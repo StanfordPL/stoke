@@ -169,13 +169,14 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
 
   // If there's no segment corresponding to the stack, create one.
   switch (segments.size()) {
+  default:
   case 3:
     cs.data = segments[2];
   case 2:
     cs.stack = segments[1];
   case 1:
     cs.heap = segments[0];
-  default:
+  case 0:
     break;
   }
 
@@ -283,6 +284,16 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
     }
   }
 
-  return Cfg(new_code, cfg.def_ins(), cfg.live_outs());
+  auto& old_fxn = cfg.get_function();
+  TUnit new_fxn(new_code, old_fxn.get_file_offset(), old_fxn.get_rip_offset(), 0);
+
+  return Cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
 
 }
+
+
+
+
+
+
+

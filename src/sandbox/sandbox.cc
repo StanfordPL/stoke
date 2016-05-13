@@ -186,9 +186,6 @@ Sandbox& Sandbox::clear_functions() {
   }
   fxns_src_.clear();
 
-  fxns_read_only_.clear();
-  all_fxns_read_only_ = true;
-
   return *this;
 }
 
@@ -229,12 +226,6 @@ Sandbox& Sandbox::clear_callbacks() {
 
 Sandbox& Sandbox::run(size_t index) {
 
-  /*
-  cout << endl;
-  cout << "RUNNING ON" << endl;
-  cout << *get_input(index) << endl;
-  */
-
   assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
@@ -244,16 +235,13 @@ Sandbox& Sandbox::run(size_t index) {
     return *this;
   }
 
-  // Optimization: In read only mem mode, we don't need to reset output memory
-  // Stefan: this optimization seems unsound, see issue 761
-  // if (!all_fxns_read_only_) {
   io->out_.stack.copy(io->in_.stack);
   io->out_.heap.copy(io->in_.heap);
   io->out_.data.copy(io->in_.data);
+  io->out_.segments.resize(io->in_.segments.size());
   for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
     io->out_.segments[i].copy(io->in_.segments[i]);
   }
-  // }
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
@@ -326,13 +314,6 @@ void Sandbox::recompile(const Cfg& cfg) {
   // Compile the function and record its source
   assert(fxns_[label] != 0);
   emit_function(cfg, fxns_[label]);
-
-  // Update the read only memory tracker
-  fxns_read_only_[label] = is_mem_read_only(cfg);
-  all_fxns_read_only_ = true;
-  for (const auto& r : fxns_read_only_) {
-    all_fxns_read_only_ &= r.second;
-  }
 
   // Relink everything
   lnkr_.start();
@@ -602,7 +583,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     segments.push_back(&cs.heap);
   if (cs.data.size())
     segments.push_back(&cs.data);
-  for (auto seg : cs.segments)
+  for (auto& seg : cs.segments)
     if (seg.size())
       segments.push_back(&seg);
 
@@ -705,30 +686,6 @@ void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* 
 
   // Get out of here
   assm_.jmp_1(done);
-}
-
-bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      const auto& instr = cfg.get_code()[i];
-      if (instr.is_implicit_memory_dereference() && instr.get_opcode() != RET) {
-        return false;
-      }
-      if (instr.is_explicit_memory_dereference()) {
-        const auto mi = instr.mem_index();
-        if (instr.maybe_write(mi) || instr.maybe_undef(mi)) {
-          return false;
-        }
-      }
-    }
-  }
-
-  return true;
 }
 
 // Emits an instrumented version of a user's function into a persistent
@@ -935,7 +892,11 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     emit_reg_div(instr);
     break;
   case DispatchTable::INSTR:
-    assm_.assemble(instr);
+    if (instr.is_lea() && instr.get_operand<Mem>(1).rip_offset()) {
+      emit_lea_rip(instr, hex_offset);
+    } else {
+      assm_.assemble(instr);
+    }
     break;
   default:
     assert(false);
@@ -967,7 +928,9 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
   if (rip_offset) {
-    assm_.mov(rdi, Imm64(hex_offset + old_op.get_disp()));
+    int32_t disp = old_op.get_disp();
+    int64_t sign_extend = (int64_t)disp;
+    assm_.mov(rdi, Imm64(hex_offset + (uint64_t)sign_extend));
   } else {
     if (uses_rsp) {
       assm_.mov(rsp, Imm64(&user_rsp_));
@@ -1435,19 +1398,64 @@ void Sandbox::emit_popf(const Instruction& instr) {
 }
 
 void Sandbox::emit_push(const Instruction& instr) {
-  switch (instr.get_opcode()) {
-  case PUSH_IMM16:
+
+  auto opcode = instr.get_opcode();
+  size_t immediate_size = 8;
+
+  switch (opcode) {
+  case PUSHQ_IMM8:
+    immediate_size = 8;
+    break;
+  case PUSHQ_IMM16:
+    immediate_size = 16;
+    break;
+  case PUSHQ_IMM32:
+    immediate_size = 32;
+    break;
+  default:
+    immediate_size = 0;
+    break;
+  }
+
+  switch (opcode) {
+  case PUSHW_IMM8: {
+    // Sign-extend to 16 bits
+    uint16_t value = (uint16_t)instr.get_operand<Imm8>(0);
+    if (value & 0x80) {
+      value = 0xff00 | value;
+    } else {
+      value = 0xff & value;
+    }
+    Imm16 argument(value);
+
+    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), argument}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  }
+  case PUSHW_IMM16:
     emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;
-  case PUSH_IMM32:
-    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
-    assm_.lea(rsp, M64(rsp, Imm32(-4)));
+
+  case PUSHQ_IMM16:
+  case PUSHQ_IMM32:
+  case PUSHQ_IMM8: {
+    // Sign-extend to 64 bits
+    uint64_t value = (uint64_t)instr.get_operand<Imm>(0);
+    if (value & ((uint64_t)0x1 << (immediate_size-1))) {
+      value = (0xffffffffffffffff << immediate_size) | value;
+    } else {
+      value = (((uint64_t)0x1 << immediate_size) - 1) & value;
+    }
+    Imm32 lower((uint32_t)value & 0xffffffff);
+    Imm32 higher((uint32_t)(value >> 32));
+
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-8)), lower}});
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), higher}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
     break;
-  case PUSH_IMM8:
-    emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
-    assm_.lea(rsp, M64(rsp, Imm32(-1)));
-    break;
+  }
+
   case PUSH_R16:
   case PUSH_R16_1:
     emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
@@ -1460,6 +1468,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     break;
 
   default:
+    cout << "Tried opcode: " << instr.get_opcode() << endl;
     assert(false);
     break;
   }
@@ -1526,6 +1535,34 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   }
   // Now that we're safely finished, reload the user's rsp
   emit_load_user_rsp();
+}
+
+void Sandbox::emit_lea_rip(const Instruction& instr, uint64_t hex_offset) {
+  assert(instr.mem_index() == 1);
+  auto mem = instr.get_operand<Mem>(1);
+
+  // Get the actual RIP value we should see, which is the offset *following*
+  // this instruction.
+  assert(mem.rip_offset());
+  uint64_t offset = (uint64_t)mem.get_disp();
+  offset += hex_offset;
+
+  // Assemble the correct instruction to do the emulation
+  auto destination = instr.get_operand<R>(0);
+  switch (destination.size()) {
+  case 16:
+    assm_.mov(instr.get_operand<R16>(0), Imm16(offset & 0xffff));
+    break;
+
+  case 32:
+    assm_.mov(instr.get_operand<R32>(0), Imm32(offset & 0xffffffff));
+    break;
+
+  case 64:
+    assm_.mov(instr.get_operand<R64>(0), Imm64(offset));
+    break;
+  }
+
 }
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {

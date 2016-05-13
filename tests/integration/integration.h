@@ -98,7 +98,7 @@ TEST_F(IntegrationTest, ExamplesTutorial) {
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for (size_t i = 0; i < 10; ++i) {
-    if (!shell("make search")) {
+    if (!shell("make synthesize")) {
       good++;
       break;
     }

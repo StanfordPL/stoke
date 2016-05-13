@@ -516,9 +516,13 @@ TEST(SandboxTest, PUSH_POP) {
   ss << "pushw %ax" << std::endl;
   ss << "pushq -0x18(%rsp)" << std::endl;
   ss << "pushq %rax" << std::endl;
-  ss << "pushq $0xffffffffffffffaa" << std::endl;
-  ss << "pushq $0xffffffffffffffaa" << std::endl;
-  ss << "pushq $0xffffffffffffbbbb" << std::endl;
+  ss << "pushq $0xffffffaa" << std::endl;
+  ss << "popq  %rax" << std::endl;
+  ss << "popq  %rax" << std::endl;
+  ss << "popq  %rax" << std::endl;
+  ss << "popq  %rax" << std::endl;
+  ss << "pushq $0xffffffaa" << std::endl;
+  ss << "pushq $0xffffbbbb" << std::endl;
   ss << "pushq $0xcccccccc" << std::endl;
   ss << "popq %rax" << std::endl;
   ss << "popw %ax" << std::endl;
@@ -534,11 +538,119 @@ TEST(SandboxTest, PUSH_POP) {
   Sandbox sb;
   sb.set_abi_check(false);
   StateGen sg(&sb);
-  sg.get(tc);
+  sg.get(tc);               // this has 32 bytes of space on the stack only
   sb.insert_input(tc);
 
   sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, PushImm16SignExtend) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+
+  // put garbage on the stack
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+
+  // this should push 0xffffffffffffc0de
+  ss << "pushq $0xc0de #OPC=pushq_imm16" << std::endl;
+
+  // make sure the right number of bytes were pushed
+  ss << "popq %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run(Cfg(TUnit(c)));
+  auto result = *sb.result_begin();
+
+  EXPECT_EQ(ErrorCode::NORMAL, result.code);
+  EXPECT_EQ(0xffffffffffffc0de, result[rax]);
+
+}
+
+TEST(SandboxTest, PushImm32ZeroExtend) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+
+  // put garbage on the stack
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+
+  // this should push 0xc0de
+  ss << "pushq $0xc0de #OPC=pushq_imm32" << std::endl;
+
+  // make sure the right number of bytes were pushed
+  ss << "popq %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run(Cfg(TUnit(c)));
+  auto result = *sb.result_begin();
+
+  EXPECT_EQ(ErrorCode::NORMAL, result.code);
+  EXPECT_EQ(0xc0deul, result[rax]);
+
+}
+
+TEST(SandboxTest, PushImm32SignExtend) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+
+  // put garbage on the stack
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+  ss << "pushw $0xaaaa" << std::endl;
+
+  // this should push 0xffffffffc0def00d
+  ss << "pushq $0xc0def00d" << std::endl;
+
+  // make sure the right number of bytes were pushed
+  ss << "popq %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run(Cfg(TUnit(c)));
+  auto result = *sb.result_begin();
+
+  EXPECT_EQ(ErrorCode::NORMAL, result.code);
+  EXPECT_EQ(0xffffffffc0def00d, result[rax]);
+
 }
 
 TEST(SandboxTest, MEM_DIV) {
@@ -912,6 +1024,31 @@ TEST(SandboxTest, Issue709_5) {
   sb.run(cfg);
   EXPECT_EQ(ErrorCode::SIGSEGV_, sb.result_begin()->code);
 
+}
+
+TEST(SandboxTest, LeaRip) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "leaq (%rip), %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  TUnit fxn(c, 0, 0x4004f6, 0);
+  Cfg cfg(fxn, RegSet::empty(), RegSet::empty() + rax);
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.insert_input(tc);
+  sb.run(cfg);
+
+  auto result = *sb.result_begin();
+
+  /** 0x4004fd accounts for an instruction length of 7 */
+  /** This has been compared with what the actual hardware does. */
+  EXPECT_EQ(0x4004fdul, result[rax]);
 }
 
 TEST(SandboxTest, CannotReadInvalidAddress) {

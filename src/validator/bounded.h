@@ -42,7 +42,6 @@ public:
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
     set_no_bailout(false);
-    set_heap_out(true); // FIXME: there's a bug prevening the command line argument from making it here.
     set_sandbox(NULL);
   }
 
@@ -69,6 +68,9 @@ public:
 
   /** Evalue if the target and rewrite are the same */
   bool verify(const Cfg& target, const Cfg& rewrite);
+
+  /** Make testcases for a target. */
+  std::vector<CpuState> make_testcases(const Cfg& target);
 
   /** Returns whether the last counterexample made sense */
   size_t counter_examples_available() {

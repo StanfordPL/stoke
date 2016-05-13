@@ -35,6 +35,22 @@ Handler::SupportLevel ConditionalHandler::get_support(const x64asm::Instruction&
 
 }
 
+SymBool ConditionalHandler::rcx_is_zero(const SymState& state) {
+  return state.gp[rcx] == SymBitVector::constant(64, 0);
+}
+
+bool ConditionalHandler::rcx_is_zero(const CpuState& state) {
+  return state[rcx] == 0;
+}
+
+SymBool ConditionalHandler::ecx_is_zero(const SymState& state) {
+  return state.gp[ecx] == SymBitVector::constant(32, 0);
+}
+
+bool ConditionalHandler::ecx_is_zero(const CpuState& state) {
+  return state[ecx] == 0;
+}
+
 template <typename U, typename T>
 U ConditionalHandler::read_condition(const string& cc, const T& state) {
 
@@ -116,6 +132,15 @@ U ConditionalHandler::read_condition(const string& cc, const T& state) {
   // SF = 1
   if (cc == "s") {
     return state[eflags_sf];
+  }
+
+  if (cc == "rcxz") {
+    return rcx_is_zero(state);
+  }
+
+
+  if (cc == "ecxz") {
+    return ecx_is_zero(state);
   }
 
   string mestateage = "Condition flag " + cc + " is not handled.";

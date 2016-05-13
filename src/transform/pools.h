@@ -106,7 +106,6 @@ public:
   }
   /** Insert a value into the mem operand pool */
   TransformPools& insert_mem(const x64asm::M8& m)  {
-    assert(!m.rip_offset());
     const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
     if (itr == m_pool_.end()) {
       m_pool_.push_back(m);

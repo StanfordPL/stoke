@@ -46,7 +46,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   prove.add_invariant(&prove_state);
   prove.add_invariant(&memory_equal);
 
-  BOUNDED_DEBUG(cout << "heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
+  //BOUNDED_DEBUG(cout << "[bv] heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
   if (heap_out_ || stack_out_) {
     equiv = check(target, rewrite, P, Q, assume, prove);
@@ -114,6 +114,9 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     size_t count = 0;
     for (auto target_path : target_paths) {
       for (auto rewrite_path : rewrite_paths) {
+
+        BOUNDED_DEBUG(cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;)
+
         count++;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
 

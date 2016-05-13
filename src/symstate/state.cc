@@ -60,13 +60,14 @@ void SymState::build_from_cpustate(const CpuState& cs) {
       uint8_t value = mem[addr];
       auto addr_bv = SymBitVector::constant(64, addr);
       auto val_bv = SymBitVector::constant(8, value);
-      fm->write(addr_bv, val_bv, 1, 0);
+      fm->write(addr_bv, val_bv, 8, 0);
     }
   }
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
   sigsegv = SymBool::_false();
+  rip = SymBitVector::constant(64, 0x0);
 }
 
 void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
@@ -99,6 +100,13 @@ void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
   sigbus = SymBool::var("sigbus" + (no_suffix ? "" : "_" + suffix));
   sigfpe = SymBool::var("sigfpe" + (no_suffix ? "" : "_" + suffix));
   sigsegv = SymBool::var("sigsegv" + (no_suffix ? "" : "_" + suffix));
+
+  stringstream name;
+  name << "rip";
+  if (!no_suffix) {
+    name << "_" << suffix;
+  }
+  rip = SymBitVector::var(64, name.str());
 }
 
 SymBool SymState::operator[](const Eflags f) const {
@@ -143,6 +151,20 @@ SymBitVector SymState::operator[](const Operand o) {
 }
 
 SymBitVector SymState::lookup(const Operand o) const {
+
+  if (o.is_typical_memory()) {
+    auto& m = reinterpret_cast<const M8&>(o);
+    uint16_t size = o.size();
+    auto addr = get_addr(m);
+
+    if (memory) {
+      auto p = memory->read(addr, size, lineno_);
+      return p.first;
+    } else {
+      return SymBitVector::tmp_var(size);
+    }
+  }
+
 
   if (o.type() == Type::RH) {
     auto& r = reinterpret_cast<const R&>(o);
@@ -302,6 +324,23 @@ void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
   set(eflags_pf, v[7][0].parity());
 }
 
+void SymState::set_szp_flags(const SymBitVector& v, SymBool condition) {
+
+  auto width = v.width();
+
+  /* The sign flag is the most significant bit */
+  auto new_sf = v[width-1];
+  set(eflags_sf, condition.ite(new_sf, (*this)[eflags_sf]));
+
+  /* The zero flag says if the whole BV is 0 */
+  auto new_zf = (v == SymBitVector::constant(width, 0));
+  set(eflags_zf, condition.ite(new_zf, (*this)[eflags_zf]));
+
+  /* The parity flag */
+  auto new_pf = v[7][0].parity();
+  set(eflags_pf, condition.ite(new_pf, (*this)[eflags_pf]));
+}
+
 /** Generate constraints expressing equality of two states over a given regset */
 std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
 
@@ -330,6 +369,11 @@ template <typename T>
 SymBitVector SymState::get_addr(M<T> memory) const {
 
   SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
+
+  if (memory.rip_offset()) {
+    address = address + this->rip;
+    return address;
+  }
 
   if (memory.contains_base()) {
     address = address + lookup(memory.get_base());
@@ -373,8 +417,20 @@ SymBitVector SymState::get_addr(const Instruction& instr) const {
   if (instr.is_explicit_memory_dereference()) {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
-    auto arg = instr.get_operand<Operand>(0);
-    return lookup(rsp) - SymBitVector::constant(64, arg.size()/8);
+    size_t bytes = 2;
+    switch (instr.get_opcode()) {
+    case PUSHQ_IMM32:
+    case PUSHQ_IMM16:
+    case PUSHQ_IMM8:
+    case PUSH_M64:
+    case PUSH_R64:
+    case PUSH_R64_1:
+      bytes = 8;
+      break;
+    default:
+      bytes = 2;
+    }
+    return lookup(rsp) - SymBitVector::constant(64, bytes);
   } else if (instr.is_pop() || instr.is_ret()) {
     return lookup(rsp);
   } else {

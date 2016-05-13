@@ -38,11 +38,11 @@ public:
     return *this;
   }
 
-  SymBool operator()(const SymState& left, const SymState& right) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
     SymBool b = SymBool::_true();
 
     for (auto it : invariants_) {
-      b = b & (*it)(left, right);
+      b = b & (*it)(left, right, tln, rln);
     }
 
     return b;
@@ -89,6 +89,25 @@ public:
     }
     return os;
   }
+
+  virtual std::vector<x64asm::Mem> target_memory_references() const {
+    std::vector<x64asm::Mem> result;
+    for (auto it : invariants_) {
+      auto prev = it->target_memory_references();
+      result.insert(result.end(), prev.begin(), prev.end());
+    }
+    return result;
+  }
+
+  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
+    std::vector<x64asm::Mem> result;
+    for (auto it : invariants_) {
+      auto prev = it->rewrite_memory_references();
+      result.insert(result.end(), prev.begin(), prev.end());
+    }
+    return result;
+  }
+
 
 private:
 

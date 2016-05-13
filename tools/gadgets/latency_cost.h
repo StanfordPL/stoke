@@ -24,7 +24,6 @@ namespace stoke {
 class LatencyCostGadget : public LatencyCost {
 public:
   LatencyCostGadget() : LatencyCost() {
-    set_nesting_penalty(nesting_penalty_arg);
   }
 };
 

@@ -25,6 +25,57 @@ using namespace x64asm;
 
 namespace stoke {
 
+uint64_t CpuState::get_addr(Mem ref) const {
+
+  uint64_t address = 0;
+
+  // get the displacement
+  uint32_t displacement = ref.get_disp();
+
+  // sign extend to 64 bits
+  if (displacement & 0x80000000) {
+    address = 0xffffffff00000000 | (uint64_t)displacement;
+  } else {
+    address = (uint64_t) displacement;
+  }
+
+  // check if memory has base
+  if (ref.contains_base()) {
+    address = address + gp[ref.get_base()].get_fixed_quad(0);
+  }
+
+  // check for index
+  if (ref.contains_index()) {
+    uint64_t index = gp[ref.get_index()].get_fixed_quad(0);
+
+    switch (ref.get_scale()) {
+    case Scale::TIMES_1:
+      address = address + index;
+      break;
+    case Scale::TIMES_2:
+      address = address + (index << 1);
+      break;
+    case Scale::TIMES_4:
+      address = address + (index << 2);
+      break;
+    case Scale::TIMES_8:
+      address = address + (index << 3);
+      break;
+    default:
+      assert(false);
+      break;
+    }
+  }
+
+  // check for 32-bit override
+  if (ref.addr_or()) {
+    address = address & 0xffffffff;
+  }
+
+  return address;
+
+
+}
 
 /** Get the memory address corresponding to a memory operand */
 uint64_t CpuState::get_addr(M8 ref) const {
@@ -85,8 +136,20 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   if (instr.is_explicit_memory_dereference()) {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
-    auto arg = instr.get_operand<Operand>(0);
-    return gp[x64asm::rsp].get_fixed_quad(0) - arg.size()/8;
+    size_t bytes = 2;
+    switch (instr.get_opcode()) {
+    case PUSHQ_IMM32:
+    case PUSHQ_IMM16:
+    case PUSHQ_IMM8:
+    case PUSH_M64:
+    case PUSH_R64:
+    case PUSH_R64_1:
+      bytes = 8;
+      break;
+    default:
+      bytes = 2;
+    }
+    return gp[x64asm::rsp].get_fixed_quad(0) - bytes;
   } else if (instr.is_pop()) {
     return gp[x64asm::rsp].get_fixed_quad(0);
   } else if (instr.is_ret()) {

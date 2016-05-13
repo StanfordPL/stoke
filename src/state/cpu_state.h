@@ -63,10 +63,6 @@ struct CpuState {
     return !(*this == rhs);
   }
 
-  // TODO: we can improve the performance of these functions by implementing
-  // specialized versions of operator[] for specific register types, rather
-  // than always calling the generic method and looking up the type.  Not that
-  // we care.  -- Berkeley
   /** Access to a general purpose register. */
   uint64_t operator[](const x64asm::R& reg) const {
     size_t start = 0;
@@ -160,11 +156,103 @@ struct CpuState {
     return sse[ymm];
   }
 
+  /** Access an arbitrary operand. */
+  cpputil::BitVector operator[](const x64asm::Operand& operand) const {
+    if (operand.is_typical_memory()) {
+      return (*this)[static_cast<const x64asm::Mem&>(operand)];
+    } else if (operand.is_sse_register()) {
+      return (*this)[static_cast<const x64asm::Sse&>(operand)];
+    } else if (operand.is_gp_register()) {
+      return this->gp[static_cast<const x64asm::R&>(operand)];
+    }
+    assert(false);
+    cpputil::BitVector zero(64);
+    return zero;
+  }
+
 
   /** Access Eflags */
   inline bool operator[](const x64asm::Eflags& f) const {
     return rf.is_set(f.index());
   }
+
+  /** Check if memory is in range. */
+  bool in_range(const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Check if memory is in range AND valid. */
+  bool is_valid(const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        for (size_t i = 0; i < size/8; ++i) {
+          if (!segment->is_valid(addr + (uint64_t)i))
+            return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Read memory */
+  cpputil::BitVector inline operator[](const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        cpputil::BitVector result(size);
+        for (size_t i = 0; i < size/8; ++i) {
+          result.get_fixed_byte(i) = (*segment)[addr + (uint64_t)i];
+        }
+        return result;
+      }
+    }
+
+    assert(false);
+    cpputil::BitVector result(size);
+    return result;
+  }
+
 
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
@@ -196,9 +284,11 @@ struct CpuState {
   std::vector<Memory> segments;
 
   /** Get the memory address corresponding to a memory operand */
-  uint64_t get_addr(x64asm::M8 ref) const;
+  uint64_t get_addr(x64asm::Mem ref) const;
   /** Get the memory address corresponding to an instruction */
   uint64_t get_addr(x64asm::Instruction instr) const;
+  /** Get the memory address corresponding to a memory operand (DEPRECATED) */
+  uint64_t get_addr(x64asm::M8 ref) const;
 
   /** The number of jumps last spent on this testcase */
   uint64_t jumps_seen;

@@ -28,6 +28,8 @@ public:
   SymBitVector simplify(const SymBitVector& b);
   /** Simplify a given bool */
   SymBool simplify(const SymBool& b);
+  /** Simplify a given array */
+  SymArray simplify(const SymArray& b);
 
   /** Constructions a new simplifier.  Any node sharing will be preserved for all circuits simplified with this simplifier. */
   SymSimplify() {}

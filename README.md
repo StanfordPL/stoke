@@ -13,10 +13,11 @@ and in some cases expert hand-written code.
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
 
-- [**Stochastic Superoptimization** -- ASPLOS 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos13.pdf):
-- [**Data-Driven Equivalence Checking** -- OOPSLA 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla13b.pdf):
-- [**Stochastic Optimization of Floating-Point Programs with Tunable Precision** -- PLDI 2014](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi14a.pdf):
-- [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf):
+- [**Stochastic Superoptimization** -- ASPLOS 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos13.pdf)
+- [**Data-Driven Equivalence Checking** -- OOPSLA 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla13b.pdf)
+- [**Stochastic Optimization of Floating-Point Programs with Tunable Precision** -- PLDI 2014](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi14a.pdf)
+- [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf)
+- [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
 
 Table of Contents
 =====
@@ -35,7 +36,8 @@ Table of Contents
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-6. [Contact](#contact)
+6. [FAQ](#faq)
+7. [Contact](#contact)
 
 Prerequisites
 =====
@@ -331,7 +333,7 @@ Each of the random transformations performed by STOKE are evaluated with
 respect to the contents of this file. Rewrites are compiled into a sandbox and
 executed beginning from the machine state represented by each entry. Rewrites
 are only permitted to dereference defined locations. This includes registers
-that are flagged as `def_in` (see `search.conf`, below), memory locations that
+that are flagged as `def_in` (see `synthesize.conf`, below), memory locations that
 are flagged as 'v', or locations that were written previously. Rewrites are
 permitted to write values to all registers and to any memory location that is
 flagged as valid. 
@@ -353,14 +355,14 @@ The STOKE sandbox will safely halt the execution of rewrites that perform
 undefined behavior. This includes leaving registers in a state that violates
 the x86-64 callee-save ABI, dereferencing invalid memory, performing a
 computation that results in a floating-point exception, or becoming trapped in
-a loop that performs more than `max_jumps` (see `search.conf`, below). 
+a loop that performs more than `max_jumps` (see `synthesize.conf`, below). 
 
 The final step is to use these testcases and the target code contained in
-`bins/_Z6popcntm.s` to run STOKE search by typing:
+`bins/_Z6popcntm.s` to run STOKE search in synthesis mode (i.e., trying to find a program starting from the empty program) by typing:
 
-    $ stoke search --config search.conf
+    $ stoke synthesize --config synthesize.conf
     
-where `search.conf` contains:
+where `synthesize.conf` contains:
 
 ```
 ##### stoke search config file
@@ -368,7 +370,6 @@ where `search.conf` contains:
 --out result.s # Path to write results to
 
 --target bins/_Z6popcntm.s # Path to the function to optimize
---init empty # Begin search from all nops 
 
 --def_in "{ %rax %rdi }" # The registers that are defined on entry to the target
 --live_out "{ %rax }" # The registers that are live on exit from the target
@@ -431,7 +432,7 @@ retq                               je .L_X64ASM_0
 Statistics updates will be printed every `statistics_interval` proposals.
 Statistics are shown for the number of proposals that have taken place, elapsed
 time, proposal throughput, and for each of the transformations specified to
-have non-zero mass in `search.conf`.
+have non-zero mass in `synthesize.conf`.
 
 ```
 Statistics Update: 
@@ -872,6 +873,13 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .description("What this value represents")
   .default_val(Complex());
 ```
+
+
+FAQ
+=====
+
+1. What is the different between `stoke synthesize` and `stoke optimize`?
+Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
 
 
 Contact

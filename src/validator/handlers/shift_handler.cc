@@ -132,9 +132,9 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     extended_src = state[dest];
 
   // If the shift is length 1, we do set the OF
-  auto set_of = shift_amt[7][0] == SymBitVector::constant(8, 1);
+  //auto set_of = shift_amt[7][0] == SymBitVector::constant(8, 1);
   // If the shift amount is too large, CF is undefined for SHL/SHR
-  auto undef_cf = (shift_amt[7][0] >= SymBitVector::constant(8, dest.size()));
+  //auto undef_cf = (shift_amt[7][0] >= SymBitVector::constant(8, dest.size()));
 
   // Do the shift and extract final value and CF/OF flags
   // Note that the computation of CF/OF depends on instruction variant
@@ -147,16 +147,22 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     state.set(dest, result);
 
     // If not too large, CF is the lsb of extended result
+    /*
     state.set(eflags_cf, undef_cf.ite(
                 SymBool::tmp_var(),
                 operand_nonzero.ite(temp_dest[0], state[eflags_cf])
-              ));
+              ));*/
+    // TODO: improve precision
+    state.set(eflags_cf, SymBool::tmp_var());
 
     // If shift is length 1, OF is MSB of *original* operand
+    // TODO: improve precision
+    state.set(eflags_of, SymBool::tmp_var());
+    /*
     state.set(eflags_of, set_of.ite(
                 extended_src[dest.size()],
                 state[eflags_of]
-              ));
+              ));*/
 
   } else if (!rotate && right && sign) {
     temp_dest = extended_src.s_shr(shift_amt);
@@ -165,16 +171,16 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     state.set(dest, result);
 
     // For SAR, CF is set so long as a shift happens
+    // TODO: improve precision
+    state.set(eflags_cf, SymBool::tmp_var());
+    /*
     state.set(eflags_cf, operand_nonzero.ite(
                 temp_dest[0],
                 state[eflags_cf]
-              ));
+              ));*/
 
-    // The OF bit is set to 0 if this is a shift of length 1, otherwise left alone
-    state.set(eflags_of, set_of.ite(
-                SymBool::_false(),
-                state[eflags_of]
-              ));
+    // TODO: improve precision
+    state.set(eflags_of, SymBool::tmp_var());
 
   } else if (!rotate && !right) {
     temp_dest = extended_src << shift_amt;
@@ -183,34 +189,44 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     state.set(dest, result);
 
     // If not too large, CF is the msb of extended result
+    // TODO: improve precision
+    state.set(eflags_cf, SymBool::tmp_var());
+    /*
     state.set(eflags_cf, undef_cf.ite(
                 SymBool::tmp_var(),
                 operand_nonzero.ite(temp_dest[dest.size()], state[eflags_cf])
-              ));
+              )); */
 
     // The OF bit is 0 <=> MSB of result is same as carry flag (unless left alone)
+    // TODO: improve proceision
+    state.set(eflags_of, SymBool::tmp_var());
+    /*
     state.set(eflags_of, set_of.ite(
                 state[eflags_cf] != result[dest.size() - 1],
                 state[eflags_of]
-              ));
+              ));*/
   } else if (rotate && !rotate_cf) {
 
     // Do the shift and store the result
-    int last_bit_shifted;
+    //int last_bit_shifted;
     if (right) {
       temp_dest = extended_src.ror(shift_amt);
-      last_bit_shifted = dest.size() - 1;
+      //last_bit_shifted = dest.size() - 1;
     } else {
       temp_dest = extended_src.rol(shift_amt);
-      last_bit_shifted = 0;
+      //last_bit_shifted = 0;
     }
     state.set(dest, temp_dest);
 
+    // If not too large, CF is the msb of extended result
+    // TODO: improve precision
+    state.set(eflags_cf, SymBool::tmp_var());
+    /*
     // Set CF to last bit rotated, if any
     state.set(eflags_cf, operand_nonzero.ite(
                 temp_dest[last_bit_shifted],
                 state[eflags_cf]
-              ));
+              ));*/
 
     // Set OF (if needed) to xor of two MSB (for right shifts)
     // or xor of MSB, LSB (for left shifts)
@@ -221,7 +237,9 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
       of = temp_dest[dest.size() - 1] ^ temp_dest[0];
     }
 
-    state.set(eflags_of, set_of.ite(of, SymBool::tmp_var()));
+    // TODO: improve precision
+    state.set(eflags_of, SymBool::tmp_var());
+    //state.set(eflags_of, set_of.ite(of, SymBool::tmp_var()));
 
   } else if (rotate && rotate_cf) {
 
@@ -248,10 +266,13 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     else
       of = temp_dest[dest.size()] ^ temp_dest[dest.size() - 1];
 
+    // TODO: improve precision
+    state.set(eflags_of, SymBool::tmp_var());
+    /*
     state.set(eflags_of, set_of.ite(
                 of,
                 operand_nonzero.ite( state[eflags_of], SymBool::tmp_var())
-              ));
+              ));*/
   }
 
 

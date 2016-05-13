@@ -72,6 +72,9 @@ TransformPools default_fuzzer_pool() {
   memory.push_back("0x5(%r11d, %ebx)");
   memory.push_back("-0x7(%r11d, %ebx, 4)");
   memory.push_back("0x30(%r11d)");
+  memory.push_back("(%rip)");
+  memory.push_back("-0x2fffff(%rip)");
+  memory.push_back("0x80000000(%rip)");
 
   for (auto mem_str : memory) {
     std::stringstream ss;
@@ -81,9 +84,11 @@ TransformPools default_fuzzer_pool() {
     tp.insert_mem(m8);
   }
 
+  tp.insert_rip(0x100);
+  tp.insert_rip(0x5dd00000);
+
   tp.set_memory_read(true);
   tp.set_memory_write(true);
-  tp.recompute_pools();
 
   // Remove some opcodes that are both (i) useless and (ii) problematic.
   // Usually floating point stuff or control-flow that we don't handle
@@ -91,6 +96,7 @@ TransformPools default_fuzzer_pool() {
   tp.remove_opcode(x64asm::FLD_M80FP);
   tp.remove_opcode(x64asm::DIV_R8);
   tp.remove_opcode(x64asm::IDIV_R8);
+  tp.recompute_pools();
 
   return tp;
 }

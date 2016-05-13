@@ -29,6 +29,7 @@
 #include "src/symstate/memory/flat.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
+#include "src/validator/filters/default.h"
 
 //#define DEBUG_CHECKER_PERFORMANCE
 
@@ -39,6 +40,17 @@
 namespace stoke {
 
 class ObligationChecker : public Validator {
+  friend class ObligationCheckerBaseTest;
+  FRIEND_TEST(ObligationCheckerBaseTest, WcpcpyA);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligation);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligationFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNull);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNullFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProve);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProveFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut2);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveEquality);
 
 public:
 
@@ -51,16 +63,28 @@ public:
 
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
     set_alias_strategy(AliasStrategy::STRING);
+    set_nacl(false);
+    filter_ = new DefaultFilter(handler_);
   }
 
-  ~ObligationChecker() {}
-
+  ~ObligationChecker() {
+    if (filter_)
+      delete filter_;
+  }
 
   /** Set strategy for aliasing */
   ObligationChecker& set_alias_strategy(AliasStrategy as) {
     alias_strategy_ = as;
     return *this;
   }
+
+  ObligationChecker& set_filter(Filter* filter) {
+    if (filter_)
+      delete filter_;
+    filter_ = filter;
+    return *this;
+  }
+
   /** If every memory reference in your code is of the form (r15,r*x,1), then
     setting this option to 'true' is logically equivalent to adding constraints
     that bound the index register away from the top/bottom of the 32-bit
@@ -82,7 +106,6 @@ public:
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
 
-protected:
   /** Check. */
   bool check(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q,
              const Invariant& assume, const Invariant& prove);
@@ -116,9 +139,8 @@ private:
 
 
   /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
 
   /** Recursive helper function for enumerate_aliasing.  target_con_access and
    * rewrite_con_access list the lines of code where target_unroll and
@@ -134,18 +156,7 @@ private:
       const std::vector<CellMemory::SymbolicAccess>& todo,
       const std::vector<CellMemory::SymbolicAccess>& done,
       size_t sym_accesses_done,
-      const Invariant& assume,
-      bool check_feasible);
-
-
-  /** Helper for enumerate_aliasing_helper.  Builds CellMemory objects for
-   * partial description of which memory cells overlap, builds circuits, and
-   * checks to see if such executions are possible. */
-  bool check_feasibility(const Cfg& target, const Cfg& rewrite,
-                         const Cfg& target_unroll, const Cfg& rewrite_unroll,
-                         const CfgPath& P, const CfgPath& Q,
-                         const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list,
-                         const Invariant& assume);
+      const Invariant& assume);
 
 
   /** Used for CellArrangement (see below) */
@@ -176,20 +187,19 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
-  bool build_testcase_flat_memory(CpuState&, FlatMemory&, const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory,
+                                  const CellMemory* rewrite_memory,
+                                  const Cfg& target, const Cfg& rewrite,
+                                  bool begin) const;
+
+  bool build_testcase_flat_memory(CpuState&, FlatMemory&,
+                                  const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
   void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories);
 
   /** Create a vector of line numbers with memory dereferences */
   std::vector<size_t> enumerate_accesses(const Cfg& cfg);
-
-  /** Helper: do two sorted vector contain a common value? */
-  bool vectors_have_common(const std::vector<size_t>& left, const std::vector<size_t>& right, size_t& value);
-
-  /** Takes a vector of symbolic accesses, builds a map, and allocates a CellMemory to use */
-  CellMemory* make_cell_memory(const std::vector<CellMemory::SymbolicAccess>&);
 
   /** Filter out symbolic accesses depending on target/rewrite. */
   std::vector<CellMemory::SymbolicAccess> split_sym_accesses(const std::vector<CellMemory::SymbolicAccess>&, bool);
@@ -199,9 +209,19 @@ private:
 
   /////////////// These methods handle paths and circuit building ////////////////
 
+  /** This structure and the correspondong map stores RIP offsets and original
+   * line numbers for each line of a rewritten program */
+  struct LineInfo {
+    size_t line_number;
+    x64asm::Label label;
+    uint64_t rip_offset;
+  };
+
+
+  typedef std::map<size_t,LineInfo> LineMap;
 
   /** Build the circuit for a single basic block */
-  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
+  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map);
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {
@@ -215,14 +235,23 @@ private:
   }
 
   /** Check if a counterexample actually works. */
-  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
+  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
+                            const CfgPath& Q, const Invariant& assume,
+                            const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);
 
+  /** Rewrite a CFG so that it always executes a particular path, replacing
+    jumps with NOPs.  Fill a map that contains information relating the new
+    line numbers with the original ones. */
+  Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p, LineMap& to_populate);
 
 
   /////////////// Bookkeeping //////////////////
+
+  /** Rules to transform instructions for a custom purpose */
+  Filter* filter_;
 
   /** Target counterexample and end state */
   CpuState ceg_t_;
