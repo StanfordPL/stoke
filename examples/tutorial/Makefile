@@ -40,4 +40,4 @@ replace:
 	stoke replace --config replace.conf
 
 clean:
-	rm -rf bins ./a.out *.tc *.s
+	rm -rf bins ./a.out *.tc *.s tcs
