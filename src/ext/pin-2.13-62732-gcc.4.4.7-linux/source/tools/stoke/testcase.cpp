@@ -42,7 +42,7 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_PINTOOL(X) { X }
+#define DEBUG_PINTOOL(X) { }
 
 /* ============================================================================================= */
 /* Commandline Switches */
@@ -75,9 +75,7 @@ uint64_t begin_line_;
 unordered_set<uint64_t> end_lines_;
 
 // Max number of testcases to emit
-int tc_remaining_;
-// Mutex used to synchronize the number of testcases left
-mutex tc_remaining_mutex_;
+unordered_map<string, size_t> tcs_found_;
 
 // Vector of functions we're looking for
 vector<string> functions_;
@@ -124,10 +122,12 @@ VOID begin_tc(const char* function_name,
 							ADDRINT rflags
              ) {
 	// Nothing to do if we've satisfied our quota, or we're currently recording
-  if (tc_remaining_ <= 0) {
+  if (tcs_found_[function_name] > KnobMaxTc.Value()) {
     return;
+  } else {
+    tcs_found_[function_name]++;
   }
-  DEBUG_PINTOOL(cout << "beginning " << function_name << endl;)
+  //cout << "beginning " << function_name << endl;
 
 	// Otherwise, we're starting recording right now
   CpuState tc;
@@ -196,7 +196,7 @@ VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
   if (!tcs_.size()) {
     return;
   }
-  DEBUG_PINTOOL(cout << "recording deref" << endl;)
+  //DEBUG_PINTOOL(cout << "recording deref" << endl;)
 
   MemoryMap& current = memory_values_.top().back();
   for (size_t i = 0; i < size; ++i) {
@@ -215,7 +215,7 @@ VOID end_tc() {
 
   auto ended_function = current_function_.top();
   current_function_.pop();
-  DEBUG_PINTOOL(cout << "ending " << ended_function << endl;)
+  //cout << "ending " << ended_function << endl;
 
 	// Otherwise, we're done. Finish recording this testcase	
   // See the comments on the top about the memory_values_ data structure.
@@ -267,9 +267,6 @@ VOID end_tc() {
     delete os;
   }
 
-  tc_remaining_mutex_.lock();
-  tc_remaining_--;
-  tc_remaining_mutex_.unlock();
 }
 
 /* ============================================================================================= */
@@ -390,14 +387,13 @@ VOID Fini(INT32 code, VOID* v) {
 
 BOOL child_setup(CHILD_PROCESS childProcess, VOID* value) {
 
-  cout << "Forking child." << endl << "  ";
-
   // Read command line
   DEBUG_PINTOOL(
+  cout << "Forking child." << endl << "  ";
   ifstream ifs("/proc/self/cmdline");
   string temp;
   while(ifs >> temp) {
-    cout << temp;
+    cout << temp << " ";
   }
   ifs.close();
   cout << endl;);
@@ -408,15 +404,12 @@ BOOL child_setup(CHILD_PROCESS childProcess, VOID* value) {
 int main(int argc, char* argv[]) {
 
 
+  //cout << "Executing main" << endl;
+
 	// Check usage
   if (PIN_Init(argc, argv)) {
     return Usage();
   }
-
-	// Read number of testcases to emit
-  tc_remaining_mutex_.unlock();
-  tc_remaining_ = KnobMaxTc.Value();
-  tc_remaining_mutex_.lock();
 
 	// Read line number to begin recording on
 	begin_line_ = KnobBeginLine.Value();
@@ -430,13 +423,16 @@ int main(int argc, char* argv[]) {
   }
 
   // Read function list
+  int n = 0;
   if(KnobFunctionList.Value().size()) {
     ifstream ifs(KnobFunctionList.Value());
     string name;
     while(ifs >> name) {
       functions_.push_back(name);
       DEBUG_PINTOOL(cout << "Tracing " << name << endl;)
+      n++;
     }
+    ifs.close();
   }
   {
     istringstream iss(KnobFxnName.Value());
@@ -444,8 +440,10 @@ int main(int argc, char* argv[]) {
     while(iss >> name) {
       functions_.push_back(name);
       DEBUG_PINTOOL(cout << "Tracing " << name << endl;)
+      n++;
     }
   }
+  //cout << "Tracing " << n << " function" << endl;
 
   // Instrument every function and emit a finishing routine
   PIN_InitSymbols();
