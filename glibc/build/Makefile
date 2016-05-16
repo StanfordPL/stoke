@@ -5,7 +5,7 @@ all: glibc-2.23
 
 glibc-%:
 	mkdir $@
-	cd $@ && ../../sources/$@/configure --prefix=$(PWD)/$@
+	cd $@ && ../../sources/$@/configure --prefix=$(PWD)/$@ --disable-werror
 	cd $@ && make
 
 clean:
