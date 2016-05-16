@@ -75,7 +75,11 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
   auto str = symvar->name_;
 
-  auto mem_map = solver_.get_model_array(str, 64, 8);
+  auto orig_map = solver_.get_model_array(str, 64, 8);
+  unordered_map<uint64_t, BitVector> mem_map;
+  for (auto pair : orig_map) {
+    mem_map[pair.first] = pair.second;
+  }
 
   for (auto p : others) {
     auto abs_var = p.first;
@@ -104,11 +108,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
   }
   );
 
-  if (Validator::memory_map_to_testcase(mem_map, ceg))
-    return true;
-
-  return false;
-
+  return ceg.memory_from_map(mem_map);
 
 }
 
@@ -119,7 +119,7 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
     return false;
   }
 
-  std::map<uint64_t, BitVector> addr_value_pairs;
+  std::unordered_map<uint64_t, BitVector> addr_value_pairs;
 
   // Allocate a tiny bit of stack memory
   auto rsp_val = ceg[rsp];
@@ -170,10 +170,8 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
     cout << endl;
   }
   );
-  if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))
-    return true;
 
-  return false;
+  return ceg.memory_from_map(addr_value_pairs);
 }
 
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
