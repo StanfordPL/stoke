@@ -247,7 +247,7 @@ VOID end_tc() {
     ss << KnobOutputDir.Value() << "/" << ended_function;
     os = new ofstream(ss.str(), ofstream::app);
   } else if (!KnobOutFile.Value().empty()) {
-    os = new ofstream(KnobOutFile.Value());
+    os = new ofstream(KnobOutFile.Value(), ofstream::app);
   } else {
     os = &cout;
     delete_me = false;
