@@ -19,28 +19,12 @@
 
 using namespace std;
 
-size_t factorial(size_t n) {
-
-  if (n <= 1) {
-    return 1;
-  }
-  return n*factorial(n-1);
-}
-
 size_t popcnt(uint64_t x) {
   int res = 0;
   for (; x > 0; x >>= 1) {
     res += x & 0x1ull;
   }
   return res;
-}
-
-size_t foobar(uint64_t* x) {
-  if (*x < 10) {
-    return factorial(*x) + popcnt(*x);
-  } else {
-    return factorial(4) + popcnt(*x);
-  }
 }
 
 int main(int argc, char** argv) {
@@ -57,12 +41,8 @@ int main(int argc, char** argv) {
     // the testcases deterministic and all 7 modulo 19 (at least until it wraps
     // around the 64-bit limit).
 
-    ret += foobar(&j);
-    if (j > 11) {
-      j = (j*19 + 7 + (rand() % 5));
-    } else {
-      j++;
-    }
+    j = (j*19 + 7 + (rand() % 5));
+    ret += popcnt(j);
   }
 
   return ret;
