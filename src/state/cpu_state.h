@@ -283,6 +283,9 @@ struct CpuState {
   /** Other memory segments */
   std::vector<Memory> segments;
 
+  /** Set memory from a map.  Returns true on success. */
+  bool memory_from_map(std::unordered_map<uint64_t, cpputil::BitVector>& map);
+
   /** Get the memory address corresponding to a memory operand */
   uint64_t get_addr(x64asm::Mem ref) const;
   /** Get the memory address corresponding to an instruction */
