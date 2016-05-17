@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
   // no reason to check def-in/live-out
   def_in_arg.default_val(RegSet::universe()).set_provided();
   live_out_arg.default_val(RegSet::empty()).set_provided();
-  
+
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
