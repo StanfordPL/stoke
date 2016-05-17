@@ -68,9 +68,9 @@ auto& out = ValueArg<string>::create("out")
             .default_val("result.s");
 
 auto& results_arg = ValueArg<string>::create("results")
-            .usage("<path/to/folder>")
-            .description("Path to folder where new best correct rewrites are being stored.  Rewrites are verified before being stored (using the same verification settings as the final verification).")
-            .default_val("");
+                    .usage("<path/to/folder>")
+                    .description("Path to folder where new best correct rewrites are being stored.  Rewrites are verified before being stored (using the same verification settings as the final verification).")
+                    .default_val("");
 
 auto& machine_output_arg = ValueArg<string>::create("machine_output")
                            .usage("<path/to/file.s>")
