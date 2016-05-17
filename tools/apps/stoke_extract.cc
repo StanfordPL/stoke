@@ -41,6 +41,11 @@ auto& out = ValueArg<string>::create("o")
             .description("Directory to write results to")
             .default_val("out");
 
+auto& fxn = ValueArg<string>::create("function")
+            .usage("<string>")
+            .description("only extract this function")
+            .default_val("");
+
 auto& flat_binary = FlagArg::create("flat_binary");
 
 bool make_dir() {
@@ -62,7 +67,10 @@ bool make_dir() {
 }
 
 void callback(const FunctionCallbackData& data, void* arg) {
-  if (!data.parse_error) {
+
+  if (fxn.value().size() && data.tunit.get_name() != fxn.value()) {
+    return;
+  } else if (!data.parse_error) {
     ofstream ofs(out.value() + "/" + data.tunit.get_name() + ".s");
     ofs << data.tunit << endl;
   } else {
