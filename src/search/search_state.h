@@ -49,6 +49,9 @@ public:
   /** Did the search get interrupted? */
   bool interrupted;
 
+  /** Last ID we tried to store a result at. */
+  int last_result_id = 0;
+
   /** Search state should agree on boundary conditions wrt target */
   bool invariant_boundary_conditions(const Cfg& target) const;
   /** Search state should be composed of well-formed functions */
