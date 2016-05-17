@@ -521,7 +521,7 @@ Additional Features
 =====
 
 In addition to the subcommands described above, STOKE has facilities for
-debugging and benchmarking the performance of each of its core components:
+debugging and benchmarking the performance of each of its core components.  See `stoke --help` for an up-to-date list.
 
 - `stoke debug cfg`: Generate a pdf of a control flow graph.
 - `stoke debug cost`: Compute the cost of a rewrite.
@@ -583,6 +583,15 @@ Developer FAQ
 
 ### How does the assembler work (and how do I debug it?)
 There is a good explanation [in the issue tracker](https://github.com/StanfordPL/stoke/issues/791#issuecomment-169783865).  We also have a [script to compare how gcc and the x64asm assembler assemble an instruction](https://github.com/StanfordPL/stoke/issues/803).
+
+### How can I run STOKE in gdb?
+STOKEs sandbox catches SIGFPEs, and thus running STOKEs search in the sandbox causes gdb to pause very often.  To not have it stop for SIGFPEs (they are almost never a problem for STOKE), run this inside gdb:
+
+    handle SIGFPE nostop noprint
+
+You can enable this by default by running the following command:
+
+    echo "handle SIGFPE nostop noprint" > .gdbinit
 
 
 
