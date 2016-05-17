@@ -86,7 +86,7 @@ auto& output_dir = ValueArg<string>::create("output_dir")
                    .default_val("");
 
 auto& function_list = ValueArg<string>::create("function_list")
-                      .usage("<file>")
+                      .usage("<string>")
                       .description("List of functions we wish to trace, in addition to --fxn")
                       .default_val("");
 
