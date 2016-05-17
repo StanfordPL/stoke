@@ -121,8 +121,8 @@ private:
   /** Rescale rip displacements for x64asm hex */
   void rescale_offsets(x64asm::Code& code, const std::vector<LineInfo>& lines);
 
-  /* Parse a single function from objdump's stdout; returns true until eof */
-  bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, uint64_t text_offset);
+  /* Parse a single function from objdump's stdout; returns 0 on eof, -1 on error and 1 otherwise */
+  int parse_function(redi::ipstream& ips, FunctionCallbackData& data, uint64_t text_offset);
 };
 
 } // namespace stoke
