@@ -17,4 +17,3 @@ def check_repository
 end
 
 
-check_repository
