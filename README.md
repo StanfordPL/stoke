@@ -578,6 +578,11 @@ User FAQ
 ### What is the different between `stoke synthesize` and `stoke optimize`?
 Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
 
+### `stoke replace` errors with `New function has N bytes, but the old one had M`.  What does that mean?
+
+Right now, `stoke replace` has a limitation where it can only replace a function if the old implementation has at least the size (in bytes) of the new implementation.  If you control the compilation of the binary, one thing that might help making the old implementation artificially larger is to use the compiler flag `-falign-functions=N` for some large enough `N`, say 64.  In this case, the compiler will align functions at `N` bytes, which typically
+requires padding the functions with `nop`s.  This increases the chance of `stoke replace` to succeed.
+
 Developer FAQ
 =====
 
