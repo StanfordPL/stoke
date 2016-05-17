@@ -27,7 +27,9 @@ Table of Contents
  1. [Using the formal validator](#using-the-formal-validator)
 3. [Using STOKE](#using-stoke)
 4. [Additional Features](#additional-features)
-5. [Extending STOKE](#extending-stoke)
+5. [User FAQ](#user-faq)
+6. [Developer FAQ](#developer-faq)
+7. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
  2. [Gadgets](#gadgets)
  3. [Initial Search State](#initial-search-state)
@@ -36,8 +38,6 @@ Table of Contents
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-6. [User FAQ](#user-faq)
-7. [Developer FAQ](#developer-faq)
 8. [Contact](#contact)
 
 Prerequisites
@@ -525,9 +525,14 @@ debugging and benchmarking the performance of each of its core components:
 
 - `stoke debug cfg`: Generate a pdf of a control flow graph.
 - `stoke debug cost`: Compute the cost of a rewrite.
+- `stoke debug diff`: Diff the resulting state of two functions.
+- `stoke debug effect`: Show the effect of a function on the state.
+- `stoke debug formula`: .
 - `stoke debug sandbox`: Step through the execution of a rewrite.
 - `stoke debug search`: View the changes produced by performing and undoing a program transformation.
+- `stoke debug simplify`: Take an x86 program and simplify it (by removing redundant instructions).
 - `stoke debug state`: Check the behavior of operators that manipulate hardware machine states.
+- `stoke debug tunit`: Show the instruction sizes and RIP-offsets for a code.
 - `stoke debug verify`: Check the equivalence of two programs.
 - `stoke benchmark cfg`: Measure the time required to recompute a control flow graph.
 - `stoke benchmark cost`: Measure the time required to compute a cost function.
@@ -565,6 +570,21 @@ STOKE can not only propose instructions when searching for programs, but also pr
     .size clear_of, .-clear_of
 
 Note that it is enough to specify the maybe sets, as STOKE will automatically realize that the must sets need to be contained in the maybe set.
+
+
+User FAQ
+=====
+
+### What is the different between `stoke synthesize` and `stoke optimize`?
+Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
+
+Developer FAQ
+=====
+
+### How does the assembler work (and how do I debug it?)
+There is a good explanation [in the issue tracker](https://github.com/StanfordPL/stoke/issues/791#issuecomment-169783865).  We also have a [script to compare how gcc and the x64asm assembler assemble an instruction](https://github.com/StanfordPL/stoke/issues/803).
+
+
 
 Extending STOKE
 =====
@@ -874,19 +894,6 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .description("What this value represents")
   .default_val(Complex());
 ```
-
-
-User FAQ
-=====
-
-### What is the different between `stoke synthesize` and `stoke optimize`?
-Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
-
-Developer FAQ
-=====
-
-### How does the assembler work (and how do I debug it?)
-There is a good explanation [in the issue tracker](https://github.com/StanfordPL/stoke/issues/791#issuecomment-169783865).  We also have a [script to compare how gcc and the x64asm assembler assemble an instruction](https://github.com/StanfordPL/stoke/issues/803).
 
 
 Contact
