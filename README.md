@@ -36,8 +36,9 @@ Table of Contents
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-6. [FAQ](#faq)
-7. [Contact](#contact)
+6. [User FAQ](#user-faq)
+7. [Developer FAQ](#developer-faq)
+8. [Contact](#contact)
 
 Prerequisites
 =====
@@ -875,11 +876,17 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
 ```
 
 
-FAQ
+User FAQ
 =====
 
-1. What is the different between `stoke synthesize` and `stoke optimize`?
+### What is the different between `stoke synthesize` and `stoke optimize`?
 Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
+
+Developer FAQ
+=====
+
+### How does the assembler work (and how do I debug it?)
+There is a good explanation [in the issue tracker](https://github.com/StanfordPL/stoke/issues/791#issuecomment-169783865).  We also have a [script to compare how gcc and the x64asm assembler assemble an instruction](https://github.com/StanfordPL/stoke/issues/803).
 
 
 Contact
