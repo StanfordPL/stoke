@@ -580,8 +580,9 @@ Both use the same core search algorithm, but in synthesis mode, STOKE starts fro
 
 ### `stoke replace` errors with `New function has N bytes, but the old one had M`.  What does that mean?
 
-Right now, `stoke replace` has a limitation where it can only replace a function if the old implementation has at least the size (in bytes) of the new implementation.  If you control the compilation of the binary, one thing that might help making the old implementation artificially larger is to use the compiler flag `-falign-functions=N` for some large enough `N`, say 64.  In this case, the compiler will align functions at `N` bytes, which typically
-requires padding the functions with `nop`s.  This increases the chance of `stoke replace` to succeed.
+Right now, `stoke replace` has a limitation where it can only replace a function if the old implementation has at least the size (in bytes) of the new implementation.
+
+If you still want to use `stoke replace`, and if you control the compilation of the binary, a workaround is to make the old implementation artificially larger by using the compiler flag `-falign-functions=N` for some large enough `N`, say 64.  In this case, the compiler will align functions at `N` bytes, which typically requires padding the functions with `nop`s.  This increases the chance of `stoke replace` to succeed.
 
 Developer FAQ
 =====
