@@ -158,7 +158,7 @@ public:
   SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
     if (is_cached(bv)) return get_cached(bv);
 
-    // add/subtract of 0 or a-a
+    // add/subtract of 0
     // multiply of 0
     auto& f = bv->f_;
     if (f.args.size() == 2) {
@@ -172,9 +172,6 @@ public:
       }
       if ((f.name == "add_single" || f.name == "add_double") && is_zero(a)) {
         return cache(bv, (SymBitVectorAbstract*) b);
-      }
-      if ((f.name == "sub_single" || f.name == "sub_double") && a->equals(b)) {
-        return cache(bv, make_constant(bv->width_, 0));
       }
       if ((f.name == "mul_single" || f.name == "mul_double") && (is_zero(a) && is_zero(b))) {
         return cache(bv, make_constant(bv->width_, 0));
