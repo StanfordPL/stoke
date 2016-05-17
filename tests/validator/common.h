@@ -548,8 +548,8 @@ private:
       size_t line = 0;
       std::string message = v_.error();
       ADD_FAILURE() << "StraightLineValidator reported unexpected error"
-                                            << expected_string.str()
-                                            << std::endl << "Message: " << message << std::endl;
+                    << expected_string.str()
+                    << std::endl << "Message: " << message << std::endl;
       break;
     }
 
