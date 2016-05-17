@@ -27,6 +27,7 @@
 #include "src/expr/expr_parser.h"
 #include "src/tunit/tunit.h"
 #include "src/search/progress_callback.h"
+#include "src/search/new_best_correct_callback.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/failed_verification_action.h"
 #include "src/search/postprocessing.h"
@@ -50,6 +51,10 @@
 #include "tools/io/postprocessing.h"
 #include "tools/io/failed_verification_action.h"
 
+#include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/path.hpp>
+namespace fs = boost::filesystem;
+
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
@@ -61,6 +66,11 @@ auto& out = ValueArg<string>::create("out")
             .usage("<path/to/file.s>")
             .description("File to write successful results to")
             .default_val("result.s");
+
+auto& results_arg = ValueArg<string>::create("results")
+            .usage("<path/to/folder>")
+            .description("Path to folder where new best correct rewrites are being stored.  Rewrites are verified before being stored (using the same verification settings as the final verification).")
+            .default_val("");
 
 auto& machine_output_arg = ValueArg<string>::create("machine_output")
                            .usage("<path/to/file.s>")
@@ -291,6 +301,45 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   }
 }
 
+void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg) {
+
+  if (results_arg.has_been_provided()) {
+
+    auto state = data.state;
+    auto data = (pair<VerifierGadget&, TargetGadget&>*)arg;
+    auto verifier = data->first;
+    auto target = data->second;
+
+    // verify the new best correct rewrite
+    const auto verified = verifier.verify(target, state.best_correct);
+
+    if (verifier.has_error()) {
+      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl;
+    }
+
+    // save to file if verified
+    if (verified) {
+      // next name for result file
+      string name = "";
+      bool done = false;
+      do {
+        name = results_arg.value() + "/result-" + to_string(state.last_result_id) + ".s";
+        state.last_result_id += 1;
+        ifstream f(name.c_str());
+        done = !f.good();
+      } while (!done);
+
+      // write output
+      ofstream outfile;
+      outfile.open(name);
+      outfile << state.current.get_function();
+      outfile.close();
+    }
+
+  }
+
+}
+
 vector<string>& split(string& s, const string& delim, vector<string>& result) {
   auto pos = string::npos;
   while ((pos = s.find(delim)) != string::npos) {
@@ -308,6 +357,14 @@ int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
+
+  // create results dir if necessary
+  if (results_arg.has_been_provided()) {
+    fs::path result_dir(results_arg.value());
+    if (!fs::is_directory(result_dir)) {
+      fs::create_directories(result_dir);
+    }
+  }
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
@@ -335,6 +392,8 @@ int main(int argc, char** argv) {
   if (!no_progress_update_arg.value()) {
     search.set_progress_callback(pcb, &Console::msg());
   }
+  auto nbcc_data = pair<VerifierGadget&, TargetGadget&>(verifier, target);
+  search.set_new_best_correct_callback(new_best_correct_callback, &nbcc_data);
 
   size_t total_iterations = 0;
   size_t total_restarts = 0;

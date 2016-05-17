@@ -21,6 +21,7 @@
 #include "src/cost/cost_function.h"
 #include "src/search/init.h"
 #include "src/search/progress_callback.h"
+#include "src/search/new_best_correct_callback.h"
 #include "src/search/search_state.h"
 #include "src/search/statistics.h"
 #include "src/search/statistics_callback.h"
@@ -58,6 +59,12 @@ public:
   Search& set_progress_callback(ProgressCallback cb, void* arg) {
     progress_cb_ = cb;
     progress_cb_arg_ = arg;
+    return *this;
+  }
+  /** Set new best correct callback function. */
+  Search& set_new_best_correct_callback(NewBestCorrectCallback cb, void* arg) {
+    new_best_correct_cb_ = cb;
+    new_best_correct_cb_arg_ = arg;
     return *this;
   }
   /** Set statistics callback function. */
@@ -101,6 +108,9 @@ private:
   /** Progress callback. */
   ProgressCallback progress_cb_;
   void* progress_cb_arg_;
+  /** New best correct callback. */
+  NewBestCorrectCallback new_best_correct_cb_;
+  void* new_best_correct_cb_arg_;
   /** Statistics callback. */
   StatisticsCallback statistics_cb_;
   void* statistics_cb_arg_;
