@@ -19,6 +19,7 @@
 #include <regex>
 
 #include "src/ext/cpputil/include/io/fail.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/disassembler/disassembler.h"
 
@@ -400,9 +401,9 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   return result;
 }
 
-bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
+int Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
-    return false;
+    return 0;
   }
 
   // Get the name of the function
@@ -445,13 +446,13 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
 
     if (!success) {
       //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
-      fail(ss) << "Could not encode " << l.instr << " within " << l.hex_bytes << " bytes." << endl;
+      fail(ss) << "Could not encode '" << l.instr << "' within " << l.hex_bytes << " bytes." << endl;
     }
   }
 
   if (failed(ss)) {
-    set_error(fail_msg(ss));
-    return true;
+    Console::warn() << "Cannot parse function '" << name << "', skipping.  Error(s): " << fail_msg(ss);
+    return -1;
   }
 
   // Read code
@@ -472,7 +473,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   data.name = name;
   data.tunit = {code, file_offset, rip_offset, capacity};
 
-  return true;
+  return 1;
 }
 
 void Disassembler::disassemble(const std::string& filename) {
@@ -511,11 +512,14 @@ void Disassembler::disassemble(const std::string& filename) {
   }
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
-  while (parse_function(*body, data, text_offset)) {
-    if (!callback_closure_) {
-      fxn_cb_(data, fxn_cb_arg_);
-    } else {
-      (*callback_closure_)(data);
+  int retval = 0;
+  while ((retval = parse_function(*body, data, text_offset)) != 0) {
+    if (retval == 1) {
+      if (!callback_closure_) {
+        fxn_cb_(data, fxn_cb_arg_);
+      } else {
+        (*callback_closure_)(data);
+      }
     }
   }
 }
