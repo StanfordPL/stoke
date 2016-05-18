@@ -329,10 +329,22 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
         done = !f.good();
       } while (!done);
 
+      Cfg res(state.current);
+      if (postprocessing_arg == Postprocessing::FULL) {
+        CfgTransforms::remove_redundant(res);
+        CfgTransforms::remove_unreachable(res);
+        CfgTransforms::remove_nop(res);
+      } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+        CfgTransforms::remove_unreachable(res);
+        CfgTransforms::remove_nop(res);
+      } else {
+        // Do nothing.
+      }
+
       // write output
       ofstream outfile;
       outfile.open(name);
-      outfile << state.current.get_function();
+      outfile << res.get_function();
       outfile.close();
     }
 
