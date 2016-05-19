@@ -376,7 +376,8 @@ void TransformPools::recompute_pools() {
         }
 
         res.push_back(opc2);
-        no: ;
+no:
+        ;
       }
       raw_memonic_pool_[opcode] = res;
     }
