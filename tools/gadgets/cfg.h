@@ -110,35 +110,7 @@ private:
       return live_out_arg.value();
     }
 
-    // Solve for defined out values
-    Cfg temp(target_arg.value());
-    const auto dos = temp.def_outs();
-
-    // If no general purpose registers were written we can guess xmm live out
-    if (!dos.contains(x64asm::rax) && !dos.contains(x64asm::rdx)) {
-      auto res = x64asm::RegSet::empty();
-      if (dos.contains(x64asm::xmm0)) {
-        res += x64asm::xmm0;
-      }
-      if (dos.contains(x64asm::xmm1)) {
-        res += x64asm::xmm1;
-      }
-      return res;
-    }
-
-    // If no xmms were written we can guess general purpose live outs
-    if (!dos.contains(x64asm::xmm0) && !dos.contains(x64asm::xmm1)) {
-      auto res = x64asm::RegSet::empty();
-      if (dos.contains(x64asm::rax)) {
-        res += x64asm::rax;
-      }
-      if (dos.contains(x64asm::rdx)) {
-        res += x64asm::rdx;
-      }
-      return res;
-    }
-
-    return x64asm::RegSet::linux_call_return();
+    return x64asm::RegSet::linux_call_return() | x64asm::RegSet::linux_call_preserved();
   }
 
   /** Checks for unsupported cpu flags */

@@ -21,6 +21,7 @@ time:
 	time ./a.out 100000000
 
 extract:
+	chmod +x test.sh
 	stoke extract --config extract.conf
 
 testcase:
@@ -39,4 +40,4 @@ replace:
 	stoke replace --config replace.conf
 
 clean:
-	rm -rf bins ./a.out *.tc *.s
+	rm -rf bins ./a.out *.tc *.s tcs

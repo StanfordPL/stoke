@@ -60,7 +60,7 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
   auto result = smt_->checkSat(em_.mkConst(true));
 
   if (result.isUnknown()) { // || result.isSat() == Result::SAT_UNKNOWN) {
-    error_ = "CVC4 returned unknown: " + result.whyUnknown();
+    error_ = "CVC4 returned unknown: " + result.toString();
     return false;
   }
   return result.isSat() == Result::SAT;

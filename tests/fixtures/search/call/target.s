@@ -1,2 +1,2 @@
-vpxor %ymm0, %ymm0, %ymm0
+pxor %xmm0, %xmm0
 retq

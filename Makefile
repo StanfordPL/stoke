@@ -224,7 +224,7 @@ BIN=\
 	bin/stoke_tcgen \
 	\
 	bin/stoke_debug_cfg \
-	bin/stoke_debug_circuit \
+	bin/stoke_debug_formula \
 	bin/stoke_debug_cost \
 	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
@@ -405,10 +405,10 @@ tests/validator/handlers.h: .FORCE
 	rm -f tests/validator/handlers-tmp
 
 tests/%.o: tests/%.cc tests/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
 
 ## MISC
 

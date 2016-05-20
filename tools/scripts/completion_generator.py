@@ -230,7 +230,7 @@ class ZshHandler(Handler):
         continue
 
       # no match, just add default help
-      print "ERROR: Argument with unknown usage found: " + self.name
+      print "ERROR: Argument with unknown usage found: " + usage
       sys.exit(1)
       #res.append(a + "[" + esc(arg.desc) + "]:argument:'")
 

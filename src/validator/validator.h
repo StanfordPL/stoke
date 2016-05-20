@@ -54,11 +54,6 @@ public:
     return false;
   };
 
-  /** Get the error message, and optionally metadata */
-  virtual std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
-    return "This is a default implementation";
-  }
-
   /** Returns whether the last counterexample made sense */
   virtual size_t counter_examples_available() {
     return 0;
@@ -72,10 +67,6 @@ public:
   bool is_supported(x64asm::Instruction& i) const;
   /** Returns whether an opcode is fully supported.  No error message. */
   bool is_supported(const x64asm::Opcode& op) const;
-
-  /** Generally useful helper function: take a map of <address,value> pairs
-    and stick them into the memory of a testcase.  Returns true on success. */
-  static bool memory_map_to_testcase(std::map<uint64_t, cpputil::BitVector> map, CpuState& tc);
 
   /** Useful helper.  Extracts a counterexample from a model.  Assumes that
    * you've constructed constraints the same way the validator does and know

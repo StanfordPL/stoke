@@ -16,6 +16,8 @@
 #include <cmath>
 #include <csignal>
 #include <unistd.h>
+#include <string>
+#include <fstream>
 
 #include "src/search/search.h"
 #include "src/transform/weighted.h"
@@ -136,6 +138,8 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       state.success = true;
       state.best_correct = state.current;
       state.best_correct_cost = new_cost;
+
+      new_best_correct_cb_({state}, new_best_correct_cb_arg_);
     }
 
     if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
