@@ -17,6 +17,9 @@
 
 #include <vector>
 
+#include "src/sandbox/sandbox.h"
+#include "src/state/cpu_state.h"
+
 namespace stoke {
 
 class Abstraction {
@@ -35,14 +38,14 @@ public:
   virtual std::vector<State> prev_states(State) = 0;
 
   /** Extract a sequence of states from a test case. */
-  virtual std::vector<State> learn_trace(CpuState) = 0;
+  virtual std::vector<State> learn_trace(CpuState&) = 0;
 
   /** Provide a sandbox for learning traces (that will be reset). */
   void set_sandbox(Sandbox* sb) {
     sandbox_ = sb;
   }
 
-  virtual ~Abstraction() = 0;
+  virtual ~Abstraction() { }
 
 private:
 

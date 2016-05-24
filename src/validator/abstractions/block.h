@@ -16,6 +16,7 @@
 #define STOKE_SRC_VALIDATOR_ABSTRACTION_BLOCK_H
 
 #include "src/validator/abstraction.h"
+#include "src/cfg/paths.h"
 
 namespace stoke {
 
@@ -23,7 +24,7 @@ class BlockAbstraction : public Abstraction {
 
 public:
 
-  BlockAbstraction(Cfg& cfg) : cfg_(cfg) {
+  BlockAbstraction(const Cfg& cfg) : cfg_(cfg) {
 
   }
 
@@ -63,12 +64,12 @@ public:
     return trace;
   }
 
-  virtual ~BlockAbstraction() { }
+  ~BlockAbstraction() { }
 
 private:
 
   /** The control flow graph we're abstracting. */
-  Cfg& cfg_;
+  Cfg cfg_;
 
 };
 

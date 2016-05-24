@@ -16,6 +16,7 @@
 #define STOKE_SRC_VALIDATOR_EDDEC_H
 
 #include "src/validator/cutpoints.h"
+#include "src/validator/dual.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/obligation_checker.h"

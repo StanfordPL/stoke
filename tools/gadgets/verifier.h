@@ -26,6 +26,7 @@
 #include "src/verifier/verifier.h"
 #include "src/validator/bounded.h"
 #include "src/validator/ddec.h"
+#include "src/validator/eddec.h"
 
 #include "tools/args/bounded_validator.inc"
 #include "tools/args/ddec_validator.inc"
@@ -124,6 +125,8 @@ private:
       ddec->set_bound(bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);
       return ddec;
+    } else if (s == "eddec") {
+      return new EDdecValidator(*solver_);
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "none") {
