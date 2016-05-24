@@ -15,10 +15,10 @@ public:
 
   struct State {
     Abstraction::State ts;
-    Abstraction::State rs; 
+    Abstraction::State rs;
 
     bool operator<(const State& other) const {
-      if(this->ts < other.ts) {
+      if (this->ts < other.ts) {
         return true;
       } else if (this->ts == other.ts) {
         return this->rs < other.rs;
@@ -26,22 +26,23 @@ public:
         return false;
       }
     }
+
   };
 
   struct Edge {
 
-    Edge(State tail, std::vector<Abstraction::State>& tp, std::vector<Abstraction::State>& rp) {
+    Edge(State tail, std::vector<Abstraction::State> tp, std::vector<Abstraction::State> rp) {
       from = tail;
       te = tp;
       re = rp;
 
-      if(tp.size()) {
+      if (tp.size()) {
         to.ts = tp.back();
       } else {
         to.ts = from.ts;
       }
 
-      if(rp.size()) {
+      if (rp.size()) {
         to.rs = rp.back();
       } else {
         to.rs = from.rs;
@@ -76,7 +77,7 @@ public:
   std::vector<State> next_states(State s) {
     std::vector<State> states;
 
-    for(auto edge : next_edges[s]) {
+    for (auto edge : next_edges_[s]) {
       states.push_back(edge.to);
     }
 
@@ -87,7 +88,7 @@ public:
   std::vector<State> prev_states(State s) {
     std::vector<State> states;
 
-    for(auto edge : prev_edges[s]) {
+    for (auto edge : prev_edges_[s]) {
       states.push_back(edge.from);
     }
 
@@ -105,6 +106,10 @@ private:
 
 };
 
+}
+
+namespace std {
+  std::ostream& operator<<(std::ostream& os, const stoke::DualAutomata::State&);
 }
 
 #endif

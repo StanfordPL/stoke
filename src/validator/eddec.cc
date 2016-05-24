@@ -14,6 +14,7 @@
 
 #include "src/validator/abstraction.h"
 #include "src/validator/abstractions/block.h"
+#include "src/validator/dual.h"
 #include "src/validator/eddec.h"
 
 #include <set>
@@ -29,31 +30,43 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   Abstraction* target_automata = new BlockAbstraction(init_target);
   Abstraction* rewrite_automata = new BlockAbstraction(init_rewrite);
 
+  DualAutomata dual(target_automata, rewrite_automata);
 
+  // Manually program in some correspondences
+  // a : 13 / 1234
+  auto start_state = dual.start_state();
+  DualAutomata::Edge edge_a(start_state, {1,3}, {1,2,3,4});
 
+  // b : 23 / 34
+  DualAutomata::Edge edge_b(edge_a.to, {2,3}, {3,4});
+
+  cout << "Edge a: " << edge_a.from << " --> " << edge_a.to << endl;
+  cout << "Edge b: " << edge_b.from << " --> " << edge_b.to << endl;
+
+  // Learn invariants at each of the reachable states.
 
 
   reset_mm();
   return false;
 }
 
-  /*
-  // For debugging
-  set<Abstraction::State> states_visited;
-  set<Abstraction::State> current_set;
-  set<Abstraction::State> next_set;
+/*
+// For debugging
+set<Abstraction::State> states_visited;
+set<Abstraction::State> current_set;
+set<Abstraction::State> next_set;
 
-  next_set.insert(rewrite_automata->start_state());
-  while(next_set.size()) {
-    current_set = next_set;
-    next_set.clear();
-    for(auto s : current_set) {
-      for(auto t : rewrite_automata->next_states(s)) {
-        if(!states_visited.count(t)) {
-          cout << t << endl;
-          states_visited.insert(t);
-          next_set.insert(t);
-        }
+next_set.insert(rewrite_automata->start_state());
+while(next_set.size()) {
+  current_set = next_set;
+  next_set.clear();
+  for(auto s : current_set) {
+    for(auto t : rewrite_automata->next_states(s)) {
+      if(!states_visited.count(t)) {
+        cout << t << endl;
+        states_visited.insert(t);
+        next_set.insert(t);
       }
     }
-  }*/
+  }
+}*/

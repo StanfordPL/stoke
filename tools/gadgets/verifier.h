@@ -117,10 +117,7 @@ private:
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_);
-      std::cout << "no try sign extend arg: " << no_try_sign_extend_arg.value() << std::endl;
-      ddec->set_try_sign_extend(!no_try_sign_extend_arg.value());
       ddec->set_no_bv(no_ddec_bv_arg.value());
-      ddec->set_sound_nullspace(sound_nullspace_arg.value());
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);

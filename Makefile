@@ -161,9 +161,11 @@ SRC_OBJ=\
 	src/validator/bounded.o \
 	src/validator/cutpoints.o \
 	src/validator/ddec.o \
+	src/validator/dual.o \
 	src/validator/eddec.o \
 	src/validator/handler.o \
 	src/validator/invariant.o \
+	src/validator/learner.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/validator.o \

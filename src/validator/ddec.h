@@ -18,6 +18,7 @@
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/learner.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
@@ -30,8 +31,6 @@ public:
   DdecValidator(SMTSolver& solver) : ObligationChecker(solver) {
     cutpoints_ = NULL;
     set_no_bv(false);
-    set_sound_nullspace(false);
-    set_try_sign_extend(true);
   }
 
   ~DdecValidator() {
@@ -39,21 +38,10 @@ public:
       delete cutpoints_;
   }
 
-  /** Turn on/off invariants that sign-extend the 32-bit registers.
-      Good for some benchmarks, bad for others.  --no_try_sign_extend */
-  DdecValidator& set_try_sign_extend(bool b) {
-    try_sign_extend_ = b;
-    return *this;
-  }
   /** Turn off the bounded validator.  This is a terribly silly thing to do, except
     to demonstrate that most benchmarks don't work without it. --no_ddec_bv */
   DdecValidator& set_no_bv(bool b) {
     no_bv_ = b;
-    return *this;
-  }
-  /** Choose whether to use sound nullspace computation */
-  DdecValidator& set_sound_nullspace(bool b) {
-    sound_nullspace_ = b;
     return *this;
   }
   /** Set the bound for bounded validator */
@@ -66,6 +54,8 @@ public:
   bool verify(const Cfg& target, const Cfg& rewrite);
 
 private:
+
+  InvariantLearner learner_;
 
   /** Find all invariants with CEGAR-style search. */
   std::vector<ConjunctionInvariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
@@ -90,8 +80,6 @@ private:
   bool try_sign_extend_;
   /** Skip the bounded validator? */
   bool no_bv_;
-  /** Use the sound nullspace computation? */
-  bool sound_nullspace_;
 };
 
 } // namespace stoke

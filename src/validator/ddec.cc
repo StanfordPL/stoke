@@ -22,15 +22,10 @@
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/implication.h"
-#include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
-#include "src/validator/invariants/memory_null.h"
-#include "src/validator/invariants/mod_2n.h"
-#include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
-#include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 
 #include <algorithm>
@@ -542,7 +537,7 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
 
   /** Case 1: there's no conditional jump */
   if (!target_has_jcc && !rewrite_has_jcc) {
-    return learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_states, rewrite_states);
+    return learner_.learn(target, rewrite, target_regs, rewrite_regs, target_states, rewrite_states);
   } else if (target_has_jcc && !rewrite_has_jcc) {
 
     vector<CpuState> target_jump_states;
@@ -561,11 +556,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
     }
 
     auto jump_inv = new FlagInvariant(last_target_instr, false, false);
-    auto jump_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_target_instr, false, true);
-    auto fall_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -591,11 +586,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
     }
 
     auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
-    auto jump_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
-    auto fall_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -633,22 +628,22 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
       }
     }
 
-    auto S1 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
+    auto S1 = learner_.learn(target, rewrite, target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
 
-    auto S2 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
+    auto S2 = learner_.learn(target, rewrite, target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
 
-    auto S3 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
+    auto S3 = learner_.learn(target, rewrite, target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
 
-    auto S4 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
+    auto S4 = learner_.learn(target, rewrite, target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);
@@ -665,354 +660,4 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
 
 }
 
-/** Return a set of possible memory null invariants */
-vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs, const Cfg& target, const Cfg& rewrite) {
-  vector<MemoryNullInvariant*> invariants;
 
-  for (size_t k = 0; k < 2; ++k) {
-    bool is_rewrite = k;
-    const Cfg& cfg = is_rewrite ? rewrite : target;
-    auto code = cfg.get_code();
-    auto regs = is_rewrite ? rewrite_regs : target_regs;
-
-    set<x64asm::Mem> memory_operands;
-    for (auto instr : code) {
-      if (instr.is_explicit_memory_dereference()) {
-        auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
-        //cout << "Considering operand " << mem << endl;
-        memory_operands.insert(mem);
-      }
-    }
-
-    for (auto it : memory_operands) {
-      //cout << "And now it is: " << it << endl;
-      if (it.contains_seg())
-        continue;
-      if (it.contains_base() && !regs.contains(it.get_base()))
-        continue;
-      if (it.contains_index() && !regs.contains(it.get_index()))
-        continue;
-
-      auto mni = new MemoryNullInvariant(it, is_rewrite, true);
-      invariants.push_back(mni);
-
-      /*
-      cout << "Ok, made a " << *mni << endl;
-
-      mni = new MemoryNullInvariant(it, is_rewrite, false);
-      invariants.push_back(mni);
-      */
-    }
-
-
-  }
-
-  /*
-  for (auto it : invariants) {
-    cout << *it << endl;
-  }
-  */
-
-  return invariants;
-}
-
-/** Return a set of possible inequality invariants. */
-vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) {
-
-  vector<InequalityInvariant*> inequalities;
-
-  // For now, let's look at unsigned target-target and rewrite-rewrite inequalities
-
-  for (size_t k = 0; k < 2; ++k) {
-    auto regs = k ? rewrite_regs : target_regs;
-
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
-      for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
-        if (*i == *j)
-          continue;
-        if ((*i).size() != (*j).size())
-          continue;
-
-        if ((*i).size() == 32) {
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
-        } else if ((*i).size() == 64) {
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
-
-          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, true, false));
-        }
-      }
-    }
-  }
-
-  return inequalities;
-}
-
-/** Return a set of possible lower-n bit invariants. */
-vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrite_regs) {
-
-  vector<Mod2NInvariant*> invariants;
-
-  for (size_t k = 0; k < 2; ++k) {
-    auto regs = k ? rewrite_regs : target_regs;
-
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i)
-      for (auto j = 1; j < 5; ++j)
-        invariants.push_back(new Mod2NInvariant(*i, k, j));
-  }
-
-  return invariants;
-}
-
-/** Return a set of sign invariants. */
-vector<SignInvariant*> build_sign_invariants(RegSet target_regs, RegSet rewrite_regs) {
-
-  vector<SignInvariant*> invariants;
-
-  for (size_t k = 0; k < 2; ++k) {
-    auto regs = k ? rewrite_regs : target_regs;
-
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
-      invariants.push_back(new SignInvariant(*i, k, true));
-      invariants.push_back(new SignInvariant(*i, k, false));
-    }
-  }
-
-  return invariants;
-}
-
-ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
-
-  assert(target_states.size() == rewrite_states.size());
-
-  //TODO leaks memory
-
-  MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
-
-  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
-  conj->add_invariant(no_sigs);
-  conj->add_invariant(mem_equ);
-
-  if (target_states.size() == 0 || rewrite_states.size() == 0) {
-    conj->add_invariant(new FalseInvariant());
-    return conj;
-  }
-
-  RegSet r64_exclude = RegSet::empty();
-
-  // TopZero and NonZero invariants
-  for (size_t k = 0; k < 2; ++k) {
-    auto& states = k ? rewrite_states : target_states;
-    auto& regs = k ? rewrite_regs : target_regs;
-
-    for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
-      bool all_topzero = true;
-      bool all_nonzero = true;
-
-      if ((*it).size() == 64) {
-        for (auto state : states) {
-          if (state.gp[*it].get_fixed_double(1) != 0) {
-            all_topzero = false;
-          }
-        }
-      } else {
-        all_topzero = false;
-      }
-
-      for (auto state : states) {
-        if (state.gp[*it].get_fixed_quad(0) == 0) {
-          all_nonzero = false;
-        }
-      }
-
-      if (all_topzero) {
-        auto tzi = new TopZeroInvariant(r64s[*it], k);
-        if (tzi->check(target_states, rewrite_states)) {
-          conj->add_invariant(tzi);
-          r64_exclude = r64_exclude + r64s[*it];
-        } else {
-          DDEC_DEBUG(cout << "GOT BAD INVARIANT " << *tzi << endl;)
-          delete tzi;
-        }
-      }
-
-      if (all_nonzero) {
-        auto nz = new NonzeroInvariant(r64s[*it], k);
-        if (nz->check(target_states, rewrite_states)) {
-          conj->add_invariant(nz);
-        } else {
-          DDEC_DEBUG(cout << "GOT BAD INVARIANT " << *nz << endl;)
-          delete nz;
-        }
-      }
-    }
-  }
-
-  // mod2^n invariants
-  auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
-  for (auto modulo : potential_mod2n) {
-    if (modulo->check(target_states, rewrite_states)) {
-      conj->add_invariant(modulo);
-    } else {
-      delete modulo;
-    }
-  }
-
-  // sign invariants
-  auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
-  for (auto sign : potential_sign) {
-    if (sign->check(target_states, rewrite_states)) {
-      conj->add_invariant(sign);
-    } else {
-      delete sign;
-    }
-  }
-
-  // Inequality invariants
-  auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
-  for (auto ineq : potential_inequalities) {
-    if (ineq->check(target_states, rewrite_states)) {
-      conj->add_invariant(ineq);
-    } else {
-      delete ineq;
-    }
-  }
-
-  auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target, rewrite);
-  for (auto mem_null : potential_memory_nulls) {
-    //cout << "Testing " << *mem_null << endl;
-    if (mem_null->check(target_states, rewrite_states)) {
-      //cout << " * pass" << endl;
-      conj->add_invariant(mem_null);
-    } else {
-      //cout << " * fail" << endl;
-      delete mem_null;
-    }
-  }
-
-
-  // Define columns that will be used to learn equalities
-  vector<EqualityInvariant::Term> columns;
-
-  DDEC_DEBUG(cout << "try sign extend: " << try_sign_extend_ << endl;)
-
-  for (size_t k = 0; k < 2; ++k) {
-    auto def_ins = k ? rewrite_regs : target_regs;
-    for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      EqualityInvariant::Term c;
-      c.reg = *r;
-      c.is_rewrite = k;
-      c.sign_extend = false;
-      c.index = 0;
-      columns.push_back(c);
-    }
-    for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
-      for (size_t i = 0; i < (*r).size()/64; ++i) {
-        EqualityInvariant::Term c;
-        c.reg = *r;
-        c.is_rewrite = k;
-        c.sign_extend = false;
-        c.index = i;
-        columns.push_back(c);
-      }
-    }
-  }
-
-  DDEC_DEBUG(
-  for (auto it : columns) {
-  cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
-});
-
-  size_t num_columns = columns.size() + 1;
-  size_t tc_count = target_states.size();
-
-  // Find some of the simple equalities by brute force
-  DDEC_DEBUG(cout << "looking for simple equalities" << endl;)
-
-  for (size_t i = 0; i < columns.size(); ++i) {
-    for (size_t j = i+1; j < columns.size(); ++j) {
-      // check if column i matches column j
-      bool match = true;
-      for (size_t k = 0; k < tc_count; ++k) {
-        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
-            columns[j].from_state(target_states[k], rewrite_states[k])) {
-          match = false;
-          break;
-        }
-      }
-      // add equality asserting column[i] matches column[j].
-      if (match) {
-        vector<EqualityInvariant::Term> terms;
-        columns[i].coefficient = 1;
-        columns[j].coefficient = -1;
-        terms.push_back(columns[i]);
-        terms.push_back(columns[j]);
-
-        auto ei = new EqualityInvariant(terms, 0);
-        conj->add_invariant(ei);
-        DDEC_DEBUG(cout << "generating " << *ei << endl;)
-      }
-    }
-  }
-
-  // Build the nullspace matrix
-  DDEC_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
-  uint64_t* matrix = new uint64_t[tc_count*num_columns];
-
-  for (size_t i = 0; i < tc_count; ++i) {
-    for (size_t j = 0; j < columns.size(); ++j) {
-      matrix[i*num_columns + j] = columns[j].from_state(target_states[i], rewrite_states[i]);
-    }
-    matrix[i*num_columns + num_columns - 1] = 1;
-  }
-
-  DDEC_DEBUG(
-  for (size_t i = 0; i < tc_count; ++i) {
-  for (size_t j = 0; j < num_columns; ++j) {
-      cout << hex << matrix[i*num_columns + j] << dec << " ";
-    }
-    cout << endl;
-  }
-  );
-
-  // Compute the nullspace
-  uint64_t** nullspace_out;
-  size_t dim;
-
-  dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  delete matrix;
-
-  // Extract the data from the nullspace
-  for (size_t i = 0; i < dim; ++i) {
-    vector<EqualityInvariant::Term> terms;
-
-    for (size_t j = 0; j < num_columns - 1; ++j) {
-      auto column = columns[j];
-
-      if (nullspace_out[i][j]) {
-        column.coefficient = nullspace_out[i][j];
-        terms.push_back(column);
-      }
-    }
-
-    auto ei = new EqualityInvariant(terms, -nullspace_out[i][num_columns-1]);
-    if (ei->check(target_states, rewrite_states)) {
-      conj->add_invariant(ei);
-      DDEC_DEBUG(cout << *ei << endl;)
-    } else {
-      DDEC_DEBUG(cout << "GOT BAD INVARIANT ? " << *ei << endl;)
-    }
-  }
-
-  for (size_t i = 0; i < dim; ++i)
-    delete nullspace_out[i];
-  delete nullspace_out;
-
-  DDEC_DEBUG(cout << "Nullspace dimension:" << dec << dim << endl;)
-  DDEC_DEBUG(cout << "Column count: " << dec << num_columns << endl;)
-
-  return conj;
-}

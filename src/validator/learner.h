@@ -12,38 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VALIDATOR_EDDEC_H
-#define STOKE_SRC_VALIDATOR_EDDEC_H
+#ifndef STOKE_SRC_VALIDATOR_LEARNING_H
+#define STOKE_SRC_VALIDATOR_LEARNING_H
 
 #include "src/validator/cutpoints.h"
-#include "src/validator/dual.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
-#include "src/validator/learner.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
-#include "src/validator/abstraction.h"
-#include "src/validator/abstractions/block.h"
-
 namespace stoke {
 
-class EDdecValidator : public ObligationChecker {
+class InvariantLearner {
 
 public:
 
-  EDdecValidator(SMTSolver& solver) : ObligationChecker(solver) {
-  }
-
-  ~EDdecValidator() {
-  }
-
-  /** Verify if target and rewrite are equivalent. */
-  bool verify(const Cfg& target, const Cfg& rewrite);
-
-private:
-
-  InvariantLearner learner_;
+  ConjunctionInvariant* learn(
+      const Cfg& target, 
+      const Cfg& rewrite, 
+      x64asm::RegSet target_regs, 
+      x64asm::RegSet rewrite_regs, 
+      const std::vector<CpuState>& states, 
+      const std::vector<CpuState>& states2);
 
 };
 
