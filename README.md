@@ -27,7 +27,9 @@ Table of Contents
  1. [Using the formal validator](#using-the-formal-validator)
 3. [Using STOKE](#using-stoke)
 4. [Additional Features](#additional-features)
-5. [Extending STOKE](#extending-stoke)
+5. [User FAQ](#user-faq)
+6. [Developer FAQ](#developer-faq)
+7. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
  2. [Gadgets](#gadgets)
  3. [Initial Search State](#initial-search-state)
@@ -36,8 +38,7 @@ Table of Contents
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-6. [FAQ](#faq)
-7. [Contact](#contact)
+8. [Contact](#contact)
 
 Prerequisites
 =====
@@ -57,7 +58,7 @@ definitely will not work.
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
-    $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion libiml-dev libgmp-dev
+    $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion libiml-dev libgmp-dev libboost-regex-dev
 
 Note that your distribution might not have g++-4.9 by default.  You may consider installing a PPA as described here: https://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-4-9-on-ubuntu-14-04
 
@@ -520,13 +521,18 @@ Additional Features
 =====
 
 In addition to the subcommands described above, STOKE has facilities for
-debugging and benchmarking the performance of each of its core components:
+debugging and benchmarking the performance of each of its core components.  See `stoke --help` for an up-to-date list.
 
 - `stoke debug cfg`: Generate a pdf of a control flow graph.
 - `stoke debug cost`: Compute the cost of a rewrite.
+- `stoke debug diff`: Diff the resulting state of two functions.
+- `stoke debug effect`: Show the effect of a function on the state.
+- `stoke debug formula`: .
 - `stoke debug sandbox`: Step through the execution of a rewrite.
 - `stoke debug search`: View the changes produced by performing and undoing a program transformation.
+- `stoke debug simplify`: Take an x86 program and simplify it (by removing redundant instructions).
 - `stoke debug state`: Check the behavior of operators that manipulate hardware machine states.
+- `stoke debug tunit`: Show the instruction sizes and RIP-offsets for a code.
 - `stoke debug verify`: Check the equivalence of two programs.
 - `stoke benchmark cfg`: Measure the time required to recompute a control flow graph.
 - `stoke benchmark cost`: Measure the time required to compute a cost function.
@@ -564,6 +570,36 @@ STOKE can not only propose instructions when searching for programs, but also pr
     .size clear_of, .-clear_of
 
 Note that it is enough to specify the maybe sets, as STOKE will automatically realize that the must sets need to be contained in the maybe set.
+
+
+User FAQ
+=====
+
+### What is the different between `stoke synthesize` and `stoke optimize`?
+Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
+
+### `stoke replace` errors with `New function has N bytes, but the old one had M`.  What does that mean?
+
+Right now, `stoke replace` has a limitation where it can only replace a function if the old implementation has at least the size (in bytes) of the new implementation.
+
+If you still want to use `stoke replace`, and if you control the compilation of the binary, a workaround is to make the old implementation artificially larger by using the compiler flag `-falign-functions=N` for some large enough `N`, say 64.  In this case, the compiler will align functions at `N` bytes, which typically requires padding the functions with `nop`s.  This increases the chance of `stoke replace` to succeed.
+
+Developer FAQ
+=====
+
+### How does the assembler work (and how do I debug it?)
+There is a good explanation [in the issue tracker](https://github.com/StanfordPL/stoke/issues/791#issuecomment-169783865).  We also have a [script to compare how gcc and the x64asm assembler assemble an instruction](https://github.com/StanfordPL/stoke/issues/803).
+
+### How can I run STOKE in gdb?
+STOKEs sandbox catches SIGFPEs, and thus running STOKEs search in the sandbox causes gdb to pause very often.  To not have it stop for SIGFPEs (they are almost never a problem for STOKE), run this inside gdb:
+
+    handle SIGFPE nostop noprint
+
+You can enable this by default by running the following command:
+
+    echo "handle SIGFPE nostop noprint" > .gdbinit
+
+
 
 Extending STOKE
 =====
@@ -873,13 +909,6 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .description("What this value represents")
   .default_val(Complex());
 ```
-
-
-FAQ
-=====
-
-1. What is the different between `stoke synthesize` and `stoke optimize`?
-Both use the same core search algorithm, but in synthesis mode, STOKE starts from the empty program and tries to find a rewrite from scratch.  This is great for finding implementations that are very different than the target.  In optimization mode however, STOKE starts from an initial program, usually the target.  This allows STOKE to work on much longer programs (because it already starts with a correct program) and apply optimizations to that program.
 
 
 Contact

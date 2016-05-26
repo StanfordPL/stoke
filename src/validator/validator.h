@@ -54,11 +54,6 @@ public:
     return false;
   };
 
-  /** Get the error message, and optionally metadata */
-  virtual std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
-    return "This is a default implementation";
-  }
-
   /** Returns whether the last counterexample made sense */
   virtual size_t counter_examples_available() {
     return 0;

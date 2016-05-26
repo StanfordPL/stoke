@@ -134,7 +134,7 @@ protected:
 
     check_codes(ERROR);
 
-    return v_.get_error();
+    return v_.error();
   }
 
   /** Runs the target on the given CpuState in a sandbox, and compares
@@ -546,11 +546,10 @@ private:
 
     case ERROR: {
       size_t line = 0;
-      std::string file;
-      std::string message = v_.get_error(&line, &file);
-      ADD_FAILURE_AT(message.c_str(), line) << "StraightLineValidator reported unexpected error"
-                                            << expected_string.str()
-                                            << std::endl << "Message: " << message << std::endl;
+      std::string message = v_.error();
+      ADD_FAILURE() << "StraightLineValidator reported unexpected error"
+                    << expected_string.str()
+                    << std::endl << "Message: " << message << std::endl;
       break;
     }
 

@@ -52,13 +52,13 @@ auto& input_header = Heading::create("More Input Formats:");
 auto& code_arg = ValueArg<Code, CodeReader, CodeWriter>::create("code")
                  .description("Input code directly");
 
-auto& dbg = Heading::create("Circuit Printing Options:");
+auto& dbg = Heading::create("Formula Printing Options:");
 auto& only_live_out_arg = FlagArg::create("only_live_outs")
                           .description("Only show live out registers");
 auto& show_unchanged_arg = FlagArg::create("show_unchanged")
                            .description("Show the formula for unchanged registers");
 auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
-                              .description("Show circuits in smtlib format");
+                              .description("Show formula in smtlib format");
 auto& no_simplify_arg = FlagArg::create("no_simplify")
                         .description("Don't simplify formulas before printing them.");
 
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  // compute circuit
+  // compute formula
   size_t line = 0;
   for (auto it : code) {
     if (it.get_opcode() == Opcode::LABEL_DEFN) continue;
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     Console::error() << "Symbolic execution failed: " << ch.error() << endl;
   }
 
-  Console::msg() << "Circuits:" << endl;
+  Console::msg() << "Formula:" << endl;
   Console::msg() << endl;
 
   SymPrettyVisitor pretty(Console::msg());
