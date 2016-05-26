@@ -89,6 +89,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
   give_up_now = false;
   size_t iterations = 0;
+
+  Cfg prev = state.current;
+
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
@@ -105,10 +108,13 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       break;
     }
 
+    // Save previous state so we can restore to it.
 
+    prev = state.current;
     ti = (*transform_)(state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
+      state.current = prev;
       continue;
     }
     move_statistics[ti.move_type].num_succeeded++;
@@ -121,7 +127,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto new_cost = new_res.second;
 
     if (new_cost > max) {
-      (*transform_).undo(state.current, ti);
+      state.current = prev;
       continue;
     }
     move_statistics[ti.move_type].num_accepted++;

@@ -52,7 +52,7 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
   cfg.get_function().replace(ti.undo_index[0], instr, false, false);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
-    undo(cfg, ti);
+    //undo(cfg, ti);
     return ti;
   }
 

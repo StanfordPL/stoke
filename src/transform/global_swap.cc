@@ -47,7 +47,7 @@ TransformInfo GlobalSwapTransform::operator()(Cfg& cfg) {
   cfg.get_function().swap(ti.undo_index[0], ti.undo_index[1]);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
-    undo(cfg, ti);
+    //undo(cfg, ti);
     return ti;
   }
 

@@ -51,7 +51,7 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
 
   cfg.recompute();
   if (!cfg.check_invariants()) {
-    undo(cfg, ti);
+    //undo(cfg, ti);
     return ti;
   }
 
