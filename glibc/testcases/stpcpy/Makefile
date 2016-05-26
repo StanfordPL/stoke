@@ -14,13 +14,13 @@ LIBS=$(STOKE_ROOT)/bin/stoke.o \
 		 -L $(STOKE_ROOT)/src/ext/cvc4-1.4-build/lib -lcvc4 \
 		 -L $(STOKE_ROOT)/src/ext/z3/build -lz3
 
-all: stpcpy stpcpy.tc
+all: bin stpcpy.tc
 
-stpcpy:
+bin:
 	$(CXX) $(INCLUDE) $(LIBS) stpcpy.cc -o stpcpy
 
-stpcpy.tc:
-	stpcpy --count 40 > stpcpy.tc
+stpcpy.tc: stpcpy
+	./stpcpy --max_len 60 --count 4 > stpcpy.tc
 
 clean:
-	rm -f ./stpcpy stpcpy.tc
+	rm -f stpcpy stpcpy.tc

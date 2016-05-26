@@ -33,9 +33,9 @@ public:
     auto value = (is_rewrite_ ? rewrite : target).lookup(reg_);
 
     if (positive_)
-      return value.s_ge(SymBitVector::constant(64, 0));
+      return value.s_ge(SymBitVector::constant(reg_.size(), 0));
     else
-      return value.s_le(SymBitVector::constant(64, 0));
+      return value.s_le(SymBitVector::constant(reg_.size(), 0));
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {

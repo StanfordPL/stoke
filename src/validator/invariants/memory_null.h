@@ -57,7 +57,7 @@ public:
 
     auto& state = is_rewrite_ ? rewrite : target;
 
-    if (!state.is_valid(m_)) {
+    if (!state.in_range(m_) || !state.is_valid(m_)) {
       /*
       std::cout << state << std::endl;
       std::cout << " * " << m_ << std::endl;

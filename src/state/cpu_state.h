@@ -179,7 +179,7 @@ struct CpuState {
   /** Check if memory is in range. */
   bool in_range(const x64asm::Mem& m) const {
     auto addr = get_addr(m);
-    return in_range(addr, m.size());
+    return in_range(addr, m.size()/8);
   }
 
   /** Check if memory is in range. */
@@ -194,7 +194,7 @@ struct CpuState {
     }
 
     for (auto segment : my_segments) {
-      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+      if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {
         return true;
       }
     }

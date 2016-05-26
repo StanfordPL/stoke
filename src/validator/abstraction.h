@@ -31,6 +31,13 @@ public:
   typedef uint64_t State;
   typedef std::vector<State> Path;
 
+  Abstraction(const Cfg& cfg, const Sandbox& sandbox) : cfg_(cfg), sandbox_(sandbox) { }
+
+  /** Get the CFG */
+  Cfg get_cfg() {
+    return cfg_;
+  }
+
   /** Get the start state for this abstraction. */
   virtual State start_state() = 0;
 
@@ -39,20 +46,20 @@ public:
   /** Get the previous states from a start state. */
   virtual std::vector<State> prev_states(State) = 0;
 
+  /** Get the defined registers at a given state. */
+  virtual x64asm::RegSet defined_regs(State) = 0;
+
   /** Extract a sequence of states from a test case. */
   virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState&) = 0;
 
-  /** Provide a sandbox for learning traces (that will be reset). */
-  void set_sandbox(Sandbox* sb) {
-    sandbox_ = sb;
-  }
-
   virtual ~Abstraction() { }
 
-private:
+protected:
 
+  /** Cfg we're abstracting. */
+  Cfg cfg_;
   /** The sandbox */
-  Sandbox* sandbox_;
+  Sandbox sandbox_;
 
 };
 

@@ -74,7 +74,7 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
         continue;
 
       auto mni = new MemoryNullInvariant(it, is_rewrite, true);
-      invariants.push_back(mni);
+      //invariants.push_back(mni);  //FIXME: bring me back to life
 
       /*
       cout << "Ok, made a " << *mni << endl;

@@ -7,6 +7,7 @@
 
 #include "src/validator/abstraction.h"
 #include "src/validator/invariant.h"
+#include "src/validator/invariants/false.h"
 #include "src/validator/learner.h"
 
 namespace stoke {
@@ -24,7 +25,7 @@ public:
 
   struct Edge {
 
-    Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&); 
+    Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&);
 
     State from;
     State to;
@@ -68,13 +69,41 @@ public:
     return states;
   }
 
+  /** Get the list of edges from this state. */
+  std::vector<Edge> next_edges(State s) {
+    return next_edges_[s];
+  }
+
+  /** Get the list of edges to this state. */
+  std::vector<Edge> prev_edges(State s) {
+    return prev_edges_[s];
+  }
+
   /** Learn invariants. */
-  void learn_invariants(Sandbox& sb); 
+  void learn_invariants(Sandbox& sb);
 
   /** Get invariant at state. */
   Invariant* get_invariant(State& state) {
-    return invariants_[state];
+    if(invariants_.count(state))
+      return invariants_[state];
+    else {
+      auto conj = new ConjunctionInvariant();
+      auto false_ = new FalseInvariant();
+      conj->add_invariant(false_);
+      invariants_[state] = conj;
+      return conj;
+    }
   }
+
+  /** Forcibly set invariant (e.g. proof went bad) */
+  void set_invariant(State& state, Invariant* inv) {
+    invariants_[state] = inv;
+  }
+
+  /** Get set of reachable states (from data). */
+  std::set<State> get_reachable_states() {
+    return reachable_states_;
+  } 
 
 
 private:
@@ -84,11 +113,13 @@ private:
   Abstraction* target_;
   Abstraction* rewrite_;
 
+  std::set<State> reachable_states_;
   std::map<State, std::vector<Edge>> next_edges_;
   std::map<State, std::vector<Edge>> prev_edges_;
 
   std::map<State, Invariant*> invariants_;
-  std::map<State, std::vector<CpuState>> state_data_;
+  std::map<State, std::vector<CpuState>> target_state_data_;
+  std::map<State, std::vector<CpuState>> rewrite_state_data_;
 
 };
 

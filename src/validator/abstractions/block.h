@@ -24,8 +24,8 @@ class BlockAbstraction : public Abstraction {
 
 public:
 
-  BlockAbstraction(const Cfg& cfg, const Sandbox& sandbox) : cfg_(cfg), sandbox_(sandbox) {
-
+  BlockAbstraction(const Cfg& cfg, const Sandbox& sandbox) : Abstraction(cfg, sandbox) { 
+    cfg_.recompute();
   }
 
   /** Get the start state for this abstraction. */
@@ -49,6 +49,10 @@ public:
       prev.push_back(*it);
     }
     return prev;
+  }
+
+  virtual x64asm::RegSet defined_regs(State s) {
+    return cfg_.def_outs(s);
   }
 
   struct TraceCallbackInfo {
@@ -80,8 +84,11 @@ public:
     std::vector<TraceCallbackInfo*> to_delete;
 
 
-    for(size_t i = cfg_.get_entry(), ie = cfg_.get_exit(); i < ie; ++i) {
-      size_t instrs_in_block = cfg_.num_instrs(i); 
+    for (size_t i = cfg_.get_entry(), ie = cfg_.get_exit(); i < ie; ++i) {
+      size_t instrs_in_block = cfg_.num_instrs(i);
+      if(!instrs_in_block)
+        continue;
+
       size_t index = cfg_.get_index({i, instrs_in_block-1});
       auto instr = code[index];
 
@@ -90,29 +97,22 @@ public:
       tci->trace = &trace;
       to_delete.push_back(tci);
 
-      if(instr.is_jump()) {
+      if (instr.is_jump()) {
         sandbox_.insert_before(label, index, learn_trace_callback, tci);
       } else {
-        sandbox_.insert_before(label, index, learn_trace_callback, tci);
+        sandbox_.insert_after(label, index, learn_trace_callback, tci);
       }
     }
 
     sandbox_.run();
 
-    for(auto it : to_delete)
+    for (auto it : to_delete)
       delete it;
 
     return trace;
   }
 
   ~BlockAbstraction() { }
-
-private:
-
-  /** The control flow graph we're abstracting. */
-  Cfg cfg_;
-  /** Sandbox we're going to use. */
-  Sandbox sandbox_;
 
 };
 
