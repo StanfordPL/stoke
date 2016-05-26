@@ -66,12 +66,12 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   set<DualAutomata::State> worklist;
   worklist = all_states;
 
-  while(worklist.size()) {
+  while (worklist.size()) {
     // Pick a state
     auto current = worklist.begin();
 
     bool ok = true;
-    for(auto edge : dual.next_edges(*current)) {
+    for (auto edge : dual.next_edges(*current)) {
       // check this edge
       auto start_inv = dual.get_invariant(edge.from);
       auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
@@ -80,12 +80,12 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "Edge: " << edge.from << " -> " << edge.to << endl;
 
       // check the invariants in the conjunction one at a time
-      for(size_t i = 0; i < end_inv->size(); ++i) {
+      for (size_t i = 0; i < end_inv->size(); ++i) {
         auto partial_inv = (*end_inv)[i];
         cout << "  Proving " << *partial_inv << endl;
         bool valid = check(init_target, init_rewrite, edge.te, edge.re, *start_inv, *partial_inv);
         cout << "    " << (valid ? "true" : "false") << endl;
-        if(!valid) {
+        if (!valid) {
           ok = false;
           end_inv->remove(i);
           i--;
@@ -93,7 +93,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       }
     }
 
-    if(!ok) {
+    if (!ok) {
       // add all successors of 'current' to the worklist
       // remove 'current' from the worklist
       auto tmp = *current;

@@ -84,7 +84,7 @@ public:
 
   /** Get invariant at state. */
   Invariant* get_invariant(State& state) {
-    if(invariants_.count(state))
+    if (invariants_.count(state))
       return invariants_[state];
     else {
       auto conj = new ConjunctionInvariant();
@@ -103,7 +103,7 @@ public:
   /** Get set of reachable states (from data). */
   std::set<State> get_reachable_states() {
     return reachable_states_;
-  } 
+  }
 
 
 private:

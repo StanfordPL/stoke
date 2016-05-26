@@ -23,9 +23,9 @@ auto& max_len = ValueArg<size_t>::create("max_len")
                 .default_val(8);
 
 auto& tc_count = ValueArg<size_t>::create("count")
-                .usage("<int>")
-                .description("How many test cases to generate for each length")
-                .default_val(4);
+                 .usage("<int>")
+                 .description("How many test cases to generate for each length")
+                 .default_val(4);
 
 
 /** Add a randomly-generated string into the test case's memory. */

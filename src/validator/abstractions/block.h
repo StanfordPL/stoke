@@ -24,7 +24,7 @@ class BlockAbstraction : public Abstraction {
 
 public:
 
-  BlockAbstraction(const Cfg& cfg, const Sandbox& sandbox) : Abstraction(cfg, sandbox) { 
+  BlockAbstraction(const Cfg& cfg, const Sandbox& sandbox) : Abstraction(cfg, sandbox) {
     cfg_.recompute();
   }
 
@@ -86,7 +86,7 @@ public:
 
     for (size_t i = cfg_.get_entry(), ie = cfg_.get_exit(); i < ie; ++i) {
       size_t instrs_in_block = cfg_.num_instrs(i);
-      if(!instrs_in_block)
+      if (!instrs_in_block)
         continue;
 
       size_t index = cfg_.get_index({i, instrs_in_block-1});
