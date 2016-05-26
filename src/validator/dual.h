@@ -6,6 +6,8 @@
 #include <vector>
 
 #include "src/validator/abstraction.h"
+#include "src/validator/invariant.h"
+#include "src/validator/learner.h"
 
 namespace stoke {
 
@@ -17,37 +19,12 @@ public:
     Abstraction::State ts;
     Abstraction::State rs;
 
-    bool operator<(const State& other) const {
-      if (this->ts < other.ts) {
-        return true;
-      } else if (this->ts == other.ts) {
-        return this->rs < other.rs;
-      } else {
-        return false;
-      }
-    }
-
+    bool operator<(const State& other) const;
   };
 
   struct Edge {
 
-    Edge(State tail, std::vector<Abstraction::State> tp, std::vector<Abstraction::State> rp) {
-      from = tail;
-      te = tp;
-      re = rp;
-
-      if (tp.size()) {
-        to.ts = tp.back();
-      } else {
-        to.ts = from.ts;
-      }
-
-      if (rp.size()) {
-        to.rs = rp.back();
-      } else {
-        to.rs = from.rs;
-      }
-    }
+    Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&); 
 
     State from;
     State to;
@@ -76,27 +53,33 @@ public:
   /** Get the list of next states from a starting point. */
   std::vector<State> next_states(State s) {
     std::vector<State> states;
-
     for (auto edge : next_edges_[s]) {
       states.push_back(edge.to);
     }
-
     return states;
   }
 
   /** Get the list of previous states from here. */
   std::vector<State> prev_states(State s) {
     std::vector<State> states;
-
     for (auto edge : prev_edges_[s]) {
       states.push_back(edge.from);
     }
-
     return states;
+  }
+
+  /** Learn invariants. */
+  void learn_invariants(Sandbox& sb); 
+
+  /** Get invariant at state. */
+  Invariant* get_invariant(State& state) {
+    return invariants_[state];
   }
 
 
 private:
+
+  InvariantLearner learner_;
 
   Abstraction* target_;
   Abstraction* rewrite_;
@@ -104,12 +87,15 @@ private:
   std::map<State, std::vector<Edge>> next_edges_;
   std::map<State, std::vector<Edge>> prev_edges_;
 
+  std::map<State, Invariant*> invariants_;
+  std::map<State, std::vector<CpuState>> state_data_;
+
 };
 
 }
 
 namespace std {
-  std::ostream& operator<<(std::ostream& os, const stoke::DualAutomata::State&);
+std::ostream& operator<<(std::ostream& os, const stoke::DualAutomata::State&);
 }
 
 #endif

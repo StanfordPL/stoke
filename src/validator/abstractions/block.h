@@ -24,7 +24,7 @@ class BlockAbstraction : public Abstraction {
 
 public:
 
-  BlockAbstraction(const Cfg& cfg) : cfg_(cfg) {
+  BlockAbstraction(const Cfg& cfg, const Sandbox& sandbox) : cfg_(cfg), sandbox_(sandbox) {
 
   }
 
@@ -51,15 +51,56 @@ public:
     return prev;
   }
 
-  /** Extract a sequence of states from a test case. */
-  virtual std::vector<State> learn_trace(CpuState& tc) {
-    std::vector<State> trace;
+  struct TraceCallbackInfo {
+    State state;
+    std::vector<std::pair<State, CpuState>>* trace;
+  };
 
-    CfgPath p;
-    CfgPaths cp;
-    cp.learn_path(p, cfg_, tc);
-    for (auto it : p)
-      trace.push_back((State)it);
+  static void learn_trace_callback(const StateCallbackData& data, void* ptr) {
+    auto tci = (TraceCallbackInfo*)ptr;
+
+    std::pair<State, CpuState> p;
+    p.first = tci->state;
+    p.second = data.state;
+
+    tci->trace->push_back(p);
+  }
+
+  /** Extract a sequence of states from a test case. */
+  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState& tc) {
+    auto code = cfg_.get_code();
+    auto label = cfg_.get_function().get_leading_label();
+    sandbox_.clear_callbacks();
+    sandbox_.clear_inputs();
+    sandbox_.insert_function(cfg_);
+    sandbox_.insert_input(tc);
+    sandbox_.set_entrypoint(label);
+
+    std::vector<std::pair<State, CpuState>> trace;
+    std::vector<TraceCallbackInfo*> to_delete;
+
+
+    for(size_t i = cfg_.get_entry(), ie = cfg_.get_exit(); i < ie; ++i) {
+      size_t instrs_in_block = cfg_.num_instrs(i); 
+      size_t index = cfg_.get_index({i, instrs_in_block-1});
+      auto instr = code[index];
+
+      TraceCallbackInfo* tci = new TraceCallbackInfo();
+      tci->state = (State)i;
+      tci->trace = &trace;
+      to_delete.push_back(tci);
+
+      if(instr.is_jump()) {
+        sandbox_.insert_before(label, index, learn_trace_callback, tci);
+      } else {
+        sandbox_.insert_before(label, index, learn_trace_callback, tci);
+      }
+    }
+
+    sandbox_.run();
+
+    for(auto it : to_delete)
+      delete it;
 
     return trace;
   }
@@ -70,6 +111,8 @@ private:
 
   /** The control flow graph we're abstracting. */
   Cfg cfg_;
+  /** Sandbox we're going to use. */
+  Sandbox sandbox_;
 
 };
 

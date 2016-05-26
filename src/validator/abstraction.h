@@ -15,7 +15,9 @@
 #ifndef STOKE_SRC_VALIDATOR_ABSTRACTION_H
 #define STOKE_SRC_VALIDATOR_ABSTRACTION_H
 
+#include <utility>
 #include <vector>
+
 
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
@@ -38,7 +40,7 @@ public:
   virtual std::vector<State> prev_states(State) = 0;
 
   /** Extract a sequence of states from a test case. */
-  virtual std::vector<State> learn_trace(CpuState&) = 0;
+  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState&) = 0;
 
   /** Provide a sandbox for learning traces (that will be reset). */
   void set_sandbox(Sandbox* sb) {

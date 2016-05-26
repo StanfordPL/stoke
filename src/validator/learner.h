@@ -28,12 +28,12 @@ class InvariantLearner {
 public:
 
   ConjunctionInvariant* learn(
-      const Cfg& target, 
-      const Cfg& rewrite, 
-      x64asm::RegSet target_regs, 
-      x64asm::RegSet rewrite_regs, 
-      const std::vector<CpuState>& states, 
-      const std::vector<CpuState>& states2);
+    const Cfg& target,
+    const Cfg& rewrite,
+    x64asm::RegSet target_regs,
+    x64asm::RegSet rewrite_regs,
+    const std::vector<CpuState>& states,
+    const std::vector<CpuState>& states2);
 
 };
 

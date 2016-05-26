@@ -242,7 +242,9 @@ BIN=\
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify
+	bin/stoke_benchmark_verify \
+	\
+	bin/stoke.o
 
 # used to force a target to rebuild
 .PHONY: .FORCE
@@ -388,6 +390,9 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
+
+bin/stoke.o: $(SRC_OBJ)
+	ld -r $(SRC_OBJ) -o $@
 
 ##### TESTING
 

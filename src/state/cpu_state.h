@@ -179,8 +179,11 @@ struct CpuState {
   /** Check if memory is in range. */
   bool in_range(const x64asm::Mem& m) const {
     auto addr = get_addr(m);
-    auto size = m.size();
+    return in_range(addr, m.size());
+  }
 
+  /** Check if memory is in range. */
+  bool in_range(uint64_t addr, size_t size=1) const {
     std::vector<const Memory*> my_segments;
     my_segments.push_back(&heap);
     my_segments.push_back(&stack);
@@ -197,6 +200,7 @@ struct CpuState {
     }
     return false;
   }
+
 
   /** Check if memory is in range AND valid. */
   bool is_valid(const x64asm::Mem& m) const {

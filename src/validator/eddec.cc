@@ -27,8 +27,8 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
 
-  Abstraction* target_automata = new BlockAbstraction(init_target);
-  Abstraction* rewrite_automata = new BlockAbstraction(init_rewrite);
+  Abstraction* target_automata = new BlockAbstraction(init_target, *sandbox_);
+  Abstraction* rewrite_automata = new BlockAbstraction(init_rewrite, *sandbox_);
 
   DualAutomata dual(target_automata, rewrite_automata);
 
@@ -44,7 +44,9 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << "Edge b: " << edge_b.from << " --> " << edge_b.to << endl;
 
   // Learn invariants at each of the reachable states.
+  dual.learn_invariants(*sandbox_);
 
+  // Now prove some stuff.
 
   reset_mm();
   return false;

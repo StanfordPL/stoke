@@ -43,8 +43,6 @@ public:
 
 private:
 
-  InvariantLearner learner_;
-
 };
 
 } // namespace stoke
