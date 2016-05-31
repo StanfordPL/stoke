@@ -27,7 +27,6 @@
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
-#include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 #include "src/validator/null.h"
 
@@ -181,41 +180,17 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     return conj;
   }
 
-  RegSet r64_exclude = RegSet::empty();
-
   // TopZero and NonZero invariants
   for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;
     auto& regs = k ? rewrite_regs : target_regs;
 
     for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
-      bool all_topzero = true;
       bool all_nonzero = true;
-
-      if ((*it).size() == 64) {
-        for (auto state : states) {
-          if (state.gp[*it].get_fixed_double(1) != 0) {
-            all_topzero = false;
-          }
-        }
-      } else {
-        all_topzero = false;
-      }
 
       for (auto state : states) {
         if (state.gp[*it].get_fixed_quad(0) == 0) {
           all_nonzero = false;
-        }
-      }
-
-      if (all_topzero) {
-        auto tzi = new TopZeroInvariant(r64s[*it], k);
-        if (tzi->check(target_states, rewrite_states)) {
-          conj->add_invariant(tzi);
-          r64_exclude = r64_exclude + r64s[*it];
-        } else {
-          DDEC_DEBUG(cout << "GOT BAD INVARIANT " << *tzi << endl;)
-          delete tzi;
         }
       }
 
@@ -293,10 +268,10 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
 
   DDEC_DEBUG(
     cout << "Columns" << endl;
-    for (auto it : columns) {
-      cout << it << endl;
-    }
-  );
+  for (auto it : columns) {
+  cout << it << endl;
+}
+);
 
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
