@@ -73,7 +73,7 @@ public:
 
     for (auto term : terms_) {
 
-      if(not_first)
+      if (not_first)
         os << " + ";
 
       if (term.coefficient != 0) {

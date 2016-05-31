@@ -285,7 +285,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     }
     for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
       for (size_t i = 0; i < (*r).size()/64; ++i) {
-        Variable c(*r,k);
+        Variable c(*r,k,8,i);
         columns.push_back(c);
       }
     }

@@ -79,13 +79,13 @@ void DualAutomata::learn_invariants(Sandbox& sb) {
     auto rewrite_trace = rewrite_->learn_trace(*sb.get_input(i));
 
     cout << "target trace: ";
-    for(size_t i = 0; i < target_trace.size(); ++i) {
+    for (size_t i = 0; i < target_trace.size(); ++i) {
       cout << target_trace[i].first << " ";
     }
     cout << endl;
 
     cout << "rewrite trace: ";
-    for(size_t i = 0; i < rewrite_trace.size(); ++i) {
+    for (size_t i = 0; i < rewrite_trace.size(); ++i) {
       cout << rewrite_trace[i].first << " ";
     }
     cout << endl;

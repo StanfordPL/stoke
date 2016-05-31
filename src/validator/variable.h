@@ -58,14 +58,19 @@ struct Variable {
   uint64_t from_state(const CpuState& target, const CpuState& rewrite);
 
   Variable() : is_rewrite(false), size(0), offset(0), coefficient(0), operand(x64asm::rax), name("") { }
-  Variable(x64asm::Operand op, bool rewrite) : is_rewrite(rewrite), size(op.size()/8), offset(0), 
-                                       coefficient(1), operand(op), name("") { }
+
+  Variable(x64asm::Operand op, bool rewrite) : is_rewrite(rewrite), size(op.size()/8), offset(0),
+    coefficient(1), operand(op), name("") { }
+
+  Variable(x64asm::Operand op, bool rewrite, size_t sz, int32_t off) : is_rewrite(rewrite), size(sz), 
+    offset(off), coefficient(1), operand(op), name("") { }
+
 };
 
 }
 
 namespace std {
-  std::ostream& operator<<(std::ostream&, const stoke::Variable&);
+std::ostream& operator<<(std::ostream&, const stoke::Variable&);
 }
 
 #endif

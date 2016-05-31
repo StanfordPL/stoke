@@ -100,7 +100,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   // 17 -> 16
   DualAutomata::Edge edge_17_16(stop17, {3,4}, {18,16});
   dual.add_edge(edge_17_16);
-  
+
   // Learn invariants at each of the reachable states.
   dual.learn_invariants(*sandbox_);
 
@@ -164,7 +164,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   auto return_state = edge_1_19_0.to;
   auto return_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(return_state));
   cout << endl << " XXXXXXX PROVEN RELATIONSHIPS AT RETURN XXXXXXX " << endl << endl;
-  for(size_t i = 0; i < return_inv->size(); ++i) {
+  for (size_t i = 0; i < return_inv->size(); ++i) {
     cout << *(*return_inv)[i] << endl;
   }
 
