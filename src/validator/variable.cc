@@ -5,24 +5,22 @@ using namespace stoke;
 using namespace std;
 using namespace x64asm;
 
-SymBitVector Variable::from_state(SymState& target, SymState& rewrite) {
-  auto& prog = this->is_rewrite ? rewrite : target;
-  auto op = this->operand;
+SymBitVector Variable::from_state(SymState& target, SymState& rewrite) const {
+  auto& prog = is_rewrite ? rewrite : target;
 
-  SymBitVector original_bv = prog[op];
-  SymBitVector extracted = original_bv[this->size*8+this->offset*8-1][this->offset*8];
+  SymBitVector original_bv = prog[operand];
+  SymBitVector extracted = original_bv[size*8+offset*8-1][offset*8];
   return extracted;
 }
 
 /** From a concrete state, find the value of this term. */
-uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) {
+uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) const {
 
   assert(size <= 8);
   assert(offset >= 0);
 
-  auto& prog = this->is_rewrite ? rewrite : target;
-  auto op = this->operand;
-  auto vector = prog[op];
+  auto& prog = is_rewrite ? rewrite : target;
+  auto vector = prog[operand];
 
   uint64_t value = 0;
   for (int i = offset + (int)size - 1; (int)i >= offset; --i) {

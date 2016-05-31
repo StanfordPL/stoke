@@ -113,14 +113,23 @@ vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, Reg
           continue;
 
         if ((*i).size() == 32) {
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
-        } else if ((*i).size() == 64) {
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
+          Variable v1(*i, k);
+          Variable v2(*j, k);
 
-          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, false, false));
-          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, true, false));
+          inequalities.push_back(new InequalityInvariant(v1, v2, false, false));
+          inequalities.push_back(new InequalityInvariant(v1, v2, true, false));
+        } else if ((*i).size() == 64) {
+          Variable v1(*i, k);
+          Variable v2(*j, k);
+
+          Variable v1_32(r32s[*i], k);
+          Variable v2_32(r32s[*j], k);
+
+          inequalities.push_back(new InequalityInvariant(v1, v2, false, false));
+          inequalities.push_back(new InequalityInvariant(v1, v2, true, false));
+
+          inequalities.push_back(new InequalityInvariant(v1_32, v2_32, false, false));
+          inequalities.push_back(new InequalityInvariant(v1_32, v2_32, true, false));
         }
       }
     }
@@ -137,9 +146,12 @@ vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrit
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
 
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i)
-      for (auto j = 1; j < 5; ++j)
-        invariants.push_back(new Mod2NInvariant(*i, k, j));
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+      for (auto j = 1; j < 5; ++j) {
+        Variable v(*i, k);
+        invariants.push_back(new Mod2NInvariant(v, j));
+      }
+    }
   }
 
   return invariants;
@@ -195,7 +207,8 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
       }
 
       if (all_nonzero) {
-        auto nz = new NonzeroInvariant(r64s[*it], k);
+        Variable v(r64s[*it], k);
+        auto nz = new NonzeroInvariant(v);
         if (nz->check(target_states, rewrite_states)) {
           conj->add_invariant(nz);
         } else {

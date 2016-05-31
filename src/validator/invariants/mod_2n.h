@@ -24,43 +24,36 @@ class Mod2NInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  Mod2NInvariant(const x64asm::R& reg, bool is_rewrite, size_t zero_bits) :
-    reg_(reg), is_rewrite_(is_rewrite), zero_bits_(zero_bits) {
+  Mod2NInvariant(const Variable& var, size_t zero_bits) :
+    variable_(var), zero_bits_(zero_bits) {
   }
 
   SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
 
     uint64_t mask = (1 << zero_bits_) - 1;
-    auto value = (is_rewrite_ ? rewrite : target).lookup(reg_);
-    auto anded = value & SymBitVector::constant(64, mask);
+    auto value = variable_.from_state(target, rewrite);
+    auto anded = value & SymBitVector::constant(variable_.size*8, mask);
 
-    return anded == SymBitVector::constant(64, 0);
+    return anded == SymBitVector::constant(variable_.size*8, 0);
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
 
     uint64_t mask = (1 << zero_bits_) - 1;
-    auto value = is_rewrite_ ? rewrite[reg_] : target[reg_];
+    auto value = variable_.from_state(target, rewrite);
     auto anded = value & mask;
 
     return anded == 0;
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << reg_;
-    if (is_rewrite_)
-      os << "'";
-
-    os << " % 2^" << zero_bits_;
-    os << " == 0";
-
+    os << variable_ << " % 2^" << zero_bits_ << " = 0";
     return os;
   }
 
 private:
 
-  x64asm::R reg_;
-  bool is_rewrite_;
+  Variable variable_;
   size_t zero_bits_;
 
 };

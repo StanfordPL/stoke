@@ -24,39 +24,25 @@ class NonzeroInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  NonzeroInvariant(const x64asm::R64& reg, bool is_rewrite) : reg_(reg) {
-    is_rewrite_ = is_rewrite;
+  NonzeroInvariant(Variable v) : variable_(v) {
   }
 
   SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
-
-    if (is_rewrite_) {
-      return right.gp[reg_] != SymBitVector::constant(64, 0);
-    } else {
-      return left.gp[reg_] != SymBitVector::constant(64, 0);
-    }
+    return variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    if (is_rewrite_) {
-      return rewrite.gp[reg_].get_fixed_quad(0) != 0;
-    } else {
-      return target.gp[reg_].get_fixed_quad(0) != 0;
-    }
+    return (variable_.from_state(target,rewrite) != 0);
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << reg_;
-    if (is_rewrite_)
-      os << "'";
-    os << " != 0";
+    os << variable_ << " != 0";
     return os;
   }
 
 private:
 
-  x64asm::R64 reg_;
-  bool is_rewrite_;
+  Variable variable_;
 
 };
 

@@ -52,10 +52,10 @@ struct Variable {
   std::string name;
 
   /** From an abstract state, find the abstract value of this term. */
-  SymBitVector from_state(SymState& target, SymState& rewrite);
+  SymBitVector from_state(SymState& target, SymState& rewrite) const;
 
   /** From a concrete state, find the value of this term. */
-  uint64_t from_state(const CpuState& target, const CpuState& rewrite);
+  uint64_t from_state(const CpuState& target, const CpuState& rewrite) const;
 
   Variable() : is_rewrite(false), size(0), offset(0), coefficient(0), operand(x64asm::rax), name("") { }
 
