@@ -285,16 +285,18 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     }
     for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
       for (size_t i = 0; i < (*r).size()/64; ++i) {
-        Variable c(*r,k,8,i);
+        Variable c(*r,k,8,i*8);
         columns.push_back(c);
       }
     }
   }
 
   DDEC_DEBUG(
-  for (auto it : columns) {
-  cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << endl;
-});
+    cout << "Columns" << endl;
+    for (auto it : columns) {
+      cout << it << endl;
+    }
+  );
 
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
