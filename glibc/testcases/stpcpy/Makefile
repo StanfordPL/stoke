@@ -20,7 +20,7 @@ bin:
 	$(CXX) $(INCLUDE) $(LIBS) stpcpy.cc -o stpcpy
 
 stpcpy.tc: stpcpy
-	./stpcpy --max_len 60 --count 4 > stpcpy.tc
+	./stpcpy --max_len 20 --count 32 > stpcpy.tc
 
 clean:
 	rm -f stpcpy stpcpy.tc

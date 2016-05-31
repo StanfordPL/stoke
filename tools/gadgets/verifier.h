@@ -123,7 +123,9 @@ private:
       ddec->set_nacl(verify_nacl_arg);
       return ddec;
     } else if (s == "eddec") {
-      return new EDdecValidator(*solver_);
+      auto eddec = new EDdecValidator(*solver_);
+      eddec->set_alias_strategy(parse_alias());
+      return eddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "none") {

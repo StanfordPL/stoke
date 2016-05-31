@@ -38,18 +38,69 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   DualAutomata dual(target_automata, rewrite_automata);
 
   // Manually program in some correspondences
-  // a : 13 / 1234
   auto start_state = dual.start_state();
-  DualAutomata::Edge edge_a(start_state, {1,4}, {1,2,3,4});
 
-  // b : 23 / 34
-  DualAutomata::Edge edge_b(edge_a.to, {3,4}, {3,4});
+  // 1 -> 3
+  DualAutomata::Edge edge_1_3(start_state, {1,4}, {1,2,3});
+  dual.add_edge(edge_1_3);
 
-  dual.add_edge(edge_a);
-  dual.add_edge(edge_b);
-  cout << "Edge a: " << edge_a.from << " --> " << edge_a.to << endl;
-  cout << "Edge b: " << edge_b.from << " --> " << edge_b.to << endl;
+  // 1 -> 8
+  DualAutomata::Edge edge_1_8(start_state, {1,4,3,4,3,4,3,4,3,4,3,4,3,4,3,4}, {1,5,6,7,8});
+  dual.add_edge(edge_1_8);
 
+  // 1 -> 16
+  DualAutomata::Edge edge_1_16_0(start_state, {1,4}, {1,5,6,16});
+  DualAutomata::Edge edge_1_16_1(start_state, {1,4}, {1,5,6,7,16});
+  dual.add_edge(edge_1_16_0);
+  dual.add_edge(edge_1_16_1);
+
+  // 1 -> 19
+  DualAutomata::Edge edge_1_19_0(start_state, {1,4,5}, {1,5,6,16,19});
+  DualAutomata::Edge edge_1_19_1(start_state, {1,4,5}, {1,5,6,7,16,19});
+  dual.add_edge(edge_1_19_0);
+  dual.add_edge(edge_1_19_1);
+
+  // 3 -> 3
+  auto stop3 = edge_1_3.to;
+  DualAutomata::Edge edge_3_3(stop3, {3,4}, {4,3});
+  dual.add_edge(edge_3_3);
+
+  // 3 -> 8
+  DualAutomata::Edge edge_3_8(stop3, {3,4,3,4,3,4,3,4,3,4,3,4,3,4,3,4}, {4,5,6,7,8});
+  dual.add_edge(edge_3_8);
+
+  // 3 -> 16
+  DualAutomata::Edge edge_3_16_0(stop3, {3,4}, {4,5,6,16});
+  DualAutomata::Edge edge_3_16_1(stop3, {3,4}, {4,5,6,7,16});
+  dual.add_edge(edge_3_16_0);
+  dual.add_edge(edge_3_16_1);
+
+  // 3 -> 19
+  DualAutomata::Edge edge_3_19_0(stop3, {3,4,5}, {4,5,6,16,19});
+  DualAutomata::Edge edge_3_19_1(stop3, {3,4,5}, {4,5,6,7,16,19});
+  DualAutomata::Edge edge_3_19_2(stop3, {3,4,5}, {19});
+  dual.add_edge(edge_3_19_0);
+  dual.add_edge(edge_3_19_1);
+  dual.add_edge(edge_3_19_2);
+
+  // 16 -> 17
+  auto stop16 = edge_1_16_0.to;
+  DualAutomata::Edge edge_16_17(stop16, {3,4}, {17});
+  dual.add_edge(edge_16_17);
+
+  // 16 -> 19
+  DualAutomata::Edge edge_16_19(stop16, {5}, {19});
+  dual.add_edge(edge_16_19);
+
+  // 17 -> 19
+  auto stop17 = edge_16_17.to;
+  DualAutomata::Edge edge_17_19(stop17, {5}, {19});
+  dual.add_edge(edge_17_19);
+
+  // 17 -> 16
+  DualAutomata::Edge edge_17_16(stop17, {3,4}, {18,16});
+  dual.add_edge(edge_17_16);
+  
   // Learn invariants at each of the reachable states.
   dual.learn_invariants(*sandbox_);
 
@@ -66,6 +117,8 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   set<DualAutomata::State> worklist;
   worklist = all_states;
 
+  // TODO: we can make this faster if the worklist contains *edges* rather than
+  //   states.
   while (worklist.size()) {
     // Pick a state
     auto current = worklist.begin();
@@ -84,6 +137,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         auto partial_inv = (*end_inv)[i];
         cout << "  Proving " << *partial_inv << endl;
         bool valid = check(init_target, init_rewrite, edge.te, edge.re, *start_inv, *partial_inv);
+        //bool valid = true;
         cout << "    " << (valid ? "true" : "false") << endl;
         if (!valid) {
           ok = false;
@@ -105,6 +159,15 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       worklist.erase(current);
     }
   }
+
+  // Finally, print the learned invariant at (5,19)
+  auto return_state = edge_1_19_0.to;
+  auto return_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(return_state));
+  cout << endl << " XXXXXXX PROVEN RELATIONSHIPS AT RETURN XXXXXXX " << endl << endl;
+  for(size_t i = 0; i < return_inv->size(); ++i) {
+    cout << *(*return_inv)[i] << endl;
+  }
+
 
   reset_mm();
   return false;

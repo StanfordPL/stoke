@@ -275,25 +275,17 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
 
 
   // Define columns that will be used to learn equalities
-  vector<EqualityInvariant::Term> columns;
+  vector<Variable> columns;
 
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      EqualityInvariant::Term c;
-      c.reg = *r;
-      c.is_rewrite = k;
-      c.sign_extend = false;
-      c.index = 0;
+      Variable c(*r, k);
       columns.push_back(c);
     }
     for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
       for (size_t i = 0; i < (*r).size()/64; ++i) {
-        EqualityInvariant::Term c;
-        c.reg = *r;
-        c.is_rewrite = k;
-        c.sign_extend = false;
-        c.index = i;
+        Variable c(*r,k);
         columns.push_back(c);
       }
     }
@@ -301,7 +293,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
 
   DDEC_DEBUG(
   for (auto it : columns) {
-  cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
+  cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << endl;
 });
 
   size_t num_columns = columns.size() + 1;
@@ -323,7 +315,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
       }
       // add equality asserting column[i] matches column[j].
       if (match) {
-        vector<EqualityInvariant::Term> terms;
+        vector<Variable> terms;
         columns[i].coefficient = 1;
         columns[j].coefficient = -1;
         terms.push_back(columns[i]);
@@ -365,7 +357,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
 
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
-    vector<EqualityInvariant::Term> terms;
+    vector<Variable> terms;
 
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];

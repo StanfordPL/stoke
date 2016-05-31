@@ -97,7 +97,7 @@ public:
       tci->trace = &trace;
       to_delete.push_back(tci);
 
-      if (instr.is_jump()) {
+      if (instr.is_jump() || instr.is_ret()) {
         sandbox_.insert_before(label, index, learn_trace_callback, tci);
       } else {
         sandbox_.insert_after(label, index, learn_trace_callback, tci);

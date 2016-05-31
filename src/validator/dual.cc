@@ -78,13 +78,19 @@ void DualAutomata::learn_invariants(Sandbox& sb) {
     auto target_trace = target_->learn_trace(*sb.get_input(i));
     auto rewrite_trace = rewrite_->learn_trace(*sb.get_input(i));
 
-    /*
     cout << "target trace: ";
     for(size_t i = 0; i < target_trace.size(); ++i) {
       cout << target_trace[i].first << " ";
     }
     cout << endl;
-    */
+
+    cout << "rewrite trace: ";
+    for(size_t i = 0; i < rewrite_trace.size(); ++i) {
+      cout << rewrite_trace[i].first << " ";
+    }
+    cout << endl;
+
+
 
     // figure out all the possible paths this could correspond to through the dual automata
     TraceState initial;

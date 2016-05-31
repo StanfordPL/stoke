@@ -107,6 +107,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     auto result = solver_.check();
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
     microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    cout << "    query time: " << (solver_end - solver_start).count() << endl;
     solver_time_ += (solver_end - solver_start).count();
 #endif
 

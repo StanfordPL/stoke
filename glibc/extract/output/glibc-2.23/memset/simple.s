@@ -14,10 +14,12 @@
   cmpq %rdx, %rdi        #  4     0x69  3      OPC=cmpq_r64_r64   
   jae .L_47d             #  5     0x6c  2      OPC=jae_label      
   xchgw %ax, %ax         #  6     0x6e  2      OPC=xchgw_ax_r16   
+.L_470:
   addq $0x1, %rcx        #  7     0x70  4      OPC=addq_r64_imm8  
   movb %sil, -0x1(%rcx)  #  8     0x74  4      OPC=movb_m8_r8     
   cmpq %rdx, %rcx        #  9     0x78  3      OPC=cmpq_r64_r64   
   jne .L_470             #  10    0x7b  2      OPC=jne_label      
+.L_47d:
   retq                   #  11    0x7d  1      OPC=retq           
   nop                    #  12    0x7e  1      OPC=nop            
   nop                    #  13    0x7f  1      OPC=nop            

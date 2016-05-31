@@ -23,7 +23,7 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memo_visitor.h"
 
-//#define DEBUG_Z3_INTERFACE_PERFORMANCE
+#define DEBUG_Z3_INTERFACE_PERFORMANCE
 
 namespace stoke {
 
@@ -36,10 +36,10 @@ public:
     model_ = NULL;
 
     context_.set("timeout", (int)timeout_);
-    context_.set("smt.phase_selection", 5);
   }
 
   SMTSolver& set_timeout(uint64_t ms) {
+    std::cout << "Z3: setting timeout to : " << ms << std::endl;
     timeout_ = ms;
     context_.set("timeout", (int)timeout_);
     return *this;
