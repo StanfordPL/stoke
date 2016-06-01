@@ -360,6 +360,19 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
   constraints.push_back(sigfpe == other.sigfpe);
   constraints.push_back(sigsegv == other.sigsegv);
 
+  if(shadow.size() != other.shadow.size()) {
+    constraints.push_back(SymBool::_false());
+    return constraints;
+  }
+
+  for(auto i = shadow.begin(), j = other.shadow.begin(); i != shadow.end(); ++i, ++j) {
+    if(i->first != j->first) {
+      constraints.push_back(SymBool::_false());
+      return constraints;
+    }
+    constraints.push_back(i->second == j->second);
+  }
+
   return constraints;
 }
 

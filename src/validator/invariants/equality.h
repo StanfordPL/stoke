@@ -41,6 +41,10 @@ public:
 
   EqualityInvariant(std::vector<Variable> terms, long constant) : terms_(terms) {
     constant_ = constant;
+
+    for(auto it : terms) {
+      assert(it.size == 8);
+    }
   }
 
   /** Check if this invariant holds over an abstract state */
@@ -94,6 +98,10 @@ public:
     os << std::dec;
 
     return os;
+  }
+
+  virtual std::vector<Variable> get_variables() const {
+    return terms_;
   }
 
 

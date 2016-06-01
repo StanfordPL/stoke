@@ -24,6 +24,7 @@ class MemoryNullInvariant : public Invariant {
 public:
   using Invariant::check;
 
+  // TODO: rewrite to use Variable class
   MemoryNullInvariant(const x64asm::Mem m, bool is_rewrite, bool is_null)
     : m_(m), is_rewrite_(is_rewrite), is_null_(is_null) {
     is_rewrite_ = is_rewrite;
@@ -83,19 +84,11 @@ public:
       return !zero;
   }
 
-  virtual std::vector<x64asm::Mem> target_memory_references() const {
-    std::vector<x64asm::Mem> empty;
-    if (!is_rewrite_)
-      empty.push_back(m_);
-    return empty;
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    return result;
   }
 
-  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
-    std::vector<x64asm::Mem> empty;
-    if (is_rewrite_)
-      empty.push_back(m_);
-    return empty;
-  }
 
 
   std::ostream& write(std::ostream& os) const {

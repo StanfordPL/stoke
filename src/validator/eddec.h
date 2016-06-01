@@ -26,6 +26,8 @@
 #include "src/validator/abstraction.h"
 #include "src/validator/abstractions/block.h"
 
+#include <set>
+
 namespace stoke {
 
 class EDdecValidator : public ObligationChecker {
@@ -33,15 +35,48 @@ class EDdecValidator : public ObligationChecker {
 public:
 
   EDdecValidator(SMTSolver& solver) : ObligationChecker(solver) {
+    /** For testing only */
+    set_string(x64asm::rsi);
+    set_string(x64asm::rdi);
+    set_no_string_overlap();
   }
 
   ~EDdecValidator() {
   }
 
+  /** Mark a parameter as a null-terminated string argument. */
+  EDdecValidator& set_string(x64asm::R64 param) {
+    string_params_.insert(param);
+    return *this;
+  }
+
+  /** Mark two parameters as non-overlapping. */
+  EDdecValidator& set_no_string_overlap() {
+    no_string_overlap_ = true;
+    return *this;
+  }
+
+
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
 private:
+
+  InvariantLearner learner_;
+
+  /** The set of R64s that we assume point to strings. */
+  std::set<x64asm::R64> string_params_;
+  /** Whether we can assume the strings don't overlap. */
+  bool no_string_overlap_;
+
+  /** The transform to add shadow values into testcases. */
+  void transform_testcase(CpuState& tc) const;
+  /** The initial invariant. */
+  ConjunctionInvariant* get_initial_invariant(const Cfg& cfg) const;
+  /** An invariant that needs to be conjoined at each state. */
+  Invariant* get_fixed_invariant() const;
+
+
 
 };
 

@@ -61,6 +61,8 @@ public:
   SymBool sigsegv;
   /** Current rip offset */
   SymBitVector rip;
+  /** Shadow registers */
+  std::map<std::string, SymBitVector> shadow;
 
   /** Should the memory be deleted? */
   void set_delete_memory(bool b) {

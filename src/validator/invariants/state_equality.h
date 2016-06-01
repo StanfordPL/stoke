@@ -53,6 +53,15 @@ public:
       if (target.rf.is_set((*it).index()) != rewrite.rf.is_set((*it).index()))
         return false;
     }
+
+    // check that shadow values are the same
+    if(target.shadow.size() != rewrite.shadow.size())
+      return false;  
+
+    for(auto i = target.shadow.begin(), j = rewrite.shadow.begin(); i != target.shadow.end(); ++i, ++j)
+      if(*i != *j)
+        return false;
+
     return true;
   }
 

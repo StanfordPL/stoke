@@ -1129,6 +1129,23 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     SymState state_t("1_INIT");
     SymState state_r("2_INIT");
 
+    /** Here we need to figure out if there are any ghost variables we need to add to the
+      symbolic representations. */
+    set<string> ghost_names;
+    auto assume_variables = assume.get_variables();
+    auto all_variables = prove.get_variables();
+    all_variables.insert(all_variables.begin(), assume_variables.begin(), assume_variables.end());
+    for(auto var : all_variables) {
+      if(var.is_ghost) {
+        ghost_names.insert(var.name);
+      }
+    }
+    for(auto name : ghost_names) {
+      state_t.shadow[name] = SymBitVector::tmp_var(64);
+      state_r.shadow[name] = SymBitVector::tmp_var(64);
+    }
+
+    /** Now we setup memory. */
     FlatMemory initial_target_flat_memory;
     FlatMemory initial_rewrite_flat_memory;
 

@@ -35,6 +35,12 @@ public:
     return (variable_.from_state(target,rewrite) != 0);
   }
 
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    result.push_back(variable_);
+    return result;
+  }
+
   std::ostream& write(std::ostream& os) const {
     os << variable_ << " != 0";
     return os;

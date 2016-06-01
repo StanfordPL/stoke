@@ -16,6 +16,7 @@
 #define STOKE_SRC_VALIDATOR_INVARIANT_INEQUALITY_H
 
 #include "src/validator/invariant.h"
+#include "src/validator/variable.h"
 
 namespace stoke {
 
@@ -127,6 +128,15 @@ public:
 
     return os;
   }
+
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    result.push_back(variable1_);
+    result.push_back(variable2_);
+    return result;
+  }
+
+
 
 private:
 

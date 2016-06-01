@@ -80,7 +80,7 @@ public:
   }
 
   /** Learn invariants. */
-  void learn_invariants(Sandbox& sb);
+  void learn_invariants(Sandbox&, InvariantLearner&);
 
   /** Get invariant at state. */
   Invariant* get_invariant(State& state) {

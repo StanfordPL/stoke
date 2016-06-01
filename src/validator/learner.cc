@@ -166,8 +166,9 @@ vector<SignInvariant*> build_sign_invariants(RegSet target_regs, RegSet rewrite_
     auto regs = k ? rewrite_regs : target_regs;
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
-      invariants.push_back(new SignInvariant(*i, k, true));
-      invariants.push_back(new SignInvariant(*i, k, false));
+      Variable v(*i, k);
+      invariants.push_back(new SignInvariant(v, true));
+      invariants.push_back(new SignInvariant(v, false));
     }
   }
 
@@ -268,8 +269,10 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      Variable c(*r, k);
-      columns.push_back(c);
+      if((*r).size() == 64) {
+        Variable c(*r, k);
+        columns.push_back(c);
+      }
     }
     for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
       for (size_t i = 0; i < (*r).size()/64; ++i) {

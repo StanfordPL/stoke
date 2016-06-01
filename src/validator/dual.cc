@@ -60,7 +60,7 @@ CpuState remove_prefix(const vector<Abstraction::State>& tr1, vector<pair<Abstra
   return last;
 }
 
-void DualAutomata::learn_invariants(Sandbox& sb) {
+void DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
 
   struct TraceState {
     State state;
@@ -154,7 +154,7 @@ void DualAutomata::learn_invariants(Sandbox& sb) {
   rewrite.recompute();
 
   for (auto state : reachable_states_) {
-    auto inv = learner_.learn(target, rewrite,
+    auto inv = learner.learn(target, rewrite,
                               target_->defined_regs(state.ts), rewrite_->defined_regs(state.rs),
                               target_state_data_[state], rewrite_state_data_[state]);
     invariants_[state] = inv;

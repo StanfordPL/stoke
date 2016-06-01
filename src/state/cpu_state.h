@@ -18,6 +18,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <map>
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/error_code.h"
@@ -189,12 +190,34 @@ struct CpuState {
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
-    for (auto it : segments) {
+    for (auto& it : segments) {
       my_segments.push_back(&it);
     }
 
-    for (auto segment : my_segments) {
+    for (auto& segment : my_segments) {
       if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool is_valid(uint64_t addr, size_t size=1) const {
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto& it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto& segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {
+        for (size_t i = 0; i < size; ++i) {
+          if (!segment->is_valid(addr + (uint64_t)i))
+            return false;
+        }
         return true;
       }
     }
@@ -206,46 +229,24 @@ struct CpuState {
   bool is_valid(const x64asm::Mem& m) const {
     auto addr = get_addr(m);
     auto size = m.size();
-
-    std::vector<const Memory*> my_segments;
-    my_segments.push_back(&heap);
-    my_segments.push_back(&stack);
-    my_segments.push_back(&data);
-
-    for (auto it : segments) {
-      my_segments.push_back(&it);
-    }
-
-    for (auto segment : my_segments) {
-      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
-        for (size_t i = 0; i < size/8; ++i) {
-          if (!segment->is_valid(addr + (uint64_t)i))
-            return false;
-        }
-        return true;
-      }
-    }
-    return false;
+    return is_valid(addr, size/8);
   }
 
   /** Read memory */
-  cpputil::BitVector inline operator[](const x64asm::Mem& m) const {
-    auto addr = get_addr(m);
-    auto size = m.size();
-
+  cpputil::BitVector read(uint64_t addr, size_t size) const {
     std::vector<const Memory*> my_segments;
     my_segments.push_back(&heap);
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
-    for (auto it : segments) {
+    for (auto& it : segments) {
       my_segments.push_back(&it);
     }
 
-    for (auto segment : my_segments) {
-      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
-        cpputil::BitVector result(size);
-        for (size_t i = 0; i < size/8; ++i) {
+    for (auto& segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {
+        cpputil::BitVector result(size*8);
+        for (size_t i = 0; i < size; ++i) {
           result.get_fixed_byte(i) = (*segment)[addr + (uint64_t)i];
         }
         return result;
@@ -253,8 +254,14 @@ struct CpuState {
     }
 
     assert(false);
-    cpputil::BitVector result(size);
+    cpputil::BitVector result(size*8);
     return result;
+  }
+
+  cpputil::BitVector operator[](const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+    return read(addr, size/8);
   }
 
 
@@ -286,6 +293,8 @@ struct CpuState {
   Memory data;
   /** Other memory segments */
   std::vector<Memory> segments;
+  /** Shadow registers */
+  std::map<std::string, uint64_t> shadow;
 
   /** Set memory from a map.  Returns true on success. */
   bool memory_from_map(std::unordered_map<uint64_t, cpputil::BitVector>& map);

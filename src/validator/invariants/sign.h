@@ -24,23 +24,23 @@ class SignInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  SignInvariant(const x64asm::R& reg, bool is_rewrite, bool positive) :
-    reg_(reg), is_rewrite_(is_rewrite), positive_(positive) {
+  SignInvariant(const Variable& var, bool positive) :
+    variable_(var), positive_(positive) {
   }
 
   SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
 
-    auto value = (is_rewrite_ ? rewrite : target).lookup(reg_);
+    auto value = variable_.from_state(target, rewrite);
 
     if (positive_)
-      return value.s_ge(SymBitVector::constant(reg_.size(), 0));
+      return value.s_ge(SymBitVector::constant(variable_.size*8, 0));
     else
-      return value.s_le(SymBitVector::constant(reg_.size(), 0));
+      return value.s_le(SymBitVector::constant(variable_.size*8, 0));
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
 
-    int64_t value = (int64_t)(is_rewrite_ ? rewrite[reg_] : target[reg_]);
+    int64_t value = variable_.from_state(target, rewrite);
 
     if (positive_)
       return value >= 0;
@@ -48,10 +48,14 @@ public:
       return value <= 0;
   }
 
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    result.push_back(variable_);
+    return result;
+  }
+
   std::ostream& write(std::ostream& os) const {
-    os << reg_;
-    if (is_rewrite_)
-      os << "'";
+    os << variable_;
 
     if (positive_)
       os << " >= 0";
@@ -63,8 +67,7 @@ public:
 
 private:
 
-  x64asm::R reg_;
-  bool is_rewrite_;
+  Variable variable_;
   bool positive_;
 
 };

@@ -16,10 +16,14 @@
 #include "src/validator/abstractions/block.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/disjunction.h"
+#include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/pointer_null.h"
 #include "src/validator/dual.h"
 #include "src/validator/eddec.h"
+#include "src/validator/variable.h"
 
 
 #include <set>
@@ -28,9 +32,120 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+string string_ghost_start(x64asm::R64 r) {
+  stringstream ss;
+  ss << r << "_start";
+  return ss.str();
+}
+
+string string_ghost_end(x64asm::R64 r) {
+  stringstream ss;
+  ss << r << "_end";
+  return ss.str();
+}
+
+Invariant* EDdecValidator::get_fixed_invariant() const {
+
+  auto result = new DisjunctionInvariant();
+
+  if(no_string_overlap_) {
+    for(auto r : string_params_) {
+      for(auto s : string_params_) {
+        if(r == s)
+          continue;
+
+        Variable r_start(string_ghost_start(r), false, 8);
+        Variable r_end(string_ghost_end(r), false, 8);
+        Variable s_start(string_ghost_start(r), false, 8);
+        Variable s_end(string_ghost_end(r), false, 8);
+
+        // r_end < s_start OR s_end < r_start
+        result->add_invariant(new InequalityInvariant(s_end, r_start, true, false));
+        result->add_invariant(new InequalityInvariant(r_end, s_start, true, false));
+      }
+    }
+  }
+
+  return result;
+}
+
+ConjunctionInvariant* EDdecValidator::get_initial_invariant(const Cfg& target) const {
+
+  auto initial_invariant = new ConjunctionInvariant();
+  auto sei = new StateEqualityInvariant(target.def_ins());
+  initial_invariant->add_invariant(sei);
+  initial_invariant->add_invariant(new MemoryEqualityInvariant());
+  initial_invariant->add_invariant(new NoSignalsInvariant());
+
+  for(auto r : string_params_) {
+    Variable end_var(string_ghost_start(r), false);
+    auto end_mem = new PointerNullInvariant(end_var, 1);
+    initial_invariant->add_invariant(end_mem);
+  }
+
+  initial_invariant->add_invariant(get_fixed_invariant());
+
+  return initial_invariant;
+}
+
+
+
+void EDdecValidator::transform_testcase(CpuState& tc) const {
+
+  /** For each string argument, we need to insert a ghost value representing
+   * the start and the end of each string. */
+  for(auto r : string_params_) {
+
+    stringstream start;
+    start << r << "_start";
+    stringstream end;
+    end << r << "_end";
+
+    tc.shadow[start.str()] = tc[r];
+
+    // now we need to find the end of the string.
+    CpuState copy = tc;
+    M8 ptr(r);
+
+    while(copy.is_valid(ptr) && copy[ptr].get_fixed_byte(0) != 0) {
+      copy.update(r, copy[r]+1);
+    }
+
+    if(!copy.is_valid(ptr)) {
+      cout << "Register " << r << endl;
+      cout << tc << endl;
+      cout << copy << endl;
+      cout << "Address: " << hex << copy.get_addr(ptr) << endl;
+      cout << "Size: " << ptr.size() << endl;
+      cout << "Range? " << copy.in_range(copy.get_addr(ptr), 1) << endl;
+      cout << "Valid? " << copy.is_valid(ptr) << endl;
+      for(size_t i = 0; i < copy.segments.size(); ++i) {
+        cout << "in range @ " << i << ": " << copy.segments[i].in_range(copy.get_addr(ptr)) << endl;
+      }
+      cout << "Memory value: " << copy[ptr].get_fixed_byte(0) << endl;
+      throw VALIDATOR_ERROR("String doesn't have null terminator in test case.");
+    }
+
+    tc.shadow[end.str()] = copy[r];
+  }
+
+}
+
+
+
 bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
+
+  vector<CpuState> transformed_inputs;
+  for(size_t i = 0; i < sandbox_->size(); ++i) {
+    CpuState input = *sandbox_->get_input(i);
+    transform_testcase(input);
+    transformed_inputs.push_back(input);
+  }
+  sandbox_->clear_inputs();
+  for(auto tc : transformed_inputs)
+    sandbox_->insert_input(tc);
 
   Abstraction* target_automata = new BlockAbstraction(init_target, *sandbox_);
   Abstraction* rewrite_automata = new BlockAbstraction(init_rewrite, *sandbox_);
@@ -102,14 +217,10 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   dual.add_edge(edge_17_16);
 
   // Learn invariants at each of the reachable states.
-  dual.learn_invariants(*sandbox_);
+  dual.learn_invariants(*sandbox_, learner_);
 
   // At the initial state, we say what invariant goes.
-  auto initial_invariant = new ConjunctionInvariant();
-  auto sei = new StateEqualityInvariant(init_target.def_ins());
-  initial_invariant->add_invariant(sei);
-  initial_invariant->add_invariant(new MemoryEqualityInvariant());
-  initial_invariant->add_invariant(new NoSignalsInvariant());
+  auto initial_invariant = get_initial_invariant(init_target);
   dual.set_invariant(start_state, static_cast<Invariant*>(initial_invariant));
 
   // Now we run a fixedpoint algorithm to get the provable invariants
@@ -136,7 +247,13 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       for (size_t i = 0; i < end_inv->size(); ++i) {
         auto partial_inv = (*end_inv)[i];
         cout << "  Proving " << *partial_inv << endl;
-        bool valid = check(init_target, init_rewrite, edge.te, edge.re, *start_inv, *partial_inv);
+        bool valid = false;
+        try {
+          valid = check(init_target, init_rewrite, edge.te, edge.re, *start_inv, *partial_inv);
+        } catch (validator_error e) {
+          valid = false;
+          cout << "   * encountered " << e.what() << "; assuming false.";
+        }
         //bool valid = true;
         cout << "    " << (valid ? "true" : "false") << endl;
         if (!valid) {

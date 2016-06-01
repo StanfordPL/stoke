@@ -49,6 +49,7 @@ struct Variable {
   x64asm::Operand operand;
 
   // For ghosts
+  bool is_ghost;
   std::string name;
 
   /** From an abstract state, find the abstract value of this term. */
@@ -57,13 +58,14 @@ struct Variable {
   /** From a concrete state, find the value of this term. */
   uint64_t from_state(const CpuState& target, const CpuState& rewrite) const;
 
-  Variable() : is_rewrite(false), size(0), offset(0), coefficient(0), operand(x64asm::rax), name("") { }
-
   Variable(x64asm::Operand op, bool rewrite) : is_rewrite(rewrite), size(op.size()/8), offset(0),
-    coefficient(1), operand(op), name("") { }
+    coefficient(1), operand(op), is_ghost(false), name("") { }
 
   Variable(x64asm::Operand op, bool rewrite, size_t sz, int32_t off) : is_rewrite(rewrite), size(sz),
-    offset(off), coefficient(1), operand(op), name("") { }
+    offset(off), coefficient(1), operand(op), is_ghost(false), name("") { }
+
+  Variable(std::string var, bool rewrite, size_t sz=8) : is_rewrite(rewrite), size(sz), 
+    offset(0), coefficient(1), operand(x64asm::rax), is_ghost(true), name(var) { }
 
 };
 
