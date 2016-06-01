@@ -99,16 +99,60 @@ int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
-
+  
+  Cfg target = Cfg(target_arg.value().get_code());
+  target.recompute();
+  
+  for (size_t block_id = 0; block_id < target.num_blocks(); block_id++) {
+    //std::cout << "basic block:" << "\n";
+    std::map<x64asm::R, x64asm::Opcode> values;
+    x64asm::Opcode eflags_value;
+    bool has_eflags;
+    
+    for(auto instr = target.instr_begin(block_id); instr != target.instr_end(block_id); instr++) {
+      
+      // log this instruction
+      std::cout << "1:" << instr->get_opcode() << "\n";
+      
+      // find prefixes that are used
+      for (unsigned i = 0; i < instr->arity(); i++) {
+        if (instr->maybe_read(i)) {
+          x64asm::R r = instr->get_operand<x64asm::R>(i);
+          if (values.find(r) != values.end()) {
+            x64asm::Opcode opcode = values[r];
+            std::cout << "2:" << instr->get_opcode() << "," << i << "," << opcode << "\n";
+          }
+        }
+        
+      }
+      auto read_set = instr->must_read_set();
+      bool reads_eflags = false;
+      for (auto w = read_set.flags_begin(); w != read_set.flags_end(); ++w) {
+        reads_eflags = true;
+      }
+      if (reads_eflags && has_eflags) {
+        std::cout << "2:" << instr->get_opcode() << "," << -1 << "," << eflags_value << "\n";
+      }
+      
+      auto written_set = instr->maybe_write_set() | instr->must_write_set();
+      for (auto w = written_set.gp_begin(); w != written_set.gp_end(); ++w) {
+        values[*w] = instr->get_opcode();
+      }
+      for (auto w = written_set.flags_begin(); w != written_set.flags_end(); ++w) {
+        has_eflags = true;
+        eflags_value = instr->get_opcode();
+      }
+    }
+  }
+  
+  /*
   const auto dot_file = tempfile("/tmp/stoke_debug_cfg.dot.XXXXXX");
-
   to_dot(dot_file);
   if (!to_pdf(dot_file, out.value())) {
     Console::error(1) << "Unable to save file!" << endl;
   } else if (view && !view_pdf(out.value())) {
     Console::error(1) << "Unable to open file for viewing!" << endl;
   }
-
+  */
   return 0;
 }
-
