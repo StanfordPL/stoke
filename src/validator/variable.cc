@@ -8,7 +8,7 @@ using namespace x64asm;
 SymBitVector Variable::from_state(SymState& target, SymState& rewrite) const {
   auto& prog = is_rewrite ? rewrite : target;
 
-  if(!is_ghost) {
+  if (!is_ghost) {
     SymBitVector original_bv = prog[operand];
     SymBitVector extracted = original_bv[size*8+offset*8-1][offset*8];
     return extracted;
@@ -25,7 +25,7 @@ uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) c
 
   auto& prog = is_rewrite ? rewrite : target;
 
-  if(!is_ghost) {
+  if (!is_ghost) {
     auto vector = prog[operand];
 
     uint64_t value = 0;
@@ -56,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, const stoke::Variable& v) {
     os << v.coefficient;
   }
 
-  if(!v.is_ghost) {
+  if (!v.is_ghost) {
     size_t total_size = v.operand.size()/8;
     size_t sub_size = v.size;
 
@@ -71,7 +71,7 @@ std::ostream& operator<<(std::ostream& os, const stoke::Variable& v) {
     }
   } else {
     os << v.name;
-    if(v.is_rewrite)
+    if (v.is_rewrite)
       os << "'";
   }
 

@@ -48,10 +48,10 @@ Invariant* EDdecValidator::get_fixed_invariant() const {
 
   auto result = new DisjunctionInvariant();
 
-  if(no_string_overlap_) {
-    for(auto r : string_params_) {
-      for(auto s : string_params_) {
-        if(r == s)
+  if (no_string_overlap_) {
+    for (auto r : string_params_) {
+      for (auto s : string_params_) {
+        if (r == s)
           continue;
 
         Variable r_start(string_ghost_start(r), false, 8);
@@ -77,7 +77,7 @@ ConjunctionInvariant* EDdecValidator::get_initial_invariant(const Cfg& target) c
   initial_invariant->add_invariant(new MemoryEqualityInvariant());
   initial_invariant->add_invariant(new NoSignalsInvariant());
 
-  for(auto r : string_params_) {
+  for (auto r : string_params_) {
     Variable end_var(string_ghost_start(r), false);
     auto end_mem = new PointerNullInvariant(end_var, 1);
     initial_invariant->add_invariant(end_mem);
@@ -94,7 +94,7 @@ void EDdecValidator::transform_testcase(CpuState& tc) const {
 
   /** For each string argument, we need to insert a ghost value representing
    * the start and the end of each string. */
-  for(auto r : string_params_) {
+  for (auto r : string_params_) {
 
     stringstream start;
     start << r << "_start";
@@ -107,11 +107,11 @@ void EDdecValidator::transform_testcase(CpuState& tc) const {
     CpuState copy = tc;
     M8 ptr(r);
 
-    while(copy.is_valid(ptr) && copy[ptr].get_fixed_byte(0) != 0) {
+    while (copy.is_valid(ptr) && copy[ptr].get_fixed_byte(0) != 0) {
       copy.update(r, copy[r]+1);
     }
 
-    if(!copy.is_valid(ptr)) {
+    if (!copy.is_valid(ptr)) {
       cout << "Register " << r << endl;
       cout << tc << endl;
       cout << copy << endl;
@@ -119,7 +119,7 @@ void EDdecValidator::transform_testcase(CpuState& tc) const {
       cout << "Size: " << ptr.size() << endl;
       cout << "Range? " << copy.in_range(copy.get_addr(ptr), 1) << endl;
       cout << "Valid? " << copy.is_valid(ptr) << endl;
-      for(size_t i = 0; i < copy.segments.size(); ++i) {
+      for (size_t i = 0; i < copy.segments.size(); ++i) {
         cout << "in range @ " << i << ": " << copy.segments[i].in_range(copy.get_addr(ptr)) << endl;
       }
       cout << "Memory value: " << copy[ptr].get_fixed_byte(0) << endl;
@@ -138,13 +138,13 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   init_mm();
 
   vector<CpuState> transformed_inputs;
-  for(size_t i = 0; i < sandbox_->size(); ++i) {
+  for (size_t i = 0; i < sandbox_->size(); ++i) {
     CpuState input = *sandbox_->get_input(i);
     transform_testcase(input);
     transformed_inputs.push_back(input);
   }
   sandbox_->clear_inputs();
-  for(auto tc : transformed_inputs)
+  for (auto tc : transformed_inputs)
     sandbox_->insert_input(tc);
 
   Abstraction* target_automata = new BlockAbstraction(init_target, *sandbox_);
@@ -217,6 +217,12 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   dual.add_edge(edge_17_16);
 
   // Learn invariants at each of the reachable states.
+  for(auto p : string_params_) {
+    Variable a(string_ghost_start(p), false, 8);
+    Variable b(string_ghost_end(p), false, 8);
+    learner_.add_ghost(a);
+    learner_.add_ghost(b);
+  }
   dual.learn_invariants(*sandbox_, learner_);
 
   // At the initial state, we say what invariant goes.

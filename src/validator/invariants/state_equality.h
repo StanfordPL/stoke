@@ -55,11 +55,11 @@ public:
     }
 
     // check that shadow values are the same
-    if(target.shadow.size() != rewrite.shadow.size())
-      return false;  
+    if (target.shadow.size() != rewrite.shadow.size())
+      return false;
 
-    for(auto i = target.shadow.begin(), j = rewrite.shadow.begin(); i != target.shadow.end(); ++i, ++j)
-      if(*i != *j)
+    for (auto i = target.shadow.begin(), j = rewrite.shadow.begin(); i != target.shadow.end(); ++i, ++j)
+      if (*i != *j)
         return false;
 
     return true;

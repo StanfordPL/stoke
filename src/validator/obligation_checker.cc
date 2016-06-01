@@ -1135,12 +1135,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     auto assume_variables = assume.get_variables();
     auto all_variables = prove.get_variables();
     all_variables.insert(all_variables.begin(), assume_variables.begin(), assume_variables.end());
-    for(auto var : all_variables) {
-      if(var.is_ghost) {
+    for (auto var : all_variables) {
+      if (var.is_ghost) {
         ghost_names.insert(var.name);
       }
     }
-    for(auto name : ghost_names) {
+    for (auto name : ghost_names) {
       state_t.shadow[name] = SymBitVector::tmp_var(64);
       state_r.shadow[name] = SymBitVector::tmp_var(64);
     }

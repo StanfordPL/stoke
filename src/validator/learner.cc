@@ -96,7 +96,7 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
 }
 
 /** Return a set of possible inequality invariants. */
-vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) {
+vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) const {
 
   vector<InequalityInvariant*> inequalities;
 
@@ -106,6 +106,17 @@ vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, Reg
     auto regs = k ? rewrite_regs : target_regs;
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+
+      if((*i).size() == 64) {
+        for(auto ghost : ghosts_) {
+          Variable v(*i, k);
+          inequalities.push_back(new InequalityInvariant(v, ghost, false, false));
+          inequalities.push_back(new InequalityInvariant(v, ghost, true, false));
+          inequalities.push_back(new InequalityInvariant(ghost, v, false, false));
+          inequalities.push_back(new InequalityInvariant(ghost, v, true, false));
+        }
+      }
+
       for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
         if (*i == *j)
           continue;
@@ -130,6 +141,7 @@ vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, Reg
 
           inequalities.push_back(new InequalityInvariant(v1_32, v2_32, false, false));
           inequalities.push_back(new InequalityInvariant(v1_32, v2_32, true, false));
+
         }
       }
     }
@@ -193,7 +205,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     return conj;
   }
 
-  // TopZero and NonZero invariants
+  // NonZero invariants
   for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;
     auto& regs = k ? rewrite_regs : target_regs;
@@ -269,7 +281,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      if((*r).size() == 64) {
+      if ((*r).size() == 64) {
         Variable c(*r, k);
         columns.push_back(c);
       }

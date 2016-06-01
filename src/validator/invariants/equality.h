@@ -42,7 +42,7 @@ public:
   EqualityInvariant(std::vector<Variable> terms, long constant) : terms_(terms) {
     constant_ = constant;
 
-    for(auto it : terms) {
+    for (auto it : terms) {
       assert(it.size == 8);
     }
   }

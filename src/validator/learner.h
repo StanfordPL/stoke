@@ -18,6 +18,7 @@
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/inequality.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
@@ -27,6 +28,11 @@ class InvariantLearner {
 
 public:
 
+  InvariantLearner& add_ghost(Variable v) {
+    ghosts_.push_back(v);
+    return *this;
+  }
+
   ConjunctionInvariant* learn(
     const Cfg& target,
     const Cfg& rewrite,
@@ -34,6 +40,16 @@ public:
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
     const std::vector<CpuState>& states2);
+
+private:
+
+
+  /** Overapproximate set of possible inequality invariants. */
+  std::vector<InequalityInvariant*> build_inequality_invariants 
+    (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+
+  /** Set of ghost variables we should do learning over. */
+  std::vector<Variable> ghosts_;
 
 };
 

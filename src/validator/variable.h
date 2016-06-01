@@ -64,7 +64,7 @@ struct Variable {
   Variable(x64asm::Operand op, bool rewrite, size_t sz, int32_t off) : is_rewrite(rewrite), size(sz),
     offset(off), coefficient(1), operand(op), is_ghost(false), name("") { }
 
-  Variable(std::string var, bool rewrite, size_t sz=8) : is_rewrite(rewrite), size(sz), 
+  Variable(std::string var, bool rewrite, size_t sz=8) : is_rewrite(rewrite), size(sz),
     offset(0), coefficient(1), operand(x64asm::rax), is_ghost(true), name(var) { }
 
 };
