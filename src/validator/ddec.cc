@@ -512,6 +512,8 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
 ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint) {
 
+  InvariantLearner learner(target, rewrite);
+
   /** Lets get out the relevant data here... */
   vector<CpuState> target_states = cutpoints_->data_at(cutpoint, false);
   vector<CpuState> rewrite_states = cutpoints_->data_at(cutpoint, true);
@@ -537,7 +539,7 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
 
   /** Case 1: there's no conditional jump */
   if (!target_has_jcc && !rewrite_has_jcc) {
-    return learner_.learn(target, rewrite, target_regs, rewrite_regs, target_states, rewrite_states);
+    return learner.learn(target_regs, rewrite_regs, target_states, rewrite_states);
   } else if (target_has_jcc && !rewrite_has_jcc) {
 
     vector<CpuState> target_jump_states;
@@ -556,11 +558,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
     }
 
     auto jump_inv = new FlagInvariant(last_target_instr, false, false);
-    auto jump_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learner.learn(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_target_instr, false, true);
-    auto fall_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learner.learn(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -586,11 +588,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
     }
 
     auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
-    auto jump_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learner.learn(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
-    auto fall_simple = learner_.learn(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learner.learn(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -628,22 +630,22 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
       }
     }
 
-    auto S1 = learner_.learn(target, rewrite, target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
+    auto S1 = learner.learn(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
 
-    auto S2 = learner_.learn(target, rewrite, target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
+    auto S2 = learner.learn(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
 
-    auto S3 = learner_.learn(target, rewrite, target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
+    auto S3 = learner.learn(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
 
-    auto S4 = learner_.learn(target, rewrite, target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
+    auto S4 = learner.learn(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);

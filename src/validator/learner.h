@@ -28,14 +28,14 @@ class InvariantLearner {
 
 public:
 
+  InvariantLearner(const Cfg& target, const Cfg& rewrite) : target_(target), rewrite_(rewrite) {}
+
   InvariantLearner& add_ghost(Variable v) {
     ghosts_.push_back(v);
     return *this;
   }
 
   ConjunctionInvariant* learn(
-    const Cfg& target,
-    const Cfg& rewrite,
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
@@ -43,6 +43,9 @@ public:
 
 private:
 
+  /** Keep track of the program we're working on. */
+  Cfg target_;
+  Cfg rewrite_;
 
   /** Overapproximate set of possible inequality invariants. */
   std::vector<InequalityInvariant*> build_inequality_invariants

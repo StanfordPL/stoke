@@ -55,8 +55,6 @@ public:
 
 private:
 
-  InvariantLearner learner_;
-
   /** Find all invariants with CEGAR-style search. */
   std::vector<ConjunctionInvariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
   /** Learn invariants from CpuStates */

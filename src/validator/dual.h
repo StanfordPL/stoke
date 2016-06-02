@@ -109,8 +109,6 @@ public:
 
 private:
 
-  InvariantLearner learner_;
-
   Abstraction* target_;
   Abstraction* rewrite_;
 

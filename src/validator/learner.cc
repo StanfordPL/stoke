@@ -25,6 +25,7 @@
 #include "src/validator/invariants/mod_2n.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/pointer_null.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -44,7 +45,47 @@ using namespace stoke;
 using namespace x64asm;
 
 
+vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
+
+  vector<Variable> results;
+
+  set<x64asm::Mem> memory_operands;
+  for (auto& prog : {
+         target, rewrite
+       }) {
+    for (auto instr : prog.get_code()) {
+      if (instr.is_explicit_memory_dereference()) {
+        auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
+        //cout << "Considering operand " << mem << endl;
+        memory_operands.insert(mem);
+      }
+    }
+  }
+
+  for (auto mem : memory_operands) {
+    for (size_t offset : {
+           0,8,-8
+         }) {
+      // Make everything an M64
+      M64 mem_fixed(mem.get_seg(),
+                    mem.get_base(),
+                    mem.get_index(),
+                    mem.get_scale(),
+                    mem.get_disp() + offset);
+
+      Variable v(mem_fixed, false);
+      Variable w(mem_fixed, true);
+      results.push_back(v);
+      results.push_back(w);
+    }
+  }
+
+  return results;
+}
+
+
 /** Return a set of possible memory null invariants */
+/*
 vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs, const Cfg& target, const Cfg& rewrite) {
   vector<MemoryNullInvariant*> invariants;
 
@@ -75,25 +116,21 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
       auto mni = new MemoryNullInvariant(it, is_rewrite, true);
       //invariants.push_back(mni);  //FIXME: bring me back to life
 
-      /*
-      cout << "Ok, made a " << *mni << endl;
+      //cout << "Ok, made a " << *mni << endl;
 
-      mni = new MemoryNullInvariant(it, is_rewrite, false);
-      invariants.push_back(mni);
-      */
+      //mni = new MemoryNullInvariant(it, is_rewrite, false);
+      //invariants.push_back(mni);
     }
 
 
   }
 
-  /*
-  for (auto it : invariants) {
-    cout << *it << endl;
-  }
-  */
+  //for (auto it : invariants) {
+  //  cout << *it << endl;
+  //}
 
   return invariants;
-}
+}*/
 
 /** Return a set of possible inequality invariants. */
 vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) const {
@@ -187,7 +224,10 @@ vector<SignInvariant*> build_sign_invariants(RegSet target_regs, RegSet rewrite_
   return invariants;
 }
 
-ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
+ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
+    x64asm::RegSet rewrite_regs,
+    const vector<CpuState>& target_states,
+    const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
 
@@ -262,6 +302,7 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     }
   }
 
+  /*
   auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target, rewrite);
   for (auto mem_null : potential_memory_nulls) {
     //cout << "Testing " << *mem_null << endl;
@@ -271,6 +312,19 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
     } else {
       //cout << " * fail" << endl;
       delete mem_null;
+    }
+  }
+  */
+
+  for (auto ghost : ghosts_) {
+    auto pointer_null = new PointerNullInvariant(ghost, 1);
+    cout << "testing ptr " << *pointer_null << endl;
+    if (pointer_null->check(target_states, rewrite_states)) {
+      conj->add_invariant(pointer_null);
+      cout << "  * accepted" << endl;
+    } else {
+      delete pointer_null;
+      cout << "  * rejected" << endl;
     }
   }
 
@@ -291,6 +345,16 @@ ConjunctionInvariant* InvariantLearner::learn(const Cfg& target, const Cfg& rewr
         Variable c(*r,k,8,i*8);
         columns.push_back(c);
       }
+    }
+  }
+  auto mem_vars = get_memory_variables(target_, rewrite_);
+  for (auto var : mem_vars) {
+    cout << "Checking mem var: " << var << endl;
+    if (var.size == 8) {
+      cout << " * size 8 :)" << endl;
+      columns.push_back(var);
+    } else {
+      cout << " * size " << var.size << endl;
     }
   }
 

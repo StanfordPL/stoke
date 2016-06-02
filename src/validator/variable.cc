@@ -47,13 +47,9 @@ namespace std {
 std::ostream& operator<<(std::ostream& os, const stoke::Variable& v) {
 
   if (v.coefficient < 0) {
-    if (v.coefficient == -1) {
-      os << "-";
-    } else {
-      os << "-" << (-v.coefficient);
-    }
+    os << "-" << -v.coefficient << "*";
   } else if (v.coefficient != 1) {
-    os << v.coefficient;
+    os << v.coefficient << "*";
   }
 
   if (!v.is_ghost) {

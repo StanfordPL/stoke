@@ -208,12 +208,8 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   dual.add_edge(edge_3_16_1);
 
   // 3 -> 19
-  DualAutomata::Edge edge_3_19_0(stop3, {3,4,5}, {4,5,6,16,19});
-  DualAutomata::Edge edge_3_19_1(stop3, {3,4,5}, {4,5,6,7,16,19});
-  DualAutomata::Edge edge_3_19_2(stop3, {3,4,5}, {19});
-  dual.add_edge(edge_3_19_0);
-  dual.add_edge(edge_3_19_1);
-  dual.add_edge(edge_3_19_2);
+  DualAutomata::Edge edge_3_19(stop3, {5}, {19});
+  dual.add_edge(edge_3_19);
 
   // 16 -> 17
   auto stop16 = edge_1_16_0.to;
@@ -234,13 +230,14 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   dual.add_edge(edge_17_16);
 
   // Learn invariants at each of the reachable states.
+  InvariantLearner learner(init_target, init_rewrite);
   for (auto p : string_params_) {
     Variable a(string_ghost_start(p), false, 8);
     Variable b(string_ghost_end(p), false, 8);
-    learner_.add_ghost(a);
-    learner_.add_ghost(b);
+    learner.add_ghost(a);
+    learner.add_ghost(b);
   }
-  dual.learn_invariants(*sandbox_, learner_);
+  dual.learn_invariants(*sandbox_, learner);
 
   // At the initial state, we say what invariant goes.
   auto initial_invariant = get_initial_invariant(init_target);

@@ -26,7 +26,7 @@
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { X }
+#define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }

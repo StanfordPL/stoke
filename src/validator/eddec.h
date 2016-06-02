@@ -62,8 +62,6 @@ public:
 
 private:
 
-  InvariantLearner learner_;
-
   /** The set of R64s that we assume point to strings. */
   std::set<x64asm::R64> string_params_;
   /** Whether we can assume the strings don't overlap. */
