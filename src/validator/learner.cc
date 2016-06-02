@@ -107,8 +107,8 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
 
-      if((*i).size() == 64) {
-        for(auto ghost : ghosts_) {
+      if ((*i).size() == 64) {
+        for (auto ghost : ghosts_) {
           Variable v(*i, k);
           inequalities.push_back(new InequalityInvariant(v, ghost, false, false));
           inequalities.push_back(new InequalityInvariant(v, ghost, true, false));

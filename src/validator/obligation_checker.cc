@@ -26,7 +26,7 @@
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { }
+#define BUILD_TC_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -69,7 +69,8 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
   return output;
 }
 
-bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
+bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory,
+    const map<const SymBitVectorAbstract*, uint64_t>& others) const {
 
   auto var = memory.get_variable();
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
@@ -1140,6 +1141,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
         ghost_names.insert(var.name);
       }
     }
+    vector<string> ghost_vector;
+    ghost_vector.insert(ghost_vector.begin(), ghost_names.begin(), ghost_names.end());
     for (auto name : ghost_names) {
       state_t.shadow[name] = SymBitVector::tmp_var(64);
       state_r.shadow[name] = SymBitVector::tmp_var(64);
@@ -1219,10 +1222,16 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     // Extract the final states of target/rewrite
     SymState state_t_final("1_FINAL");
     SymState state_r_final("2_FINAL");
+    for (auto name : ghost_names) {
+      state_t_final.shadow[name] = SymBitVector::tmp_var(64);
+      state_r_final.shadow[name] = SymBitVector::tmp_var(64);
+    }
 
-    for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe()))
+
+
+    for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe(), ghost_vector))
       constraints.push_back(it);
-    for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
+    for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe(), ghost_vector))
       constraints.push_back(it);
 
     // Step 4: Invoke the solver
@@ -1243,10 +1252,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 #endif
 
     if (is_sat) {
-      ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
-      ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
-      ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL");
-      ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL");
+      ceg_t_ = Validator::state_from_model(solver_, "_1_INIT", ghost_vector);
+      ceg_r_ = Validator::state_from_model(solver_, "_2_INIT", ghost_vector);
+      ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL", ghost_vector);
+      ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL", ghost_vector);
 
       bool ok = true;
       if (flat_model) {

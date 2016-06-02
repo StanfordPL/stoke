@@ -17,6 +17,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/disjunction.h"
+#include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/no_signals.h"
@@ -44,24 +45,32 @@ string string_ghost_end(x64asm::R64 r) {
   return ss.str();
 }
 
-Invariant* EDdecValidator::get_fixed_invariant() const {
+ConjunctionInvariant* EDdecValidator::get_fixed_invariant() const {
 
-  auto result = new DisjunctionInvariant();
+  auto result = new ConjunctionInvariant();
 
   if (no_string_overlap_) {
     for (auto r : string_params_) {
+
+      Variable r_start(string_ghost_start(r), false, 8);
+      Variable r_end(string_ghost_end(r), false, 8);
+
+      result->add_invariant(new InequalityInvariant(r_start, r_end, false, false));
+      result->add_invariant(new StateEqualityInvariant(x64asm::RegSet::empty(), {r_start, r_end}));
+
       for (auto s : string_params_) {
-        if (r == s)
+        if ((int)r <= (int)s)
           continue;
 
-        Variable r_start(string_ghost_start(r), false, 8);
-        Variable r_end(string_ghost_end(r), false, 8);
-        Variable s_start(string_ghost_start(r), false, 8);
-        Variable s_end(string_ghost_end(r), false, 8);
+        Variable s_start(string_ghost_start(s), false, 8);
+        Variable s_end(string_ghost_end(s), false, 8);
 
         // r_end < s_start OR s_end < r_start
-        result->add_invariant(new InequalityInvariant(s_end, r_start, true, false));
-        result->add_invariant(new InequalityInvariant(r_end, s_start, true, false));
+        auto disj = new DisjunctionInvariant();
+        disj->add_invariant(new InequalityInvariant(s_end, r_start, true, false));
+        disj->add_invariant(new InequalityInvariant(r_end, s_start, true, false));
+
+        result->add_invariant(disj);
       }
     }
   }
@@ -78,7 +87,15 @@ ConjunctionInvariant* EDdecValidator::get_initial_invariant(const Cfg& target) c
   initial_invariant->add_invariant(new NoSignalsInvariant());
 
   for (auto r : string_params_) {
-    Variable end_var(string_ghost_start(r), false);
+    /** rsi_start = rsi (for example) */
+    Variable start_var(string_ghost_start(r), false);
+    Variable string_reg(r, false);
+    string_reg.coefficient = -1;
+    auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+    initial_invariant->add_invariant(equiv);
+
+    /** *rsi_end = 0 (for example) */
+    Variable end_var(string_ghost_end(r), false);
     auto end_mem = new PointerNullInvariant(end_var, 1);
     initial_invariant->add_invariant(end_mem);
   }
@@ -217,7 +234,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   dual.add_edge(edge_17_16);
 
   // Learn invariants at each of the reachable states.
-  for(auto p : string_params_) {
+  for (auto p : string_params_) {
     Variable a(string_ghost_start(p), false, 8);
     Variable b(string_ghost_end(p), false, 8);
     learner_.add_ghost(a);
@@ -227,7 +244,20 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   // At the initial state, we say what invariant goes.
   auto initial_invariant = get_initial_invariant(init_target);
-  dual.set_invariant(start_state, static_cast<Invariant*>(initial_invariant));
+  dual.set_invariant(start_state, initial_invariant);
+
+  // At other states, we conjoin invariants we know we need to handle different data types
+  for (auto state : dual.get_reachable_states()) {
+    if (state == start_state)
+      continue;
+
+    auto learned_invariant = dual.get_invariant(state);
+    auto fixed_invariant = get_fixed_invariant();
+    for (size_t i = 0; i < fixed_invariant->size(); ++i) {
+      learned_invariant->add_invariant((*fixed_invariant)[i]);
+    }
+    dual.set_invariant(state, learned_invariant);
+  }
 
   // Now we run a fixedpoint algorithm to get the provable invariants
   auto all_states = dual.get_reachable_states();
@@ -248,6 +278,7 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
       cout << "_____________________________" << endl;
       cout << "Edge: " << edge.from << " -> " << edge.to << endl;
+      cout << "Assuming: " << *start_inv << endl << endl;
 
       // check the invariants in the conjunction one at a time
       for (size_t i = 0; i < end_inv->size(); ++i) {

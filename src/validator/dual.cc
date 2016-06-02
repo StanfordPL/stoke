@@ -14,6 +14,10 @@ bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   }
 }
 
+bool DualAutomata::State::operator==(const DualAutomata::State& other) const {
+  return (ts == other.ts && rs == other.rs);
+}
+
 DualAutomata::Edge::Edge(DualAutomata::State tail, const vector<Abstraction::State>& tp, const vector<Abstraction::State>& rp) {
   from = tail;
   te = tp;

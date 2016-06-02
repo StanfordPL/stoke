@@ -87,7 +87,8 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
 
 
 
-CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) {
+CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
+                                     const vector<string>& ghosts) {
   CpuState cs;
 
   // Get the values of registers
@@ -111,6 +112,10 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     stringstream name;
     name << eflags[i] << name_suffix;
     cs.rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
+  }
+
+  for (auto ghost : ghosts) {
+    cs.shadow[ghost] = smt.get_model_bv(ghost, 64).get_fixed_quad(0);
   }
 
   // Figure out error code

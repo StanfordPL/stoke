@@ -45,8 +45,8 @@ private:
 
 
   /** Overapproximate set of possible inequality invariants. */
-  std::vector<InequalityInvariant*> build_inequality_invariants 
-    (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+  std::vector<InequalityInvariant*> build_inequality_invariants
+  (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;

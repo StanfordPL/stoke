@@ -21,6 +21,7 @@ public:
     Abstraction::State rs;
 
     bool operator<(const State& other) const;
+    bool operator==(const State& other) const;
   };
 
   struct Edge {
@@ -83,7 +84,7 @@ public:
   void learn_invariants(Sandbox&, InvariantLearner&);
 
   /** Get invariant at state. */
-  Invariant* get_invariant(State& state) {
+  ConjunctionInvariant* get_invariant(State& state) {
     if (invariants_.count(state))
       return invariants_[state];
     else {
@@ -96,7 +97,7 @@ public:
   }
 
   /** Forcibly set invariant (e.g. proof went bad) */
-  void set_invariant(State& state, Invariant* inv) {
+  void set_invariant(State& state, ConjunctionInvariant* inv) {
     invariants_[state] = inv;
   }
 
@@ -117,7 +118,7 @@ private:
   std::map<State, std::vector<Edge>> next_edges_;
   std::map<State, std::vector<Edge>> prev_edges_;
 
-  std::map<State, Invariant*> invariants_;
+  std::map<State, ConjunctionInvariant*> invariants_;
   std::map<State, std::vector<CpuState>> target_state_data_;
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
 

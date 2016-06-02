@@ -74,7 +74,7 @@ private:
   /** The initial invariant. */
   ConjunctionInvariant* get_initial_invariant(const Cfg& cfg) const;
   /** An invariant that needs to be conjoined at each state. */
-  Invariant* get_fixed_invariant() const;
+  ConjunctionInvariant* get_fixed_invariant() const;
 
 
 

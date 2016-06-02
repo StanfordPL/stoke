@@ -26,17 +26,27 @@ class StateEqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  StateEqualityInvariant(x64asm::RegSet rs) : rs_(rs) {}
+  StateEqualityInvariant(x64asm::RegSet rs, std::vector<Variable> ghosts = {}) : rs_(rs) {
+    ghost_variables_ = ghosts;
+    for (auto it : ghosts) {
+      ghost_names_.push_back(it.name);
+    }
+  }
 
   SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
     SymBool b = SymBool::_true();
-    for (auto it : left.equality_constraints(right, rs_))
+    for (auto it : left.equality_constraints(right, rs_, ghost_names_))
       b = b & it;
     return b;
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << "(t/r agree on " << rs_ << ")";
+    os << "(t/r agree on " << rs_;
+    for (auto it : ghost_names_) {
+      os << ", " << it;
+    }
+    os << ")";
+
     return os;
   }
 
@@ -55,18 +65,22 @@ public:
     }
 
     // check that shadow values are the same
-    if (target.shadow.size() != rewrite.shadow.size())
-      return false;
-
-    for (auto i = target.shadow.begin(), j = rewrite.shadow.begin(); i != target.shadow.end(); ++i, ++j)
-      if (*i != *j)
+    for (auto ghost : ghost_names_)
+      if (target.shadow.at(ghost) != rewrite.shadow.at(ghost))
         return false;
 
     return true;
   }
 
+  std::vector<Variable> get_variables() {
+    return ghost_variables_;
+  }
+
 private:
   x64asm::RegSet rs_;
+
+  std::vector<std::string> ghost_names_;
+  std::vector<Variable> ghost_variables_;
 
 };
 

@@ -71,7 +71,8 @@ public:
   /** Useful helper.  Extracts a counterexample from a model.  Assumes that
    * you've constructed constraints the same way the validator does and know
    * what you're doing.  Ignores memory. */
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
+                                   const std::vector<std::string>& ghosts = {});
 
 protected:
 

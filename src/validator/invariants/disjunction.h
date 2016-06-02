@@ -80,7 +80,7 @@ public:
     for (size_t i = 0; i < invariants_.size(); ++i) {
       invariants_[i]->write(os);
       if (i != invariants_.size() - 1) {
-        os << " ) v ( ";
+        os << " v ";
       }
     }
     os << " )";
