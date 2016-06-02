@@ -48,7 +48,7 @@ uint64_t add_string(CpuState& tc, size_t length, size_t null_size = 1) {
 
     /** Fill a new segment with a random string. */
     Memory m;
-    m.resize(start, length);
+    m.resize(start, length+16);
 
     for (uint64_t j = start; j < start + length; ++j) {
       m.set_valid(j, true);
@@ -57,6 +57,10 @@ uint64_t add_string(CpuState& tc, size_t length, size_t null_size = 1) {
     for (uint64_t j = start+length-null_size; j < start+length; ++j) {
       m.set_valid(j, true);
       m[j] = 0;
+    }
+    for (uint64_t j = start+length; j < start+length+16; ++j) {
+      m.set_valid(j, true);
+      m[j] = unif(gen);
     }
 
     /** Add the segment. */
