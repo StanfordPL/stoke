@@ -40,6 +40,7 @@ public:
 
     insert_transform(new AddNopsTransform(pools), add_nops_mass_arg.value());
     insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
+    insert_transform(new DoubleTransform(pools), double_mass_arg.value());
     insert_transform(new InstructionTransform(pools), instruction_mass_arg.value());
     insert_transform(new OpcodeTransform(pools), opcode_mass_arg.value());
     insert_transform(new OpcodeWidthTransform(pools), opcode_width_mass_arg.value());

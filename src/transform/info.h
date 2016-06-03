@@ -21,7 +21,7 @@ namespace stoke {
 
 struct TransformInfo {
 
-  TransformInfo() : success(false), undo_instr(x64asm::NOP) { }
+  TransformInfo() : success(false), undo_instr(x64asm::NOP), undo_instr2(x64asm::NOP) { }
 
   // Did the transform succeed?
   bool success;
@@ -32,6 +32,7 @@ struct TransformInfo {
   // Records information to undo the transform
   size_t undo_index[2];
   x64asm::Instruction undo_instr;
+  x64asm::Instruction undo_instr2;
 
 };
 
