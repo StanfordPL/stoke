@@ -27,6 +27,11 @@ orig_llvm:
 orig_gcc:
 	g++ -std=c++11 -O0 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
+opt_gcc:
+	g++ -std=c++11 -O3 -c fxn.cc
+	g++ -std=c++11 -O3 main.cc fxn.o
+
+
 
 rebuild:
 	rm -f stoke.s

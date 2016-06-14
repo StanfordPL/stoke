@@ -96,6 +96,14 @@ public:
     }
   }
 
+  /** Get data for state. */
+  std::vector<CpuState> get_target_data(State s) {
+    return target_state_data_[s];
+  }
+  std::vector<CpuState> get_rewrite_data(State s) {
+    return rewrite_state_data_[s];
+  }
+
   /** Forcibly set invariant (e.g. proof went bad) */
   void set_invariant(State& state, ConjunctionInvariant* inv) {
     invariants_[state] = inv;

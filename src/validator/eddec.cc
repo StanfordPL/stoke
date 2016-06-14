@@ -211,23 +211,24 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   DualAutomata::Edge edge_3_19(stop3, {5}, {19});
   dual.add_edge(edge_3_19);
 
-  // 16 -> 17
-  auto stop16 = edge_1_16_0.to;
-  DualAutomata::Edge edge_16_17(stop16, {3,4}, {17});
-  dual.add_edge(edge_16_17);
-
   // 16 -> 19
-  DualAutomata::Edge edge_16_19(stop16, {5}, {19});
-  dual.add_edge(edge_16_19);
-
-  // 17 -> 19
-  auto stop17 = edge_16_17.to;
-  DualAutomata::Edge edge_17_19(stop17, {5}, {19});
-  dual.add_edge(edge_17_19);
-
-  // 17 -> 16
-  DualAutomata::Edge edge_17_16(stop17, {3,4}, {18,16});
-  dual.add_edge(edge_17_16);
+  auto stop16 = edge_3_16_0.to;
+  DualAutomata::Edge edge_16_19_0(stop16, {5}, {19});
+  DualAutomata::Edge edge_16_19_1(stop16, {3,4,5}, {17,19});
+  DualAutomata::Edge edge_16_19_2(stop16, {3,4,3,4,5}, {17,18,16,19});
+  DualAutomata::Edge edge_16_19_3(stop16, {3,4,3,4,3,4,5}, {17,18,16,17,19});
+  DualAutomata::Edge edge_16_19_4(stop16, {3,4,3,4,3,4,3,4,5}, {17,18,16,17,18,16,19});
+  DualAutomata::Edge edge_16_19_5(stop16, {3,4,3,4,3,4,3,4,3,4,5}, {17,18,16,17,18,16,17,19});
+  DualAutomata::Edge edge_16_19_6(stop16, {3,4,3,4,3,4,3,4,3,4,3,4,5}, {17,18,16,17,18,16,17,18,16,19});
+  DualAutomata::Edge edge_16_19_7(stop16, {3,4,3,4,3,4,3,4,3,4,3,4,3,4,5}, {17,18,16,17,18,16,17,18,16,17,19});
+  dual.add_edge(edge_16_19_0);
+  dual.add_edge(edge_16_19_1);
+  dual.add_edge(edge_16_19_2);
+  dual.add_edge(edge_16_19_3);
+  dual.add_edge(edge_16_19_4);
+  dual.add_edge(edge_16_19_5);
+  dual.add_edge(edge_16_19_6);
+  dual.add_edge(edge_16_19_7);
 
   // Learn invariants at each of the reachable states.
   InvariantLearner learner(init_target, init_rewrite);
@@ -238,6 +239,33 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     learner.add_ghost(b);
   }
   dual.learn_invariants(*sandbox_, learner);
+
+  // DEBUGING rax=-8(%rsp) for stpcpy
+  /*
+  cout << "DEBUGGING STPCPY MEMREG" << endl;
+  Variable my_rax(rax, true);
+  Variable my_ptr(x64asm::M64(rsi, -0x1), false);
+  my_ptr.coefficient = -1;
+  auto my_equ = new EqualityInvariant({my_rax, my_ptr}, 0);
+  cout << " * checking " << *my_equ << endl;
+  auto r_states_at_16 = dual.get_rewrite_data(stop16);
+  auto t_states_at_16 = dual.get_target_data(stop16);
+  cout << " * tests: " << r_states_at_16.size() << endl;
+  for(size_t i = 0; i < r_states_at_16.size(); ++i) {
+    auto ts = t_states_at_16[i];
+    auto rs = r_states_at_16[i];
+    if(!my_equ->check(ts, rs)) {
+      cout << "Bad tc:" << endl;
+      cout << "TARGET" << endl;
+      cout << ts << endl;
+      cout << "REWRITE" << endl;
+      cout << rs << endl;
+      cout << endl;
+    } else {
+      cout << "Pass" << endl;
+    }
+  }
+  */
 
   // At the initial state, we say what invariant goes.
   auto initial_invariant = get_initial_invariant(init_target);
@@ -275,6 +303,16 @@ bool EDdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
       cout << "_____________________________" << endl;
       cout << "Edge: " << edge.from << " -> " << edge.to << endl;
+      cout << "target: ";
+      for(auto it : edge.te) {
+        cout << it << " ";
+      }
+      cout << endl;
+      cout << "rewrite: ";
+      for(auto it : edge.re) {
+        cout << it << " ";
+      }
+      cout << endl;
       cout << "Assuming: " << *start_inv << endl << endl;
 
       // check the invariants in the conjunction one at a time

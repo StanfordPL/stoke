@@ -1,0 +1,14 @@
+
+
+ EASY: all the correspondences should exhibit some seen control flow
+       all seen control flow should be exhibited in correspondences
+
+ 1. We need coverage of target and rewrite states.
+ 2. It's best for memory to line up after each transition.
+ 3. We don't want one program looping while the other isn't.
+ 4. We would like the correspondence between registers to be as strong as possible.
+
+
+STOP POINTS METHOD:
+
+  - choose "stop" points, make cartesian product, consider all correspondences where nobody loops by themselves
