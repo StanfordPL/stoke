@@ -14,6 +14,7 @@
 
 
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/handlers.h"
 
 using namespace stoke;
 using namespace x64asm;
@@ -73,5 +74,21 @@ Handler* ComboHandler::get_handler(const Instruction& instr, Handler::SupportLev
 
   return best_handler;
 
+}
+
+std::vector<Handler*> ComboHandler::default_handler_list() const {
+  std::vector<Handler*> v;
+
+  v.push_back(new PackedHandler());
+  v.push_back(new SimpleHandler());
+  v.push_back(new AddHandler());
+  v.push_back(new ConditionalHandler());
+  v.push_back(new LeaHandler());
+  v.push_back(new MoveHandler());
+  v.push_back(new PunpckHandler());
+  v.push_back(new ShiftHandler());
+  v.push_back(new StrataHandler());
+
+  return v;
 }
 

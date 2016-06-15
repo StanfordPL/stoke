@@ -239,6 +239,8 @@ void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool skip_fi
       }
     }
   }
+
+  recompute();
 }
 
 void TUnit::swap(size_t i, size_t j) {

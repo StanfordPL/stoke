@@ -136,8 +136,20 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   if (instr.is_explicit_memory_dereference()) {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
-    auto arg = instr.get_operand<Operand>(0);
-    return gp[x64asm::rsp].get_fixed_quad(0) - arg.size()/8;
+    size_t bytes = 2;
+    switch (instr.get_opcode()) {
+    case PUSHQ_IMM32:
+    case PUSHQ_IMM16:
+    case PUSHQ_IMM8:
+    case PUSH_M64:
+    case PUSH_R64:
+    case PUSH_R64_1:
+      bytes = 8;
+      break;
+    default:
+      bytes = 2;
+    }
+    return gp[x64asm::rsp].get_fixed_quad(0) - bytes;
   } else if (instr.is_pop()) {
     return gp[x64asm::rsp].get_fixed_quad(0);
   } else if (instr.is_ret()) {
@@ -147,6 +159,109 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   // instruction not supported
   assert(false);
   return 0;
+}
+
+bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete) {
+
+  // We can get a list of concrete addresses accessed, and need to split these
+  // addresses into heap/stack.  My goal is to just optimize the size of each
+  // of the heap and the stack; the algorithm is to just sort the addresses and
+  // try every possible place to split them.  This is O(n^2) where n is the
+  // number of addresses.  The sorting O(n*log n) is dominated by the loop
+  // where we check the goodness of each split; calculating the goodness costs
+  // O(n) and we need to do this O(n) times.
+
+  stack.resize(0x700000000, 0);
+  heap.resize(0x100000000, 0);
+  data.resize(0x000000000, 0);
+
+  if (concrete.size() == 0) {
+    // no memory
+    return true;
+  }
+
+  vector<pair<uint64_t, BitVector>> concrete_vector;
+  concrete_vector.insert(concrete_vector.begin(), concrete.begin(), concrete.end());
+
+  auto compare = [] (const pair<uint64_t, BitVector>& p1, const pair<uint64_t, BitVector>& p2) {
+    if (p1.first == p2.first)
+      return p1.second.num_fixed_bytes() < p2.second.num_fixed_bytes();
+    return p1.first < p2.first;
+  };
+  sort(concrete_vector.begin(), concrete_vector.end(), compare);
+
+  vector<Memory> my_segments;
+
+  // Create memory segments as needed so that there's no 16-byte invalid gap.
+  Memory* last_segment = NULL;
+  uint64_t max_addr = 0;
+
+  // Build the first segment
+  Memory first_segment;
+  uint64_t first_address = concrete_vector[0].first;
+  size_t size = concrete_vector[0].second.num_fixed_bytes();
+
+  first_segment.resize(first_address, size);
+  for (size_t i = 0; i < size; ++i) {
+    first_segment.set_valid(first_address + i, true);
+    first_segment[first_address + i] = concrete_vector[0].second.get_fixed_byte(i);
+  }
+
+  max_addr = first_address + size;
+  my_segments.push_back(first_segment);
+  last_segment = &my_segments[0];
+
+  // Build remaining segments
+  for (size_t i = 1; i < concrete_vector.size(); ++i) {
+    auto pair = concrete_vector[i];
+    uint64_t address = pair.first;
+    size_t size = pair.second.num_fixed_bytes();
+
+    // Three cases:
+    // Case 1: address + size < max_addr, and neither has overflowed
+    // (do nothing)
+    // Case 2: address - max_addr < 32
+    // (expand existing region)
+    // Case 3: address - max_addr >= 32
+    // (create new region)
+    if (!(address < max_addr && address + size <= max_addr)) {
+      if (address - max_addr < 32) {
+        uint64_t new_size = address + size - last_segment->lower_bound();
+        last_segment->resize(last_segment->lower_bound(), new_size);
+      } else {
+        Memory m;
+        m.resize(address, size);
+        my_segments.push_back(m);
+        last_segment = &my_segments[my_segments.size()-1];
+      }
+    }
+
+    for (size_t i = 0; i < size; ++i) {
+      last_segment->set_valid(address + i, true);
+      (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
+    }
+    max_addr = address+size;
+  }
+
+  // If there's no segment corresponding to the stack, create one.
+  switch (my_segments.size()) {
+  default:
+  case 3:
+    data = my_segments[2];
+  case 2:
+    stack = my_segments[1];
+  case 1:
+    heap = my_segments[0];
+  case 0:
+    break;
+  }
+
+  segments.clear();
+  for (size_t i = 3; i < my_segments.size(); ++i) {
+    segments.push_back(my_segments[i]);
+  }
+
+  return true;
 }
 
 
@@ -210,7 +325,7 @@ ostream& CpuState::write_text(ostream& os) const {
 
 // This reads the rest of the memory of the testcase.  We only do this if the
 // segments are listed for backward compatibility.  One day someone can merge
-// this code into the main algorithm, once we no longer need old files -- BRC.
+// this code into the main algorithm, once we no longer need old files.
 istream& CpuState::read_text_segments(istream& is) {
   string s;
 

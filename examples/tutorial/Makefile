@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract testcase search replace
+all: orig extract testcase synthesize replace
 
 orig:
 	g++ -std=c++11 -fno-inline -Os main.cc
@@ -21,16 +21,17 @@ time:
 	time ./a.out 100000000
 
 extract:
+	chmod +x test.sh
 	stoke extract --config extract.conf
 
 testcase:
 	stoke testcase --config testcase.conf
 
-search:
-	stoke search --config search.conf
+synthesize:
+	stoke synthesize --config synthesize.conf
 
 # 'make check' should always work unless there's
-# a bug in 'stoke debug verify' or 'stoke search'
+# a bug in 'stoke debug verify' or 'stoke synthesize'
 # or the search just fails.
 check:
 	stoke debug verify --config verify.conf
@@ -39,4 +40,4 @@ replace:
 	stoke replace --config replace.conf
 
 clean:
-	rm -rf bins ./a.out *.tc *.s
+	rm -rf bins ./a.out *.tc *.s tcs

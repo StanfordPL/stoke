@@ -85,113 +85,7 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
 }
 
 
-bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, CpuState& cs) {
 
-  // We can get a list of concrete addresses accessed, and need to split these
-  // addresses into heap/stack.  My goal is to just optimize the size of each
-  // of the heap and the stack; the algorithm is to just sort the addresses and
-  // try every possible place to split them.  This is O(n^2) where n is the
-  // number of addresses.  The sorting O(n*log n) is dominated by the loop
-  // where we check the goodness of each split; calculating the goodness costs
-  // O(n) and we need to do this O(n) times.
-
-  cs.stack.resize(0x700000000, 0);
-  cs.heap.resize(0x100000000, 0);
-  cs.data.resize(0x000000000, 0);
-
-  if (concrete.size() == 0) {
-    // no memory
-    return true;
-  }
-
-  vector<pair<uint64_t, BitVector>> concrete_vector;
-  concrete_vector.insert(concrete_vector.begin(), concrete.begin(), concrete.end());
-
-  auto compare = [] (const pair<uint64_t, BitVector>& p1, const pair<uint64_t, BitVector>& p2) {
-    if (p1.first == p2.first)
-      return p1.second.num_fixed_bytes() < p2.second.num_fixed_bytes();
-    return p1.first < p2.first;
-  };
-  sort(concrete_vector.begin(), concrete_vector.end(), compare);
-
-  vector<Memory> segments;
-
-  // Create memory segments as needed so that there's no 16-byte invalid gap.
-  Memory* last_segment = NULL;
-  uint64_t max_addr = 0;
-
-  // Build the first segment
-  Memory first_segment;
-  uint64_t first_address = concrete_vector[0].first;
-  size_t size = concrete_vector[0].second.num_fixed_bytes();
-
-  first_segment.resize(first_address, size);
-  for (size_t i = 0; i < size; ++i) {
-    first_segment.set_valid(first_address + i, true);
-    first_segment[first_address + i] = concrete_vector[0].second.get_fixed_byte(i);
-  }
-
-  max_addr = first_address + size;
-  segments.push_back(first_segment);
-  last_segment = &segments[0];
-
-  // Build remaining segments
-  for (size_t i = 1; i < concrete_vector.size(); ++i) {
-    auto pair = concrete_vector[i];
-    uint64_t address = pair.first;
-    size_t size = pair.second.num_fixed_bytes();
-
-    // Three cases:
-    // Case 1: address + size < max_addr, and neither has overflowed
-    // (do nothing)
-    // Case 2: address - max_addr < 32
-    // (expand existing region)
-    // Case 3: address - max_addr >= 32
-    // (create new region)
-    if (!(address < max_addr && address + size <= max_addr)) {
-      if (address - max_addr < 32) {
-        uint64_t new_size = address + size - last_segment->lower_bound();
-        last_segment->resize(last_segment->lower_bound(), new_size);
-      } else {
-        Memory m;
-        m.resize(address, size);
-        segments.push_back(m);
-        last_segment = &segments[segments.size()-1];
-      }
-    }
-
-    for (size_t i = 0; i < size; ++i) {
-      last_segment->set_valid(address + i, true);
-      (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
-    }
-    max_addr = address+size;
-  }
-
-  // If there's no segment corresponding to the stack, create one.
-  switch (segments.size()) {
-  case 3:
-    cs.data = segments[2];
-  case 2:
-    cs.stack = segments[1];
-  case 1:
-    cs.heap = segments[0];
-  default:
-    break;
-  }
-
-  for (size_t i = 3; i < segments.size(); ++i) {
-    cs.segments.push_back(segments[i]);
-  }
-
-  DEBUG_MAP_TC(
-    cout << "Filling up memory using this map..." << endl;
-  for (auto p : concrete) {
-  cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
-  }
-  cout << "Here's the testcase: " << endl << cs << endl;)
-
-  return true;
-}
 
 CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) {
   CpuState cs;
@@ -283,6 +177,16 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
     }
   }
 
-  return Cfg(new_code, cfg.def_ins(), cfg.live_outs());
+  auto& old_fxn = cfg.get_function();
+  TUnit new_fxn(new_code, old_fxn.get_file_offset(), old_fxn.get_rip_offset(), 0);
+
+  return Cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
 
 }
+
+
+
+
+
+
+

@@ -355,11 +355,31 @@ void TransformPools::recompute_pools() {
   raw_memonic_pool_.resize(X64ASM_NUM_OPCODES);
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     if (opcode_weights_[i]) {
-      string text = opcode_write_att((Opcode)i);
+      auto opcode = (Opcode)i;
+      string text = opcode_write_att(opcode);
       text = text.substr(0, text.size()-1);
 
       auto vector = str_to_opcode[text];
-      raw_memonic_pool_[(Opcode)i] = vector;
+      std::vector<Opcode> res;
+      for (auto& opc2 : vector) {
+        // check that opcodes are compatible
+        if (arity(opc2) != arity(opcode)) goto no;
+        if (opc2 == opcode) goto no;
+        for (size_t i = 0, ie = arity(opcode); i < ie; ++i) {
+          auto t1 = type(opcode, i);
+          auto t2 = type(opc2, i);
+          if (is_type_gp_register(t1) != is_type_gp_register(t2)) goto no;
+          if (is_type_mm_register(t1) != is_type_mm_register(t2)) goto no;
+          if (is_type_sse_register(t1) != is_type_sse_register(t2)) goto no;
+          if (is_type_typical_memory(t1) != is_type_typical_memory(t2)) goto no;
+          if (is_type_immediate(t1) != is_type_immediate(t2)) goto no;
+        }
+
+        res.push_back(opc2);
+no:
+        ;
+      }
+      raw_memonic_pool_[opcode] = res;
     }
   }
 

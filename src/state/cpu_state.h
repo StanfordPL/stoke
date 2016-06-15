@@ -63,10 +63,6 @@ struct CpuState {
     return !(*this == rhs);
   }
 
-  // TODO: we can improve the performance of these functions by implementing
-  // specialized versions of operator[] for specific register types, rather
-  // than always calling the generic method and looking up the type.  Not that
-  // we care.  -- Berkeley
   /** Access to a general purpose register. */
   uint64_t operator[](const x64asm::R& reg) const {
     size_t start = 0;
@@ -158,6 +154,20 @@ struct CpuState {
   /** Access a YMM register */
   cpputil::BitVector operator[](const x64asm::Ymm& ymm) const {
     return sse[ymm];
+  }
+
+  /** Access an arbitrary operand. */
+  cpputil::BitVector operator[](const x64asm::Operand& operand) const {
+    if (operand.is_typical_memory()) {
+      return (*this)[static_cast<const x64asm::Mem&>(operand)];
+    } else if (operand.is_sse_register()) {
+      return (*this)[static_cast<const x64asm::Sse&>(operand)];
+    } else if (operand.is_gp_register()) {
+      return this->gp[static_cast<const x64asm::R&>(operand)];
+    }
+    assert(false);
+    cpputil::BitVector zero(64);
+    return zero;
   }
 
 
@@ -272,6 +282,9 @@ struct CpuState {
   Memory data;
   /** Other memory segments */
   std::vector<Memory> segments;
+
+  /** Set memory from a map.  Returns true on success. */
+  bool memory_from_map(std::unordered_map<uint64_t, cpputil::BitVector>& map);
 
   /** Get the memory address corresponding to a memory operand */
   uint64_t get_addr(x64asm::Mem ref) const;

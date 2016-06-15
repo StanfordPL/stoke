@@ -44,8 +44,10 @@ public:
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    //flag_check();
-    sandbox_check();
+    if (!live_dangerously_arg.value()) {
+      flag_check();
+      sandbox_check();
+    }
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
 
@@ -53,19 +55,21 @@ public:
     // @todo At some point, all functions should have summaries for everything else
     summarize_functions(aux_fxns);
 
-    // Check Cfg invariants
-    // These warnings need to be emitted to the user because the Cfg class isn't guaranteed
-    // to catch them during construction
-    if (!invariant_no_undef_reads()) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
-    } else if (!invariant_no_undef_live_outs() && !is_init_zero) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
-    }
+    if (!live_dangerously_arg.value()) {
+      // Check Cfg invariants
+      // These warnings need to be emitted to the user because the Cfg class isn't guaranteed
+      // to catch them during construction
+      if (!invariant_no_undef_reads()) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
+      } else if (!invariant_no_undef_live_outs() && !is_init_zero) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
+      }
 
-    // Control shouldn't ever reach here given the checks above.
-    // This is a major bug and should be reported by the user
-    if (!check_invariants() && !is_init_zero) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
+      // Control shouldn't ever reach here given the checks above.
+      // This is a major bug and should be reported by the user
+      if (!check_invariants() && !is_init_zero) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
+      }
     }
   }
 
@@ -105,35 +109,7 @@ private:
       return live_out_arg.value();
     }
 
-    // Solve for defined out values
-    Cfg temp(target_arg.value());
-    const auto dos = temp.def_outs();
-
-    // If no general purpose registers were written we can guess xmm live out
-    if (!dos.contains(x64asm::rax) && !dos.contains(x64asm::rdx)) {
-      auto res = x64asm::RegSet::empty();
-      if (dos.contains(x64asm::xmm0)) {
-        res += x64asm::xmm0;
-      }
-      if (dos.contains(x64asm::xmm1)) {
-        res += x64asm::xmm1;
-      }
-      return res;
-    }
-
-    // If no xmms were written we can guess general purpose live outs
-    if (!dos.contains(x64asm::xmm0) && !dos.contains(x64asm::xmm1)) {
-      auto res = x64asm::RegSet::empty();
-      if (dos.contains(x64asm::rax)) {
-        res += x64asm::rax;
-      }
-      if (dos.contains(x64asm::rdx)) {
-        res += x64asm::rdx;
-      }
-      return res;
-    }
-
-    return x64asm::RegSet::linux_call_return();
+    return x64asm::RegSet::linux_call_return() | x64asm::RegSet::linux_call_preserved();
   }
 
   /** Checks for unsupported cpu flags */

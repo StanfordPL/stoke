@@ -68,6 +68,10 @@ protected:
 
       ti = transform(*cfg_);
       if (ti.success) {
+        // testing every iteration is too expensive, so let's do it probabilistically
+        if (rand() % 50 == 0) {
+          check_print_parse();
+        }
         success++;
         ASSERT_TRUE(check_cfg());
         transform.undo(*cfg_, ti);
@@ -78,6 +82,17 @@ protected:
       ASSERT_EQ(original, cfg_->get_code()) <<
                                             "and the seed was: " << seed_ << std::endl;
     }
+  }
+
+  void check_print_parse() {
+    stringstream ss;
+    ss << cfg_->get_function();
+    EXPECT_FALSE(cpputil::failed(ss)) << "failed to print the code: " << cpputil::fail_msg(ss);
+    TUnit t;
+    istringstream iss(ss.str());
+    iss >> t;
+    EXPECT_FALSE(cpputil::failed(iss)) << "failed to parse the code: " << cpputil::fail_msg(iss);
+    EXPECT_TRUE(t.check_invariants()) << "invariants don't hold for " << t;
   }
 
   bool check_cfg() {
@@ -307,7 +322,6 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   functions.push_back(&correctness);
 
   stoke::LatencyCost latency;
-  latency.set_nesting_penalty(7);
   functions.push_back(&latency);
 
   stoke::SizeCost size;

@@ -77,7 +77,7 @@ using namespace x64asm;
 #include "tests/integration/integration.h"
 #include "tests/validator/bounded_long.h"
 #include "tests/validator/ddec.h"
-#include "tests/validator/ddec_long.h"
+//#include "tests/validator/ddec_long.h"
 #include "tests/validator/ddec_nacl.h"
 #include "tests/validator/handlers.h"
 #include "tests/validator/memory.h"

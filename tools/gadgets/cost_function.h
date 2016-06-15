@@ -36,7 +36,7 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), correctness_(NULL), fxn_(build_fxn(target, sb, &correctness_)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) : CostFunction(), correctness_(NULL), fxn_(build_fxn(target, test_sb, perf_sb, &correctness_)) {
   }
 
   // This is a hack for Berkeley's NaCl experiments to get a handle on the correctness function directly.
@@ -59,19 +59,21 @@ private:
 
   CostFunction* fxn_;
 
-  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb, CorrectnessCost** correctness_ptr) {
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, 
+                                 CorrectnessCost** correctness_ptr) {
 
-    *correctness_ptr = new CorrectnessCostGadget(target, sb);
+    *correctness_ptr = new CorrectnessCostGadget(target, test_sb);
 
     CostParser::SymbolTable st;
     st["correctness"] =  *correctness_ptr;
     st["binsize"] =      new BinSizeCost();
+    st["correctness"] =  new CorrectnessCostGadget(target, test_sb);
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["nacl"] =         new NaClCost();
     st["nacl2"] =        new NaCl2CostGadget<false>();
     st["nacl2debug"] =   new NaCl2CostGadget<true>();
-    st["preserveflow"] = new PreserveControlCostGadget(target, sb);
+    st["preserveflow"] = new PreserveControlCostGadget(target, test_sb);
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target);
@@ -97,7 +99,8 @@ private:
     }
 
     (*cost_fxn).set_correctness(correctness_fxn)
-    .setup_sandbox(sb);
+    .setup_test_sandbox(test_sb)
+    .setup_perf_sandbox(perf_sb);
     return cost_fxn;
   }
 

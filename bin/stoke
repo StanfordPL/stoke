@@ -26,15 +26,16 @@ then
 	echo ""
 	echo "  extract             extract the contents of a binary file"
 	echo "  replace             replace the contents of a binary file"
-	echo "  search              run STOKE search"
+	echo "  synthesize          run STOKE search in synthesis mode"
+	echo "  optimize            run STOKE search in optimization mode"
 	echo "  testcase            generate a STOKE testcase file"
 	echo "  stategen            use bounded validator to make testcases"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
-	echo "  debug circuit       show the SMT formula (circuit) for a straight-line piece of code"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
 	echo "  debug diff          diff the resulting state of two functions"
 	echo "  debug effect        show the effect of a function on the state"
+	echo "  debug formula       show the SMT formula for a straight-line piece of code"
 	echo "  debug sandbox       step through a function execution"
 	echo "  debug search        perform a program transformation"
 	echo "  debug simplify      take an x86 program and simplify it (by removing redundant instructions)"
@@ -56,9 +57,9 @@ then
 	if [ "$SCMD" == "cfg" ]
 	then
 		exec $HERE/stoke_debug_cfg "$@"
-	elif [ "$SCMD" == "circuit" ]
+	elif [ "$SCMD" == "formula" ]
 	then
-		exec $HERE/stoke_debug_circuit "$@"
+		exec $HERE/stoke_debug_formula "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
 		exec $HERE/stoke_debug_cost "$@"
@@ -130,6 +131,12 @@ then
 elif [ "$SCMD" == "stategen" ]
 then
 	exec $HERE/stoke_stategen "$@"
+elif [ "$SCMD" == "synthesize" ]
+then
+	exec $HERE/stoke_search --init zero "$@"
+elif [ "$SCMD" == "optimize" ]
+then
+	exec $HERE/stoke_search --init target "$@"
 elif [ "$SCMD" == "testcase" ]
 then
 	exec $HERE/stoke_testcase "$@"

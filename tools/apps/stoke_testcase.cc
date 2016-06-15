@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/console.h"
@@ -64,7 +65,7 @@ auto& max_tc = ValueArg<size_t>::create("max_testcases")
 auto& trace_opt = Heading::create("Trace options:");
 auto& fxn = ValueArg<string>::create("fxn")
             .usage("<string>")
-            .description("Function to generate testcases for")
+            .description("Function(s) to generate testcases for, space-delimited")
             .default_val("main");
 auto& begin_line = ValueArg<size_t>::create("begin_line")
                    .usage("<int>")
@@ -78,6 +79,17 @@ auto& max_stack = ValueArg<uint64_t>::create("max_stack")
                   .usage("<bytes>")
                   .description("The maximum number of bytes to assume could be stack")
                   .default_val(1024);
+
+auto& output_dir = ValueArg<string>::create("output_dir")
+                   .usage("<dir>")
+                   .description("Place separate testcase file for each function in this directory.")
+                   .default_val("");
+
+auto& function_list = ValueArg<string>::create("function_list")
+                      .usage("<string>")
+                      .description("List of functions we wish to trace, in addition to --fxn")
+                      .default_val("");
+
 
 auto& autogen_opt = Heading::create("Autogen options:");
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
@@ -266,39 +278,71 @@ int auto_gen() {
   return 0;
 }
 
-int trace(const string& argv0) {
-  string here = argv0;
+std::string readlink_str(const std::string& s) {
+  constexpr ssize_t BUF_SIZE = 1024;
+  char buf[BUF_SIZE];
+  ssize_t ret = readlink(s.c_str(), buf, BUF_SIZE);
+  if (0 < ret && ret < BUF_SIZE)
+    return std::string(buf, buf+ret);
+  else
+    return "";
+}
+
+int trace() {
+  string here = readlink_str("/proc/self/exe");
   here = here.substr(0, here.find_last_of("/") + 1);
 
+  /** If an output file was given, delete its contents.  The new pintool only
+   * ever appends.  This is to ensure backward-compatibility. */
+  if (out.has_been_provided()) {
+    unlink(out.value().c_str());
+  }
+
+  /** If there's an output dir, parse the function names.  Existing files should be deleted. */
+  if (output_dir.has_been_provided()) {
+    mkdir(output_dir.value().c_str(), 0755);
+
+    istringstream iss(fxn.value());
+    vector<string> functions;
+    string temp;
+    while (iss >> temp) {
+      functions.push_back(temp);
+    }
+    if (function_list.has_been_provided()) {
+      ifstream ifs(function_list.value());
+      while (ifs >> temp) {
+        functions.push_back(temp);
+      }
+    }
+    for (auto name : functions) {
+      stringstream ss;
+      ss << output_dir.value() << "/" << name;
+      unlink(ss.str().c_str());
+    }
+  }
+
+  /** Build arguments to run the pintool. */
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
 
-  stringstream command;
-  command << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
-
-  command << "-f " << fxn.value() << " ";
-  if (out.has_been_provided()) {
-    command << "-o " << out.value() << " ";
-  }
-  command << "-x " << max_stack.value() << " ";
-  command << "-n " << max_tc.value() << " ";
-  command << "-b " << begin_line.value() << " ";
-  command << "-e \" ";
-  for (auto e : end_lines.value()) {
-    command << e << " ";
-  }
-  command << "\" ";
-
-  command << " -- " << bin.value() << " " << args.value() << endl;
-
-
-  Console::msg() << "Running: " << command.str() << endl;
-
   Terminal term;
-  term << command.str();
+  term << pin_path << "pin -follow_execv -injection child -t " << so_path << "testcase.so ";
 
-  // Don't return term.result() because it computes it mod 256 in the shell,
-  // and this sometimes hides errors from pin -- Berkeley
+  term << "-f \"" << fxn.value() << "\" ";
+  if (out.has_been_provided()) {
+    term << "-o \"" << out.value() << "\" ";
+  }
+  term << "-x \"" << max_stack.value() << "\" ";
+  term << "-n \"" << max_tc.value() << "\" ";
+  term << "-b \"" << begin_line.value() << "\" ";
+  if (function_list.has_been_provided())
+    term << "-l \"" << function_list.value() << "\" ";
+  if (output_dir.has_been_provided())
+    term << "-d \"" << output_dir.value() << "\" ";
+  term << "-e \" ";
+
+  /* Don't return term.result() because it computes it mod 256 in the shell,
+   * and this sometimes hides errors from pin */
   if (term.result() != 0) {
     Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
   }
@@ -365,7 +409,6 @@ int main(int argc, char** argv) {
   } else if (target_arg.has_been_provided()) {
     return auto_gen();
   } else {
-    return trace(argv[0]);
+    return trace();
   }
 }
-

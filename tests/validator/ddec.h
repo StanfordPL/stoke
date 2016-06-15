@@ -362,7 +362,7 @@ TEST_F(DdecValidatorBaseTest, MemoryOverlapBad) {
 
 TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rcx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -388,6 +388,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
+  sandbox->reset();
   for (size_t i = 0; i < 4; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
@@ -396,8 +397,152 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
   }
 
   validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  validator->set_sandbox(sandbox);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(DdecValidatorBaseTest, XmmEquiv) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rsp;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::xmm1;
+
+  std::stringstream sst;
+  sst << ".bar:" << std::endl;
+  sst << "movq $0x30, (%rsp)" << std::endl;
+  sst << "movq $0x50, 0x8(%rsp)" << std::endl;
+  sst << "movq $0x70, 0x10(%rsp)" << std::endl;
+  sst << "movq $0x90, 0x18(%rsp)" << std::endl;
+  sst << "movups (%rsp), %xmm1" << std::endl;
+  sst << ".foo:" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "cmpl $0x10, %eax" << std::endl;
+  sst << "jne .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".bar:" << std::endl;
+  ssr << "movq $0x30, (%rsp)" << std::endl;
+  ssr << "movq $0x50, 0x8(%rsp)" << std::endl;
+  ssr << "movq $0x70, 0x10(%rsp)" << std::endl;
+  ssr << "movq $0x90, 0x18(%rsp)" << std::endl;
+  ssr << "movups (%rsp), %xmm1" << std::endl;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "cmpl $0x10, %eax" << std::endl;
+  ssr << "jne .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rax, 0x10);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  sandbox->reset();
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  solver->set_timeout(1000);
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  validator->set_sandbox(sandbox);
+  EXPECT_TRUE(validator->verify(target, rewrite) || validator->has_error());
+
+}
+
+TEST_F(DdecValidatorBaseTest, XmmEquiv2) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rsp + x64asm::xmm1 + x64asm::xmm0;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::xmm0 + x64asm::xmm1;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "shufps $0x2f, %xmm0, %xmm1" << std::endl;
+  sst << "cmpl $0x20, %eax" << std::endl;
+  sst << "jne .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  ssr << "shufps $0x2f, %xmm0, %xmm1" << std::endl;
+  ssr << "cmpl $0x20, %eax" << std::endl;
+  ssr << "jne .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rax, 0x0c);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  sandbox->reset();
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  solver->set_timeout(1000);
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  validator->set_sandbox(sandbox);
+  EXPECT_TRUE(validator->verify(target, rewrite) || validator->has_error());
+
+}
+
+TEST_F(DdecValidatorBaseTest, YmmEquiv) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rsp + x64asm::ymm1 + x64asm::ymm0;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::ymm0 + x64asm::ymm1;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "shufps $0xd5, %xmm0, %xmm1" << std::endl;
+  sst << "cmpl $0x20, %eax" << std::endl;
+  sst << "jne .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  ssr << "shufps $0xd5, %xmm0, %xmm1" << std::endl;
+  ssr << "cmpl $0x20, %eax" << std::endl;
+  ssr << "jne .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rax, 0x0c);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  sandbox->reset();
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  solver->set_timeout(1000);
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  validator->set_sandbox(sandbox);
+  EXPECT_TRUE(validator->verify(target, rewrite) || validator->has_error());
+
 }
 
 TEST_F(DdecValidatorBaseTest, LoopMemoryWrong) {
@@ -434,6 +579,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -476,7 +622,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong2) {
   }
 
 
-
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -597,6 +743,7 @@ TEST_F(DdecValidatorBaseTest, Wcslen2ExitsFail1) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -732,6 +879,7 @@ TEST_F(DdecValidatorBaseTest, DISABLED_StrlenCorrect) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -820,7 +968,7 @@ TEST_F(DdecValidatorBaseTest, DISABLED_WcslenCorrect2) {
 
 }
 
-TEST_F(DdecValidatorBaseTest, WcslenWrong1) {
+TEST_F(DdecValidatorBaseTest, DISABLED_WcslenWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -873,6 +1021,33 @@ TEST_F(DdecValidatorBaseTest, WcslenWrong1) {
   ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  sandbox->reset();
+
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    StateGen sg(sandbox);
+    sg.get(tc);
+    uint64_t address = tc[r15] + (uint64_t)tc[eax];
+    if (address >= 0xffffffffffffff00)
+      continue;
+    tc.heap.resize(address & 0xffffffffffffff00, 512);
+    size_t len = i;
+    for (size_t j = 0; j < len; ++j) {
+      tc.heap.set_valid(address + j, true);
+      tc.heap[address + j] = (rand() % 256);
+    }
+    tc.heap.set_valid(address + len, true);
+    tc.heap[address+len] = '\0';
+    sandbox->insert_input(tc);
+
+    if (len > 2) {
+      tc.heap[address + 2] = 0x1;
+      sandbox->insert_input(tc);
+    }
+  }
+
+  validator->set_sandbox(sandbox);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();

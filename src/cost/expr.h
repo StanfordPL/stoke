@@ -58,7 +58,9 @@ public:
     reset();
 
     if (a1_ && a2_) // if there's a parse error, one could be null
-      need_sandbox_ = a1->need_sandbox() || a2->need_sandbox();
+      need_test_sandbox_ = a1->need_test_sandbox() || a2->need_test_sandbox();
+    if (a1_ && a2_) // if there's a parse error, one could be null
+      need_perf_sandbox_ = a1->need_perf_sandbox() || a2->need_perf_sandbox();
   }
   /** Constructs a reference to a "leaf" cost function.
       (i.e. one that does real work) */
@@ -67,8 +69,10 @@ public:
     reset();
 
     if (a1_) { //could be null if there's a parse error
-      a1->set_run_sandbox(false);
-      need_sandbox_ = a1->need_sandbox();
+      a1->set_run_test_sandbox(false);
+      need_test_sandbox_ = a1->need_test_sandbox();
+      a1->set_run_perf_sandbox(false);
+      need_perf_sandbox_ = a1->need_perf_sandbox();
     }
   }
   /** Constructs a constant operation */
@@ -86,25 +90,31 @@ public:
   }
 
   /** Figure out if we need to do any cost function setup. */
-  bool need_sandbox() {
-    return need_sandbox_;
+  bool need_test_sandbox() {
+    return need_test_sandbox_;
+  }
+  bool need_perf_sandbox() {
+    return need_perf_sandbox_;
   }
 
   /** Do any necessary cost function setup. */
-  ExprCost& setup_sandbox(Sandbox* sb);
+  ExprCost& setup_test_sandbox(Sandbox* sb);
+  ExprCost& setup_perf_sandbox(Sandbox* sb);
 
 private:
   /** Called by all constructors. */
   void reset() {
     correctness_ = NULL;
-    need_sandbox_ = false;
+    need_test_sandbox_ = false;
+    need_perf_sandbox_ = false;
   }
 
   /** Compute the cost associated with this node. */
   Cost run(const std::map<CostFunction*, Cost>& environment) const;
 
   /** Do we need a sandbox? */
-  bool need_sandbox_;
+  bool need_test_sandbox_;
+  bool need_perf_sandbox_;
 
   // Get the cached list of leaf functions
   std::set<CostFunction*> leaves_;

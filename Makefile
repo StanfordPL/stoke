@@ -23,12 +23,29 @@ ifndef COMPILERBINARY
 endif
 
 ifndef STOKE_PLATFORM
-$(error STOKE_PLATFORM is not set.  Did you run ./configure?)
+$(error STOKE_PLATFORM is not set.  Did you run ./configure.sh?)
 endif
 
 # Set the number of threads used for compiling
 ifndef NTHREADS
 	NTHREADS=8
+endif
+
+# Decide on optimization flags
+ifndef BUILD_TYPE
+$(error BUILD_TYPE is not set. Did you run ./configure.sh?)
+endif
+ifeq ($(BUILD_TYPE), release)
+	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
+endif
+ifeq ($(BUILD_TYPE), debug)
+	OPT=-O2 -g $(MISC_OPTIONS)
+endif
+ifeq ($(BUILD_TYPE), profile)
+	OPT=-O3 -DNDEBUG -pg $(MISC_OPTIONS)
+endif
+ifndef OPT
+$(error Invalid BUILD_TYPE '${BUILD_TYPE}' given)
 endif
 
 # Set platform-specific compiler options to use
@@ -43,16 +60,14 @@ ifndef ARCH_OPT
 		ARCH_OPT=-march=corei7 -DNEHALEM_BUILD
 	endif
 endif
+ifndef ARCH_OPT
+$(error Invalid STOKE_PLATFORM '${STOKE_PLATFORM}' given.)
+endif
 ifndef EXT_OPT
 	EXT_OPT=release
 endif
 ifndef EXT_TARGET
 	EXT_TARGET=$(ARCH_OPT)
-endif
-
-# Set default options for building a binary, like /bin/stoke_search
-ifndef OPT
-	OPT=-O3 -DNDEBUG
 endif
 
 #CXX_FLAGS are any extra flags the user might want to pass to the compiler
@@ -74,12 +89,15 @@ DEPS=\
 	src/ext/x64asm/lib/libx64asm.a
 
 LIB=\
-	src/ext/x64asm/lib/libx64asm.a\
-	-pthread\
+	src/ext/x64asm/lib/libx64asm.a \
+	-pthread \
+	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread \
 	-lcln \
 	-liml -lgmp \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
+
+LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
 
 SRC_OBJ=\
 	src/cfg/cfg.o \
@@ -155,6 +173,7 @@ SRC_OBJ=\
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/validator.o \
+	src/validator/strata_support.o \
 	\
 	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
@@ -165,6 +184,9 @@ SRC_OBJ=\
 	src/validator/handlers/punpck_handler.o \
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
+	src/validator/handlers/strata_combo_handler.o \
+	src/validator/handlers/strata_handler.o \
+	src/validator/handlers/pseudo_handler.o \
 	\
 	src/verifier/hold_out.o
 
@@ -206,9 +228,10 @@ BIN=\
 	bin/stoke_search \
 	bin/stoke_stategen \
 	bin/stoke_testcase \
+	bin/stoke_tcgen \
 	\
 	bin/stoke_debug_cfg \
-	bin/stoke_debug_circuit \
+	bin/stoke_debug_formula \
 	bin/stoke_debug_cost \
 	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
@@ -243,28 +266,28 @@ BIN=\
 all: release hooks
 
 release:
-	$(MAKE) -C . external EXT_OPT="release" 
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG"
+	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="release"
 	echo -e "\a"
 debug:
 	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="debug"
 	echo -e "\a"
 profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="profile"
 	echo -e "\a"
 tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug"
 	echo -e "\a"
 test: tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	bin/stoke_test
 	echo -e "\a"
 fast_tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug" MISC_OPTIONS="-DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
+	bin/stoke_test
 	echo -e "\a"
 fast: fast_tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 	echo -e "\a"
 
 ##### CTAGS TARGETS
@@ -283,7 +306,7 @@ depend:
 	for F in $(OBJS:.o=.cc); do \
 		D=`dirname $$F | sed "s/^\.\///"`; \
 		echo -n "$$D/" >> ./.depend; \
-		$(CXX) $(TARGET) $(OPT) $(INC) -MM -MG $$F >> ./.depend; \
+		$(CXX) $(TARGET) $(INC) -MM -MG $$F >> ./.depend; \
 	done
 	# for the binaries, the path is wrong (because we don't generate an object
 	# file, and instead generate the binary in 'bin').  use sed to correct this.
@@ -378,7 +401,7 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 ##### BINARY TARGETS
 
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 ##### TESTING
 
@@ -398,10 +421,10 @@ tests/validator/handlers.h: .FORCE
 	rm -f tests/validator/handlers-tmp
 
 tests/%.o: tests/%.cc tests/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
 
 ## MISC
 

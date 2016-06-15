@@ -119,7 +119,7 @@ void Cutpoints::compute() {
     */
   )
 
-  for(auto& option : cutpoint_options_) {
+  for (auto& option : cutpoint_options_) {
     auto& target_cuts = option.first;
     auto& rewrite_cuts = option.second;
     target_cuts.insert(target_cuts.begin(), target_.get_entry());
@@ -138,16 +138,22 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
+  vector<CutpointList> results;
+  size_t n = target_sccs.count();
+
   if (target_sccs.count() != rewrite_sccs.count()) {
     error_ = "DDEC only works when target/rewrite have the same number of SCCs/loops";
-    vector<CutpointList> empty;
-    return empty;
+    return results;
   }
 
-  size_t n = target_sccs.count();
+  if (n == 0) {
+    CutpointList empty;
+    results.push_back(empty);
+    return results;
+  }
+
   auto permutations = get_permutations(n);
 
-  vector<CutpointList> results;
 
   for (auto pi : permutations) {
     vector<CutpointList> working_set;
@@ -158,20 +164,21 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
     for (size_t j = 0; j < n; ++j) {
       // Working on SCC j of target
       // Working on SCC pi[j] of rewrite
-      cout << "Working on SCC pair " << j << " - " << pi[j] << endl;
+      DEBUG_CUTPOINTS(cout << "Working on SCC pair " << j << " - " << pi[j] << endl;)
       auto target_nodes = target_sccs.get_blocks(j);
       auto rewrite_nodes = rewrite_sccs.get_blocks(pi[j]);
 
-      cout << "  - target nodes: ";
+      DEBUG_CUTPOINTS(
+        cout << "  - target nodes: ";
       for (auto it : target_nodes) {
-        cout << "  " << it;
-      }
-      cout << endl;
-      cout << "  - rewrite nodes: ";
-      for (auto it : rewrite_nodes) {
-        cout << "  " << it;
-      }
-      cout << endl;
+      cout << "  " << it;
+    }
+    cout << endl;
+         cout << "  - rewrite nodes: ";
+    for (auto it : rewrite_nodes) {
+      cout << "  " << it;
+    }
+    cout << endl;);
 
       // Create a place to put new cutpoints into.
       vector<CutpointList> new_working_set;
@@ -284,7 +291,6 @@ void Cutpoints::callback(const StateCallbackData& data, void* arg) {
 
   args.trace->push_back(tp);
 }
-
 
 /** Take an execution trace and extract the cutpoints/data that have been visited. */
 vector<Cutpoints::TracePoint> Cutpoints::filter_cutpoints(vector<TracePoint>& trace, vector<Cfg::id_type>& basic_blocks) {

@@ -98,7 +98,7 @@ TEST_F(IntegrationTest, ExamplesTutorial) {
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for (size_t i = 0; i < 10; ++i) {
-    if (!shell("make search")) {
+    if (!shell("make synthesize")) {
       good++;
       break;
     }
@@ -245,7 +245,7 @@ TEST_F(IntegrationTest, SandboxRecursiveJmp) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
+#if !defined(NEHALEM_BUILD)
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
   set_path("../../../../bin");

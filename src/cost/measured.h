@@ -25,22 +25,25 @@ class MeasuredCost : public CostFunction {
 public:
 
   /** Yes, we need to use the sandbox */
-  bool need_sandbox() {
+  bool need_perf_sandbox() {
     return true;
   }
 
   /** And we need to set it up. */
-  MeasuredCost& setup_sandbox(Sandbox* sb) {
-    sandbox_ = sb;
-    sandbox_->insert_before(measured_callback, this);
+  MeasuredCost& setup_perf_sandbox(Sandbox* sb) {
+    perf_sandbox_ = sb;
+    perf_sandbox_->insert_before(measured_callback, this);
     return *this;
   }
 
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
-    size_t tc_count = sandbox_->size();
+    run_perf_sandbox(cfg);
 
+    uint64_t res = latency_;
+    size_t tc_count = perf_sandbox_->size();
+    latency_ = 0;
     if (tc_count == 0) {
       LatencyCost lc;
       return lc(cfg, max);

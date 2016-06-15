@@ -57,6 +57,8 @@ public:
         cell_unconstrained_[access.cell] = access.unconstrained;
       }
     }
+
+    secret_cell_ = SymBitVector::tmp_var(32);
   }
 
   /** Retrieve the map of line -> (cell#, size) */
@@ -102,6 +104,11 @@ private:
 
   /** Map from cell -> starting address. */
   std::map<size_t, SymBitVector> cell_addrs_;
+
+  /** The "secret cell" representing a memory location not explicitly in the
+   * map.  This is explained in more detail in cell.cc in the implementation of
+   * equality_constraint. */
+  SymBitVector secret_cell_;
 
 };
 

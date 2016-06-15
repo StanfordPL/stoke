@@ -30,7 +30,12 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
+
+#ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
+#else
+#define CEG_DEBUG(X) { }
+#endif
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -70,7 +75,11 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
   auto str = symvar->name_;
 
-  auto mem_map = solver_.get_model_array(str, 64, 8);
+  auto orig_map = solver_.get_model_array(str, 64, 8);
+  unordered_map<uint64_t, BitVector> mem_map;
+  for (auto pair : orig_map) {
+    mem_map[pair.first] = pair.second;
+  }
 
   for (auto p : others) {
     auto abs_var = p.first;
@@ -99,11 +108,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
   }
   );
 
-  if (Validator::memory_map_to_testcase(mem_map, ceg))
-    return true;
-
-  return false;
-
+  return ceg.memory_from_map(mem_map);
 
 }
 
@@ -114,7 +119,7 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
     return false;
   }
 
-  std::map<uint64_t, BitVector> addr_value_pairs;
+  std::unordered_map<uint64_t, BitVector> addr_value_pairs;
 
   // Allocate a tiny bit of stack memory
   auto rsp_val = ceg[rsp];
@@ -165,10 +170,8 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
     cout << endl;
   }
   );
-  if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))
-    return true;
 
-  return false;
+  return ceg.memory_from_map(addr_value_pairs);
 }
 
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
@@ -176,7 +179,9 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
-  auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
+  LineMap line_map;
+
+  auto new_cfg = rewrite_cfg_with_path(cfg, P, line_map);
   auto new_f = new_cfg.get_function();
   new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
   new_f.push_back(x64asm::Instruction(x64asm::RET));
@@ -508,18 +513,14 @@ vector<vector<int>> ObligationChecker::compute_offset_vectors(size_t* cell_sizes
 
 vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
-  auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
-  auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+  map<size_t, LineInfo> target_line_map;
+  map<size_t, LineInfo> rewrite_line_map;
+
+  auto target_unroll = rewrite_cfg_with_path(target, P, target_line_map);
+  auto rewrite_unroll = rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
 
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
-
-  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
-    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
-    auto v = vector<pair<CellMemory*, CellMemory*>>();
-    v.push_back(null_pair);
-    return v;
-  }
 
 
   // Symbolically execute target/rewrite to get memory accesses
@@ -541,10 +542,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], JumpType::NONE, target_state, line_no);
+    build_circuit(target, P[i], JumpType::NONE, target_state, line_no, target_line_map);
   line_no = 0;
   for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no);
+    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no, rewrite_line_map);
 
   for (auto& it : target_state.constraints)
     constraints.push_back(it);
@@ -554,6 +555,21 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   // update the symbolic memory state with these further reads
   // however, we do not generate constraints based on them
   prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno);
+
+  if (target_concrete_accesses.size() == 0 &&
+      rewrite_concrete_accesses.size() == 0 &&
+      target_fake_lineno == 0 &&
+      rewrite_fake_lineno == 0) {
+    map<size_t, CellMemory::SymbolicAccess> empty_map;
+
+    auto left = new CellMemory(empty_map);
+    auto right = new CellMemory(empty_map);
+
+    auto empty_pair = pair<CellMemory*, CellMemory*>(left, right);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(empty_pair);
+    return v;
+  }
 
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {
@@ -757,8 +773,11 @@ for (size_t i = 0; i < total_accesses; ++i) {
   if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
     ALIAS_STRING_DEBUG(cout << "Alias Strategy STRING" << std::endl;)
 
-    auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
-    auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+    LineMap target_line_map;
+    LineMap rewrite_line_map;
+
+    auto target_unroll = rewrite_cfg_with_path(target, P, target_line_map);
+    auto rewrite_unroll = rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
 
     // We'll use the helper to compute all overlaps of the mega-cells we found.
     // Typically, you give it a list of SymbolicAccesses, one per memory
@@ -936,7 +955,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
 
 
 void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
-                                      SymState& state, size_t& line_no) {
+                                      SymState& state, size_t& line_no, const LineMap& line_map) {
 
   if (cfg.num_instrs(bb) == 0)
     return;
@@ -945,6 +964,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   size_t end_index = start_index + cfg.num_instrs(bb);
 
   for (size_t i = start_index; i < end_index; ++i) {
+    auto li = line_map.at(line_no);
     line_no++;
     auto instr = cfg.get_code()[i];
 
@@ -979,6 +999,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
     } else {
       // Build the handler for the instruction
       state.set_lineno(line_no-1);
+      state.rip = SymBitVector::constant(64, li.rip_offset);
 
       if (nacl_) {
         // We need to add constraints keeping the index register (if present)
@@ -995,13 +1016,13 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
       }
 
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
-      handler_.build_circuit(instr, state);
+      auto constraints = (*filter_)(instr, state);
+      for (auto constraint : constraints) {
+        state.constraints.push_back(constraint);
+      }
 
-      if (handler_.has_error()) {
-        stringstream ss;
-        ss << "Error building circuit for: " << instr << ".";
-        ss << "Handler says: " << handler_.error();
-        throw VALIDATOR_ERROR(ss.str());
+      if (filter_->has_error()) {
+        throw VALIDATOR_ERROR(filter_->error());
       }
     }
   }
@@ -1128,13 +1149,19 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
+    // Compute line maps
+    LineMap target_line_map;
+    rewrite_cfg_with_path(target, P, target_line_map);
+    LineMap rewrite_line_map;
+    rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
+
     // Build the circuits
     size_t line_no = 0;
     for (size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_map);
     line_no = 0;
     for (size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_map);
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));
@@ -1290,4 +1317,39 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
 }
 
+Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
+    map<size_t,LineInfo>& to_populate) {
+  Code code;
+  auto function = cfg.get_function();
 
+  for (auto node : p) {
+    if (cfg.num_instrs(node) == 0)
+      continue;
+
+    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
+    size_t end_index = start_index + cfg.num_instrs(node);
+    for (size_t i = start_index; i < end_index; ++i) {
+
+      LineInfo li;
+      li.label = function.get_leading_label();
+      li.line_number = i;
+      li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
+      to_populate[code.size()] = li;
+
+      if (cfg.get_code()[i].is_jump()) {
+        code.push_back(Instruction(NOP));
+      } else {
+        code.push_back(cfg.get_code()[i]);
+      }
+    }
+  }
+
+  TUnit new_fxn(code, 0, function.get_rip_offset(), 0);
+  Cfg new_cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
+
+  //cout << "path cfg for " << print(p) << " is " << endl;
+  //cout << TUnit(code) << endl;
+
+  return new_cfg;
+
+}
