@@ -107,12 +107,13 @@ def speedup_graph(folder)
 
     $benchmarks.each do |bench,data|
       opt = get_best(folder, "#{bench}-opt")
-      trn = get_best(folder, "#{bench}-trans")
-      max = [opt, trn, 1].max
+      #trn = get_best(folder, "#{bench}-trans")
+      #max = [opt, trn, 1].max
+      max = [opt, 1].max
       opts.push(opt)
-      trans.push(trn)
+      #trans.push(trn)
       maxes.push(max)
-      out.puts "#{bench} #{opt} #{trn} #{max}"
+      out.puts "#{bench} #{opt} #{max}"
     end
   end
 
@@ -213,9 +214,9 @@ def counts_graph(folder)
       out.puts "#{bench}-opt #{opt_bars[0]} #{opt_bars[1]} #{opt_bars[2]}" if not opt_bars.nil?
       total_verified_opt += opt_bars[0]
 
-      trans_bars = get_counts(folder, "#{bench}-trans")
-      out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
-      total_verified_trans += trans_bars[0]
+      #trans_bars = get_counts(folder, "#{bench}-trans")
+      #out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
+      #total_verified_trans += trans_bars[0]
     end
   end
 
@@ -245,6 +246,7 @@ def quartiles(arr)
   sorted = arr.sort
   size = sorted.length
 
+  return [] if size == 0
   return [sorted[0], sorted[0], sorted[0], sorted[0], sorted[0]] if size == 1
 
   median = (sorted[(size-1)/2] + sorted[size/2])/2
@@ -304,9 +306,9 @@ def ddec_times_graph(folder)
       out.puts "#{n} #{bench}-opt-pass #{opt_stats[0]} #{opt_stats[1]} #{opt_stats[2]} #{opt_stats[3]} #{opt_stats[4]}" if not opt_stats.nil?
       n = n + 2
 
-      trans_stats = get_ddec_stats(folder, "#{bench}-trans", :verified)
-      out.puts "#{n} #{bench}-trans-pass #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
-      n = n + 2
+      #trans_stats = get_ddec_stats(folder, "#{bench}-trans", :verified)
+      #out.puts "#{n} #{bench}-trans-pass #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
+      #n = n + 2
     end
   end
 
@@ -318,9 +320,9 @@ def ddec_times_graph(folder)
       out.puts "#{n} #{bench}-opt-fail #{opt_stats[0]} #{opt_stats[1]} #{opt_stats[2]} #{opt_stats[3]} #{opt_stats[4]}" if not opt_stats.nil?
       n = n + 2
 
-      trans_stats = get_ddec_stats(folder, "#{bench}-trans", :fail)
-      out.puts "#{n} #{bench}-trans-fail #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
-      n = n + 2
+      #trans_stats = get_ddec_stats(folder, "#{bench}-trans", :fail)
+      #out.puts "#{n} #{bench}-trans-fail #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
+      #n = n + 2
     end
   end
 
@@ -373,9 +375,9 @@ def bv_times_graph(folder)
       out.puts "#{n} #{bench}-opt-pass #{opt_stats[0]} #{opt_stats[1]} #{opt_stats[2]} #{opt_stats[3]} #{opt_stats[4]}" if not opt_stats.nil?
       n = n + 2
 
-      trans_stats = get_bv_stats(folder, "#{bench}-trans", :verified)
-      out.puts "#{n} #{bench}-trans-pass #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
-      n = n + 2
+      #trans_stats = get_bv_stats(folder, "#{bench}-trans", :verified)
+      #out.puts "#{n} #{bench}-trans-pass #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
+      #n = n + 2
     end
   end
 
@@ -387,9 +389,9 @@ def bv_times_graph(folder)
       out.puts "#{n} #{bench}-opt-fail #{opt_stats[0]} #{opt_stats[1]} #{opt_stats[2]} #{opt_stats[3]} #{opt_stats[4]}" if not opt_stats.nil?
       n = n + 2
 
-      trans_stats = get_bv_stats(folder, "#{bench}-trans", :fail)
-      out.puts "#{n} #{bench}-trans-fail #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
-      n = n + 2
+      #trans_stats = get_bv_stats(folder, "#{bench}-trans", :fail)
+      #out.puts "#{n} #{bench}-trans-fail #{trans_stats[0]} #{trans_stats[1]} #{trans_stats[2]} #{trans_stats[3]} #{trans_stats[4]}" if not trans_stats.nil?
+      #n = n + 2
     end
   end
 
@@ -441,7 +443,7 @@ def cost_perf_graph(folder)
 
   $benchmarks.each do |bench,data|
     cost_vs_perf(folder, "#{bench}-opt")
-    cost_vs_perf(folder, "#{bench}-trans")
+    #cost_vs_perf(folder, "#{bench}-trans")
   end
 
 end
