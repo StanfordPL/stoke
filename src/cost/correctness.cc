@@ -52,6 +52,8 @@ CorrectnessCost& CorrectnessCost::recompute_inputs() {
   for (auto i = test_sandbox_->result_begin(), ie = test_sandbox_->result_end(); i != ie; ++i) {
     reference_out_.push_back(*i);
   }
+  cout << "Test sandbox size: " << test_sandbox_->size() << endl;
+  cout << "Reference out size: " << reference_out_.size() << endl;
 
   return *this;
 }

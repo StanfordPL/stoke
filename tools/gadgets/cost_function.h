@@ -67,7 +67,6 @@ private:
     CostParser::SymbolTable st;
     st["correctness"] =  *correctness_ptr;
     st["binsize"] =      new BinSizeCost();
-    st["correctness"] =  new CorrectnessCostGadget(target, test_sb);
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["nacl"] =         new NaClCost();

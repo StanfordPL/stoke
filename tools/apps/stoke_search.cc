@@ -559,14 +559,17 @@ int main(int argc, char** argv) {
     function<bool (const string&)> f = [](const string& s) -> bool { return s == "i"; };
     auto parser = ExprParser<size_t>(part, f);
     if (parser.has_error()) {
-      Console::error() << "Error parsing cycle timeout expression '" << part << "': " << parser.get_error() << endl;
+      Console::error() << "Error parsing cycle timeout expression '" 
+                       << part << "': " << parser.get_error() << endl;
     }
     cycle_timeouts.push_back(parser.get());
   }
 
   if (strategy_arg.value() == "none" &&
       failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
-    Console::error() << "No verification is performed, thus no counterexample can be added (--failed_verification_action add_counterexample and --strategy none are not compatible)." << endl;
+    Console::error() << "No verification is performed, thus no counterexample " 
+                     << "can be added (--failed_verification_action add_counterexample and "
+                     << "--strategy none are not compatible)." << endl;
   }
 
   string final_msg;
@@ -574,28 +577,42 @@ int main(int argc, char** argv) {
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb, &perf_sb);
     pcb_arg.fxn = fxn.get_correctness_term();
+    cout << "Correctness term in callback: " << pcb_arg.fxn << endl;
 
     // determine iteration timeout
-    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
+    Expr<size_t>* timeout_expr = 
+        i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
     function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
     size_t cur_timeout = (*timeout_expr)(f2);
     size_t timeout_left = cur_timeout;
     if (timeout_iterations_arg.value()) {
       timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
     }
-    cout << "cur_timeout=" << cur_timeout << "  timeout_left=" << timeout_left << "  total_iterations=" << total_iterations << endl;
-    if (timeout_left > 4000000 || timeout_left == 0)
+
+    cout << "cur_timeout=" << cur_timeout 
+         << "  timeout_left=" << timeout_left 
+         << "  total_iterations=" << total_iterations << endl;
+
+    // NaCl HACK
+    if (timeout_left > 40000000 || timeout_left == 0)
       break;
     search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 
     Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
     // timeout in seconds
     if (timeout_seconds_arg.value() != 0) {
-      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
+
+      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + 
+                            duration<double>(timeout_seconds_arg.value());
+
       if (time_remaining <= steady_clock::duration::zero()) {
-        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
-        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+
+        show_final_update(search.get_statistics(), state, total_restarts, 
+                          total_iterations, start, search_elapsed, false, true);
+        Console::error(1) << 
+          "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
       }
+
       search.set_timeout_sec(time_remaining);
       Console::msg() << " / " << time_remaining.count() << " seconds";
     }

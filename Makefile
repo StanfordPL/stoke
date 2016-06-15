@@ -39,7 +39,7 @@ ifeq ($(BUILD_TYPE), release)
 	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
 endif
 ifeq ($(BUILD_TYPE), debug)
-	OPT=-O2 -g $(MISC_OPTIONS)
+	OPT=-O0 -g $(MISC_OPTIONS)
 endif
 ifeq ($(BUILD_TYPE), profile)
 	OPT=-O3 -DNDEBUG -pg $(MISC_OPTIONS)
