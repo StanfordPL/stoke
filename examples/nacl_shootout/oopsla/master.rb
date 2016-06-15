@@ -404,6 +404,7 @@ class VerificationJob < Job
       end
       config.puts(" --def_in \"#{data[:def_in]}\"")
       config.puts(" --live_out \"{ %rax }\"")
+      config.puts(" --live-dangerously")
       config.puts(" --testcases testcases")
       config.puts(" --test_set \"#{data[:test_set]}\"")
       config.puts(" --heap_out")

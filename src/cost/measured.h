@@ -41,7 +41,6 @@ public:
 
     run_perf_sandbox(cfg);
 
-    uint64_t res = latency_;
     size_t tc_count = perf_sandbox_->size();
     latency_ = 0;
     if (tc_count == 0) {
@@ -49,29 +48,27 @@ public:
       return lc(cfg, max);
     }
 
-    sandbox_->insert_function(cfg);
-    sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+    perf_sandbox_->insert_function(cfg);
+    perf_sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
 
-    uint64_t res = 0;
     uint64_t average_size = 0;
     latency_ = 0;
 
     for (size_t i = 0; i < tc_count; ++i) {
-      auto tc = *(sandbox_->get_input(i));
+      auto tc = *(perf_sandbox_->get_input(i));
       average_size += tc.heap.size();
     }
     average_size /= tc_count;
 
     for (size_t i = 0; i < tc_count; ++i) {
-      auto tc = *(sandbox_->get_input(i));
+      auto tc = *(perf_sandbox_->get_input(i));
       if (tc.heap.size() >= average_size) {
         nops_emitted_ = 0;
-        sandbox_->run(i);
+        perf_sandbox_->run(i);
       }
     }
 
-    res = latency_;
-    return result_type(true, res/tc_count);
+    return result_type(true, latency_/tc_count);
   }
 
   /** Add to the measured latency */

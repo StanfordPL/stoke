@@ -180,13 +180,10 @@ TEST_F(DdecNaclLongTest, DISABLED_wcscpyOptimize) {
   benchmark("wcscpy", true, 0, 50, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
-<<<<<<< HEAD
 TEST_F(DdecNaclLongTest, DISABLED_wcscatOptimize) {
   benchmark("wcscat", true, 0, 100, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
-=======
->>>>>>> develop
 TEST_F(DdecNaclLongTest, strcpyOptimize) {
   benchmark("strcpy", true, 0, 50, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }

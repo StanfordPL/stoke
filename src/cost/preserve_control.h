@@ -24,25 +24,25 @@ class PreserveControlCost : public CostFunction {
 public:
 
   PreserveControlCost(Sandbox* sandbox) : CostFunction() {
-    sandbox_ = sandbox;
+    test_sandbox_ = sandbox;
   }
 
   /** Learn the expected control flow. */
   PreserveControlCost& set_target(const Cfg& target) {
-    assert(sandbox_ != nullptr);
+    assert(test_sandbox_ != nullptr);
 
     reference_outs_.clear();
 
-    sandbox_->insert_function(target);
-    sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
-    sandbox_->insert_before(build_control_callback, this);
-    for (size_t i = 0, ie = sandbox_->size(); i < ie; ++i) {
+    test_sandbox_->insert_function(target);
+    test_sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+    test_sandbox_->insert_before(build_control_callback, this);
+    for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
       std::vector<x64asm::Label> new_vector;
       current_list_ = &new_vector;
-      sandbox_->run(i);
+      test_sandbox_->run(i);
       reference_outs_.push_back(new_vector);
     }
-    sandbox_->clear_callbacks();
+    test_sandbox_->clear_callbacks();
     return *this;
   }
 
@@ -53,28 +53,28 @@ public:
 
   /** Just make sure we're getting the sandbox we've already got. */
   PreserveControlCost& setup_sandbox(Sandbox* sb) {
-    assert(sb == sandbox_);
+    assert(sb == test_sandbox_);
     return *this;
   }
 
   /** Checks if control flow matches what's expected. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
-    sandbox_->insert_function(cfg);
-    sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
-    sandbox_->insert_before(check_control_callback, this);
+    test_sandbox_->insert_function(cfg);
+    test_sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+    test_sandbox_->insert_before(check_control_callback, this);
     difference_found_ = false;
     //std::cout << "Evaluating cost function" << std::endl;
-    for (size_t i = 0, ie = sandbox_->size(); i < ie && !difference_found_; ++i) {
+    for (size_t i = 0, ie = test_sandbox_->size(); i < ie && !difference_found_; ++i) {
       current_pos_ = 0;
       current_list_ = &reference_outs_[i];
-      sandbox_->run(i);
+      test_sandbox_->run(i);
       if (current_pos_ != current_list_->size()) {
         difference_found_ = true;
       }
     }
     //std::cout << "Done evaluating cost function" << std::endl;
-    sandbox_->clear_callbacks();
+    test_sandbox_->clear_callbacks();
     return std::pair<bool,Cost>(true, difference_found_);
 
   }

@@ -38,8 +38,16 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
 
   recompute_target_defs(target.live_outs());
 
-  test_sandbox_->insert_function(target);
-  test_sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  recompute_inputs();
+  return *this;
+}
+
+
+CorrectnessCost& CorrectnessCost::recompute_inputs() {
+
+  reference_out_.clear();
+  test_sandbox_->insert_function(target_);
+  test_sandbox_->set_entrypoint(target_.get_function().get_leading_label());
   test_sandbox_->run();
   for (auto i = test_sandbox_->result_begin(), ie = test_sandbox_->result_end(); i != ie; ++i) {
     reference_out_.push_back(*i);

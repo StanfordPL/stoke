@@ -64,10 +64,10 @@ public:
     set_reduction(Reduction::SUM);
   }
 
+  CorrectnessCost& recompute_inputs();
+
   /** Reset target function; evaluates testcases and caches the results. */
   CorrectnessCost& set_target(const Cfg& target, bool stack_out, bool heap_out);
-  /** Compute data on running target with sandbox inputs.  Used after updating sandbox. */
-  CorrectnessCost& recompute_inputs();
 
   /** Set metric for measuring distance between 64-bit values. */
   CorrectnessCost& set_distance(Distance d) {

@@ -280,6 +280,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
           // got a fixed point, we can't validate this; try another cutpoint
           break;
         }
+      }
 
       if (cutpoints_->has_more()) {
         cutpoints_->next();
