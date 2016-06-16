@@ -232,9 +232,6 @@ class SearchJob < Job
     debug "Search finished"
     search_output_file = "#{@folder}/outputs/outputs.csv"
 
-    stage_job = StagedJob.new(2, "#{@benchmark}-#{@mode}")
-    stage_job.set_debug
-
     ## Create verification jobs for each series of results
     current_list = []
     current_run = -1
@@ -251,7 +248,7 @@ class SearchJob < Job
         debug "verification job for #{current_list}"
         v = VerificationJob.new(@benchmark, current_list.reverse, @mode,
                                 "#{mk_folder(@benchmark,@mode,"")}/verification_log.csv")
-        stage_job.add_to_stage(0, v)
+        $queue.add_job(v)
         current_list = []
       end
 
@@ -262,18 +259,9 @@ class SearchJob < Job
       debug "(final) verification job for #{current_list}"
       v = VerificationJob.new(@benchmark, current_list.reverse, @mode,
                               "#{mk_folder(@benchmark,@mode,"")}/verification_log.csv")
-      stage_job.add_to_stage(0, v)
+      $queue.add_job(v)
     end
 
-    ## Create benchmark job for the target
-    tbench = BenchmarkJob.new(@benchmark, 0, @mode)
-    stage_job.add_to_stage(0, tbench)
-
-    ## Create statistics job to aggregate results for this benchmark
-    stats_job = StatisticsJob.new(@benchmark, @mode)
-    stage_job.add_to_stage(1, stats_job)
-
-    $queue.add_job(stage_job)
   end
 
   def write_config(filename)
@@ -296,7 +284,7 @@ class SearchJob < Job
       file.write("## Transforms\n")
       file.write("--add_nops_mass 1\n")
       file.write("--delete_mass 1\n")
-      file.write("--opcode_width_mass 1\n")
+      file.write("--opcode_width_mass 0\n")
       file.write("\n")
 
       file.write("## Search\n")
@@ -404,7 +392,7 @@ class VerificationJob < Job
       end
       config.puts(" --def_in \"#{data[:def_in]}\"")
       config.puts(" --live_out \"{ %rax }\"")
-      config.puts(" --live-dangerously")
+      config.puts(" --live_dangerously")
       config.puts(" --testcases testcases")
       config.puts(" --test_set \"#{data[:test_set]}\"")
       config.puts(" --heap_out")
@@ -448,7 +436,7 @@ class VerificationJob < Job
       # benchmarking
       debug "Success; benchmarking"
       j = BenchmarkJob.new(@benchmark, @rewrite_id, @mode)
-      j.run
+      $queue.add_job(j)
     elsif @rewrite_ids.length() > 0
       # otherwise, we check the next verification candidate (if any)
       debug "Fail; verifying #{@rewrite_ids}"
@@ -471,6 +459,10 @@ class BenchmarkJob < Job
 
   def to_s
     "Benchmark/#{@benchmark}-#{@mode}/#{@id}"
+  end
+
+  def exclusive
+    true
   end
 
   def run
@@ -674,12 +666,12 @@ def main
   end
 
   all.each do |bench|
-    j = SearchJob.new(bench, :optimize)
-    $queue.add_job(j)
+    $queue.add_job(SearchJob.new(bench, :optimize))
+    $queue.add_job(BenchmarkJob.new(bench, 0, :optimize))
 
     if not $global_settings[:optimize_only]
-      j = SearchJob.new(bench, :transform)
-      $queue.add_job(j)
+      $queue.add_job(SearchJob.new(bench, :transform))
+      $queue.add_job(BenchmarkJob.new(bench, 0, :transform))
     end
   end
 
@@ -689,6 +681,20 @@ def main
   end_time = Time.new
   log "Finished"
   log "Wall time is #{(end_time - start_time).round(3)}"
+  log "Plotting"
+
+  ## Now agregate statistics
+  $queue = JobQueue.new(s)
+  all.each do |bench|
+    $queue.add_job(StatisticsJob.new(bench, :optimize))
+
+    if not $global_settings[:optimize_only]
+      $queue.add_job(StatisticsJob.new(bench, :transform))
+    end
+  end
+  $queue.exec_all
+
+  `./plot.rb "#{$stamp}"`
 
 end
 

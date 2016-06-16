@@ -17,34 +17,32 @@ def filter_last(folder, benchmark, option = nil)
   filter_list = [0]
 
 
-  File.open(search_log).each do |line|
-    pieces = line.split(",")
-    run = pieces[2].to_i
-    id = pieces[0].to_i
+  if File.exist(search_log) do
+    File.open(search_log).each do |line|
+      pieces = line.split(",")
+      run = pieces[2].to_i
+      id = pieces[0].to_i
 #puts "id=#{id},run=#{run},last_id=#{last_id},current_run=#{current_run}"
 
-    next if id == "num"
+      next if id == "num"
 
-    if option != :last then
-      filter_list.push(id)
-      next
-    end
+      if option != :last then
+        filter_list.push(id)
+        next
+      end
 
-    if last_id == -1 then
+      if last_id == -1 then
+        last_id = id
+      end
+
+      if current_run != run then
+        filter_list.push(last_id)
+        current_run = run
+      end
       last_id = id
     end
-
-    if current_run != run then
-      filter_list.push(last_id)
-      current_run = run
-    end
-
-    last_id = id
-
-
   end
   filter_list.push(last_id)
-
 
 #puts "Filter list for #{benchmark}: #{filter_list}"
   filter_list

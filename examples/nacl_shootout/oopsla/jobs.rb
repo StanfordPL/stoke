@@ -9,6 +9,10 @@ class Semaphore
     @available = n_cores
   end
 
+  def total_cores
+    @n_cores
+  end
+
   def acquire(m)
 
     got_it = false
@@ -43,6 +47,7 @@ class JobQueue
     @semaphore = semaphore
     @queue_lock = Mutex.new
     @queue = []
+    @exclude_queue = []
     @stop = false
 
     @running_lock = Mutex.new
@@ -55,13 +60,22 @@ class JobQueue
 
   def add_job(j)
     @queue_lock.synchronize {
-      @queue.push(j)
+      if j.exclusive then
+        @exclude_queue.push(j)
+      else
+        @queue.push(j)
+      end
       log "Queued: #{j.to_s}"
     }
   end
 
   def exec(job)
-    @semaphore.acquire(job.cores_needed)
+    ncores = job.cores_needed
+    if job.exclusive
+      ncores = @semaphore.total_cores
+    end
+
+    @semaphore.acquire(ncores)
 
     @running_lock.synchronize {
       @running_jobs = @running_jobs + 1        
@@ -82,7 +96,7 @@ class JobQueue
       @running_lock.synchronize {
         @running_jobs = @running_jobs - 1
       }
-      @semaphore.release(job.cores_needed)
+      @semaphore.release(ncores)
       
       log "Finished: #{job.to_s}"
     }
@@ -99,6 +113,9 @@ class JobQueue
             index = rand(@queue.length)
             #picking a job at random helps to be more fair
             job = @queue.delete_at(index)
+          elsif @exclude_queue.length > 0
+            index = rand(@exclude_queue.length)
+            job = @exclude_queue.delete_at(index)
           else
             @running_lock.synchronize {
               if @running_jobs == 0
@@ -127,6 +144,10 @@ class Job
 
   def initialize
     @owner = nil
+  end
+
+  def exclusive
+    false
   end
 
   def cores_needed
