@@ -17,7 +17,7 @@ def filter_last(folder, benchmark, option = nil)
   filter_list = [0]
 
 
-  if File.exist(search_log) do
+  if File.exist?(search_log) then
     File.open(search_log).each do |line|
       pieces = line.split(",")
       run = pieces[2].to_i
@@ -52,7 +52,7 @@ end
 #### Here's what to do
 
 def get_best(folder, benchmark)
-  bench_log = "#{folder}/#{benchmark}/benchmark_log.good.csv"
+  bench_log = "#{folder}/#{benchmark}/benchmark_log.csv"
 
   return 0 if not File.exist?(bench_log)
 
@@ -106,12 +106,13 @@ def speedup_graph(folder)
     $benchmarks.each do |bench,data|
       opt = get_best(folder, "#{bench}-opt")
       #trn = get_best(folder, "#{bench}-trans")
-      #max = [opt, trn, 1].max
+      trn = 0
+      max = [opt, trn, 1].max
       max = [opt, 1].max
       opts.push(opt)
       #trans.push(trn)
       maxes.push(max)
-      out.puts "#{bench} #{opt} #{max}"
+      out.puts "#{bench} #{opt} #{trn} #{max}"
     end
   end
 

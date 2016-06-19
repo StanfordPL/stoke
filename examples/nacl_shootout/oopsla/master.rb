@@ -403,7 +403,7 @@ class VerificationJob < Job
     end
 
     cmd =  "timeout #{$global_settings[:verify_timeout]} stoke_debug_verify"
-    cmd += " --config #{@rewrite_id}.conf >#{@rewrite_id}.out 2>/dev/null"
+    cmd += " --config #{@rewrite_id}.conf >#{@rewrite_id}.out 2>#{@rewrite_id}.err"
 
     verify_start = Time.new
     shell(cmd, folder)

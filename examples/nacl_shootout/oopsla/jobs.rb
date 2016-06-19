@@ -13,17 +13,23 @@ class Semaphore
     @n_cores
   end
 
+  def acquire_non_block(m)
+    got_it = false
+    @lock.synchronize {
+      if(@available >= m) then
+        @available = @available - m
+        got_it = true
+      end
+    }
+    got_it
+  end
+
   def acquire(m)
 
     got_it = false
 
     while(not got_it)
-      @lock.synchronize {
-        if(@available >= m) then
-          @available = @available - m
-          got_it = true
-        end
-      }
+      got_it = acquire_non_block(m)
 
       if(not got_it)
         sleep 0.1
@@ -58,24 +64,26 @@ class JobQueue
     @stop = true
   end
 
-  def add_job(j)
+  def add_job(j, no_print=false)
     @queue_lock.synchronize {
       if j.exclusive then
         @exclude_queue.push(j)
       else
         @queue.push(j)
       end
-      log "Queued: #{j.to_s}"
+      log "Queued: #{j.to_s}" unless no_print
     }
   end
 
+  ## This is non-blocking: if we can't acquire resources, we just give up and return false
   def exec(job)
     ncores = job.cores_needed
     if job.exclusive
       ncores = @semaphore.total_cores
     end
 
-    @semaphore.acquire(ncores)
+    success = @semaphore.acquire_non_block(ncores)
+    return false if not success
 
     @running_lock.synchronize {
       @running_jobs = @running_jobs + 1        
@@ -103,37 +111,34 @@ class JobQueue
   end
 
   def exec_all()
+    @stop = false
     while not @stop do
 
       job = nil
+      @queue_lock.synchronize {
+        if @queue.length > 0 
+          index = rand(@queue.length)
+          #picking a job at random helps to be more fair
+          job = @queue.delete_at(index)
+        elsif @exclude_queue.length > 0
+          index = rand(@exclude_queue.length)
+          job = @exclude_queue.delete_at(index)
+        else
+          @running_lock.synchronize {
+            if @running_jobs == 0
+              @stop = true
+              break
+            end
+          }
+        end
+      }
 
-      while job.nil? and not @stop do
-        @queue_lock.synchronize {
-          if @queue.length > 0 
-            index = rand(@queue.length)
-            #picking a job at random helps to be more fair
-            job = @queue.delete_at(index)
-          elsif @exclude_queue.length > 0
-            index = rand(@exclude_queue.length)
-            job = @exclude_queue.delete_at(index)
-          else
-            @running_lock.synchronize {
-              if @running_jobs == 0
-                @stop = true
-                break
-              end
-            }
-          end
-        }
-        if job.nil? then
+      if not job.nil? then
+        success = exec(job)
+        if not success then
+          add_job(job, true) 
           sleep 0.1
         end
-      end
-
-      if job.nil?
-        break
-      else
-        exec(job)
       end
     end
 
