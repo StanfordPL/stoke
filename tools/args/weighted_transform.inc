@@ -38,10 +38,10 @@ cpputil::ValueArg<size_t>& delete_mass_arg =
   .default_val(0);
 
 cpputil::ValueArg<size_t>& double_mass_arg =
-  cpputil::ValueArg<size_t>::create("delete_mass")
+  cpputil::ValueArg<size_t>::create("double_mass")
   .usage("<int>")
-  .description("Delete proposal mass")
-  .default_val(0);
+  .description("Double proposal mass")
+  .default_val(1);
 
 cpputil::ValueArg<size_t>& instruction_mass_arg =
   cpputil::ValueArg<size_t>::create("instruction_mass")

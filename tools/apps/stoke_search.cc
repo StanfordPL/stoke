@@ -282,6 +282,7 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
     f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
     f << "  \"timeout\": " << (timeout ? "true" : "false") << "," << endl;
     f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
+    f << "  \"starting_cost\": " << starting_cost << "," << endl;
     f << "  \"statistics\": {" << endl;
     f << "    \"total_iterations\": " << total_iterations << "," << endl;
     f << "    \"total_attempted_searches\": " << total_restarts << "," << endl;
@@ -448,7 +449,7 @@ int main(int argc, char** argv) {
       auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
       if (time_remaining <= steady_clock::duration::zero()) {
         show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
-        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+        Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
       }
       search.set_timeout_sec(time_remaining);
       Console::msg() << " / " << time_remaining.count() << " seconds";
@@ -481,7 +482,7 @@ int main(int argc, char** argv) {
       Console::msg() << endl;
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
       Console::msg() << "Search interrupted!" << endl;
-      exit(1);
+      exit(2);
     }
 
     const auto verified = verifier.verify(target, state.best_correct);
@@ -509,7 +510,7 @@ int main(int argc, char** argv) {
 
     if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
-      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
 
     if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
