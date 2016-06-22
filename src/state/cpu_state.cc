@@ -190,7 +190,7 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
   };
   sort(concrete_vector.begin(), concrete_vector.end(), compare);
 
-  vector<Memory> segments;
+  vector<Memory> my_segments;
 
   // Create memory segments as needed so that there's no 16-byte invalid gap.
   Memory* last_segment = NULL;
@@ -208,8 +208,8 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
   }
 
   max_addr = first_address + size;
-  segments.push_back(first_segment);
-  last_segment = &segments[0];
+  my_segments.push_back(first_segment);
+  last_segment = &my_segments[0];
 
   // Build remaining segments
   for (size_t i = 1; i < concrete_vector.size(); ++i) {
@@ -231,8 +231,8 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
       } else {
         Memory m;
         m.resize(address, size);
-        segments.push_back(m);
-        last_segment = &segments[segments.size()-1];
+        my_segments.push_back(m);
+        last_segment = &my_segments[my_segments.size()-1];
       }
     }
 
@@ -244,20 +244,21 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
   }
 
   // If there's no segment corresponding to the stack, create one.
-  switch (segments.size()) {
+  switch (my_segments.size()) {
   default:
   case 3:
-    data = segments[2];
+    data = my_segments[2];
   case 2:
-    stack = segments[1];
+    stack = my_segments[1];
   case 1:
-    heap = segments[0];
+    heap = my_segments[0];
   case 0:
     break;
   }
 
-  for (size_t i = 3; i < segments.size(); ++i) {
-    segments.push_back(segments[i]);
+  segments.clear();
+  for (size_t i = 3; i < my_segments.size(); ++i) {
+    segments.push_back(my_segments[i]);
   }
 
   return true;

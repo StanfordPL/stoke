@@ -60,7 +60,7 @@ protected:
     TransformInfo ti;
 
     if (!cfg_->check_invariants()) {
-      std::cout << "[----------] Invaraints failed at beginning; can't check this one." << std::endl;
+      std::cout << "[----------] Invariants failed at beginning; can't check this one." << std::endl;
       return;
     }
 
