@@ -5,8 +5,8 @@ using namespace std;
 using namespace stoke;
 
 int main() {
-    CpuState testcase;
-    cin >> testcase;
-    cout << testcase << endl;
-    return 0;
+  CpuState testcase;
+  cin >> testcase;
+  cout << testcase << endl;
+  return 0;
 }
