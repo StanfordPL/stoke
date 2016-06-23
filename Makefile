@@ -274,7 +274,7 @@ fast: fast_tests
 	echo -e "\a"
 
 stoked:
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) tools/apps/stoked.cc -o bin/stoked $(LIB) $(LDFLAGS)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) tools/apps/stoked.cc -o bin/stoked $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 ##### CTAGS TARGETS
 

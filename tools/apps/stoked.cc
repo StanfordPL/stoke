@@ -1,8 +1,12 @@
 #include <iostream>
+#include "src/state/cpu_state.h"
 
 using namespace std;
+using namespace stoke;
 
 int main() {
-  cout << "hello world!\n";
-  return 0;
+    CpuState testcase;
+    cin >> testcase;
+    cout << testcase << endl;
+    return 0;
 }

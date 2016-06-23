@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
 
     // close stdin and make it the read end of the parent to child pipe
     close(0);
-    // close current stdout and make it write end of child to parent pipe
-    close(1);
+    // close stderr and make it write end of child to parent pipe
+    close(2);
     if (dup(pc[0]) == -1 || dup(cp[1]) == -1) {
       Console::error() << "Failed to create pipe (dup) to communicate with stoked." << endl;
     }
@@ -89,12 +89,18 @@ int main(int argc, char** argv) {
     // parent process
     close(pc[0]);
     close(cp[1]);
-    printf("\nOutput from child:\n");
-    char ch;
-    while (read(cp[0], &ch, 1) == 1) {
-      cout << " " << ch;
+    stringstream ss;
+    ss << perf_tcs[0];
+    auto str = ss.str();
+    if (write(pc[1], str.c_str(), str.length()) == -1) {
+      Console::error() << "Failed to send testcase to stoked." << endl;
     }
-    cout << endl;
+//    printf("\nOutput from child:\n");
+//    char ch;
+//    while (read(cp[0], &ch, 1) == 1) {
+//      cout << " " << ch;
+//    }
+//    cout << endl;
   }
   return 0;
 
