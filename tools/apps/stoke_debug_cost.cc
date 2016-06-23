@@ -51,6 +51,53 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_tcs, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
+  pid_t pid;
+  int pc[2]; // parent to child pipe
+  int cp[2]; // child to parent pipe
+
+  // create a pipe for communication
+  if (pipe(pc) || pipe(cp)) {
+    Console::error() << "Failed to create pipe to communicate with stoked." << endl;
+    return EXIT_FAILURE;
+  }
+
+  // fork
+  pid = fork();
+  if (pid == (pid_t) 0) {
+    // child process
+
+    // close stdin and make it the read end of the parent to child pipe
+    close(0);
+    // close current stdout and make it write end of child to parent pipe
+    close(1);
+    if (dup(pc[0]) == -1 || dup(cp[1]) == -1) {
+      Console::error() << "Failed to create pipe (dup) to communicate with stoked." << endl;
+    }
+
+    // close unused ends of pipes
+    close(pc[1]);
+    close(cp[0]);
+
+    // exec stoked binary
+    string stoked_path = "/home/sheule/dev/strata/stoke/bin/stoked";
+    auto ret = execl(stoked_path.c_str(), stoked_path.c_str(), (char*)0);
+    // we should not reach this point if exec succeeds
+    Console::error() << "Exec of " << stoked_path <<  " failed: " << ret << "." << endl;
+  } else if (pid < (pid_t) 0) {
+    Console::error() << "Fork for stoked failed." << endl;
+  } else {
+    // parent process
+    close(pc[0]);
+    close(cp[1]);
+    printf("\nOutput from child:\n");
+    char ch;
+    while (read(cp[0], &ch, 1) == 1) {
+      cout << " " << ch;
+    }
+    cout << endl;
+  }
+  return 0;
+
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
 

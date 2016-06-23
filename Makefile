@@ -273,6 +273,9 @@ fast_tests: debug
 fast: fast_tests
 	echo -e "\a"
 
+stoked:
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) tools/apps/stoked.cc -o bin/stoked $(LIB) $(LDFLAGS)
+
 ##### CTAGS TARGETS
 
 tags:
