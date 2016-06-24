@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
+#include "src/ext/x64asm/src/function.h"
 
 #include "tools/args/cost.inc"
 #include "tools/args/rewrite.inc"
@@ -34,6 +35,13 @@
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
+
+void safe_write(int handle, const void* data, int nbytes) {
+  if (write(handle, data, nbytes) != nbytes) {
+    Console::error() << "Failed to send data to stoked." << endl;
+  }
+}
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -51,6 +59,15 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_tcs, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
+  // auto c = target.get_code();
+  // for (int i = 0; i < 100000; i++) {
+  //   stringstream ss;
+  //   ss << c;
+  //   istringstream iss(ss.str());
+  //   iss >> c;
+  // }
+  // return 0;
+
   pid_t pid;
   int pc[2]; // parent to child pipe
   int cp[2]; // child to parent pipe
@@ -58,7 +75,6 @@ int main(int argc, char** argv) {
   // create a pipe for communication
   if (pipe(pc) || pipe(cp)) {
     Console::error() << "Failed to create pipe to communicate with stoked." << endl;
-    return EXIT_FAILURE;
   }
 
   // fork
@@ -92,16 +108,24 @@ int main(int argc, char** argv) {
     stringstream ss;
     ss << perf_tcs[0];
     auto str = ss.str();
-    if (write(pc[1], str.c_str(), str.length()) == -1) {
-      Console::error() << "Failed to send testcase to stoked." << endl;
-    }
-//    printf("\nOutput from child:\n");
-//    char ch;
-//    while (read(cp[0], &ch, 1) == 1) {
-//      cout << " " << ch;
-//    }
-//    cout << endl;
+    // safe_write(pc[1], str.c_str(), str.length());
   }
+
+  // assemble code
+  Function code;
+  Assembler assm;
+  assm.start(code);
+
+  assm.mov(rax, Imm32(3));
+  assm.ret();
+
+  bool ok = assm.finish();
+  assert(ok);
+
+  int n = code.size();
+  safe_write(pc[1], &n, sizeof(n));
+  safe_write(pc[1], code.data(), n);
+
   return 0;
 
   ofilterstream<Column> os(Console::msg());
