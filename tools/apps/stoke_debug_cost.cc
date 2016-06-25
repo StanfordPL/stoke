@@ -43,6 +43,14 @@ void safe_write(int handle, const void* data, int nbytes) {
   }
 }
 
+void safe_read(int handle, void* buf, int size) {
+  auto nread = read(handle, buf, size);
+  if (size != nread) {
+    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << "." << endl;
+    exit(1);
+  }
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -108,23 +116,102 @@ int main(int argc, char** argv) {
     stringstream ss;
     ss << perf_tcs[0];
     auto str = ss.str();
-    // safe_write(pc[1], str.c_str(), str.length());
+    int n = str.length();
+    safe_write(pc[1], &n, sizeof(n));
+    safe_write(pc[1], str.c_str(), str.length());
   }
 
-  // assemble code
-  Function code;
-  Assembler assm;
-  assm.start(code);
+  // read rsp backup pointer value
+  uint64_t* rsp_backup_ptr = NULL;
+  safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
-  assm.mov(rax, Imm32(3));
+  // assemble code
+  Function buffer;
+  Assembler assm;
+  assm.start(buffer);
+  auto testcase = perf_tcs[0];
+
+  Code code;
+  stringstream tmp;
+  tmp << ".test:" << std::endl;
+  // 0x400fe8
+  tmp << "retq" << std::endl;
+  tmp >> code;
+
+  // assm.mov(rax, Imm32(3));
+  // assm.ret();
+
+  // save callee-saved registers
+  assm.push_1(rbx);
+  assm.push_1(rbp);
+  assm.push_1(r12);
+  assm.push_1(r13);
+  assm.push_1(r14);
+  assm.push_1(r15);
+
+  // backup rsp to fixed location
+  assm.mov(rax, rsp);
+  assm.mov(Moffs64(rsp_backup_ptr), rax);
+
+  // initialize registers from testcase
+  // - flags
+  // assm.mov(rax, Moffs64(cs.rf.data()));
+  // assm.push_1(rax);
+  // assm.popfq();
+  // - sse registers
+//   for (const auto& s : xmms) {
+//     assm.mov((R64)rax, Imm64(cs.sse[s].data()));
+// #if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
+//     assm.vmovdqu(ymms[s], M256(rax));
+// #else
+//     assm.movdqu(xmms[s], M128(rax));
+// #endif
+//   }
+  // - gp registers
+  for (const auto& r : r64s) {
+    if (r != rsp) {
+      assm.mov(r, Imm64(*((uint64_t*)testcase.gp[r].data())));
+    }
+  }
+
+  // label for the clean-up code
+  const Label exit;
+
+  // assemble function
+  for (size_t i = 0; i < code.size(); i++) {
+    auto& instr = code[i];
+    // turn returns into jumps to the tear-down code
+    if (instr.get_opcode() == RET) {
+      assm.jmp(exit);
+    } else {
+      assm.assemble(instr);
+    }
+  }
+
+  // what follows is all cleanup code
+  assm.bind(exit);
+
+  // restore rsp
+  assm.mov(rax, Moffs64(rsp_backup_ptr));
+  assm.mov(rsp, rax);
+
+  // restore callee-saved registers
+  assm.pop_1(r15);
+  assm.pop_1(r14);
+  assm.pop_1(r13);
+  assm.pop_1(r12);
+  assm.pop_1(rbp);
+  assm.pop_1(rbx);
+
+  // return
   assm.ret();
 
   bool ok = assm.finish();
   assert(ok);
 
-  int n = code.size();
+  int n = buffer.size();
   safe_write(pc[1], &n, sizeof(n));
-  safe_write(pc[1], code.data(), n);
+  safe_write(pc[1], buffer.data(), n);
 
   return 0;
 
