@@ -253,6 +253,20 @@ struct CpuState {
     return result;
   }
 
+  /** Get a vector of all non-empty memory segments (including heap, stack and data) */
+  std::vector<Memory*> get_nonempty_segments() {
+    std::vector<Memory*> segments;
+    if (heap.size())
+      segments.push_back(&heap);
+    if (stack.size())
+      segments.push_back(&stack);
+    if (data.size())
+      segments.push_back(&data);
+    for (auto& it : this->segments)
+      if (it.size())
+        segments.push_back(&it);
+    return segments;
+  }
 
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;

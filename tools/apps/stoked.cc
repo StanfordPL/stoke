@@ -66,7 +66,6 @@ int main() {
   safe_write(&rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
   // cout << hex << testcase.stack.size() << endl;
-  // allocate memory
   // auto stack = (unsigned char*) mmap((void*)testcase.stack.lower_bound(), testcase.stack.size(),
   //                                   PROT_READ | PROT_WRITE,
   //                                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -74,6 +73,27 @@ int main() {
   //   cout << "error: " << errno << " - " << strerror(errno) << endl;
   //   return 1;
   // }
+  // allocate memory
+  for (auto segment : testcase.get_nonempty_segments()) {
+    auto page_size = 4096;
+    uint64_t start = segment->lower_bound() & (~(page_size - 1));
+    auto size = segment->upper_bound() - start;
+    cout << (void*)start << endl;
+    unsigned char* mem = (unsigned char*) mmap((void*)start, size,
+                                      PROT_READ | PROT_WRITE,
+                                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+    cout << hex << (void*)mem << endl;
+    cout << hex << (void*)segment->lower_bound() << endl;
+    if (mem == (void*)-1) {
+      auto str = strerror(errno);
+      cout << "error: " << errno << " - " << str << endl;
+      return 1;
+    }
+    mem = (unsigned char*)segment->lower_bound();
+    cout << (int)*mem << endl;
+    *mem = 10;
+    cout << (int)*mem << endl;
+  }
 
   // read assembled code
   safe_read(&n, sizeof(n));

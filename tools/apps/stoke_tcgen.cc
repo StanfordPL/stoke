@@ -90,23 +90,6 @@ void read_memory_status(statm_t& result)
   fclose(f);
 }
 
-/** Get a vector of all non-empty memory segments for a testcase */
-vector<Memory*> get_segments(CpuState& cs) {
-
-  vector<Memory*> segments;
-  if (cs.heap.size())
-    segments.push_back(&cs.heap);
-  if (cs.stack.size())
-    segments.push_back(&cs.stack);
-  if (cs.data.size())
-    segments.push_back(&cs.data);
-  for (auto& it : cs.segments)
-    if (it.size())
-      segments.push_back(&it);
-
-  return segments;
-}
-
 /** Make sure that a testcase is valid for the program */
 bool check_testcase(CpuState cs, Sandbox& sb) {
 
@@ -136,7 +119,7 @@ CpuState mutate(CpuState cs, size_t iterations,
 
     case 1: {
       // Mutate one byte of memory
-      auto segments = get_segments(candidate);
+      auto segments = candidate.get_nonempty_segments();
       if (segments.size()) {
         auto memory = segments[gen() % segments.size()];
         auto addr = (gen() % memory->size()) + memory->lower_bound();
@@ -260,7 +243,7 @@ int main(int argc, char** argv) {
       }
 
       // Now, lets find another testcase that touches *different* memory.
-      auto segments = get_segments(tc);
+      auto segments = tc.get_nonempty_segments();
       if (segments.size()) {
 
         vector<uint64_t> low;
