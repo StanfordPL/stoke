@@ -80,8 +80,8 @@ int main() {
     auto size = segment->upper_bound() - start;
     cout << (void*)start << endl;
     unsigned char* mem = (unsigned char*) mmap((void*)start, size,
-                                      PROT_READ | PROT_WRITE,
-                                      MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+                         PROT_READ | PROT_WRITE,
+                         MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
     cout << hex << (void*)mem << endl;
     cout << hex << (void*)segment->lower_bound() << endl;
     if (mem == (void*)-1) {
