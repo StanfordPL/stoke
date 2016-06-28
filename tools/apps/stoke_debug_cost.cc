@@ -14,6 +14,8 @@
 
 #include <iostream>
 
+#include <sys/wait.h>
+
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
@@ -135,6 +137,7 @@ int main(int argc, char** argv) {
   stringstream tmp;
   tmp << ".test:" << std::endl;
   // 0x400fe8
+  tmp << "movq $0x2, %rax" << endl;
   tmp << "retq" << std::endl;
   tmp >> code;
 
@@ -213,6 +216,9 @@ int main(int argc, char** argv) {
   safe_write(pc[1], &n, sizeof(n));
   safe_write(pc[1], buffer.data(), n);
 
+  int returnStatus;
+  waitpid(pid, &returnStatus, 0);
+  cout << "child finished with: " << returnStatus << endl;
   return 0;
 
   ofilterstream<Column> os(Console::msg());
