@@ -69,15 +69,6 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_tcs, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
-  // auto c = target.get_code();
-  // for (int i = 0; i < 100000; i++) {
-  //   stringstream ss;
-  //   ss << c;
-  //   istringstream iss(ss.str());
-  //   iss >> c;
-  // }
-  // return 0;
-
   pid_t pid;
   int pc[2]; // parent to child pipe
   int cp[2]; // child to parent pipe
@@ -115,12 +106,22 @@ int main(int argc, char** argv) {
     // parent process
     close(pc[0]);
     close(cp[1]);
-    stringstream ss;
-    ss << perf_tcs[0];
-    auto str = ss.str();
-    int n = str.length();
-    safe_write(pc[1], &n, sizeof(n));
-    safe_write(pc[1], str.c_str(), str.length());
+    // stringstream ss;
+    // ss << perf_tcs[0];
+    // auto str = ss.str();
+    // int n = str.length();
+    // safe_write(pc[1], &n, sizeof(n));
+    // safe_write(pc[1], str.c_str(), str.length());
+  }
+
+  auto& testcase = perf_tcs[0];
+  int n = testcase.get_nonempty_segments().size();
+  safe_write(pc[1], &n, sizeof(n));
+  for (auto segment : testcase.get_nonempty_segments()) {
+    uint64_t addr = segment->lower_bound();
+    safe_write(pc[1], &addr, sizeof(addr));
+    uint64_t size = segment->upper_bound() - segment->lower_bound();
+    safe_write(pc[1], &size, sizeof(size));
   }
 
   // read rsp backup pointer value
@@ -131,12 +132,10 @@ int main(int argc, char** argv) {
   Function buffer;
   Assembler assm;
   assm.start(buffer);
-  auto testcase = perf_tcs[0];
 
   Code code;
   stringstream tmp;
   tmp << ".test:" << std::endl;
-  // 0x400fe8
   tmp << "movq $0x2, %rax" << endl;
   tmp << "retq" << std::endl;
   tmp >> code;
@@ -212,7 +211,7 @@ int main(int argc, char** argv) {
   bool ok = assm.finish();
   assert(ok);
 
-  int n = buffer.size();
+  n = buffer.size();
   safe_write(pc[1], &n, sizeof(n));
   safe_write(pc[1], buffer.data(), n);
 
