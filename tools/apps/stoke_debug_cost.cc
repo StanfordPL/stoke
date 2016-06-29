@@ -138,12 +138,12 @@ int main(int argc, char** argv) {
   Code code;
   stringstream tmp;
   tmp << ".test:" << std::endl;
-  tmp << "movq $0x2, %rax" << endl;
+  tmp << "movq $0x400f28, %rax" << endl;
+  tmp << "movq (%rax), %rax" << endl;
   tmp << "retq" << std::endl;
   tmp >> code;
-
-  // assm.mov(rax, Imm32(3));
-  // assm.ret();
+  code = target.get_code();
+  cout << code << endl;
 
   // save callee-saved registers
   assm.push_1(rbx);
@@ -196,8 +196,10 @@ int main(int argc, char** argv) {
   assm.bind(exit);
 
   // restore rsp
+  assm.mov(rcx, rax);
   assm.mov(rax, Moffs64(rsp_backup_ptr));
   assm.mov(rsp, rax);
+  assm.mov(rax, rcx);
 
   // restore callee-saved registers
   assm.pop_1(r15);

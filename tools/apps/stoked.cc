@@ -98,19 +98,21 @@ int main() {
   // allocate memory
   auto page_size = getpagesize();
   for (auto segment : memories) {
-    cout << "allocating segment..." << endl;
     uint64_t start = segment.addr & (~(page_size - 1));
     auto size = segment.addr + segment.size - start;
-    cout << (void*)start << endl;
     auto mem = (unsigned char*) mmap((void*)start, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-    cout << hex << (void*)mem << endl;
-    cout << hex << (void*)segment.addr << endl;
     if (mem == (void*)-1) {
       auto str = strerror(errno);
       cout << "error: " << errno << " - " << str << endl;
       return 1;
     }
   }
+
+  // initialize memory
+  for (auto segment : memories) {
+    memcpy((void*)segment.addr, segment.data, segment.size);
+  }
+
   // for (auto segment : testcase.get_nonempty_segments()) {
   //   cout << "allocating segment..." << endl;
   //   auto page_size = getpagesize();
@@ -134,7 +136,9 @@ int main() {
   cout << "test" << endl;
 
   cout << "okay" << endl;
-  cout << to_string(code.call<int>()) << endl;
+  auto ret = code.call<int>();
+  cout << hex << "0x" << ret << endl;
+  cout << dec << ret << endl;
   cout << "done" << endl;
 
   return 0;
