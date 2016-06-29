@@ -114,14 +114,16 @@ int main(int argc, char** argv) {
     // safe_write(pc[1], str.c_str(), str.length());
   }
 
+  // send testcase memory information
   auto& testcase = perf_tcs[0];
   int n = testcase.get_nonempty_segments().size();
   safe_write(pc[1], &n, sizeof(n));
   for (auto segment : testcase.get_nonempty_segments()) {
     uint64_t addr = segment->lower_bound();
     safe_write(pc[1], &addr, sizeof(addr));
-    uint64_t size = segment->upper_bound() - segment->lower_bound();
+    uint64_t size = segment->size();
     safe_write(pc[1], &size, sizeof(size));
+    safe_write(pc[1], segment->data(), size);
   }
 
   // read rsp backup pointer value

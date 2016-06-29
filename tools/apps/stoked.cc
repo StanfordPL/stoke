@@ -79,7 +79,7 @@ int main() {
     safe_read(&mem.addr, sizeof(mem.addr));
     safe_read(&mem.size, sizeof(mem.size));
     mem.data = new unsigned char[mem.size];
-    // safe_read(&mem.data, mem.size);
+    safe_read(mem.data, mem.size);
   }
   // CpuState testcase;
   // safe_read(&n, sizeof(n));
