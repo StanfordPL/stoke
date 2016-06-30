@@ -181,7 +181,7 @@ int main() {
     }
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::nanoseconds>(end-start).count() / reps;
-    
+
     // send duration
     uint64_t dur = duration;
     safe_write(&dur, sizeof(dur));
