@@ -4,6 +4,7 @@
 #include <errno.h>
 
 #include <iostream>
+#include <chrono>
 
 #include "src/ext/x64asm/src/function.h"
 // #include "src/state/cpu_state.h"
@@ -17,12 +18,16 @@ using namespace x64asm;
 size_t capacity_ = 1000;
 unsigned char* buffer_;
 
-void safe_read(void* buf, int size) {
+bool safe_read(void* buf, int size) {
   auto nread = read(0, buf, size);
+  if (nread == 0) {
+    return false;
+  }
   if (size != nread) {
     cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << "." << endl;
     exit(1);
   }
+  return true;
 }
 
 void safe_write(const void* data, int nbytes) {
@@ -30,6 +35,22 @@ void safe_write(const void* data, int nbytes) {
     cout << "Failed to send data to stoked." << endl;
     exit(1);
   }
+}
+
+chrono::high_resolution_clock::time_point __init;
+void start() {
+  __init = chrono::high_resolution_clock::now();
+}
+
+void stop(const string& explanation) {
+  auto now = chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(now-__init).count();
+  cout << "[time] " << explanation << ": ";
+  for (int i = 0; i < 20-(int)explanation.size(); i++) {
+    cout << " ";
+  }
+  cout << duration << " ns";
+  cout << endl;
 }
 
 class Mem {
@@ -109,9 +130,11 @@ int main() {
   }
 
   // initialize memory
+  // start();
   for (auto segment : memories) {
     memcpy((void*)segment.addr, segment.data, segment.size);
   }
+  // stop("memory init");
 
   // for (auto segment : testcase.get_nonempty_segments()) {
   //   cout << "allocating segment..." << endl;
@@ -130,16 +153,39 @@ int main() {
   // }
 
   // read assembled code
-  safe_read(&n, sizeof(n));
-  code.reserve(n);
-  safe_read(code.data(), n);
-  cout << "test" << endl;
+  while (true) {
+    // start();
+    if (!safe_read(&n, sizeof(n))) break;
+    // stop("read code size");
+    // start();
+    code.reserve(n);
+    safe_read(code.data(), n);
+    // stop("read code");
 
-  cout << "okay" << endl;
-  auto ret = code.call<int>();
-  cout << hex << "0x" << ret << endl;
-  cout << dec << ret << endl;
-  cout << "done" << endl;
+    // for (int i = 0; i < 10; i++) {
+    //   start();
+    //   code.call<int>();
+    //   stop("run code");
+    // }
+
+
+    int startup_reps = 100;
+    int reps = startup_reps;
+    for (int i = 0; i < startup_reps; i++) {
+      code.call<int>();
+    }
+
+    auto start = chrono::high_resolution_clock::now();
+    for (int i = 0; i < reps; i++) {
+      code.call<int>();
+    }
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end-start).count() / reps;
+    
+    // send duration
+    uint64_t dur = duration;
+    safe_write(&dur, sizeof(dur));
+  }
 
   return 0;
 }

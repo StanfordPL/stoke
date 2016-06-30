@@ -136,14 +136,14 @@ int main(int argc, char** argv) {
   assm.start(buffer);
 
   Code code;
-  stringstream tmp;
-  tmp << ".test:" << std::endl;
-  tmp << "movq $0x400f28, %rax" << endl;
-  tmp << "movq (%rax), %rax" << endl;
-  tmp << "retq" << std::endl;
-  tmp >> code;
+  // stringstream tmp;
+  // tmp << ".test:" << std::endl;
+  // tmp << "movq $0x400f28, %rax" << endl;
+  // tmp << "movq (%rax), %rax" << endl;
+  // tmp << "retq" << std::endl;
+  // tmp >> code;
   code = target.get_code();
-  cout << code << endl;
+  // cout << code << endl;
 
   // save callee-saved registers
   assm.push_1(rbx);
@@ -219,9 +219,18 @@ int main(int argc, char** argv) {
   safe_write(pc[1], &n, sizeof(n));
   safe_write(pc[1], buffer.data(), n);
 
+  // read execution time
+  uint64_t exec;
+  safe_read(cp[0], &exec, sizeof(exec));
+  cout << exec << endl;
+
+  // done
+  close(pc[1]);
+  close(cp[0]);
+
   int returnStatus;
   waitpid(pid, &returnStatus, 0);
-  cout << "child finished with: " << returnStatus << endl;
+  // cout << "child finished with: " << returnStatus << endl;
   return 0;
 
   ofilterstream<Column> os(Console::msg());
