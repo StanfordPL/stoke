@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 
 #include <iostream>
 #include <chrono>
@@ -169,21 +170,23 @@ int main() {
     // }
 
 
-    int startup_reps = 100;
+    int startup_reps = 1;
     int reps = startup_reps;
     for (int i = 0; i < startup_reps; i++) {
       code.call<int>();
     }
 
-    auto start = chrono::high_resolution_clock::now();
+    timespec start, end;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
     for (int i = 0; i < reps; i++) {
       code.call<int>();
     }
-    auto end = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::nanoseconds>(end-start).count() / reps;
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
 
+    auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
+    uint64_t dur = duration / reps;
+    
     // send duration
-    uint64_t dur = duration;
     safe_write(&dur, sizeof(dur));
   }
 
