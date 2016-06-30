@@ -185,7 +185,7 @@ int main() {
 
     auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
     uint64_t dur = duration / reps;
-    
+
     // send duration
     safe_write(&dur, sizeof(dur));
   }
