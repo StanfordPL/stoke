@@ -181,13 +181,13 @@ int main() {
     //   stop("run code");
     // }
 
-    int reps2 = 10000;
-    for (int i = 0; i < reps2; i++) {
-      code.call<int>();
-    }
+    int reps = 100;
+    vector<uint64_t> measurements;
+    measurements.reserve(reps);
 
 #define USE_TS
 
+    for (int i = 0; i < reps; i++) {
 #ifdef USE_CLOCK
     timespec start, end;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
@@ -196,10 +196,7 @@ int main() {
     auto start = rdtsc();
 #endif
 
-    int reps = 10000;
-    for (int i = 0; i < reps; i++) {
       code.call<int>();
-    }
 
 #ifdef USE_CLOCK
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
@@ -209,8 +206,16 @@ int main() {
     auto end = rdtsc();
     auto duration = end - start;
 #endif
+    measurements.push_back(duration);
 
-    uint64_t dur = duration / reps;
+    }
+
+    // sort(measurements.begin(), measurements.end());
+    for (auto& m : measurements) {
+      cout << m << endl;
+    }
+
+    uint64_t dur = 1;
 
     // send duration
     safe_write(&dur, sizeof(dur));

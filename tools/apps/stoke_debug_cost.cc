@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
   assm.start(buffer);
 
   Code code;
-#define STRAIGHT_LINE
+// #define STRAIGHT_LINE
 #ifdef STRAIGHT_LINE
   stringstream tmp;
   tmp << ".test:" << std::endl;
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
   // read execution time
   uint64_t exec;
   safe_read(cp[0], &exec, sizeof(exec));
-  cout << exec << endl;
+  // cout << exec << endl;
 
   // done
   close(pc[1]);
