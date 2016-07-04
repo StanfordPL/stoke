@@ -64,6 +64,18 @@ public:
   unsigned char* data;
 };
 
+inline long long rdtsc() {
+  long long cycles;
+  asm volatile("rdtscp\n"
+               "shlq $32, %%rdx\n"
+               "addq %%rdx, %%rax\n"
+               : "=a" (cycles)
+               : /* no inputs */
+               : "rdx", "rcx");
+  return cycles;
+}
+
+
 int main() {
 
   // uint64_t fromAddr = 0x400f20;
@@ -169,21 +181,35 @@ int main() {
     //   stop("run code");
     // }
 
-
-    int startup_reps = 1;
-    int reps = startup_reps;
-    for (int i = 0; i < startup_reps; i++) {
+    int reps2 = 10000;
+    for (int i = 0; i < reps2; i++) {
       code.call<int>();
     }
 
+#define USE_TS
+
+#ifdef USE_CLOCK
     timespec start, end;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+#endif
+#ifdef USE_TS
+    auto start = rdtsc();
+#endif
+
+    int reps = 10000;
     for (int i = 0; i < reps; i++) {
       code.call<int>();
     }
+    
+#ifdef USE_CLOCK
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-
     auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
+#endif
+#ifdef USE_TS
+    auto end = rdtsc();
+    auto duration = end - start;
+#endif
+
     uint64_t dur = duration / reps;
 
     // send duration

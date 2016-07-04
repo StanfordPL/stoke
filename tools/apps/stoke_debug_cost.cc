@@ -136,13 +136,22 @@ int main(int argc, char** argv) {
   assm.start(buffer);
 
   Code code;
-  // stringstream tmp;
-  // tmp << ".test:" << std::endl;
+#define STRAIGHT_LINE
+#ifdef STRAIGHT_LINE
+  stringstream tmp;
+  tmp << ".test:" << std::endl;
   // tmp << "movq $0x400f28, %rax" << endl;
   // tmp << "movq (%rax), %rax" << endl;
   // tmp << "retq" << std::endl;
-  // tmp >> code;
+  tmp << "movl $0x0, %eax" << endl;
+  for (int i = 0; i < 490; i++) {
+    tmp << "addq $0x1, %rax" << endl;
+    tmp << "cmpb $0x0, (%rdi,%rax,1)" << endl;
+  }
+  tmp >> code;
+#else
   code = target.get_code();
+#endif
   // cout << code << endl;
 
   // save callee-saved registers
