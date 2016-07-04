@@ -200,7 +200,7 @@ int main() {
     for (int i = 0; i < reps; i++) {
       code.call<int>();
     }
-    
+
 #ifdef USE_CLOCK
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
     auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
