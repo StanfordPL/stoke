@@ -189,24 +189,24 @@ int main() {
 
     for (int i = 0; i < reps; i++) {
 #ifdef USE_CLOCK
-    timespec start, end;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+      timespec start, end;
+      clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
 #endif
 #ifdef USE_TS
-    auto start = rdtsc();
+      auto start = rdtsc();
 #endif
 
       code.call<int>();
 
 #ifdef USE_CLOCK
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-    auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
+      clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
+      auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
 #endif
 #ifdef USE_TS
-    auto end = rdtsc();
-    auto duration = end - start;
+      auto end = rdtsc();
+      auto duration = end - start;
 #endif
-    measurements.push_back(duration);
+      measurements.push_back(duration);
 
     }
 
