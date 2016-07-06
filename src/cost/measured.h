@@ -39,8 +39,6 @@ public:
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
-    run_perf_sandbox(cfg);
-
     uint64_t res = latency_;
     size_t tc_count = perf_sandbox_->size();
     latency_ = 0;
