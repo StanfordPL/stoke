@@ -23,11 +23,11 @@ namespace stoke {
 
 
 const vector<size_t> latency_table {{
-  // Internal mnemonics
-  0
-  // Auto-generatred mnemonics
-  #include "src/ext/x64asm/codegen/haswell_latency.inc"
-}};
+    // Internal mnemonics
+    0
+    // Auto-generatred mnemonics
+#include "src/ext/x64asm/codegen/haswell_latency.inc"
+  }};
 
 
 class LatencyCostTest : public ::testing::Test {
