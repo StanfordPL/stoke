@@ -304,21 +304,36 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
 void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg) {
 
   if (results_arg.has_been_provided()) {
+    Console::msg() << "Verifying improved rewrite..." << endl;
 
     auto state = data.state;
     auto data = (pair<VerifierGadget&, TargetGadget&>*)arg;
     auto verifier = data->first;
     auto target = data->second;
 
+    // perform the postprocessing
+    Cfg res(state.current);
+    if (postprocessing_arg == Postprocessing::FULL) {
+      CfgTransforms::remove_redundant(res);
+      CfgTransforms::remove_unreachable(res);
+      CfgTransforms::remove_nop(res);
+    } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+      CfgTransforms::remove_unreachable(res);
+      CfgTransforms::remove_nop(res);
+    } else {
+      // Do nothing.
+    }
+
     // verify the new best correct rewrite
-    const auto verified = verifier.verify(target, state.best_correct);
+    const auto verified = verifier.verify(target, res);
 
     if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl;
+      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl << endl;
     }
 
     // save to file if verified
     if (verified) {
+      Console::msg() << "Verified!  Saving result..." << endl << endl;
       // next name for result file
       string name = "";
       bool done = false;
@@ -329,24 +344,23 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
         done = !f.good();
       } while (!done);
 
-      Cfg res(state.current);
-      if (postprocessing_arg == Postprocessing::FULL) {
-        CfgTransforms::remove_redundant(res);
-        CfgTransforms::remove_unreachable(res);
-        CfgTransforms::remove_nop(res);
-      } else if (postprocessing_arg == Postprocessing::SIMPLE) {
-        CfgTransforms::remove_unreachable(res);
-        CfgTransforms::remove_nop(res);
-      } else {
-        // Do nothing.
-      }
-
       // write output
       ofstream outfile;
       outfile.open(name);
       outfile << res.get_function();
       outfile.close();
+    } else {
+      Console::msg() << "Verification failed."  << endl << endl;
+      if(verifier.counter_examples_available()) {
+        Console::msg() << "Counterexample: " << endl;
+        for(auto it : verifier.get_counter_examples()) {
+          Console::msg() << it << endl;
+        }
+      }
     }
+
+  } else {
+    cout << "No action on new best correct" << endl;
 
   }
 
