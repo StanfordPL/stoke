@@ -70,109 +70,109 @@ int main(int argc, char** argv) {
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
   if (false) {
-  pid_t pid;
-  int pc[2]; // parent to child pipe
-  int cp[2]; // child to parent pipe
+    pid_t pid;
+    int pc[2]; // parent to child pipe
+    int cp[2]; // child to parent pipe
 
-  // create a pipe for communication
-  if (pipe(pc) || pipe(cp)) {
-    Console::error() << "Failed to create pipe to communicate with stoked." << endl;
-  }
-
-  // fork
-  pid = fork();
-  if (pid == (pid_t) 0) {
-    // child process
-
-    // close stdin and make it the read end of the parent to child pipe
-    close(0);
-    // close stderr and make it write end of child to parent pipe
-    close(2);
-    if (dup(pc[0]) == -1 || dup(cp[1]) == -1) {
-      Console::error() << "Failed to create pipe (dup) to communicate with stoked." << endl;
+    // create a pipe for communication
+    if (pipe(pc) || pipe(cp)) {
+      Console::error() << "Failed to create pipe to communicate with stoked." << endl;
     }
 
-    // close unused ends of pipes
-    close(pc[1]);
-    close(cp[0]);
+    // fork
+    pid = fork();
+    if (pid == (pid_t) 0) {
+      // child process
 
-    // exec stoked binary
-    string stoked_path = "/home/sheule/dev/strata/stoke/bin/stoked";
-    auto ret = execl(stoked_path.c_str(), stoked_path.c_str(), (char*)0);
-    // we should not reach this point if exec succeeds
-    Console::error() << "Exec of " << stoked_path <<  " failed: " << ret << "." << endl;
-  } else if (pid < (pid_t) 0) {
-    Console::error() << "Fork for stoked failed." << endl;
-  } else {
-    // parent process
-    close(pc[0]);
-    close(cp[1]);
-    // stringstream ss;
-    // ss << perf_tcs[0];
-    // auto str = ss.str();
-    // int n = str.length();
-    // safe_write(pc[1], &n, sizeof(n));
-    // safe_write(pc[1], str.c_str(), str.length());
-  }
+      // close stdin and make it the read end of the parent to child pipe
+      close(0);
+      // close stderr and make it write end of child to parent pipe
+      close(2);
+      if (dup(pc[0]) == -1 || dup(cp[1]) == -1) {
+        Console::error() << "Failed to create pipe (dup) to communicate with stoked." << endl;
+      }
 
-  // send testcase memory information
-  auto& testcase = perf_tcs[0];
-  int n = testcase.get_nonempty_segments().size();
-  safe_write(pc[1], &n, sizeof(n));
-  for (auto segment : testcase.get_nonempty_segments()) {
-    uint64_t addr = segment->lower_bound();
-    safe_write(pc[1], &addr, sizeof(addr));
-    uint64_t size = segment->size();
-    safe_write(pc[1], &size, sizeof(size));
-    safe_write(pc[1], segment->data(), size);
-  }
+      // close unused ends of pipes
+      close(pc[1]);
+      close(cp[0]);
 
-  // read rsp backup pointer value
-  uint64_t* rsp_backup_ptr = NULL;
-  safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
+      // exec stoked binary
+      string stoked_path = "/home/sheule/dev/strata/stoke/bin/stoked";
+      auto ret = execl(stoked_path.c_str(), stoked_path.c_str(), (char*)0);
+      // we should not reach this point if exec succeeds
+      Console::error() << "Exec of " << stoked_path <<  " failed: " << ret << "." << endl;
+    } else if (pid < (pid_t) 0) {
+      Console::error() << "Fork for stoked failed." << endl;
+    } else {
+      // parent process
+      close(pc[0]);
+      close(cp[1]);
+      // stringstream ss;
+      // ss << perf_tcs[0];
+      // auto str = ss.str();
+      // int n = str.length();
+      // safe_write(pc[1], &n, sizeof(n));
+      // safe_write(pc[1], str.c_str(), str.length());
+    }
 
-  // assemble code
-  Function buffer;
-  Assembler assm;
-  assm.start(buffer);
+    // send testcase memory information
+    auto& testcase = perf_tcs[0];
+    int n = testcase.get_nonempty_segments().size();
+    safe_write(pc[1], &n, sizeof(n));
+    for (auto segment : testcase.get_nonempty_segments()) {
+      uint64_t addr = segment->lower_bound();
+      safe_write(pc[1], &addr, sizeof(addr));
+      uint64_t size = segment->size();
+      safe_write(pc[1], &size, sizeof(size));
+      safe_write(pc[1], segment->data(), size);
+    }
 
-  Code code;
+    // read rsp backup pointer value
+    uint64_t* rsp_backup_ptr = NULL;
+    safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
+
+    // assemble code
+    Function buffer;
+    Assembler assm;
+    assm.start(buffer);
+
+    Code code;
 // #define STRAIGHT_LINE
 #ifdef STRAIGHT_LINE
-  stringstream tmp;
-  tmp << ".test:" << std::endl;
-  // tmp << "movq $0x400f28, %rax" << endl;
-  // tmp << "movq (%rax), %rax" << endl;
-  // tmp << "retq" << std::endl;
-  tmp << "movl $0x0, %eax" << endl;
-  for (int i = 0; i < 490; i++) {
-    tmp << "addq $0x1, %rax" << endl;
-    tmp << "cmpb $0x0, (%rdi,%rax,1)" << endl;
-  }
-  tmp >> code;
+    stringstream tmp;
+    tmp << ".test:" << std::endl;
+    // tmp << "movq $0x400f28, %rax" << endl;
+    // tmp << "movq (%rax), %rax" << endl;
+    // tmp << "retq" << std::endl;
+    tmp << "movl $0x0, %eax" << endl;
+    for (int i = 0; i < 490; i++) {
+      tmp << "addq $0x1, %rax" << endl;
+      tmp << "cmpb $0x0, (%rdi,%rax,1)" << endl;
+    }
+    tmp >> code;
 #else
-  code = target.get_code();
+    code = target.get_code();
 #endif
-  // cout << code << endl;
+    // cout << code << endl;
 
-  // save callee-saved registers
-  assm.push_1(rbx);
-  assm.push_1(rbp);
-  assm.push_1(r12);
-  assm.push_1(r13);
-  assm.push_1(r14);
-  assm.push_1(r15);
+    // save callee-saved registers
+    assm.push_1(rbx);
+    assm.push_1(rbp);
+    assm.push_1(r12);
+    assm.push_1(r13);
+    assm.push_1(r14);
+    assm.push_1(r15);
 
-  // backup rsp to fixed location
-  assm.mov(rax, rsp);
-  assm.mov(Moffs64(rsp_backup_ptr), rax);
+    // backup rsp to fixed location
+    assm.mov(rax, rsp);
+    assm.mov(Moffs64(rsp_backup_ptr), rax);
 
-  // initialize registers from testcase
-  // - flags
-  // assm.mov(rax, Moffs64(cs.rf.data()));
-  // assm.push_1(rax);
-  // assm.popfq();
-  // - sse registers
+    // initialize registers from testcase
+    // - flags
+    // assm.mov(rax, Moffs64(cs.rf.data()));
+    // assm.push_1(rax);
+    // assm.popfq();
+    // - sse registers
 //   for (const auto& s : xmms) {
 //     assm.mov((R64)rax, Imm64(cs.sse[s].data()));
 // #if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
@@ -181,67 +181,67 @@ int main(int argc, char** argv) {
 //     assm.movdqu(xmms[s], M128(rax));
 // #endif
 //   }
-  // - gp registers
-  for (const auto& r : r64s) {
-    if (r != rsp) {
-      assm.mov(r, Imm64(*((uint64_t*)testcase.gp[r].data())));
+    // - gp registers
+    for (const auto& r : r64s) {
+      if (r != rsp) {
+        assm.mov(r, Imm64(*((uint64_t*)testcase.gp[r].data())));
+      }
     }
-  }
 
-  // label for the clean-up code
-  const Label exit;
+    // label for the clean-up code
+    const Label exit;
 
-  // assemble function
-  for (size_t i = 0; i < code.size(); i++) {
-    auto& instr = code[i];
-    // turn returns into jumps to the tear-down code
-    if (instr.get_opcode() == RET) {
-      assm.jmp(exit);
-    } else {
-      assm.assemble(instr);
+    // assemble function
+    for (size_t i = 0; i < code.size(); i++) {
+      auto& instr = code[i];
+      // turn returns into jumps to the tear-down code
+      if (instr.get_opcode() == RET) {
+        assm.jmp(exit);
+      } else {
+        assm.assemble(instr);
+      }
     }
-  }
 
-  // what follows is all cleanup code
-  assm.bind(exit);
+    // what follows is all cleanup code
+    assm.bind(exit);
 
-  // restore rsp
-  assm.mov(rcx, rax);
-  assm.mov(rax, Moffs64(rsp_backup_ptr));
-  assm.mov(rsp, rax);
-  assm.mov(rax, rcx);
+    // restore rsp
+    assm.mov(rcx, rax);
+    assm.mov(rax, Moffs64(rsp_backup_ptr));
+    assm.mov(rsp, rax);
+    assm.mov(rax, rcx);
 
-  // restore callee-saved registers
-  assm.pop_1(r15);
-  assm.pop_1(r14);
-  assm.pop_1(r13);
-  assm.pop_1(r12);
-  assm.pop_1(rbp);
-  assm.pop_1(rbx);
+    // restore callee-saved registers
+    assm.pop_1(r15);
+    assm.pop_1(r14);
+    assm.pop_1(r13);
+    assm.pop_1(r12);
+    assm.pop_1(rbp);
+    assm.pop_1(rbx);
 
-  // return
-  assm.ret();
+    // return
+    assm.ret();
 
-  bool ok = assm.finish();
-  assert(ok);
+    bool ok = assm.finish();
+    assert(ok);
 
-  n = buffer.size();
-  safe_write(pc[1], &n, sizeof(n));
-  safe_write(pc[1], buffer.data(), n);
+    n = buffer.size();
+    safe_write(pc[1], &n, sizeof(n));
+    safe_write(pc[1], buffer.data(), n);
 
-  // read execution time
-  uint64_t exec;
-  safe_read(cp[0], &exec, sizeof(exec));
-  // cout << exec << endl;
+    // read execution time
+    uint64_t exec;
+    safe_read(cp[0], &exec, sizeof(exec));
+    // cout << exec << endl;
 
-  // done
-  close(pc[1]);
-  close(cp[0]);
+    // done
+    close(pc[1]);
+    close(cp[0]);
 
-  int returnStatus;
-  waitpid(pid, &returnStatus, 0);
-  // cout << "child finished with: " << returnStatus << endl;
-  return 0;
+    int returnStatus;
+    waitpid(pid, &returnStatus, 0);
+    // cout << "child finished with: " << returnStatus << endl;
+    return 0;
   }
 
   ofilterstream<Column> os(Console::msg());
