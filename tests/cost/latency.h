@@ -21,6 +21,15 @@
 
 namespace stoke {
 
+
+const vector<size_t> latency_table {{
+  // Internal mnemonics
+  0
+  // Auto-generatred mnemonics
+  #include "src/ext/x64asm/codegen/haswell_latency.inc"
+}};
+
+
 class LatencyCostTest : public ::testing::Test {
 
 protected:
@@ -67,6 +76,13 @@ TEST_F(LatencyCostTest, Latencies) {
   EXPECT_EQ(xorpd2,   latency("xorpd %xmm1, %xmm2"));
 
 }
+
+TEST_F(LatencyCostTest, LatencyTableLength) {
+
+  EXPECT_EQ((size_t)latency_table.size(), (size_t)X64ASM_NUM_OPCODES);
+
+}
+
 
 TEST_F(LatencyCostTest, NestingDepth0) {
   x64asm::Code c;
