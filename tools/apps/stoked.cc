@@ -211,11 +211,11 @@ int main() {
     }
 
     // sort(measurements.begin(), measurements.end());
-    for (auto& m : measurements) {
-      cout << m << endl;
-    }
+    // for (auto& m : measurements) {
+    //   cout << m << endl;
+    // }
 
-    uint64_t dur = 1;
+    uint64_t dur = 13;
 
     // send duration
     safe_write(&dur, sizeof(dur));

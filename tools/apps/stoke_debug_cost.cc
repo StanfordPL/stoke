@@ -39,20 +39,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-void safe_write(int handle, const void* data, int nbytes) {
-  if (write(handle, data, nbytes) != nbytes) {
-    Console::error() << "Failed to send data to stoked." << endl;
-  }
-}
-
-void safe_read(int handle, void* buf, int size) {
-  auto nread = read(handle, buf, size);
-  if (size != nread) {
-    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << "." << endl;
-    exit(1);
-  }
-}
-
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
