@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_tcs, aux_fxns);
   CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
+  if (false) {
   pid_t pid;
   int pc[2]; // parent to child pipe
   int cp[2]; // child to parent pipe
@@ -241,6 +242,7 @@ int main(int argc, char** argv) {
   waitpid(pid, &returnStatus, 0);
   // cout << "child finished with: " << returnStatus << endl;
   return 0;
+  }
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
