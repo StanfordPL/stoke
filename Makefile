@@ -444,7 +444,7 @@ hooks: .git/hooks/pre-commit .git/hooks/post-merge-checkout
 ##### CLEAN TARGETS
 
 stoke_clean:
-	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash bin/stoked
 	rm -rf $(VALIDATOR_AUTOGEN)
 
 clean: stoke_clean
