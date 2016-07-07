@@ -78,30 +78,6 @@ inline long long rdtsc() {
 
 int main() {
 
-  // uint64_t fromAddr = 0x400f20;
-  // uint64_t toAddr = 0x401120;
-  // // fromAddr = 0x40000f20;
-  // // toAddr = 0x40010f20;
-
-  // cout << "allocating segment from " << (void*)fromAddr << " to " << (void*)toAddr << "..." << endl;
-  // auto page_size = getpagesize();
-  // uint64_t start = fromAddr & (~(page_size - 1));
-  // auto size = toAddr - start;
-  // cout << "allocation start addr: " << (void*)start << endl;
-  // unsigned char* mem = (unsigned char*) mmap((void*)start, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-  // cout << "Actual allocated addr: " << (void*)mem << endl;
-  // if (mem == (void*)-1) {
-  //   auto str = strerror(errno);
-  //   cout << "error: " << errno << " - " << str << endl;
-  //   return 1;
-  // }
-
-  // cout << "done" << endl;
-
-  // return 0;
-
-  // ----------------------------
-
   Function code;
   int n;
 
@@ -115,14 +91,6 @@ int main() {
     mem.data = new unsigned char[mem.size];
     safe_read(mem.data, mem.size);
   }
-  // CpuState testcase;
-  // safe_read(&n, sizeof(n));
-  // char* buffer = new char[n+1];
-  // safe_read(buffer, n);
-  // buffer[n] = 0;
-  // stringstream ss(buffer);
-  // ss >> testcase;
-  // delete buffer;
 
   // send address of rsp_backup
   uint64_t rsp_backup = 0;
@@ -143,43 +111,15 @@ int main() {
   }
 
   // initialize memory
-  // start();
   for (auto segment : memories) {
     memcpy((void*)segment.addr, segment.data, segment.size);
   }
-  // stop("memory init");
-
-  // for (auto segment : testcase.get_nonempty_segments()) {
-  //   cout << "allocating segment..." << endl;
-  //   auto page_size = getpagesize();
-  //   uint64_t start = segment->lower_bound() & (~(page_size - 1));
-  //   auto size = segment->upper_bound() - start;
-  //   cout << (void*)start << endl;
-  //   auto mem = (unsigned char*) mmap((void*)start, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-  //   cout << hex << (void*)mem << endl;
-  //   cout << hex << (void*)segment->lower_bound() << endl;
-  //   if (mem == (void*)-1) {
-  //     auto str = strerror(errno);
-  //     cout << "error: " << errno << " - " << str << endl;
-  //     return 1;
-  //   }
-  // }
 
   // read assembled code
   while (true) {
-    // start();
     if (!safe_read(&n, sizeof(n))) break;
-    // stop("read code size");
-    // start();
     code.reserve(n);
     safe_read(code.data(), n);
-    // stop("read code");
-
-    // for (int i = 0; i < 10; i++) {
-    //   start();
-    //   code.call<int>();
-    //   stop("run code");
-    // }
 
     int reps = 100;
     vector<uint64_t> measurements;
@@ -210,12 +150,16 @@ int main() {
 
     }
 
-    // sort(measurements.begin(), measurements.end());
-    // for (auto& m : measurements) {
-    //   cout << m << endl;
-    // }
+    sort(measurements.begin(), measurements.end());
+    auto len = measurements.size();
+    int use = 5;
+    int start = 5;
+    uint64_t sum = 0;
+    for (auto i = start; i < start + use; i++) {
+      sum += measurements[i];
+    }
 
-    uint64_t dur = 13;
+    uint64_t dur = sum / use;
 
     // send duration
     safe_write(&dur, sizeof(dur));

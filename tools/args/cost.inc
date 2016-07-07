@@ -38,8 +38,9 @@ cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
 # - arithmetic operators: + - * / % == << >> < > >= <= & |
 # - binsize: Size of the binary
 # - correctness: Correctness according to the testcases
-# - latency: Latency of the instructions
-# - measured: Measured latency (more precise for loops than 'latency')
+# - latency: Latency of the instructions (based on a table of latencies)
+# - measured: Latency after unrolling loops according to the performance test cases
+# - realtime: Measured execution time on first performance test case
 # - size: The number of instructions
 # - sseavx: 1 if both sse and avx instructions are used, 0 otherwise
 # - nongoal: 1 if the code is exactly the same as one provided via --non_goal)")
