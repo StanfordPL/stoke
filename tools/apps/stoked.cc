@@ -152,7 +152,7 @@ int main() {
 
     sort(measurements.begin(), measurements.end());
     auto len = measurements.size();
-    int use = 5;
+    int use = 50;
     int start = 5;
     uint64_t sum = 0;
     for (auto i = start; i < start + use; i++) {
