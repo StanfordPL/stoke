@@ -102,6 +102,9 @@ public:
     // read rsp backup pointer value
     safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
+    // send repetitions
+    safe_write(pc[1], &repetitions, sizeof(repetitions));
+
     return *this;
   }
 
@@ -203,6 +206,11 @@ public:
     return result_type(true, exec);
   }
 
+  RealtimeCost& set_repetitions(int r) {
+    repetitions = r;
+    return *this;
+  }
+
 private:
 
   /** PID of the stoked process. */
@@ -215,6 +223,8 @@ private:
   uint64_t* rsp_backup_ptr;
   /** the testcase we use */
   CpuState testcase;
+  /** The number of repetitions */
+  int repetitions;
 };
 
 } // namespace stoke

@@ -97,6 +97,10 @@ int main() {
   uint64_t* rsp_backup_ptr = &rsp_backup;
   safe_write(&rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
+  // read repetitions
+  int reps;
+  safe_read(&reps, sizeof(reps));
+
   // allocate memory
   auto page_size = getpagesize();
   for (auto segment : memories) {
@@ -121,7 +125,6 @@ int main() {
     code.reserve(n);
     safe_read(code.data(), n);
 
-    int reps = 100;
     vector<uint64_t> measurements;
     measurements.reserve(reps);
 
@@ -152,14 +155,16 @@ int main() {
 
     sort(measurements.begin(), measurements.end());
     auto len = measurements.size();
-    int use = 50;
-    int start = 5;
+    int use = 0.5*(reps + 1);
+    int start = 0.05 * reps;
     uint64_t sum = 0;
-    for (auto i = start; i < start + use; i++) {
+    auto count = 0;
+    for (auto i = start; i < start + use && i < reps; i++) {
       sum += measurements[i];
+      count += 1;
     }
 
-    uint64_t dur = sum / use;
+    uint64_t dur = sum / count;
 
     // send duration
     safe_write(&dur, sizeof(dur));
