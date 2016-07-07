@@ -49,11 +49,11 @@ systems (with AVX, but not AVX2).  It might run on newer architectures, but we c
 Running `./configure.sh` as described next will automatically configure the build for the correct architecture.
 
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
-run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
+run on Ubuntu 13.10+ and on Debian 8.0.  If you're trying to get STOKE to
 work on another linux distribution, having the right version of g++ is key.
 STOKE is supported on 4.9 only.
 It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
-definitely will not work.
+definitely will not work.  STOKE has been tested and appears to work in virtual environments, such as VMWare Fusion.
 
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
