@@ -389,7 +389,7 @@ bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 bin/stoked:
-	$(CXX) -fPIE -pie -O2 -g -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/stoked.cc -o bin/stoked
+	$(CXX) -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/stoked.cc -o bin/stoked
 
 ##### TESTING
 
