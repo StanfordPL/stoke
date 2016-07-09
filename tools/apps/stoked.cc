@@ -154,17 +154,18 @@ int main() {
     }
 
     sort(measurements.begin(), measurements.end());
-    auto len = measurements.size();
-    int use = 0.5*(reps + 1);
-    int start = 0.05 * reps;
-    uint64_t sum = 0;
-    auto count = 0;
-    for (auto i = start; i < start + use && i < reps; i++) {
-      sum += measurements[i];
-      count += 1;
-    }
+    // auto len = measurements.size();
+    // int use = 0.7*(reps + 1);
+    // int start = 0.05 * reps;
+    // uint64_t sum = 0;
+    // auto count = 0;
+    // for (auto i = start; i < start + use && i < reps; i++) {
+    //   sum += measurements[i];
+    //   count += 1;
+    // }
 
-    uint64_t dur = sum / count;
+    // uint64_t dur = sum / count;
+    uint64_t dur = measurements[0];
 
     // send duration
     safe_write(&dur, sizeof(dur));
