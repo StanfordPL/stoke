@@ -38,22 +38,6 @@ void safe_write(const void* data, int nbytes) {
   }
 }
 
-chrono::high_resolution_clock::time_point __init;
-void start() {
-  __init = chrono::high_resolution_clock::now();
-}
-
-void stop(const string& explanation) {
-  auto now = chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(now-__init).count();
-  cout << "[time] " << explanation << ": ";
-  for (int i = 0; i < 20-(int)explanation.size(); i++) {
-    cout << " ";
-  }
-  cout << duration << " ns";
-  cout << endl;
-}
-
 class Mem {
 public:
   Mem() : addr(0), size(0), data(NULL) {
