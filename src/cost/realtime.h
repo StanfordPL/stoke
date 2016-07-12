@@ -99,6 +99,12 @@ public:
       safe_write(pc[1], segment->data(), size);
     }
 
+    // send the ymm values, and read the address they will be stored
+    for (int i = 0; i < 16; i++) {
+      safe_write(pc[1], testcase.sse[i].data(), 256 / 8);
+      safe_read(cp[0], &ymm_ptr[i], sizeof(ymm_ptr[i]));
+    }
+
     // read rsp backup pointer value
     safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
@@ -138,18 +144,18 @@ public:
 
     // initialize registers from testcase
     // - flags
-    // assm.mov(rax, Moffs64(cs.rf.data()));
-    // assm.push_1(rax);
-    // assm.popfq();
+    assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(*((uint64_t*)testcase.rf.data())));
+    assm.push_1(x64asm::rax);
+    assm.popfq();
     // - sse registers
-//   for (const auto& s : xmms) {
-//     assm.mov((R64)rax, Imm64(cs.sse[s].data()));
-// #if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
-//     assm.vmovdqu(ymms[s], M256(rax));
-// #else
-//     assm.movdqu(xmms[s], M128(rax));
-// #endif
-//   }
+    for (const auto& s : x64asm::xmms) {
+      assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(ymm_ptr[s]));
+#if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
+      assm.vmovdqu(x64asm::ymms[s], x64asm::M256(x64asm::rax));
+#else
+      assm.movdqu(x64asm::xmms[s], x64asm::M128(x64asm::rax));
+#endif
+    }
     // - gp registers
     for (const auto& r : x64asm::r64s) {
       if (r != x64asm::rsp) {
@@ -221,6 +227,8 @@ private:
   int cp[2];
   /** pointer in stoked to a location where rsp can be backed up. */
   uint64_t* rsp_backup_ptr;
+  /** pointers to ymm value location in stoked to initialize ymm registers. */
+  uint64_t* ymm_ptr[16];
   /** the testcase we use */
   CpuState testcase;
   /** The number of repetitions */

@@ -92,6 +92,15 @@ int main() {
     safe_read(mem.data, mem.size);
   }
 
+  // read ymm values and send address where we store them
+  auto nbytes = 256/8;
+  unsigned char* ymmdata = new unsigned char[nbytes*16];
+  for (int i = 0; i < 16; i++) {
+    safe_read(&ymmdata[i*nbytes], nbytes);
+    void* ymmdata_ptr = &ymmdata[i*nbytes];
+    safe_write(&ymmdata_ptr, sizeof(ymmdata_ptr));
+  }
+
   // send address of rsp_backup
   uint64_t rsp_backup = 0;
   uint64_t* rsp_backup_ptr = &rsp_backup;
@@ -119,8 +128,8 @@ int main() {
     memcpy((void*)segment.addr, segment.data, segment.size);
   }
 
-  // read assembled code
   while (true) {
+    // read assembled code
     if (!safe_read(&n, sizeof(n))) break;
     code.reserve(n);
     safe_read(code.data(), n);
@@ -164,8 +173,8 @@ int main() {
     //   count += 1;
     // }
 
-    // uint64_t dur = sum / count;
     uint64_t dur = measurements[0];
+    // uint64_t dur = code.call<int>();;
 
     // send duration
     safe_write(&dur, sizeof(dur));
