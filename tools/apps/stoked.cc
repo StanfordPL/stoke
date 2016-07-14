@@ -76,7 +76,7 @@ public:
                                        PROT_READ | PROT_WRITE | PROT_EXEC,
                                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
       } else {
-        buffer = (unsigned char*) mmap(target_address, capacity,
+        buffer = (unsigned char*) mmap((void*)target_address, capacity,
                                        PROT_READ | PROT_WRITE | PROT_EXEC,
                                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
       }
