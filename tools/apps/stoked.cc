@@ -8,16 +8,9 @@
 #include <chrono>
 
 #include "src/ext/x64asm/src/function.h"
-// #include "src/state/cpu_state.h"
-// #include "src/ext/x64asm/src/assembler.h"
-
-
 
 using namespace std;
 using namespace x64asm;
-
-size_t capacity_ = 1000;
-unsigned char* buffer_;
 
 bool safe_read(void* buf, int size) {
   auto nread = read(0, buf, size);
@@ -25,7 +18,7 @@ bool safe_read(void* buf, int size) {
     return false;
   }
   if (size != nread) {
-    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << "." << endl;
+    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (stoked)." << endl;
     exit(1);
   }
   return true;
@@ -33,7 +26,7 @@ bool safe_read(void* buf, int size) {
 
 void safe_write(const void* data, int nbytes) {
   if (write(2, data, nbytes) != nbytes) {
-    cout << "Failed to send data to stoked." << endl;
+    cout << "Failed to send data to stoked (stoked)." << endl;
     exit(1);
   }
 }
@@ -60,9 +53,72 @@ inline long long rdtsc() {
 }
 
 
+/**
+* An executable buffer.  Similar to Function from x64asm, but allows choosing
+* a specific address for the buffer.
+*/
+class ExecBuffer {
+public:
+  ExecBuffer() : buffer(NULL), capacity(0), target_address(0) {
+  }
+
+  /** Allocate at least 'new_capacity' bytes. */
+  void allocate(size_t new_capacity) {
+    if (capacity < new_capacity) {
+      if (capacity != 0) {
+        // unmap
+      }
+      capacity = new_capacity;
+
+      // map new region
+      if (target_address == 0) {
+        buffer = (unsigned char*) mmap(0, capacity,
+                                    PROT_READ | PROT_WRITE | PROT_EXEC,
+                                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+      } else {
+        buffer = (unsigned char*) mmap(target_address, capacity,
+                                    PROT_READ | PROT_WRITE | PROT_EXEC,
+                                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+      }
+    }
+  }
+
+  /** Set the target address. */
+  void set_target_address(uint64_t target_addr) {
+    auto has_changed = target_addr != target_address;
+    target_address = target_addr;
+
+    if (buffer != NULL && has_changed && target_address != 0) {
+      // reallocate buffer if necessary
+      allocate(capacity);
+    }
+  }
+
+  /** Direct pointer to the underlying buffer. */
+  void* data() const {
+    return buffer;
+  }
+
+  /** Zero argument usage form. */
+  template <typename Y>
+  Y call() const {
+    return ((Y(*)()) buffer)();
+  }
+
+private:
+
+  /** The mmap'ed memory region, or NULL. */
+  unsigned char* buffer;
+  /** Capacity of the buffer. */
+  size_t capacity;
+  /** Address of the buffer, or 0 if the address can be anything */
+  uint64_t target_address;
+};
+
+
 int main() {
 
-  Function code;
+  ExecBuffer code;
   int n;
 
   // read testcase memory
@@ -107,15 +163,16 @@ int main() {
     }
   }
 
-  // initialize memory
-  for (auto segment : memories) {
-    memcpy((void*)segment.addr, segment.data, segment.size);
-  }
-
   while (true) {
+    // read the address the code should be located at
+    uint64_t target_addr;
+    safe_read(&target_addr, sizeof(target_addr));
+    cout << target_addr << endl;
+    code.set_target_address(target_addr);
+
     // read assembled code
     if (!safe_read(&n, sizeof(n))) break;
-    code.reserve(n);
+    code.allocate(n);
     safe_read(code.data(), n);
 
     vector<uint64_t> measurements;
@@ -124,6 +181,11 @@ int main() {
 #define USE_TS
 
     for (int i = 0; i < reps; i++) {
+      // initialize memory (TODO: only do this when necessary)
+      for (auto segment : memories) {
+        memcpy((void*)segment.addr, segment.data, segment.size);
+      }
+
 #ifdef USE_CLOCK
       timespec start, end;
       clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);

@@ -24,14 +24,14 @@ namespace {
 
 void safe_write(int handle, const void* data, int nbytes) {
   if (write(handle, data, nbytes) != nbytes) {
-    cpputil::Console::error() << "Failed to send data to stoked." << std::endl;
+    cpputil::Console::error() << "Failed to send data to stoked (realtime)." << std::endl;
   }
 }
 
 void safe_read(int handle, void* buf, int size) {
   auto nread = read(handle, buf, size);
   if (size != nread) {
-    cpputil::Console::error() << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << "." << std::endl;
+    cpputil::Console::error() << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (realtime)." << std::endl;
   }
 }
 
@@ -122,6 +122,10 @@ public:
     if (sandbox_result.code != ErrorCode::NORMAL) {
       return result_type(true, max);
     }
+
+    // send target address
+    uint64_t target_addr = cfg.get_function().get_rip_offset();
+    safe_write(pc[1], &target_addr, sizeof(target_addr));
 
     // assemble code
     x64asm::Function buffer;
