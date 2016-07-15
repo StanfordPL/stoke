@@ -351,9 +351,9 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
       outfile.close();
     } else {
       Console::msg() << "Verification failed."  << endl << endl;
-      if(verifier.counter_examples_available()) {
+      if (verifier.counter_examples_available()) {
         Console::msg() << "Counterexample: " << endl;
-        for(auto it : verifier.get_counter_examples()) {
+        for (auto it : verifier.get_counter_examples()) {
           Console::msg() << it << endl;
         }
       }
