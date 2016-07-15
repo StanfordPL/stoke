@@ -1,0 +1,19 @@
+permalink: pretty
+
+title: STOKE
+tagline: A stochastic superoptimizer and program synthesizer
+url: http://stoke.stanford.edu
+baseurl: ""
+
+sass:
+  sass_dir: _sass
+  style: :compressed
+
+analytics_id: UA-80843812-1
+
+github:
+  repo: https://github.com/StanfordPL/stoke
+
+exclude: [
+  README.md
+]
