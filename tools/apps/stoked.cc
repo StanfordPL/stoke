@@ -18,7 +18,7 @@ bool safe_read(void* buf, int size) {
     return false;
   }
   if (size != nread) {
-    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (stoked)." << endl;
+    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (stoked).  Error message: " << strerror(errno) << endl;
     exit(1);
   }
   return true;
@@ -62,11 +62,19 @@ public:
   ExecBuffer() : buffer(NULL), capacity(0), target_address(0) {
   }
 
+  ~ExecBuffer() {
+    if (buffer != NULL) {
+      munmap(buffer, capacity);
+      buffer = NULL;
+    }
+  }
+
   /** Allocate at least 'new_capacity' bytes. */
   void allocate(size_t new_capacity) {
     if (capacity < new_capacity) {
       if (capacity != 0) {
         // unmap
+        munmap(buffer, capacity);
       }
       capacity = new_capacity;
 
@@ -76,9 +84,19 @@ public:
                                        PROT_READ | PROT_WRITE | PROT_EXEC,
                                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
       } else {
-        buffer = (unsigned char*) mmap((void*)target_address, capacity,
+        // calculate real start address
+        auto page_size = getpagesize();
+        uint64_t adjusted_target_address = target_address & (~(page_size - 1));
+        auto adjusted_capacity = target_address + capacity - adjusted_target_address;
+
+        buffer = (unsigned char*) mmap((void*)adjusted_target_address,
+                                       adjusted_capacity,
                                        PROT_READ | PROT_WRITE | PROT_EXEC,
                                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+        if (buffer == (void*)-1) {
+          cout << "Failed to allocate code buffer.  Error: " << strerror(errno) << endl;
+          exit(1);
+        }
       }
     }
   }
@@ -96,7 +114,10 @@ public:
 
   /** Direct pointer to the underlying buffer. */
   void* data() const {
-    return buffer;
+    if (target_address == 0) {
+      return buffer;
+    }
+    return (void*)target_address;
   }
 
   /** Zero argument usage form. */
@@ -109,7 +130,8 @@ private:
 
   /** The mmap'ed memory region, or NULL. */
   unsigned char* buffer;
-  /** Capacity of the buffer. */
+  /** Capacity of the buffer, starting from target_address (or buffer, if
+  target_address is 0). */
   size_t capacity;
   /** Address of the buffer, or 0 if the address can be anything */
   uint64_t target_address;
@@ -155,11 +177,13 @@ int main() {
   for (auto segment : memories) {
     uint64_t start = segment.addr & (~(page_size - 1));
     auto size = segment.addr + segment.size - start;
+    // this memory does not need to be executable, since we are only putting data here.
+    // however, it seems that if the code buffer is close to these buffers, then
+    // that call can fail to make the code buffer executable.
     auto mem = (unsigned char*) mmap((void*)start, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
     if (mem == (void*)-1) {
-      auto str = strerror(errno);
-      cout << "error: " << errno << " - " << str << endl;
-      return 1;
+      cout << "Failed to allocate data memory.  Error: " << strerror(errno) << endl;
+      exit(1);
     }
   }
 
@@ -167,7 +191,6 @@ int main() {
     // read the address the code should be located at
     uint64_t target_addr;
     safe_read(&target_addr, sizeof(target_addr));
-    cout << target_addr << endl;
     code.set_target_address(target_addr);
 
     // read assembled code
@@ -193,7 +216,6 @@ int main() {
 #ifdef USE_TS
       auto start = rdtsc();
 #endif
-
       code.call<int>();
 
 #ifdef USE_CLOCK

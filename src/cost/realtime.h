@@ -123,10 +123,6 @@ public:
       return result_type(true, max);
     }
 
-    // send target address
-    uint64_t target_addr = cfg.get_function().get_rip_offset();
-    safe_write(pc[1], &target_addr, sizeof(target_addr));
-
     // assemble code
     x64asm::Function buffer;
     x64asm::Assembler assm;
@@ -204,6 +200,11 @@ public:
     bool ok = assm.finish();
     assert(ok);
 
+    // send target address
+    uint64_t target_addr = cfg.get_function().get_rip_offset();
+    safe_write(pc[1], &target_addr, sizeof(target_addr));
+
+    // send code
     int n;
     n = buffer.size();
     safe_write(pc[1], &n, sizeof(n));
