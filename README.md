@@ -523,7 +523,7 @@ debugging and benchmarking the performance of each of its core components.  See 
 - `stoke debug cost`: Compute the cost of a rewrite.
 - `stoke debug diff`: Diff the resulting state of two functions.
 - `stoke debug effect`: Show the effect of a function on the state.
-- `stoke debug formula`: .
+- `stoke debug formula`: Show the SMT formula for a straight-line piece of code.
 - `stoke debug sandbox`: Step through the execution of a rewrite.
 - `stoke debug search`: View the changes produced by performing and undoing a program transformation.
 - `stoke debug simplify`: Take an x86 program and simplify it (by removing redundant instructions).
