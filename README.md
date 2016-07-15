@@ -1,14 +1,9 @@
 STOKE
 =====
 
-STOKE is a stochastic optimizer for the x86-64 instruction set. STOKE uses
-random search to explore the extremely high-dimensional space of all possible
-program transformations. Although any one random transformation is unlikely to
-produce a code sequence that is both correct and an improvement over the
-original, the repeated application of millions of transformations is sufficient
-to produce novel and non-obvious code sequences that have been shown to
-outperform the code produced by general-purpose and domain-specific compilers,
-and in some cases expert hand-written code.
+STOKE is a stochastic optimizer and program synthesizer for the x86-64 instruction set. STOKE uses random search to explore the extremely high-dimensional space of all possible program transformations. Although any one random transformation is unlikely to produce a code sequence that is desirable, the repeated application of millions of transformations is sufficient to produce novel and non-obvious code sequences.  STOKE can be used in many different scenarios, such as optimizing code for performance or size, synthesizing an implementation from scratch or to trade accuracy of floating point computations for performance.  As a superoptimizer, STOKE has been shown to outperform the code produced by general-purpose and domain-specific compilers, and in some cases expert hand-written code.
+
+In addition to searching over programs, STOKE contains verification infrastructure to show the equivalence between x86-64 programs.  STOKE can consider test-cases, perform bounded verification all the way to fully formal verification that shows the equivalence for all possible inputs.
 
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
@@ -17,6 +12,7 @@ the design of STOKE, see:
 - [**Data-Driven Equivalence Checking** -- OOPSLA 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla13b.pdf)
 - [**Stochastic Optimization of Floating-Point Programs with Tunable Precision** -- PLDI 2014](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi14a.pdf)
 - [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf)
+- [**Stochastic Program Optimization** -- CACM 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/cacm16.pdf)
 - [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
 
 Table of Contents
@@ -49,11 +45,11 @@ systems (with AVX, but not AVX2).  It might run on newer architectures, but we c
 Running `./configure.sh` as described next will automatically configure the build for the correct architecture.
 
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
-run on Ubuntu 13.10+ and on Debian 8.0.  If you're trying to get STOKE to
+run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
 work on another linux distribution, having the right version of g++ is key.
 STOKE is supported on 4.9 only.
 It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
-definitely will not work.  STOKE has been tested and appears to work in virtual environments, such as VMWare Fusion.
+definitely will not work.
 
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
