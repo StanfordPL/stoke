@@ -317,7 +317,7 @@ protected:
   /** Initialize member variables. */
   virtual void SetUp() {
 
-    set_timeout(1000);
+    set_timeout(10000);
 
     live_outs_ = get_default_regset();
     def_ins_  = get_default_regset();
