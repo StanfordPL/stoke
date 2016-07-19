@@ -12,6 +12,12 @@
 using namespace std;
 using namespace x64asm;
 
+#define DEBUG_STOKED
+
+#ifdef DEBUG_STOKED
+#define DEBUG_STOKED_SHOW_ADDRS
+#endif
+
 bool safe_read(void* buf, int size) {
   auto nread = read(0, buf, size);
   if (nread == 0) {
@@ -83,6 +89,10 @@ public:
         buffer = (unsigned char*) mmap(0, capacity,
                                        PROT_READ | PROT_WRITE | PROT_EXEC,
                                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+#ifdef DEBUG_STOKED_SHOW_ADDRS
+        cout << "[ stoked ] Allocated execution buffer at arbitrary address " << (void*) buffer << endl;
+#endif
       } else {
         // calculate real start address
         auto page_size = getpagesize();
@@ -97,6 +107,13 @@ public:
           cout << "Failed to allocate code buffer.  Error: " << strerror(errno) << endl;
           exit(1);
         }
+#ifdef DEBUG_STOKED_SHOW_ADDRS
+        cout << "[ stoked ] Allocated execution buffer:" << endl;
+        cout << "             page size      = " << page_size << endl;
+        cout << "             target address = " << (void*)target_address << endl;
+        cout << "             buffer address = " << (void*)buffer << endl;
+        cout << "             buffer end     = " << (void*)(buffer + adjusted_capacity) << endl;
+#endif
       }
     }
   }
@@ -185,6 +202,14 @@ int main() {
       cout << "Failed to allocate data memory.  Error: " << strerror(errno) << endl;
       exit(1);
     }
+
+#ifdef DEBUG_STOKED_SHOW_ADDRS
+    cout << "[ stoked ] Allocated memory buffer:" << endl;
+    cout << "             segment start  = " << (void*)segment.addr << endl;
+    cout << "             segment size   = " << segment.size << endl;
+    cout << "             buffer address = " << (void*)mem << endl;
+    cout << "             buffer end     = " << (void*)(mem + size) << endl;
+#endif
   }
 
   while (true) {
