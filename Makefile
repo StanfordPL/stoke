@@ -179,7 +179,6 @@ SRC_OBJ=\
 	src/validator/handlers/simple_handler.o \
 	src/validator/handlers/strata_combo_handler.o \
 	src/validator/handlers/strata_handler.o \
-	src/validator/handlers/pseudo_handler.o \
 	\
 	src/verifier/hold_out.o
 
