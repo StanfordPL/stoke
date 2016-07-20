@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <set>
 
 #include "src/ext/x64asm/src/function.h"
 
@@ -58,6 +59,56 @@ inline long long rdtsc() {
   return cycles;
 }
 
+class Allocator {
+public:
+  Allocator(): page_size(getpagesize()) {}
+
+  void allocate(uint64_t start, uint64_t size) {
+    // calculate real start address
+    uint64_t adjusted_start = start & (~(page_size - 1));
+    auto adjusted_size = start + size - adjusted_start;
+    auto cur = adjusted_start;
+
+    do {
+      // allocate if we haven't allocated this page yet
+      if (allocated.find(cur) == allocated.end()) {
+        allocated.insert(cur);
+        auto ret = mmap((void*)cur,
+                        page_size,
+                        PROT_READ | PROT_WRITE | PROT_EXEC,
+                        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
+        if (ret == (void*)-1) {
+          cout << "Failed to allocate buffer.  Error: " << strerror(errno) << endl;
+          exit(1);
+        }
+
+#ifdef DEBUG_STOKED_SHOW_ADDRS
+        cout << "[ stoked ] Allocating one page:" << endl;
+        cout << "             buffer     = " << (void*)start << " - " << (void*) (start + size) << " (" << size << " bytes)" << endl;
+        cout << "             page size  = " << page_size << endl;
+        cout << "             page start = " << (void*)cur << endl;
+#endif
+      } else {
+#ifdef DEBUG_STOKED_SHOW_ADDRS
+        cout << "[ stoked ] Page already allocated:" << endl;
+        cout << "             start      = " << (void*)start << endl;
+        cout << "             page size  = " << page_size << endl;
+        cout << "             page start = " << (void*)cur << endl;
+#endif
+      }
+      cur += page_size;
+    } while (cur < adjusted_start + adjusted_size);
+
+  }
+
+private:
+  /** All the allocated pages (identified by the start address). */
+  set<uint64_t> allocated;
+
+  /** The size of a page. */
+  uint64_t page_size;
+};
+
 
 /**
 * An executable buffer.  Similar to Function from x64asm, but allows choosing
@@ -65,65 +116,24 @@ inline long long rdtsc() {
 */
 class ExecBuffer {
 public:
-  ExecBuffer() : buffer(NULL), capacity(0), target_address(0) {
-  }
-
-  ~ExecBuffer() {
-    if (buffer != NULL) {
-      munmap(buffer, capacity);
-      buffer = NULL;
-    }
+  ExecBuffer(Allocator& alloc) : allocator(alloc), capacity(0), target_address(0) {
   }
 
   /** Allocate at least 'new_capacity' bytes. */
   void allocate(size_t new_capacity) {
     if (capacity < new_capacity) {
-      if (capacity != 0) {
-        // unmap
-        munmap(buffer, capacity);
-      }
       capacity = new_capacity;
-
-      // map new region
-      if (target_address == 0) {
-        buffer = (unsigned char*) mmap(0, capacity,
-                                       PROT_READ | PROT_WRITE | PROT_EXEC,
-                                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-#ifdef DEBUG_STOKED_SHOW_ADDRS
-        cout << "[ stoked ] Allocated execution buffer at arbitrary address " << (void*) buffer << endl;
-#endif
-      } else {
-        // calculate real start address
-        auto page_size = getpagesize();
-        uint64_t adjusted_target_address = target_address & (~(page_size - 1));
-        auto adjusted_capacity = target_address + capacity - adjusted_target_address;
-
-        buffer = (unsigned char*) mmap((void*)adjusted_target_address,
-                                       adjusted_capacity,
-                                       PROT_READ | PROT_WRITE | PROT_EXEC,
-                                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-        if (buffer == (void*)-1) {
-          cout << "Failed to allocate code buffer.  Error: " << strerror(errno) << endl;
-          exit(1);
-        }
-#ifdef DEBUG_STOKED_SHOW_ADDRS
-        cout << "[ stoked ] Allocated execution buffer:" << endl;
-        cout << "             page size      = " << page_size << endl;
-        cout << "             target address = " << (void*)target_address << endl;
-        cout << "             buffer address = " << (void*)buffer << endl;
-        cout << "             buffer end     = " << (void*)(buffer + adjusted_capacity) << endl;
-#endif
-      }
+      allocator.allocate(target_address, capacity);
     }
   }
 
   /** Set the target address. */
   void set_target_address(uint64_t target_addr) {
+    assert(target_address != 0);
     auto has_changed = target_addr != target_address;
     target_address = target_addr;
 
-    if (buffer != NULL && has_changed && target_address != 0) {
+    if (has_changed) {
       // reallocate buffer if necessary
       allocate(capacity);
     }
@@ -131,33 +141,31 @@ public:
 
   /** Direct pointer to the underlying buffer. */
   void* data() const {
-    if (target_address == 0) {
-      return buffer;
-    }
     return (void*)target_address;
   }
 
   /** Zero argument usage form. */
   template <typename Y>
   Y call() const {
-    return ((Y(*)()) buffer)();
+    return ((Y(*)()) target_address)();
   }
 
 private:
 
-  /** The mmap'ed memory region, or NULL. */
-  unsigned char* buffer;
+  /** The allocator. */
+  Allocator& allocator;
   /** Capacity of the buffer, starting from target_address (or buffer, if
   target_address is 0). */
   size_t capacity;
-  /** Address of the buffer, or 0 if the address can be anything */
+  /** Address of the buffer */
   uint64_t target_address;
 };
 
 
 int main() {
 
-  ExecBuffer code;
+  Allocator allocator;
+  ExecBuffer code(allocator);
   int n;
 
   // read testcase memory
@@ -192,24 +200,7 @@ int main() {
   // allocate memory
   auto page_size = getpagesize();
   for (auto segment : memories) {
-    uint64_t start = segment.addr & (~(page_size - 1));
-    auto size = segment.addr + segment.size - start;
-    // this memory does not need to be executable, since we are only putting data here.
-    // however, it seems that if the code buffer is close to these buffers, then
-    // that call can fail to make the code buffer executable.
-    auto mem = (unsigned char*) mmap((void*)start, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
-    if (mem == (void*)-1) {
-      cout << "Failed to allocate data memory.  Error: " << strerror(errno) << endl;
-      exit(1);
-    }
-
-#ifdef DEBUG_STOKED_SHOW_ADDRS
-    cout << "[ stoked ] Allocated memory buffer:" << endl;
-    cout << "             segment start  = " << (void*)segment.addr << endl;
-    cout << "             segment size   = " << segment.size << endl;
-    cout << "             buffer address = " << (void*)mem << endl;
-    cout << "             buffer end     = " << (void*)(mem + size) << endl;
-#endif
+    allocator.allocate(segment.addr, segment.size);
   }
 
   while (true) {
