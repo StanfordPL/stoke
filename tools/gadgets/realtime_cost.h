@@ -22,8 +22,9 @@ namespace stoke {
 
 class RealtimeCostGadget : public RealtimeCost {
 public:
-  RealtimeCostGadget() : RealtimeCost() {
+  RealtimeCostGadget(const Cfg& target) : RealtimeCost() {
     set_repetitions(realtime_reps_arg.value());
+    set_rip_offset(target.get_function().get_rip_offset());
   }
 };
 

@@ -116,7 +116,7 @@ private:
 */
 class ExecBuffer {
 public:
-  ExecBuffer(Allocator& alloc) : allocator(alloc), capacity(0), target_address(0) {
+  ExecBuffer(Allocator& alloc, uint64_t target_addr) : allocator(alloc), capacity(0), target_address(target_addr) {
   }
 
   /** Allocate at least 'new_capacity' bytes. */
@@ -124,18 +124,6 @@ public:
     if (capacity < new_capacity) {
       capacity = new_capacity;
       allocator.allocate(target_address, capacity);
-    }
-  }
-
-  /** Set the target address. */
-  void set_target_address(uint64_t target_addr) {
-    assert(target_address != 0);
-    auto has_changed = target_addr != target_address;
-    target_address = target_addr;
-
-    if (has_changed) {
-      // reallocate buffer if necessary
-      allocate(capacity);
     }
   }
 
@@ -165,7 +153,6 @@ private:
 int main() {
 
   Allocator allocator;
-  ExecBuffer code(allocator);
   int n;
 
   // read testcase memory
@@ -178,6 +165,13 @@ int main() {
     mem.data = new unsigned char[mem.size];
     safe_read(mem.data, mem.size);
   }
+
+  // read the address the code should be located at
+  uint64_t target_addr;
+  safe_read(&target_addr, sizeof(target_addr));
+
+  // buffer for the code
+  ExecBuffer code(allocator, target_addr);
 
   // read ymm values and send address where we store them
   auto nbytes = 256/8;
@@ -204,10 +198,6 @@ int main() {
   }
 
   while (true) {
-    // read the address the code should be located at
-    uint64_t target_addr;
-    safe_read(&target_addr, sizeof(target_addr));
-    code.set_target_address(target_addr);
 
     // read assembled code
     if (!safe_read(&n, sizeof(n))) break;

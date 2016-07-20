@@ -99,6 +99,9 @@ public:
       safe_write(pc[1], segment->data(), size);
     }
 
+    // send target address
+    safe_write(pc[1], &rip_offset, sizeof(rip_offset));
+
     // send the ymm values, and read the address they will be stored
     for (int i = 0; i < 16; i++) {
       safe_write(pc[1], testcase.sse[i].data(), 256 / 8);
@@ -200,10 +203,6 @@ public:
     bool ok = assm.finish();
     assert(ok);
 
-    // send target address
-    uint64_t target_addr = cfg.get_function().get_rip_offset();
-    safe_write(pc[1], &target_addr, sizeof(target_addr));
-
     // send code
     int n;
     n = buffer.size();
@@ -219,6 +218,11 @@ public:
 
   RealtimeCost& set_repetitions(int r) {
     repetitions = r;
+    return *this;
+  }
+
+  RealtimeCost& set_rip_offset(uint64_t rip_offs) {
+    rip_offset = rip_offs;
     return *this;
   }
 
@@ -238,6 +242,8 @@ private:
   CpuState testcase;
   /** The number of repetitions */
   int repetitions;
+  /** The address where the code should be placed. */
+  uint64_t rip_offset;
 };
 
 } // namespace stoke
