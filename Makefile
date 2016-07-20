@@ -209,6 +209,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/postprocessing.o \
 	tools/io/solver.o \
 	tools/io/state_diff.o \
+	tools/io/stoke_path.o \
 	tools/io/failed_verification_action.o
 
 TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_NON_ARG_OBJ)

@@ -13,7 +13,7 @@
 using namespace std;
 using namespace x64asm;
 
-#define DEBUG_STOKED
+// #define DEBUG_STOKED
 
 #ifdef DEBUG_STOKED
 #define DEBUG_STOKED_SHOW_ADDRS

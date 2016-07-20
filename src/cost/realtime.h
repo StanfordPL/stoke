@@ -18,6 +18,8 @@
 #include "src/cost/cost_function.h"
 #include "src/ext/cpputil/include/io/console.h"
 
+#include "tools/io/stoke_path.h"
+
 namespace stoke {
 
 namespace {
@@ -76,7 +78,7 @@ public:
       close(cp[0]);
 
       // exec stoked binary
-      std::string stoked_path = "/home/sheule/dev/strata/stoke/bin/stoked";
+      std::string stoked_path = stoke_bin_path() + "/stoked";
       auto ret = execl(stoked_path.c_str(), stoked_path.c_str(), (char*)0);
       // we should not reach this point if exec succeeds
       cpputil::Console::error() << "Exec of " << stoked_path <<  " failed: " << ret << "." << std::endl;

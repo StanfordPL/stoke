@@ -21,6 +21,8 @@
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/validator/error.h"
 
+#include "tools/io/stoke_path.h"
+
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 
@@ -353,22 +355,7 @@ void StrataHandler::init() {
 
   if (strata_path_ == "") {
     // initialize the strata path once
-    char buf[1000];
-    if (readlink("/proc/self/exe", buf, 999) > 0) {
-      strata_path_ = string(buf);
-    } else {
-      if (readlink("/proc/curproc/file", buf, 999) > 0) {
-        strata_path_ = string(buf);
-      }
-    }
-
-    // find bin directory
-    strata_path_ = strata_path_.substr(0, strata_path_.rfind("/"));
-    strata_path_ += "/strata-programs";
-
-    if (strata_path_ == "") {
-      return;
-    }
+    strata_path_ = stoke_bin_path() + "/strata-programs";
   }
 
   reg_only_alternative_.clear();
