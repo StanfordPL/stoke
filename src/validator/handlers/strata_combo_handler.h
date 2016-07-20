@@ -23,7 +23,6 @@
 #include "src/validator/handlers/lea_handler.h"
 #include "src/validator/handlers/move_handler.h"
 #include "src/validator/handlers/packed_handler.h"
-#include "src/validator/handlers/pseudo_handler.h"
 #include "src/validator/handlers/punpck_handler.h"
 #include "src/validator/handlers/shift_handler.h"
 #include "src/validator/handlers/simple_handler.h"
