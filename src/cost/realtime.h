@@ -218,7 +218,7 @@ public:
     emit_rdtscp(buffer);
     assm.shl(x64asm::rdx, x64asm::Imm8(32));
     assm.add(x64asm::rax, x64asm::rdx);
-    
+
     // calculate timing
     assm.mov(x64asm::rcx, x64asm::rax);
     assm.mov(x64asm::rax, x64asm::Moffs64(timer_start_ptr));
