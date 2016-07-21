@@ -13,7 +13,7 @@
 using namespace std;
 using namespace x64asm;
 
-// #define DEBUG_STOKED
+#define DEBUG_STOKED
 
 #ifdef DEBUG_STOKED
 #define DEBUG_STOKED_SHOW_ADDRS
@@ -63,6 +63,19 @@ class Allocator {
 public:
   Allocator(): page_size(getpagesize()) {}
 
+  /** Allocated a one page buffer at an arbitrary address. */
+  void* allocate_anywhere() {
+    auto ret = mmap(0, page_size,
+                    PROT_READ | PROT_WRITE | PROT_EXEC,
+                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (ret == (void*)-1) {
+      cout << "Failed to allocate buffer.  Error: " << strerror(errno) << endl;
+      exit(1);
+    }
+    return ret;
+  }
+
+  /** Allocate necessary pages starting at start until start+size. */
   void allocate(uint64_t start, uint64_t size) {
     // calculate real start address
     uint64_t adjusted_start = start & (~(page_size - 1));
@@ -91,7 +104,7 @@ public:
       } else {
 #ifdef DEBUG_STOKED_SHOW_ADDRS
         cout << "[ stoked ] Page already allocated:" << endl;
-        cout << "             start      = " << (void*)start << endl;
+        cout << "             buffer     = " << (void*)start << " - " << (void*) (start + size) << " (" << size << " bytes)" << endl;
         cout << "             page size  = " << page_size << endl;
         cout << "             page start = " << (void*)cur << endl;
 #endif
@@ -116,20 +129,12 @@ private:
 */
 class ExecBuffer {
 public:
-  ExecBuffer(Allocator& alloc, uint64_t target_addr) : allocator(alloc), capacity(0), target_address(target_addr) {
-  }
-
-  /** Allocate at least 'new_capacity' bytes. */
-  void allocate(size_t new_capacity) {
-    if (capacity < new_capacity) {
-      capacity = new_capacity;
-      allocator.allocate(target_address, capacity);
-    }
+  ExecBuffer(void* target_addr) : target_address(target_addr) {
   }
 
   /** Direct pointer to the underlying buffer. */
   void* data() const {
-    return (void*)target_address;
+    return target_address;
   }
 
   /** Zero argument usage form. */
@@ -140,13 +145,8 @@ public:
 
 private:
 
-  /** The allocator. */
-  Allocator& allocator;
-  /** Capacity of the buffer, starting from target_address (or buffer, if
-  target_address is 0). */
-  size_t capacity;
   /** Address of the buffer */
-  uint64_t target_address;
+  void* target_address;
 };
 
 
@@ -154,6 +154,8 @@ int main() {
 
   Allocator allocator;
   int n;
+  ExecBuffer setup(allocator.allocate_anywhere());
+  ExecBuffer cleanup(allocator.allocate_anywhere());
 
   // read testcase memory
   safe_read(&n, sizeof(n));
@@ -171,7 +173,7 @@ int main() {
   safe_read(&target_addr, sizeof(target_addr));
 
   // buffer for the code
-  ExecBuffer code(allocator, target_addr);
+  ExecBuffer code((void*)target_addr);
 
   // read ymm values and send address where we store them
   auto nbytes = 256/8;
@@ -182,6 +184,10 @@ int main() {
     safe_write(&ymmdata_ptr, sizeof(ymmdata_ptr));
   }
 
+  // read the value of rsp
+  uint64_t rsp;
+  safe_read(&rsp, sizeof(rsp));
+
   // send address of rsp_backup
   uint64_t rsp_backup = 0;
   uint64_t* rsp_backup_ptr = &rsp_backup;
@@ -191,17 +197,34 @@ int main() {
   int reps;
   safe_read(&reps, sizeof(reps));
 
+  // send address of cleanup code
+  uint64_t cleanup_addr = (uint64_t) cleanup.data();
+  safe_write(&cleanup_addr, sizeof(cleanup_addr));
+
+  // read setup code
+  safe_read(&n, sizeof(n));
+  assert(n < getpagesize());
+  safe_read(setup.data(), n);
+
+  // read cleanup code
+  safe_read(&n, sizeof(n));
+  assert(n < getpagesize());
+  safe_read(cleanup.data(), n);
+
   // allocate memory
   auto page_size = getpagesize();
   for (auto segment : memories) {
     allocator.allocate(segment.addr, segment.size);
   }
 
+  // make sure the return address pointer is allocated
+  allocator.allocate(rsp, 1);
+
   while (true) {
 
     // read assembled code
     if (!safe_read(&n, sizeof(n))) break;
-    code.allocate(n);
+    allocator.allocate(target_addr, n);
     safe_read(code.data(), n);
 
     vector<uint64_t> measurements;
@@ -222,7 +245,9 @@ int main() {
 #ifdef USE_TS
       auto start = rdtsc();
 #endif
-      code.call<int>();
+      cout << "before call" << endl;
+      cout << setup.call<int>() << endl;
+      cout << "after call" << endl;
 
 #ifdef USE_CLOCK
       clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);

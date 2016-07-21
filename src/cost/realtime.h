@@ -110,13 +110,118 @@ public:
       safe_read(cp[0], &ymm_ptr[i], sizeof(ymm_ptr[i]));
     }
 
+    // send the value of rsp
+    uint64_t rsp = testcase.gp[x64asm::rsp].get_fixed_quad(0);
+    safe_write(pc[1], &rsp, sizeof(rsp));
+
     // read rsp backup pointer value
     safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
     // send repetitions
     safe_write(pc[1], &repetitions, sizeof(repetitions));
 
+    // read address of cleanup code
+    safe_read(cp[0], &cleanup_addr, sizeof(cleanup_addr));
+
+    // send setup and cleanup code
+    send_setup();
+    send_cleanup();
+
     return *this;
+  }
+
+  void send_setup() {
+    x64asm::Function buffer;
+    x64asm::Assembler assm;
+    assm.start(buffer);
+
+    // save callee-saved registers
+    assm.push_1(x64asm::rbx);
+    assm.push_1(x64asm::rbp);
+    assm.push_1(x64asm::r12);
+    assm.push_1(x64asm::r13);
+    assm.push_1(x64asm::r14);
+    assm.push_1(x64asm::r15);
+
+    // backup rsp to fixed location
+    assm.mov(x64asm::rax, x64asm::rsp);
+    assm.mov(x64asm::Moffs64(rsp_backup_ptr), x64asm::rax);
+
+    // initialize return address to point to the cleanup code
+    assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(cleanup_addr));
+    auto rsp_from_testcase = testcase.gp[x64asm::rsp].get_fixed_quad(0);
+    assm.mov((x64asm::R64)x64asm::rcx, x64asm::Imm64(rsp_from_testcase));
+    assm.mov(x64asm::M64(x64asm::rcx), x64asm::rax);
+
+    // initialize registers from testcase
+    // - flags
+    assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(*((uint64_t*)testcase.rf.data())));
+    assm.push_1(x64asm::rax);
+    assm.popfq();
+    // - sse registers
+    for (const auto& s : x64asm::xmms) {
+      assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(ymm_ptr[s]));
+#if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
+      assm.vmovdqu(x64asm::ymms[s], x64asm::M256(x64asm::rax));
+#else
+      assm.movdqu(x64asm::xmms[s], x64asm::M128(x64asm::rax));
+#endif
+    }
+    // - gp registers
+    for (const auto& r : x64asm::r64s) {
+      assm.mov(r, x64asm::Imm64(*((uint64_t*)testcase.gp[r].data())));
+    }
+
+    // jump to the actual code
+    // TODO: this only works for low rip offsets.  we could store it in memory,
+    // at address loc and then use jmp M(loc).  this requires loc to be a low
+    // address, but that should be possible to obtain
+    if (rip_offset != (uint64_t)((uint32_t) rip_offset)) {
+      cpputil::Console::error() << "code address must be at most 32 bits" << std::endl;
+    }
+    //assm.jmp(x64asm::M64(x64asm::Imm32((uint32_t)rip_offset)));
+    assm.ret();
+
+    bool ok = assm.finish();
+    assert(ok);
+
+    // send code
+    int n;
+    n = buffer.size();
+    safe_write(pc[1], &n, sizeof(n));
+    safe_write(pc[1], buffer.data(), n);
+  }
+
+  void send_cleanup() {
+    x64asm::Function buffer;
+    x64asm::Assembler assm;
+    assm.start(buffer);
+
+    // restore rsp
+    assm.mov(x64asm::rcx, x64asm::rax);
+    assm.mov(x64asm::rax, x64asm::Moffs64(rsp_backup_ptr));
+    assm.mov(x64asm::rsp, x64asm::rax);
+    assm.mov(x64asm::rax, x64asm::rcx);
+
+    // restore callee-saved registers
+    assm.pop_1(x64asm::r15);
+    assm.pop_1(x64asm::r14);
+    assm.pop_1(x64asm::r13);
+    assm.pop_1(x64asm::r12);
+    assm.pop_1(x64asm::rbp);
+    assm.pop_1(x64asm::rbx);
+
+    // return
+    assm.ret();
+
+    bool ok = assm.finish();
+    assert(ok);
+
+    // send code
+    int n;
+    n = buffer.size();
+    safe_write(pc[1], &n, sizeof(n));
+    safe_write(pc[1], buffer.data(), n);
   }
 
   /** Measures the real running time */
@@ -135,72 +240,16 @@ public:
 
     x64asm::Code code = cfg.get_code();
 
-    // save callee-saved registers
-    assm.push_1(x64asm::rbx);
-    assm.push_1(x64asm::rbp);
-    assm.push_1(x64asm::r12);
-    assm.push_1(x64asm::r13);
-    assm.push_1(x64asm::r14);
-    assm.push_1(x64asm::r15);
-
-    // backup rsp to fixed location
-    assm.mov(x64asm::rax, x64asm::rsp);
-    assm.mov(x64asm::Moffs64(rsp_backup_ptr), x64asm::rax);
-
-    // initialize registers from testcase
-    // - flags
-    assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(*((uint64_t*)testcase.rf.data())));
-    assm.push_1(x64asm::rax);
-    assm.popfq();
-    // - sse registers
-    for (const auto& s : x64asm::xmms) {
-      assm.mov((x64asm::R64)x64asm::rax, x64asm::Imm64(ymm_ptr[s]));
-#if defined(HASWELL_BUILD) || defined(SANDYBRIDGE_BUILD)
-      assm.vmovdqu(x64asm::ymms[s], x64asm::M256(x64asm::rax));
-#else
-      assm.movdqu(x64asm::xmms[s], x64asm::M128(x64asm::rax));
-#endif
-    }
-    // - gp registers
-    for (const auto& r : x64asm::r64s) {
-      if (r != x64asm::rsp) {
-        assm.mov(r, x64asm::Imm64(*((uint64_t*)testcase.gp[r].data())));
-      }
-    }
-
-    // label for the clean-up code
-    const x64asm::Label exit;
-
     // assemble function
     for (size_t i = 0; i < code.size(); i++) {
       auto& instr = code[i];
       // turn returns into jumps to the tear-down code
-      if (instr.get_opcode() == x64asm::RET) {
-        assm.jmp(exit);
-      } else {
-        assm.assemble(instr);
-      }
+      // if (instr.get_opcode() == x64asm::RET) {
+      //   assm.jmp(x64asm::M64(x64asm::Imm32((uint32_t)cleanup_addr)));
+      // } else {
+      // }
+      assm.assemble(instr);
     }
-
-    // what follows is all cleanup code
-    assm.bind(exit);
-
-    // restore rsp
-    assm.mov(x64asm::rcx, x64asm::rax);
-    assm.mov(x64asm::rax, x64asm::Moffs64(rsp_backup_ptr));
-    assm.mov(x64asm::rsp, x64asm::rax);
-    assm.mov(x64asm::rax, x64asm::rcx);
-
-    // restore callee-saved registers
-    assm.pop_1(x64asm::r15);
-    assm.pop_1(x64asm::r14);
-    assm.pop_1(x64asm::r13);
-    assm.pop_1(x64asm::r12);
-    assm.pop_1(x64asm::rbp);
-    assm.pop_1(x64asm::rbx);
-
-    // return
-    assm.ret();
 
     bool ok = assm.finish();
     assert(ok);
@@ -246,6 +295,8 @@ private:
   int repetitions;
   /** The address where the code should be placed. */
   uint64_t rip_offset;
+  /** A pointer to the cleanup code. */
+  uint64_t cleanup_addr;
 };
 
 } // namespace stoke
