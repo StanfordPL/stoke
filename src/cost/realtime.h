@@ -179,6 +179,7 @@ public:
     if (rip_offset != (uint64_t)((uint32_t) rip_offset)) {
       cpputil::Console::error() << "code address must be at most 32 bits" << std::endl;
     }
+    cout << (void*) rip_offset << endl;
     //assm.jmp(x64asm::M64(x64asm::Imm32((uint32_t)rip_offset)));
     assm.ret();
 
