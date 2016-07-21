@@ -29,17 +29,6 @@ public:
   unsigned char* data;
 };
 
-inline long long rdtsc() {
-  long long cycles;
-  asm volatile("rdtscp\n"
-               "shlq $32, %%rdx\n"
-               "addq %%rdx, %%rax\n"
-               : "=a" (cycles)
-               : /* no inputs */
-               : "rdx", "rcx");
-  return cycles;
-}
-
 class Allocator {
 public:
   Allocator(): page_size(getpagesize()) {}
@@ -192,6 +181,11 @@ int main() {
   uint64_t* rsp_backup_ptr = &rsp_backup;
   safe_write(&rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
+  // send address of timer temp pointer
+  uint64_t timer_start = 0;
+  uint64_t* timer_start_ptr = &timer_start;
+  safe_write(&timer_start_ptr, sizeof(timer_start_ptr));
+
   // allocate storage at a low address for the jump target to start
   // execution of the target
   // TODO: this is sketchy.  what if 0x10000 is already taken?  we do need it
@@ -237,49 +231,20 @@ int main() {
     vector<uint64_t> measurements;
     measurements.reserve(reps);
 
-#define USE_TS
-
     for (int i = 0; i < reps; i++) {
       // initialize memory (TODO: only do this when necessary)
       for (auto segment : memories) {
         memcpy((void*)segment.addr, segment.data, segment.size);
       }
 
-#ifdef USE_CLOCK
-      timespec start, end;
-      clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
-#endif
-#ifdef USE_TS
-      auto start = rdtsc();
-#endif
-
-      setup.call<int>();
-
-#ifdef USE_CLOCK
-      clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
-      auto duration = ((end.tv_sec * 1000000000 + end.tv_nsec) - (start.tv_sec * 1000000000 + start.tv_nsec));
-#endif
-#ifdef USE_TS
-      auto end = rdtsc();
-      auto duration = end - start;
-#endif
-      measurements.push_back(duration);
+      auto res = setup.call<uint64_t>();
+      measurements.push_back(res);
 
     }
 
     sort(measurements.begin(), measurements.end());
-    // auto len = measurements.size();
-    // int use = 0.7*(reps + 1);
-    // int start = 0.05 * reps;
-    // uint64_t sum = 0;
-    // auto count = 0;
-    // for (auto i = start; i < start + use && i < reps; i++) {
-    //   sum += measurements[i];
-    //   count += 1;
-    // }
 
     uint64_t dur = measurements[0];
-    // uint64_t dur = code.call<int>();;
 
     // send duration
     safe_write(&dur, sizeof(dur));

@@ -117,6 +117,9 @@ public:
     // read rsp backup pointer value
     safe_read(cp[0], &rsp_backup_ptr, sizeof(rsp_backup_ptr));
 
+    // read timer temp pointer
+    safe_read(cp[0], &timer_start_ptr, sizeof(timer_start_ptr));
+
     // send repetitions
     safe_write(pc[1], &repetitions, sizeof(repetitions));
 
@@ -128,6 +131,13 @@ public:
     send_cleanup();
 
     return *this;
+  }
+
+  /** Emit rdtscp instruction. */
+  void emit_rdtscp(x64asm::Function& f) {
+    f.emit_byte(0x0f);
+    f.emit_byte(0x01);
+    f.emit_byte(0xf9);
   }
 
   void send_setup() {
@@ -167,9 +177,23 @@ public:
       assm.movdqu(x64asm::xmms[s], x64asm::M128(x64asm::rax));
 #endif
     }
-    // - gp registers
+    // - most gp registers
+    std::vector<x64asm::R64> later = { x64asm::rax, x64asm::rcx, x64asm::rdx };
     for (const auto& r : x64asm::r64s) {
-      assm.mov(r, x64asm::Imm64(*((uint64_t*)testcase.gp[r].data())));
+      if (find(later.begin(), later.end(), r) == later.end()) {
+        assm.mov(r, x64asm::Imm64(testcase.gp[r].get_fixed_quad(0)));
+      }
+    }
+
+    // record start time (doing this as late as possible)
+    emit_rdtscp(buffer);
+    assm.shl(x64asm::rdx, x64asm::Imm8(32));
+    assm.add(x64asm::rax, x64asm::rdx);
+    assm.mov(x64asm::Moffs64(timer_start_ptr), x64asm::rax);
+
+    // - remaining gp registers
+    for (const auto& r : later) {
+      assm.mov(r, x64asm::Imm64(testcase.gp[r].get_fixed_quad(0)));
     }
 
     // jump to the actual code (the pointer to the code is stored at a fixed address)
@@ -190,11 +214,19 @@ public:
     x64asm::Assembler assm;
     assm.start(buffer);
 
-    // restore rsp
+    // record end time
+    emit_rdtscp(buffer);
+    assm.shl(x64asm::rdx, x64asm::Imm8(32));
+    assm.add(x64asm::rax, x64asm::rdx);
+    
+    // calculate timing
     assm.mov(x64asm::rcx, x64asm::rax);
+    assm.mov(x64asm::rax, x64asm::Moffs64(timer_start_ptr));
+    assm.sub(x64asm::rcx, x64asm::rax);
+
+    // restore rsp
     assm.mov(x64asm::rax, x64asm::Moffs64(rsp_backup_ptr));
     assm.mov(x64asm::rsp, x64asm::rax);
-    assm.mov(x64asm::rax, x64asm::rcx);
 
     // restore callee-saved registers
     assm.pop_1(x64asm::r15);
@@ -203,6 +235,9 @@ public:
     assm.pop_1(x64asm::r12);
     assm.pop_1(x64asm::rbp);
     assm.pop_1(x64asm::rbx);
+
+    // move timing into rax as the result
+    assm.mov(x64asm::rax, x64asm::rcx);
 
     // return
     assm.ret();
@@ -285,6 +320,8 @@ private:
   uint64_t rip_offset;
   /** A pointer to the cleanup code. */
   uint64_t cleanup_addr;
+  /** pointer in stoked to a location where the start time can be stored. */
+  uint64_t* timer_start_ptr;
 };
 
 } // namespace stoke
