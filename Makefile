@@ -242,7 +242,7 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
 	\
-	bin/stoked
+	bin/realtimep
 
 # used to force a target to rebuild
 .PHONY: .FORCE
@@ -389,8 +389,8 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
-bin/stoked:
-	$(CXX) -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/stoked.cc -o bin/stoked
+bin/realtimep:
+	$(CXX) -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/realtimep.cc -o bin/realtimep
 
 ##### TESTING
 
@@ -445,7 +445,7 @@ hooks: .git/hooks/pre-commit .git/hooks/post-merge-checkout
 ##### CLEAN TARGETS
 
 stoke_clean:
-	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash bin/stoked
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash bin/realtimep
 	rm -rf $(VALIDATOR_AUTOGEN)
 
 clean: stoke_clean

@@ -26,7 +26,7 @@ namespace {
 
 void safe_write(int handle, const void* data, int nbytes) {
   if (write(handle, data, nbytes) != nbytes) {
-    cpputil::Console::error() << "Failed to send data to stoked (realtime)." << std::endl;
+    cpputil::Console::error() << "Failed to send data to realtimep (realtime)." << std::endl;
   }
 }
 
@@ -57,7 +57,7 @@ public:
 
     // create a pipe for communication
     if (pipe(pc) || pipe(cp)) {
-      cpputil::Console::error() << "Failed to create pipe to communicate with stoked." << std::endl;
+      cpputil::Console::error() << "Failed to create pipe to communicate with realtimep." << std::endl;
     }
 
     // fork
@@ -70,20 +70,20 @@ public:
       // close stderr and make it write end of child to parent pipe
       close(2);
       if (dup(pc[0]) == -1 || dup(cp[1]) == -1) {
-        cpputil::Console::error() << "Failed to create pipe (dup) to communicate with stoked." << std::endl;
+        cpputil::Console::error() << "Failed to create pipe (dup) to communicate with realtimep." << std::endl;
       }
 
       // close unused ends of pipes
       close(pc[1]);
       close(cp[0]);
 
-      // exec stoked binary
-      std::string stoked_path = stoke_bin_path() + "/stoked";
-      auto ret = execl(stoked_path.c_str(), stoked_path.c_str(), (char*)0);
+      // exec realtimep binary
+      std::string realtimep_path = stoke_bin_path() + "/realtimep";
+      auto ret = execl(realtimep_path.c_str(), realtimep_path.c_str(), (char*)0);
       // we should not reach this point if exec succeeds
-      cpputil::Console::error() << "Exec of " << stoked_path <<  " failed: " << ret << "." << std::endl;
+      cpputil::Console::error() << "Exec of " << realtimep_path <<  " failed: " << ret << "." << std::endl;
     } else if (pid < (pid_t) 0) {
-      cpputil::Console::error() << "Fork for stoked failed." << std::endl;
+      cpputil::Console::error() << "Fork for realtimep failed." << std::endl;
     }
 
     // parent process
@@ -302,15 +302,15 @@ public:
 
 private:
 
-  /** PID of the stoked process. */
+  /** PID of the realtimep process. */
   pid_t pid;
   /** parent to child pipe */
   int pc[2];
   /** child to parent pipe */
   int cp[2];
-  /** pointer in stoked to a location where rsp can be backed up. */
+  /** pointer in realtimep to a location where rsp can be backed up. */
   uint64_t* rsp_backup_ptr;
-  /** pointers to ymm value location in stoked to initialize ymm registers. */
+  /** pointers to ymm value location in realtimep to initialize ymm registers. */
   uint64_t* ymm_ptr[16];
   /** the testcase we use */
   CpuState testcase;
@@ -320,7 +320,7 @@ private:
   uint64_t rip_offset;
   /** A pointer to the cleanup code. */
   uint64_t cleanup_addr;
-  /** pointer in stoked to a location where the start time can be stored. */
+  /** pointer in realtimep to a location where the start time can be stored. */
   uint64_t* timer_start_ptr;
 };
 
