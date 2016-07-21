@@ -172,16 +172,8 @@ public:
       assm.mov(r, x64asm::Imm64(*((uint64_t*)testcase.gp[r].data())));
     }
 
-    // jump to the actual code
-    // TODO: this only works for low rip offsets.  we could store it in memory,
-    // at address loc and then use jmp M(loc).  this requires loc to be a low
-    // address, but that should be possible to obtain
-    if (rip_offset != (uint64_t)((uint32_t) rip_offset)) {
-      cpputil::Console::error() << "code address must be at most 32 bits" << std::endl;
-    }
-    cout << (void*) rip_offset << endl;
-    //assm.jmp(x64asm::M64(x64asm::Imm32((uint32_t)rip_offset)));
-    assm.ret();
+    // jump to the actual code (the pointer to the code is stored at a fixed address)
+    assm.jmp(x64asm::M64(x64asm::Imm32(0x10000)));
 
     bool ok = assm.finish();
     assert(ok);
@@ -244,11 +236,6 @@ public:
     // assemble function
     for (size_t i = 0; i < code.size(); i++) {
       auto& instr = code[i];
-      // turn returns into jumps to the tear-down code
-      // if (instr.get_opcode() == x64asm::RET) {
-      //   assm.jmp(x64asm::M64(x64asm::Imm32((uint32_t)cleanup_addr)));
-      // } else {
-      // }
       assm.assemble(instr);
     }
 

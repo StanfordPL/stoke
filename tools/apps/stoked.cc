@@ -13,30 +13,11 @@
 using namespace std;
 using namespace x64asm;
 
-#define DEBUG_STOKED
+// #define DEBUG_STOKED
 
 #ifdef DEBUG_STOKED
 #define DEBUG_STOKED_SHOW_ADDRS
 #endif
-
-bool safe_read(void* buf, int size) {
-  auto nread = read(0, buf, size);
-  if (nread == 0) {
-    return false;
-  }
-  if (size != nread) {
-    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (stoked).  Error message: " << strerror(errno) << endl;
-    exit(1);
-  }
-  return true;
-}
-
-void safe_write(const void* data, int nbytes) {
-  if (write(2, data, nbytes) != nbytes) {
-    cout << "Failed to send data to stoked (stoked)." << endl;
-    exit(1);
-  }
-}
 
 class Mem {
 public:
@@ -149,6 +130,24 @@ private:
   void* target_address;
 };
 
+bool safe_read(void* buf, int size) {
+  auto nread = read(0, buf, size);
+  if (nread == 0) {
+    return false;
+  }
+  if (size != nread) {
+    cout << "Failed to read sufficient number of bytes; read " << nread << " instead of " << size << " (stoked).  Error message: " << strerror(errno) << endl;
+    exit(1);
+  }
+  return true;
+}
+
+void safe_write(const void* data, int nbytes) {
+  if (write(2, data, nbytes) != nbytes) {
+    cout << "Failed to send data to stoked (stoked)." << endl;
+    exit(1);
+  }
+}
 
 int main() {
 
@@ -192,6 +191,14 @@ int main() {
   uint64_t rsp_backup = 0;
   uint64_t* rsp_backup_ptr = &rsp_backup;
   safe_write(&rsp_backup_ptr, sizeof(rsp_backup_ptr));
+
+  // allocate storage at a low address for the jump target to start
+  // execution of the target
+  // TODO: this is sketchy.  what if 0x10000 is already taken?  we do need it
+  // to be a 32bit address, though, which is why it is hard-coded
+  uint64_t* jump_target = (uint64_t*)0x10000;
+  allocator.allocate(0x10000, 8);
+  *jump_target = target_addr;
 
   // read repetitions
   int reps;
@@ -245,9 +252,8 @@ int main() {
 #ifdef USE_TS
       auto start = rdtsc();
 #endif
-      cout << "before call" << endl;
-      cout << setup.call<int>() << endl;
-      cout << "after call" << endl;
+
+      setup.call<int>();
 
 #ifdef USE_CLOCK
       clock_gettime(CLOCK_THREAD_CPUTIME_ID, &end);
