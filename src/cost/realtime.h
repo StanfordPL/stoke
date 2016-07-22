@@ -20,6 +20,9 @@
 
 #include "tools/io/stoke_path.h"
 
+// IMPORTANT: for a high-level documentation of how this cost function works,
+// see tools/apps/realtimep.cc
+
 namespace stoke {
 
 namespace {
