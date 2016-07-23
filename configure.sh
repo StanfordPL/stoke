@@ -21,6 +21,7 @@ rm -f .stoke_config
 ## All options are off by default
 MISC_OPTIONS=""
 
+
 ## Detect platform
 $(grep avx2 /proc/cpuinfo >/dev/null)
 AVX2=$?
@@ -74,10 +75,8 @@ done
 echo "The default build type is '$BUILD_TYPE'."
 
 ## Write options to config file
-echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
-
-# Write optimization/debug to config file
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
+echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
 ## All done!
 
