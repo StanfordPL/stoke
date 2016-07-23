@@ -24,7 +24,8 @@ MISC_OPTIONS=""
 ## Pick the compiler, if possible.  If 4.9 specifically exists, we'll use that.
 ## Otherwise we'll default to the latest g++.
 if [ -f /usr/bin/g++-4.9 ]; then
-  COMPILERBINARY="/usr/bin/g++-4.9"
+  CXX="/usr/bin/g++-4.9"
+  CC="/usr/bin/gcc-4.9"
 fi
 
 
@@ -82,7 +83,8 @@ echo "The default build type is '$BUILD_TYPE'."
 
 ## Write options to config file
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
-echo "COMPILERBINARY=$COMPILERBINARY" >> .stoke_config
+echo "CC=$CC" >> .stoke_config
+echo "CXX=$CXX" >> .stoke_config
 echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
 ## All done!
