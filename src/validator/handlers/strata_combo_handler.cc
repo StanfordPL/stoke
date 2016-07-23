@@ -31,7 +31,7 @@ std::vector<Handler*> StrataComboHandler::default_handler_list() const {
   v.push_back(new MoveHandler());
   v.push_back(new PunpckHandler());
   v.push_back(new ShiftHandler());
-  //v.push_back(new PseudoHandler());
+  v.push_back(new PseudoHandler());
 
   return v;
 }
