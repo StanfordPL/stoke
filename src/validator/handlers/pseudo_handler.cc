@@ -13,14 +13,13 @@
 // limitations under the License.
 
 
-#include <boost/regex.hpp>
+#include <regex>
 
 #include "src/validator/handlers/pseudo_handler.h"
 
 using namespace stoke;
 using namespace x64asm;
 using namespace std;
-using namespace boost;
 
 const vector<string> PseudoHandler::supported_regex_ = {
   "^\\.move_([0-9]{3})_([0-9]{3})_([^_]*)_([^_]*)_([^_]*)$",

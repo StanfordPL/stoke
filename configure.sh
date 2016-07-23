@@ -21,7 +21,8 @@ rm -f .stoke_config
 ## All options are off by default
 MISC_OPTIONS=""
 
-## Pick the compiler, if possible
+## Pick the compiler, if possible.  If 4.9 specifically exists, we'll use that.
+## Otherwise we'll default to the latest g++.
 if [ -f /usr/bin/g++-4.9 ]; then
   COMPILERBINARY="/usr/bin/g++-4.9"
 fi
