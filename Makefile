@@ -320,7 +320,8 @@ x64asm:
 
 .PHONY: pintool
 pintool:
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)"
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
+					COMPILERBINARY="${COMPILERBINARY}"
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt

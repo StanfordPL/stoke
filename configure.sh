@@ -21,6 +21,12 @@ rm -f .stoke_config
 ## All options are off by default
 MISC_OPTIONS=""
 
+## Pick the compiler, if possible
+if [ -f /usr/bin/g++-4.9 ]; then
+  COMPILERBINARY="/usr/bin/g++-4.9"
+fi
+
+
 ## Detect platform
 $(grep avx2 /proc/cpuinfo >/dev/null)
 AVX2=$?
@@ -74,10 +80,9 @@ done
 echo "The default build type is '$BUILD_TYPE'."
 
 ## Write options to config file
-echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
-
-# Write optimization/debug to config file
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
+echo "COMPILERBINARY=$COMPILERBINARY" >> .stoke_config
+echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
 ## All done!
 
