@@ -29,6 +29,7 @@
 
 namespace stoke {
 
+  /*
 x64asm::RegSet parse_regset_from_json(Json::Value json) {
   x64asm::RegSet rs;
 
@@ -195,6 +196,7 @@ TEST_P(CodeFixtureTest, CFGReachable) {
   }
 
 }
+*/
 
 TEST(CfgTest, Issue856) {
 

@@ -23,8 +23,8 @@
 using namespace std;
 
 
-
 CodeFixture::CodeFixture(string filename) {
+  /*
   // slurp the whole file into a string
   ifstream in(filename);
   stringstream buffer;
@@ -63,6 +63,7 @@ CodeFixture::CodeFixture(string filename) {
   for (auto name : test_json.getMemberNames()) {
     test_data_[name] = test_json[name];
   }
+  */
 
 
 }
@@ -87,6 +88,7 @@ void CodeFixtureTestInit::generate_fixtures() {
   //we don't add them all over again.
 
   fixtures_.clear();
+  /*
   std::string folder = "tests/fixtures";
 
   DIR* dp = opendir(folder.c_str());
@@ -114,6 +116,7 @@ void CodeFixtureTestInit::generate_fixtures() {
     CodeFixture f(filepath);
     fixtures_.push_back(f);
   }
+  */
 
 }
 
