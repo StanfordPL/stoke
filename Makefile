@@ -224,6 +224,7 @@ BIN=\
 	bin/stoke_search \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
+	bin/stoke_rename \
 	\
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_formula \
