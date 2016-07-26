@@ -36,28 +36,11 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-auto& dbg = Heading::create("Diff Options:");
-auto& show_unchanged = FlagArg::create("show_unchanged")
-                       .description("Show unchanged lines");
-auto& show_all_registers = FlagArg::create("diff_all_registers")
-                           .description("Show changes in all registers, not just the ones from live_out and def_in");
+auto& verbose = FlagArg::create("verbose");
 
-auto& machine_output_arg = ValueArg<string>::create("machine_output")
-                           .usage("<path/to/file.s>")
-                           .description("Machine-readable output (result and counterexample)");
-
-
-void print_machine_output(bool verified, string error, string counterexample, bool has_counterexample) {
-  ofstream f;
-  f.open(machine_output_arg.value());
-  f << "{" << endl;
-  f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
-  f << "  \"counter_examples_available\": " << (has_counterexample ? "true" : "false") << "," << endl;
-  f << "  \"counterexample\": \"" << counterexample << "\"," << endl;
-  f << "  \"error\": \"" << error << "\"" << endl;
-  f << "}" << endl;
-  f.close();
-}
+auto& output = ValueArg<string>::create("output")
+               .description("file to write rewritten file to (or original, if verification fails)")
+               .default_val("");
 
 class RenameMap {
 
@@ -246,55 +229,51 @@ int main(int argc, char** argv) {
   auto rewrite_code = rm(target.get_code());
   Cfg rewrite(rewrite_code, target.def_ins(), target.live_outs());
 
-  Console::msg() << "Rewrite" << endl << endl << rewrite.get_function() << endl;
 
   auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target.get_exit());
   auto rewrite_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target.get_exit());
 
   auto invariant = build_invariant(rm, RegSet::universe());
 
-  cout << "MAPPING" << endl;
-  rm.print();
-  cout << endl;
+  if (verbose.value()) {
+    Console::msg() << "Rewrite" << endl << endl << rewrite.get_function() << endl;
 
-  cout << "INVARIANT: " << *invariant << endl;
+    cout << "MAPPING" << endl;
+    rm.print();
+    cout << endl;
 
+    cout << "INVARIANT: " << *invariant << endl;
+  }
+
+  bool verify_success = true;
   for (auto tp : target_paths) {
     for (auto rp : rewrite_paths) {
       auto res = obc.check(static_cast<Cfg&>(target),
                            rewrite, tp, rp, *invariant, *invariant);
 
       if (!res) {
-        Console::msg() << "Verification failed!" << endl;
-        return 0;
+        verify_success = false;
+        break;
       }
     }
   }
 
-  Console::msg() << "Verified!" << endl;
-
-  // for each r \in R,   r in Target = img(r) in Rewrite
-  // for each r \in LiveOut,   r in Target = img(r) in Rewrite
-
-  /*
-  if (verifier.has_error()) {
-    Console::msg() << "Encountered error: " << endl;
-    Console::msg() << verifier.error() << endl;
-    print_machine_output(false, verifier.error(), "", false);
-    return 1;
+  if (verbose.value()) {
+    if (verify_success) {
+      Console::msg() << "Verified!" << endl;
+    } else {
+      Console::msg() << "Verification failed!" << endl;
+      rewrite = target;
+    }
   }
 
-  Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
-
-  if (!res && verifier.counter_examples_available()) {
-    Console::msg() << endl << verifier.counter_examples_available() << " Counterexamples." << endl;
-    Console::msg() << endl;
-    Console::msg() << verifier.get_counter_examples()[0];
-    Console::msg() << endl << endl;
-  } else if (!res) {
-    Console::msg() << endl << "No counterexample available." << endl;
+  if (output.value().size()) {
+    ofstream ofs(output.value());
+    ofs << rewrite.get_function() << endl;
+    ofs.close();
+  } else {
+    cout << rewrite.get_function() << endl;
   }
-  */
 
   return 0;
 }
