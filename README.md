@@ -51,6 +51,8 @@ STOKE is supported on 4.9 only.
 It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
 definitely will not work.
 
+***IMPORTANT*** Ubuntu 16.04 shipped with a new gcc that changed the ABI.  This is causing us some problems and we're still playing catch-up.  If you're on Ubuntu 16.04, the best thing at the present-time is to install gcc-4.9 and use the ubuntu16.04 branch of this repository.  After running ./configure.sh you'll want to be sure that CXX=/usr/bin/g++-4.9 and CC=/usr/bin/gcc-4.9 are in the .stoke_config file.  Hopefully we'll get everything working for gcc-5.3 soon.
+
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
