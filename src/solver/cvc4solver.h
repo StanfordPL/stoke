@@ -58,10 +58,10 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+  std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
     std::cout << "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)"  << std::endl;
     error_ = "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)";
-    return std::map<uint64_t, cpputil::BitVector>();
+    return std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t>();
   }
 
   void reset() {
