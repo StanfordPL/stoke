@@ -62,7 +62,8 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits);
+  /** Get the satisfying assignment for an array (i.e. memory) */
+  std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t>  get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits);
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
   static void print_performance() {
