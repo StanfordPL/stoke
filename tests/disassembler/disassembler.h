@@ -132,6 +132,21 @@ TEST(DisassemblerTest, ParseErrors) {
   EXPECT_EQ(errors_found, (uint64_t)0);
 }
 
+TEST(DisassemblerTest, StaticLibraryIssue927) {
+  size_t functions_found = 0;
+
+  Disassembler::Callback test_tunit =
+  [&](const FunctionCallbackData & pf) {
+    functions_found++;
+  };
+
+  Disassembler d;
+  d.set_function_callback(&test_tunit);
+  d.disassemble("tests/fixtures/disassembler/libsupp.a");
+
+  EXPECT_EQ(functions_found, (uint64_t)14);
+}
+
 
 TEST(DisassemblerTest, NoFileGraceful) {
   Disassembler::Callback  empty =
