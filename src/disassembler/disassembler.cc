@@ -16,6 +16,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <ios>
 #include <regex>
 
 #include "src/ext/cpputil/include/io/fail.h"
@@ -145,11 +146,15 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 map<string, uint64_t> Disassembler::parse_section_offsets(ipstream& ips) {
   map<string, uint64_t> section_offsets;
 
+  string line;
   // Skip ahead to table
-  strip_lines(ips, 5);
+  while (getline(ips, line)) {
+    if (line == "Sections:")
+      break;
+  }
+  strip_lines(ips, 1);
 
   // Read entries one at a time
-  string line;
   while (getline(ips, line)) {
     istringstream iss(line);
     string section, temp;
@@ -384,7 +389,6 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       }
     }
   }
-
   // Insert label definitions where necessary and fix instruction text
   // @todo The fact that we split lock into two instructions is going to bite us here
   vector<LineInfo> result;
@@ -401,17 +405,15 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   return result;
 }
 
-int Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
+int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
     return 0;
   }
 
   // Get the name of the function
-  string name;
-  getline(ips, name);
-  const auto begin = name.find_first_of('<') + 1;
-  const auto len = name.find_last_of('>') - begin;
-  name = mangle_lable(name.substr(begin, len));
+  const auto begin = line.find_first_of('<') + 1;
+  const auto len = line.find_last_of('>') - begin;
+  string name = mangle_lable(line.substr(begin, len));
 
   // Parse the contents of this function
   // This function inserts missing lines such as labels and splits lock into two instructions
@@ -505,23 +507,30 @@ void Disassembler::disassemble(const std::string& filename) {
   if (has_error()) {
     return;
   }
-  // Skip the first four lines of output and lines starting with 'D'
-  strip_lines(*body, 4);
-  for (string line; getline(*body, line) && line[0] == 'D';) {
-    // Does nothing
-  }
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
   int retval = 0;
-  while ((retval = parse_function(*body, data, text_offset)) != 0) {
-    if (retval == 1) {
-      if (!callback_closure_) {
-        fxn_cb_(data, fxn_cb_arg_);
-      } else {
-        (*callback_closure_)(data);
+
+
+  string line;
+  while (getline(*body, line)) {
+    // Skip lines until we find a function name
+    if (line[0] == '0' && line.find_first_of('<') != line.npos && line.find_first_of('>') != line.npos) {
+      // we found a function!
+      retval = parse_function(*body, line, data, text_offset);
+      if (retval == 1) {
+        if (!callback_closure_) {
+          fxn_cb_(data, fxn_cb_arg_);
+        } else {
+          (*callback_closure_)(data);
+        }
+      } else if (retval == 0) {
+        // reached EOF?  this is strange.
+        break;
       }
     }
   }
+
 }
 
 } // namespace stoke
