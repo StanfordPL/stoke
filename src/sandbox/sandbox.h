@@ -242,6 +242,11 @@ public:
     run();
   }
 
+  /** Did the sandbox see a read/write to the top of the stack? */
+  bool did_readwrite_topofstack() const {
+    return readwrote_topof_stack_ != 0;
+  }
+
 private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;
@@ -249,6 +254,8 @@ private:
   bool stack_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
+  /** Did the target overwrite the location (%rsp) (top of stack at the beginning of the execution)?  This is used for the realtime cost function, which relies on using that position internally as a return address.? */
+  uint64_t readwrote_topof_stack_;
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;

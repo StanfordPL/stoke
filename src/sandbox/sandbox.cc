@@ -105,6 +105,7 @@ void Sandbox::init() {
   set_abi_check(true);
   set_stack_check(true);
   set_max_jumps(16);
+  readwrote_topof_stack_ = 0;
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -258,6 +259,7 @@ Sandbox& Sandbox::run(size_t index) {
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
   harness_rsp_ = 0;
   stoke_rsp_ = 0;
+  readwrote_topof_stack_ = 0;
 
   // Run the code (control exits abnormally for sigfpe or if linking failed)
   if (!lnkr_.good()) {
@@ -602,6 +604,22 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.and_(rsi, rdi);
   assm_.cmp(rsi, rdi);
   assm_.jne_1(fail);
+
+  // Check if we are reading/writing the top of the stack
+  {
+    // load rsp
+    assm_.mov((R64)rax, Imm64(cs.gp[rsp].get_fixed_quad(0)));
+    // compare rsp to virtual address
+    assm_.cmp(rax, rdi);
+    auto after = get_label();
+    assm_.jne_1(after);
+    // write flag that we read/wrote rsp
+    // assm_.mov(rax, Imm8(1));
+    assm_.mov((R64)rax, Imm64(1));
+    assm_.mov(Moffs64(&readwrote_topof_stack_), rax);
+    // label at end
+    assm_.bind(after);
+  }
 
   // emit the code to figure out which segment we're writing to.
   for (size_t i = 0; i < segments.size(); ++i) {

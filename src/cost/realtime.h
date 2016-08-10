@@ -264,6 +264,11 @@ public:
       return result_type(true, max);
     }
 
+    // check if the code read/wrote the top of the stack
+    if (perf_sandbox_->did_readwrite_topofstack()) {
+      return result_type(true, max);
+    }
+
     // assemble code
     x64asm::Function buffer;
     x64asm::Assembler assm;
