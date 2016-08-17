@@ -72,25 +72,26 @@ bool dominates(const std::vector<Cost>& a, const std::vector<Cost>& b) {
   return true;
 }
 
-void handle_frontier(size_t iteration, std::vector<std::vector<Cost>>& f, std::vector<Cost> &p) {
-  for (size_t i = 0; i < f.size(); i++) {
+void handle_frontier(const char* prefix, std::ostream& out, size_t iteration, std::vector<std::vector<Cost>>& f, std::vector<Cost> &p) {
+  for(size_t i = 0; i < f.size(); i++) {
     if (dominates(f[i], p))
       return;
   }
-  for (auto i = f.begin(); i != f.end();) {
+  for(auto i = f.begin(); i != f.end();) {
     if (dominates(p, *i))
       i = f.erase(i);
     else
       ++i;
   }
   f.push_back(p);
-
-  std::cerr << iteration << "," << f.size() << std::endl;
+  
+  out << prefix << iteration << "," << f.size() << "\n";
 }
 
 void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
   std::vector<std::vector<Cost>> frontier {};
-
+  std::vector<std::vector<Cost>> frontier_all {};
+  std::ofstream logfile{"search.log"};
   // Configure initial state
   configure(target, fxn, state, aux_fxns);
 
@@ -114,10 +115,16 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   }
 
   TransformInfo ti;
-
+  Cost old_cost = 0;
   give_up_now = false;
   size_t iterations = 0;
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
+    
+    if (state.current_cost != old_cost) {
+      logfile << "C:" << iterations << "," << state.current_cost << "\n";
+      old_cost = state.current_cost;
+    }
+    
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
       elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
@@ -148,13 +155,15 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
 
+    std::vector<Cost> costs = CorrectnessCost::testcase_costs();
+    handle_frontier("A:", logfile, iterations, frontier_all, costs);
+
     if (new_cost > max) {
       (*transform_).undo(state.current, ti);
       continue;
     }
-    std::vector<Cost> costs = CorrectnessCost::testcase_costs();
-    handle_frontier(iterations, frontier, costs);
-
+    handle_frontier("P:", logfile, iterations, frontier, costs);
+    
     move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
 
@@ -185,7 +194,8 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   if (give_up_now) {
     state.interrupted = true;
   }
-
+  
+  logfile.close();
   // make sure Cfg's are in a valid state (e.g. liveness information, which we
   // do not update during search)
   state.current.recompute();
