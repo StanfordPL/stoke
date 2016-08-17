@@ -21,6 +21,7 @@
 
 #include "src/search/search.h"
 #include "src/transform/weighted.h"
+#include "src/cost/correctness.h"
 
 using namespace cpputil;
 using namespace std;
@@ -61,7 +62,34 @@ Search::Search(Transform* transform) : transform_(transform) {
   }
 }
 
+/** Return true if a dominates b */
+bool dominates(const std::vector<Cost>& a, const std::vector<Cost>& b) {
+  assert(a.size() == b.size());
+  for (size_t i = 0; i < a.size(); i++) {
+    if (b[i] < a[i])
+      return false;
+  }
+  return true;
+}
+
+void handle_frontier(size_t iteration, std::vector<std::vector<Cost>>& f, std::vector<Cost> &p) {
+  for (size_t i = 0; i < f.size(); i++) {
+    if (dominates(f[i], p))
+      return;
+  }
+  for (auto i = f.begin(); i != f.end();) {
+    if (dominates(p, *i))
+      i = f.erase(i);
+    else
+      ++i;
+  }
+  f.push_back(p);
+
+  std::cerr << iteration << "," << f.size() << std::endl;
+}
+
 void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
+  std::vector<std::vector<Cost>> frontier {};
 
   // Configure initial state
   configure(target, fxn, state, aux_fxns);
@@ -124,6 +152,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       (*transform_).undo(state.current, ti);
       continue;
     }
+    std::vector<Cost> costs = CorrectnessCost::testcase_costs();
+    handle_frontier(iterations, frontier, costs);
+
     move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
 

@@ -113,18 +113,21 @@ Cost CorrectnessCost::max_correctness(const Cfg& cfg, const Cost max) {
   return res;
 }
 
+std::vector<Cost> CorrectnessCost::testcase_errors_;
+
 Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
   counter_example_testcase_ = -1;
 
-  size_t i = 0;
-  for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
+  testcase_errors_.resize(test_sandbox_->size());
+
+  for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
     const auto err = evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
     }
-
+    testcase_errors_[i] = err;
     res += err;
   }
 

@@ -131,6 +131,9 @@ public:
     test_sandbox_ = sb;
     return *this;
   }
+  static std::vector<Cost> testcase_costs() {
+    return testcase_errors_;
+  }
 
 private:
   /** Method for measuring the distance between two 64-bit values. */
@@ -169,6 +172,9 @@ private:
 
   /** A test-case (index) that has non-zero cost (or -1). */
   long counter_example_testcase_;
+
+  /** A vector of the errors for each testcase */
+  static std::vector<Cost> testcase_errors_;
 
   /** The set of general purpose registers live out for the target. */
   std::vector<x64asm::R> target_gp_out_;
