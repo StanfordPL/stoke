@@ -58,6 +58,13 @@ public:
 
     testcase = *sb->get_input(0);
 
+    start_realtimep();
+
+    return *this;
+  }
+
+  /** Set up the realtimep process. */
+  void start_realtimep() {
     // create a pipe for communication
     if (pipe(pc) || pipe(cp)) {
       cpputil::Console::error() << "Failed to create pipe to communicate with realtimep." << std::endl;
@@ -86,7 +93,7 @@ public:
       // we should not reach this point if exec succeeds
       cpputil::Console::error() << "Exec of " << realtimep_path <<  " failed: " << ret << "." << std::endl;
     } else if (pid < (pid_t) 0) {
-      cpputil::Console::error() << "Fork for realtimep failed." << std::endl;
+      cpputil::Console::error() << "Fork for realtimep failed: " << strerror(errno) << "." << std::endl;
     }
 
     // parent process
@@ -132,8 +139,6 @@ public:
     // send setup and cleanup code
     send_setup();
     send_cleanup();
-
-    return *this;
   }
 
   /** Emit rdtscp instruction. */
@@ -293,7 +298,26 @@ public:
 
     // read execution time
     uint64_t exec;
-    safe_read(cp[0], &exec, sizeof(exec));
+    auto nread = read(cp[0], &exec, sizeof(exec));
+    if (sizeof(exec) != nread) {
+      // if we ran into an issue of the child not responding..
+
+      // .. close all channels, ..
+      close(cp[0]);
+      close(pc[1]);
+
+      // .. kill the child, ..
+      if (kill(pid, SIGKILL) != 0) {
+        cpputil::Console::error() << "kill failed: " << strerror(errno) << "." << std::endl;
+      }
+      std::cout << "killed" << std::endl;
+
+      // .. and start it again.
+      start_realtimep();
+
+      // we report a high cost for this
+      return result_type(true, max);
+    }
 
     return result_type(true, exec);
   }

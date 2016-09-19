@@ -101,6 +101,16 @@ return address in the target stack.  This won't work if the target reads or writ
 that location (i.e. "(%rsp)")!  We could check this assumption in the sandbox,
 but right now we just silently make the assumption.
 
+
+safety net
+----------
+
+The implementation works for the most part, but there are codes that cause
+segfaults or other errors in realtimep.  To recover from these, realtime.h
+can notice when the realtimep crashes, and will assign a very high cost
+to the code that crashed realtimep.  Then, realtimep will be restarted,
+hopefully not crashing again.
+
 */
 
 
