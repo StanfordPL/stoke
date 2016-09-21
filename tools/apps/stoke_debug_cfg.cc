@@ -95,56 +95,90 @@ bool view_pdf(const string& pdf_file) {
   return term.result() == 0;
 }
 
+using namespace x64asm;
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
-  
+
   Cfg target = Cfg(target_arg.value().get_code());
   target.recompute();
-  
+
+  std::vector<Instruction> block;
+  std::vector<RegSet> live_in;
+  std::vector<bool> used;
+  std::vector<int> fixups;
+
+
   for (size_t block_id = 0; block_id < target.num_blocks(); block_id++) {
-    //std::cout << "basic block:" << "\n";
-    std::map<x64asm::R, x64asm::Opcode> values;
-    x64asm::Opcode eflags_value;
-    bool has_eflags;
-    
-    for(auto instr = target.instr_begin(block_id); instr != target.instr_end(block_id); instr++) {
-      
-      // log this instruction
-      std::cout << "1:" << instr->get_opcode() << "\n";
-      
-      // find prefixes that are used
-      for (unsigned i = 0; i < instr->arity(); i++) {
-        if (instr->maybe_read(i)) {
-          x64asm::R r = instr->get_operand<x64asm::R>(i);
-          if (values.find(r) != values.end()) {
-            x64asm::Opcode opcode = values[r];
-            std::cout << "2:" << instr->get_opcode() << "," << i << "," << opcode << "\n";
+    block.clear();
+    for (auto instr = target.instr_begin(block_id); instr != target.instr_end(block_id); instr++) {
+      if (instr->is_label_defn() || instr->is_any_call() || instr->is_any_jump() || instr->is_ret())
+        continue;
+      block.push_back(*instr);
+    }
+    if (block.size() <= 2)
+      continue;
+
+    /*std::cout << "\nbasic block:\n";
+    for(auto & i : block)
+      std::cout << "  " << i << "\n";
+    std::cout << "===" << std::endl;
+    */
+
+    for (size_t root = 0; root < block.size(); root++) {
+      auto must_write = block[root].must_write_set();
+      if (must_write == RegSet::empty())
+        continue;
+      size_t used_count = 0;
+      bool memory_banned = false;
+
+      fixups.assign(block.size(), -1);
+      used.assign(block.size(), false);
+      live_in.assign(block.size()+1, RegSet::empty());
+      live_in[root+1] = must_write;
+      used[root] = true;
+
+      size_t i = root;
+      while (true) {
+        auto& instr = block[i];
+        RegSet live = live_in[i+1];
+        if ((instr.must_undef_set() | instr.must_write_set()).intersects(live_in[i+1])) {
+          if (instr.must_write_memory() || instr.is_memory_dereference()) {
+            break;
+          }
+          used[i] = true;
+          used_count++;
+          live -= instr.must_write_set();
+          live -= instr.must_undef_set();
+          live |= instr.maybe_read_set();
+
+        }
+        live_in[i] = live;
+
+        if (i == 0)
+          break;
+        i--;
+      }
+
+      if (used_count > 2) {
+        std::cout << "---\n";
+        for (i = 0; i <= root; i++) {
+          if (used[i]) {
+            std::cout << "//" << live_in[i] << "\n";
+            std::cout << "  " << block[i] << "\n";
+            if (i == root)
+              std::cout << "//" << live_in[i+1] << "\n";
           }
         }
-        
+        std::cout << "---\n";
       }
-      auto read_set = instr->must_read_set();
-      bool reads_eflags = false;
-      for (auto w = read_set.flags_begin(); w != read_set.flags_end(); ++w) {
-        reads_eflags = true;
-      }
-      if (reads_eflags && has_eflags) {
-        std::cout << "2:" << instr->get_opcode() << "," << -1 << "," << eflags_value << "\n";
-      }
-      
-      auto written_set = instr->maybe_write_set() | instr->must_write_set();
-      for (auto w = written_set.gp_begin(); w != written_set.gp_end(); ++w) {
-        values[*w] = instr->get_opcode();
-      }
-      for (auto w = written_set.flags_begin(); w != written_set.flags_end(); ++w) {
-        has_eflags = true;
-        eflags_value = instr->get_opcode();
-      }
+
     }
+
   }
-  
+
   /*
   const auto dot_file = tempfile("/tmp/stoke_debug_cfg.dot.XXXXXX");
   to_dot(dot_file);
