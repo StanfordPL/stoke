@@ -16,7 +16,7 @@ all: orig extract testcase search replace
 
 orig:
 	g++ -c exp.s 
-	g++ -std=c++11 -O3 main.cc exp.o
+	g++ -std=c++11 -mavx -O3 main.cc exp.o
 
 time:
 	time ./a.out 100000000
@@ -32,6 +32,9 @@ search:
 
 replace:
 	stoke replace -i ./a.out --rewrite result.s
+
+replacex:
+	stoke replace -i ./a.out --rewrite $(X)
 
 clean:
 	rm -rf bins ./a.out *.tc *result.s *.o
