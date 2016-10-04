@@ -70,6 +70,10 @@ protected:
   std::stringstream target_;
   std::stringstream rewrite_;
 
+  void set_simplify(bool b) {
+    do_simplify_ = b;
+  }
+
   /** Check the two codes are equivalent */
   void assert_equiv() {
     if (!reset_state())
@@ -179,16 +183,29 @@ protected:
     // set larger solver timeout
     s_.set_timeout(0);
 
+    SymSimplify simpl;
+
     // check equivalence of two symbolic states for a given register
-    auto is_eq = [this, &cs](string name, auto a, auto b, stringstream& explanation,
+    auto is_eq = [this, &cs, &simpl](string name, auto a, auto b, stringstream& explanation,
     vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
       SymBool eq = a == b;
       vector<SymBool> eqs = { eq };
+      if (do_simplify_) {
+        eqs = { simpl.simplify(eq) };
+      }
       for (auto& c : constraints_a) {
-        eqs.push_back(c);
+        if (do_simplify_) {
+          eqs.push_back(simpl.simplify(c));
+        } else {
+          eqs.push_back(c);
+        }
       }
       for (auto& c : constraints_b) {
-        eqs.push_back(c);
+        if (do_simplify_) {
+          eqs.push_back(simpl.simplify(c));
+        } else {
+          eqs.push_back(c);
+        }
       }
       bool res = s_.is_sat(eqs);
       if (s_.has_error()) {
@@ -683,6 +700,9 @@ private:
   Cfg* cfg_t_;
   /* The rewrite CFG */
   Cfg* cfg_r_;
+
+  /** Should formulas be simplified? */
+  bool do_simplify_;
 
 
 };
