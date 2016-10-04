@@ -8,19 +8,15 @@ function show_help {
 function error {
   echo "Configure failed!  Fix errors and run again."
   echo ""
-  rm -f stoke_config
+  rm -f .stoke_config
   show_help
   exit
 }
 
 ## START
 
-echo ""
-rm -f .stoke_config
-
 ## All options are off by default
 MISC_OPTIONS=""
-
 
 ## Detect platform
 $(grep avx2 /proc/cpuinfo >/dev/null)
@@ -36,9 +32,6 @@ else
   echo "ERROR: STOKE is currently only supported on sandybridge or haswell machines.  You appear to have an older CPU."
   exit 1
 fi
-
-echo "Configuring STOKE for $PLATFORM"
-echo "STOKE_PLATFORM=\"$PLATFORM\"" >> .stoke_config
 
 ## Now do some parsing, look for options
 
@@ -72,9 +65,14 @@ while :; do
   esac
 done
 
+echo ""
 echo "The default build type is '$BUILD_TYPE'."
+echo "Configuring STOKE for $PLATFORM"
+
+rm -f .stoke_config
 
 ## Write options to config file
+echo "STOKE_PLATFORM=\"$PLATFORM\"" >> .stoke_config
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
 echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
