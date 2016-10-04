@@ -120,6 +120,18 @@ hopefully not crashing again.
 #define DEBUG_REALTIMEP_SHOW_ADDRS
 #endif
 
+inline long long rdtscp(void)
+{
+  long long cycles;
+  asm volatile("rdtscp\n"
+               "shlq $32, %%rdx\n"
+               "addq %%rdx, %%rax\n"
+               : "=a" (cycles)
+               : /* no inputs */
+               : "rdx", "rcx");
+  return cycles;
+}
+
 class Mem {
 public:
   Mem() : addr(0), size(0), data(NULL) {
@@ -332,6 +344,8 @@ int main() {
     vector<uint64_t> measurements;
     measurements.reserve(reps);
 
+    // auto start = rdtscp();
+
     for (int i = 0; i < reps; i++) {
       // initialize memory (TODO: only do this when necessary)
       for (auto segment : memories) {
@@ -345,7 +359,9 @@ int main() {
 
     sort(measurements.begin(), measurements.end());
 
-    uint64_t dur = measurements[0];
+    // auto end = rdtscp();
+
+    uint64_t dur = measurements[0]; //end-start;
 
     // send duration
     safe_write(&dur, sizeof(dur));
