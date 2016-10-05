@@ -366,6 +366,60 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
 
 }
 
+
+
+void generate_testcases(x64asm::RegSet def_in, TrainingSetGadget& set) {
+
+  mt19937_64 gen{0xc9e0b44164d52561};
+  // 1,0,-1 full cross product on up to two registers
+  for (int i = -1; i < 2; i++) {
+    for (int j = -1; j < 2; j++) {
+      CpuState state{};
+      int which = 0;
+      for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+        state.update(*reg, which ? i : j);
+        which = (which + 1) % 2;
+      }
+      set.push_back(state);
+    }
+  }
+
+
+  // 8 sparse bit patterns, 1, 2, or 3 bits set.
+  for (int i = 0; i < 8; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      uint64_t sparse = 0;
+      int bits = gen() % 3 + 1;
+      for (int j = 0; j < bits; j++)
+        sparse |= 1 << (gen() % ((*reg).size()));
+      state.update(*reg, sparse);
+    }
+    set.push_back(state);
+  }
+  // 8 complement of sparse bit patterns
+  for (int i = 0; i < 8; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      uint64_t sparse = 0;
+      int bits = gen() % 3 + 1;
+      for (int j = 0; j < bits; j++)
+        sparse |= 1 << (gen() % ((*reg).size()));
+      state.update(*reg, ~sparse);
+    }
+    set.push_back(state);
+  }
+
+  // 10 totally random testcases
+  for (int i = 0; i < 10; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      state.update(*reg, gen());
+    }
+    set.push_back(state);
+  }
+}
+
 vector<string>& split(string& s, const string& delim, vector<string>& result) {
   auto pos = string::npos;
   while ((pos = s.find(delim)) != string::npos) {
@@ -397,7 +451,12 @@ int main(int argc, char** argv) {
   TargetGadget target(aux_fxns, init_arg == Init::ZERO);
 
   TrainingSetGadget training_set(seed);
+
+  if (generate_testcases_arg.value())
+    generate_testcases(def_in_arg.value(), training_set);
+
   SandboxGadget training_sb(training_set, aux_fxns);
+
 
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
   WeightedTransformGadget transform(transform_pools, seed);

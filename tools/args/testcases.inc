@@ -72,6 +72,10 @@ cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputi
           .description("Subset of testcase indices to use for performance sets")
           .default_val({0, 1, 2, 3});
 
+cpputil::FlagArg& generate_testcases_arg =
+  cpputil::FlagArg::create("generate_testcases")
+  .description("Automatically generate simple test cases");
+
 cpputil::ValueArg<size_t>& testcase_idx_arg =
   cpputil::ValueArg<size_t>::create("index")
   .usage("<int>")
