@@ -396,7 +396,7 @@ bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 bin/realtimep:
-	$(CXX) -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/realtimep.cc -o bin/realtimep
+	$(CXX) -std=c++14 -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/realtimep.cc -o bin/realtimep
 
 ##### TESTING
 
