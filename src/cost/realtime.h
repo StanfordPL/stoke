@@ -15,6 +15,8 @@
 #ifndef STOKE_SRC_COST_REALTIME_H
 #define STOKE_SRC_COST_REALTIME_H
 
+#include <sys/wait.h>
+
 #include "src/cost/cost_function.h"
 #include "src/ext/cpputil/include/io/console.h"
 
@@ -311,6 +313,11 @@ public:
         cpputil::Console::error() << "kill failed: " << strerror(errno) << "." << std::endl;
       }
       std::cout << "killed" << std::endl;
+
+      // .. collect the child to free up it's resources
+      int status;
+      waitpid(pid, &status, 0);
+
 
       // .. and start it again.
       start_realtimep();
