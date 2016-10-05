@@ -122,7 +122,7 @@ private:
   void rescale_offsets(x64asm::Code& code, const std::vector<LineInfo>& lines);
 
   /* Parse a single function from objdump's stdout; returns 0 on eof, -1 on error and 1 otherwise */
-  int parse_function(redi::ipstream& ips, FunctionCallbackData& data, uint64_t text_offset);
+  int parse_function(redi::ipstream& ips, const std::string& line, FunctionCallbackData& data, uint64_t text_offset);
 };
 
 } // namespace stoke

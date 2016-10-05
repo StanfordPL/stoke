@@ -75,11 +75,16 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
   auto str = symvar->name_;
 
-  auto orig_map = solver_.get_model_array(str, 64, 8);
+  auto map_and_default = solver_.get_model_array(str, 64, 8);
+  auto orig_map = map_and_default.first;
+  auto default_value = map_and_default.second;
   unordered_map<uint64_t, BitVector> mem_map;
   for (auto pair : orig_map) {
     mem_map[pair.first] = pair.second;
   }
+
+  BitVector default_value_bv(8);
+  default_value_bv.get_fixed_byte(0) = default_value;
 
   for (auto p : others) {
     auto abs_var = p.first;
@@ -93,10 +98,8 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
     auto addr = address_bv.get_fixed_quad(0);
 
     for (uint64_t i = addr; i < addr + size; ++i) {
-      BitVector zero(8);
-      zero.get_fixed_byte(0) = 0;
       if (!mem_map.count(i)) {
-        mem_map[i] = zero;
+        mem_map[i] = default_value_bv;
       }
     }
   }

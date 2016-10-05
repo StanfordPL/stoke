@@ -18,8 +18,11 @@
 -include .stoke_config
 
 ## Choose the compiler to use
-ifndef COMPILERBINARY
-	COMPILERBINARY=g++
+ifndef CXX
+	CXX=g++
+endif
+ifndef CC
+	CC=gcc
 endif
 
 ifndef STOKE_PLATFORM
@@ -73,7 +76,7 @@ endif
 #CXX_FLAGS are any extra flags the user might want to pass to the compiler
 
 WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
-CXX=ccache $(COMPILERBINARY) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
+STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
 
 INC_FOLDERS=\
 						./ \
@@ -222,6 +225,7 @@ BIN=\
 	bin/stoke_search \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
+	bin/stoke_rename \
 	\
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_formula \
@@ -292,7 +296,7 @@ depend:
 	for F in $(OBJS:.o=.cc); do \
 		D=`dirname $$F | sed "s/^\.\///"`; \
 		echo -n "$$D/" >> ./.depend; \
-		$(CXX) $(TARGET) $(INC) -MM -MG $$F >> ./.depend; \
+		$(STOKE_CXX) $(TARGET) $(INC) -MM -MG $$F >> ./.depend; \
 	done
 	# for the binaries, the path is wrong (because we don't generate an object
 	# file, and instead generate the binary in 'bin').  use sed to correct this.
@@ -319,19 +323,21 @@ cpputil:
 .PHONY: x64asm
 x64asm:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY="${COMPILERBINARY}"
+	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" CXX="${CXX}" CC="${CC}"
 
 .PHONY: pintool
 pintool:
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)"
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
+					CXX="${CXX}" CC="${CC}"
 
 src/ext/gtest-1.7.0/libgtest.a:
-	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	$(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
+	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
+	CXX="${CXX}" CC="${CC}" cmake src/ext/gtest-1.7.0/CMakeLists.txt
+	VERBOSE="1" $(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
 
 .PHONY: z3
 z3: z3init src/ext/z3/build/Makefile
-	cd src/ext/z3/build && make
+	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make
 
 z3init:
 	./scripts/make/submodule-init.sh src/ext/z3
@@ -349,45 +355,45 @@ src/validator/handlers.h: .FORCE
 ##### BUILD TARGETS
 
 src/cfg/%.o: src/cfg/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/disassembler/%.o: src/disassembler/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/solver/%.o: src/solver/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/solver/cvc4solver.o: src/solver/cvc4solver.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/symstate/%.o: src/symstate/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/transform/%.o: src/transform/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/validator/handlers/%.o: src/validator/handlers/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/validator/%.o: src/validator/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 
 tools/io/%.o: tools/io/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
 
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 bin/realtimep:
 	$(CXX) -fPIE -pie $(OPT) -I. -Isrc/ext/cpputil -Isrc/ext/x64asm tools/apps/realtimep.cc -o bin/realtimep
@@ -410,10 +416,10 @@ tests/validator/handlers.h: .FORCE
 	rm -f tests/validator/handlers-tmp
 
 tests/%.o: tests/%.cc tests/%.h
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
 
 ## MISC
 
