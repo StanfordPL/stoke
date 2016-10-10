@@ -385,8 +385,8 @@ void generate_testcases(x64asm::RegSet def_in, TrainingSetGadget& set) {
   }
 
 
-  // 8 sparse bit patterns, 1, 2, or 3 bits set.
-  for (int i = 0; i < 8; i++) {
+  // 20 sparse bit patterns, 1, 2, or 3 bits set.
+  for (int i = 0; i < 20; i++) {
     CpuState state{};
     for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
       uint64_t sparse = 0;
@@ -397,8 +397,8 @@ void generate_testcases(x64asm::RegSet def_in, TrainingSetGadget& set) {
     }
     set.push_back(state);
   }
-  // 8 complement of sparse bit patterns
-  for (int i = 0; i < 8; i++) {
+  // 11 complement of sparse bit patterns
+  for (int i = 0; i < 11; i++) {
     CpuState state{};
     for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
       uint64_t sparse = 0;
@@ -410,8 +410,8 @@ void generate_testcases(x64asm::RegSet def_in, TrainingSetGadget& set) {
     set.push_back(state);
   }
 
-  // 10 totally random testcases
-  for (int i = 0; i < 10; i++) {
+  // 30 totally random testcases
+  for (int i = 0; i < 30; i++) {
     CpuState state{};
     for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
       state.update(*reg, gen());
