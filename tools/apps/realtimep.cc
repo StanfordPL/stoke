@@ -359,6 +359,11 @@ int main() {
 
     sort(measurements.begin(), measurements.end());
 
+    // for (auto m : measurements) {
+    //   cout << m << " ";
+    // }
+    // cout << endl;
+
     // auto end = rdtscp();
 
     uint64_t dur = measurements[0]; //end-start;
