@@ -357,6 +357,11 @@ int main() {
 
     }
 
+    // for (auto m : measurements) {
+    //   cout << m << " ";
+    // }
+    // cout << endl << endl;
+
     sort(measurements.begin(), measurements.end());
 
     // for (auto m : measurements) {
