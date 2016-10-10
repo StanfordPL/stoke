@@ -553,8 +553,7 @@ int main(int argc, char** argv) {
     if (state.interrupted) {
       Console::msg() << endl;
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
-      Console::msg() << "Search interrupted!" << endl;
-      exit(1);
+      Console::error(2) << "Search interrupted!" << endl;
     }
 
     const auto verified = verifier.verify(target, state.best_correct);
@@ -582,7 +581,7 @@ int main(int argc, char** argv) {
 
     if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
-      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
 
     if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
