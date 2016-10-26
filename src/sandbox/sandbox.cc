@@ -1161,13 +1161,18 @@ void Sandbox::emit_mem_bt(const Instruction& instr) {
   case Type::IMM_8:
     assm_.xor_(rsi, rsi);
     assm_.mov(sil, instr.get_operand<Imm8>(1));
+    // Mask original 8 bit constant to the appropriate width
+    switch(instr.get_operand<Operand>(0).size()) {
+      case 16: assm_.and_(rsi, Imm8(0xF)); break;
+      case 32: assm_.and_(rsi, Imm8(0x1F)); break;
+      case 64: assm_.and_(rsi, Imm8(0x3F)); break;
+    }
     break;
   case Type::R_16:
-    assm_.xor_(rsi, rsi);
-    assm_.mov(si, instr.get_operand<R16>(1));
+    assm_.movsx(rsi, instr.get_operand<R16>(1));
     break;
   case Type::R_32:
-    assm_.mov(esi, instr.get_operand<R32>(1));
+    assm_.movsxd(rsi, instr.get_operand<R32>(1));
     break;
   case Type::R_64:
     assm_.mov(rsi, instr.get_operand<R64>(1));
