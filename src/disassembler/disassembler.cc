@@ -359,7 +359,12 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       lines.push_back(line);
       parse_ptr(s, ptrs);
     } else {
-      lines.back().hex_bytes += line.hex_bytes;
+      if (lines.size()) {
+        lines.back().hex_bytes += line.hex_bytes;
+      } else {
+        // this is an error
+        return lines;
+      }
     }
   }
 
@@ -452,7 +457,7 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
     }
   }
 
-  if (failed(ss)) {
+  if (failed(ss) || lines.size() == 0) {
     Console::warn() << "Cannot parse function '" << name << "', skipping.  Error(s): " << fail_msg(ss);
     return -1;
   }
