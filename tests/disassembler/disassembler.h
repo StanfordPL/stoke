@@ -144,7 +144,7 @@ TEST(DisassemblerTest, StaticLibraryIssue927) {
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/libsupp.a");
 
-  EXPECT_EQ(functions_found, (uint64_t)14);
+  EXPECT_EQ((uint64_t)29, functions_found);
 }
 
 

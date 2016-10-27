@@ -282,15 +282,22 @@ string Disassembler::fix_instruction(const string& line) {
 }
 
 bool Disassembler::parse_line(const string& s, LineInfo& line) {
+  line.hex_bytes = 0;
+
   // Some character landmarks
   const auto tab1 = s.find_first_of('\t');
   const auto tab2 = s.find_first_of('\t', tab1 + 1);
   const auto colon = s.find_first_of(':');
 
   // Record line offset
-  line.offset = hex_to_int(s.substr(2, colon-2));
+  const auto offset_start = s.find_first_of("0123456789abcdefABCDEF");
+
+  if (offset_start == string::npos || colon == string::npos || offset_start > colon)
+    return false; //error
+
+  line.offset = hex_to_int(s.substr(offset_start, colon-offset_start));
+
   // Count hex bytes
-  line.hex_bytes = 0;
   for (auto i = tab1+1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
     line.hex_bytes += isxdigit(s[i]) ? 1 : 0;
   }
@@ -359,7 +366,12 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       lines.push_back(line);
       parse_ptr(s, ptrs);
     } else {
-      lines.back().hex_bytes += line.hex_bytes;
+      if (lines.size()) {
+        lines.back().hex_bytes += line.hex_bytes;
+      } else {
+        // this is an error
+        return lines;
+      }
     }
   }
 
@@ -452,7 +464,7 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
     }
   }
 
-  if (failed(ss)) {
+  if (failed(ss) || lines.size() == 0) {
     Console::warn() << "Cannot parse function '" << name << "', skipping.  Error(s): " << fail_msg(ss);
     return -1;
   }
