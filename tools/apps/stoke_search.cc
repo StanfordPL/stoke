@@ -243,64 +243,6 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   sep(os);
 }
 
-void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
-                       size_t total_restarts,
-                       size_t total_iterations, time_point<steady_clock> start,
-                       duration<double> search_elapsed,
-                       bool verified,
-                       bool timeout) {
-  auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
-  sep(Console::msg(), "#");
-  Console::msg() << "Final update:" << endl << endl;
-  Console::msg() << "Total search iterations:       " << total_iterations << endl;
-  Console::msg() << "Number of attempted searches:  " << total_restarts << endl;
-  Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
-  Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
-  Console::msg() << endl << "Statistics of last search" << endl << endl;
-  // get the state first (because it updates some static variables)
-  ostringstream stream;
-  show_state(state, stream);
-  show_statistics(stats, Console::msg());
-  Console::msg() << endl << endl;
-  Console::msg() << stream.str();
-  Console::msg() << endl << endl;
-  sep(Console::msg(), "#");
-
-  // output machine-readable result
-  if (machine_output_arg.has_been_provided()) {
-    auto code_to_string = [](x64asm::Code code) {
-      stringstream ss;
-      ss << code;
-      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
-      return res;
-    };
-
-    ofstream f;
-    f.open(machine_output_arg.value());
-    f << "{" << endl;
-    f << "  \"success\": " << (state.success ? "true" : "false") << "," << endl;
-    f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
-    f << "  \"timeout\": " << (timeout ? "true" : "false") << "," << endl;
-    f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
-    f << "  \"statistics\": {" << endl;
-    f << "    \"total_iterations\": " << total_iterations << "," << endl;
-    f << "    \"total_attempted_searches\": " << total_restarts << "," << endl;
-    f << "    \"total_search_time\": " << search_elapsed.count() << "," << endl;
-    f << "    \"total_time\": " << total_elapsed.count() << endl;
-    f << "  }," << endl;
-    f << "  \"best_yet\": {" << endl;
-    f << "    \"cost\": " << state.best_yet_cost << "," << endl;
-    f << "    \"code\": \"" << code_to_string(state.best_yet.get_code()) << "\"" << endl;
-    f << "  }," << endl;
-    f << "  \"best_correct\": {" << endl;
-    f << "    \"cost\": " << state.best_correct_cost << "," << endl;
-    f << "    \"code\": \"" << code_to_string(state.best_correct.get_code()) << "\"" << endl;
-    f << "  }" << endl;
-    f << "}" << endl;
-    f.close();
-  }
-}
-
 void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg) {
 
   if (results_arg.has_been_provided()) {
@@ -481,7 +423,11 @@ int main(int argc, char** argv) {
   search.set_new_best_correct_callback(new_best_correct_callback, &nbcc_data);
 
   size_t total_iterations = 0;
-  size_t total_restarts = 0;
+  size_t total_searches = 0;
+  size_t total_counterexamples = 0;
+  size_t total_verifications = 0;
+  bool did_timeout = false;
+  bool was_verified = false;
 
   // attempt to parse cycle_timeout argument
   vector<string> parts;
@@ -500,33 +446,27 @@ int main(int argc, char** argv) {
     Console::error() << "No verification is performed, thus no counterexample can be added (--failed_verification_action add_counterexample and --strategy none are not compatible)." << endl;
   }
 
-  string final_msg;
   SearchStateGadget state(target, aux_fxns);
-  for (size_t i = 0; ; ++i) {
-    CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  bool finished = false;
+  size_t cycle = 0;
+  for (; !finished; ++cycle) {
 
-    // determine iteration timeout
-    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
-    function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
-    size_t cur_timeout = (*timeout_expr)(f2);
-    size_t timeout_left = cur_timeout;
+    // Determine iteration timeout for this cycle
+    Expr<size_t>* timeout_expr = cycle_timeouts[std::min(cycle_timeouts.size()-1, cycle)];
+    function<size_t (const string&)> f2 = [cycle](const string& s) -> size_t { return cycle+1; };
+    size_t cycle_iterations_remaining = (*timeout_expr)(f2);
     if (timeout_iterations_arg.value()) {
-      timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
-    }
-    search.set_timeout_itr(std::min(cur_timeout, timeout_left));
-
-    Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
-    // timeout in seconds
-    if (timeout_seconds_arg.value() != 0) {
-      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
-      if (time_remaining <= steady_clock::duration::zero()) {
-        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
-        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      if (total_iterations < timeout_iterations_arg.value()) {
+        cycle_iterations_remaining = std::min(cycle_iterations_remaining, timeout_iterations_arg.value() - total_iterations);
+      } else {
+        cycle_iterations_remaining = 0;
       }
-      search.set_timeout_sec(time_remaining);
-      Console::msg() << " / " << time_remaining.count() << " seconds";
     }
-    Console::msg() << "):" << endl << endl;
+
+    Console::msg() << "Starting cycle " << cycle << " with " << cycle_iterations_remaining << " iterations" << endl;
+
+    // Initialize state to zero, target, etc.
     state = SearchStateGadget(target, aux_fxns);
 
     // Run the initial cost function
@@ -543,53 +483,83 @@ int main(int argc, char** argv) {
       lowest_correct = 0;
     }
 
-    const auto start_search = steady_clock::now();
-    search.run(target, fxn, init_arg, state, aux_fxns);
-    search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
-
-    total_iterations += search.get_statistics().iterations;
-    total_restarts++;
-
-    if (state.interrupted) {
-      Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
-      Console::error(2) << "Search interrupted!" << endl;
-    }
-
-    const auto verified = verifier.verify(target, state.best_correct);
-
-    if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error:" << endl;
-      Console::msg() << verifier.error() << endl;
-    }
-
-    if (!state.success) {
-      Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
-    } else if (!verified) {
-      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
-    } else {
-      if (strategy_arg.value() == "none") {
-        final_msg = "Search terminated successfully (but no verification was performed)!";
-      } else {
-        final_msg = "Search terminated successfully with a verified rewrite!";
+    // Perform the epochs within a cycle
+    for (size_t epoch = 0; ; ++epoch) {
+      if (cycle_iterations_remaining == 0) {
+        did_timeout = true;
+        finished = true;
+        break;
       }
-      break;
-    }
+      search.set_timeout_itr(cycle_iterations_remaining);
 
-    sep(Console::msg());
+      // Timeout in seconds
+      if (timeout_seconds_arg.value() != 0) {
+        auto time_remaining = duration<double>(timeout_seconds_arg.value()) - duration_cast<duration<double>>(steady_clock::now() - start);
+        if (time_remaining <= steady_clock::duration::zero()) {
+          Console::msg() << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+          did_timeout = true;
+          finished = true;
+          break;
+        }
+        search.set_timeout_sec(time_remaining);
+      }
 
+      Console::msg() << "Running search (epoch:" << epoch << " timeout is " << cycle_iterations_remaining << " iterations):";
+      const auto start_search = steady_clock::now();
+      search.run(target, fxn, init_arg, state, aux_fxns);
+      search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
 
-    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
-      Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
-    }
+      total_iterations += search.get_statistics().iterations;
+      cycle_iterations_remaining -= search.get_statistics().iterations;
+      total_searches++;
 
-    if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
-      Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
-      Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
-      training_sb.insert_input(verifier.get_counter_examples()[0]);
-    } else {
-      Console::msg() << "Restarting search" << endl;
+      if (state.interrupted) {
+        Console::msg() << endl << "Search interrupted!" << endl;
+        finished = true;
+        break;
+      }
+      if (!state.success) {
+        Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
+        // End this cycle
+        break;
+      }
+
+      const auto verified = verifier.verify(target, state.best_correct);
+      total_verifications ++;
+
+      if (verifier.has_error()) {
+        Console::msg() << "The verifier encountered an error:" << endl;
+        Console::msg() << verifier.error() << endl;
+        finished = true;
+        break;
+      }
+
+      if (verified) {
+        if (strategy_arg.value() == "none") {
+          Console::msg() << "Search terminated successfully (but no verification was performed)!" << endl;
+        } else {
+          Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+        }
+        was_verified = true;
+        finished = true;
+        break;
+      }
+
+      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
+
+      sep(Console::msg());
+
+      if (verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
+        Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
+        Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
+        training_sb.insert_input(verifier.get_counter_examples()[0]);
+        total_counterexamples++;
+      } else {
+        // Search was successful, but we didn't verify and couldn't add a new
+        // counterexample, so just end the search
+        finished = true;
+        break;
+      }
     }
   }
 
@@ -604,9 +574,61 @@ int main(int argc, char** argv) {
     // Do nothing.
   }
 
-  auto final_stats = search.get_statistics();
-  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, true, false);
-  Console::msg() << final_msg << endl;
+  auto stats = search.get_statistics();
+
+  auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
+  sep(Console::msg(), "#");
+  Console::msg() << "Final update:" << endl << endl;
+  Console::msg() << "Total search iterations:       " << total_iterations << endl;
+  Console::msg() << "Number of attempted searches:  " << total_searches << endl;
+  Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
+  Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
+  Console::msg() << endl << "Statistics of last search" << endl << endl;
+  // get the state first (because it updates some static variables)
+  ostringstream stream;
+  show_state(state, stream);
+  show_statistics(stats, Console::msg());
+  Console::msg() << endl << endl;
+  Console::msg() << stream.str();
+  Console::msg() << endl << endl;
+  sep(Console::msg(), "#");
+
+  // output machine-readable result
+  if (machine_output_arg.has_been_provided()) {
+    auto code_to_string = [](x64asm::Code code) {
+      stringstream ss;
+      ss << code;
+      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
+      return res;
+    };
+
+    ofstream f;
+    f.open(machine_output_arg.value());
+    f << "{" << endl;
+    f << "  \"success\": " << (state.success ? "true" : "false") << "," << endl;
+    f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
+    f << "  \"timeout\": " << (did_timeout ? "true" : "false") << "," << endl;
+    f << "  \"verified\": " << (was_verified ? "true" : "false") << "," << endl;
+    f << "  \"statistics\": {" << endl;
+    f << "    \"total_iterations\": " << total_iterations << "," << endl;
+    f << "    \"total_attempted_searches\": " << total_searches << "," << endl;
+    f << "    \"total_attempted_verifications\": " << total_verifications << "," << endl;
+    f << "    \"total_counterexamples\": " << total_counterexamples << "," << endl;
+    f << "    \"total_search_time\": " << search_elapsed.count() << "," << endl;
+    f << "    \"total_cycles\": " << (cycle+1) << "," << endl;
+    f << "    \"total_time\": " << total_elapsed.count() << endl;
+    f << "  }," << endl;
+    f << "  \"best_yet\": {" << endl;
+    f << "    \"cost\": " << state.best_yet_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_yet.get_code()) << "\"" << endl;
+    f << "  }," << endl;
+    f << "  \"best_correct\": {" << endl;
+    f << "    \"cost\": " << state.best_correct_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_correct.get_code()) << "\"" << endl;
+    f << "  }" << endl;
+    f << "}" << endl;
+    f.close();
+  }
 
   ofstream ofs(out.value());
   ofs << state.best_correct.get_function();
