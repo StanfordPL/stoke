@@ -262,6 +262,7 @@ public:
       case SymBitVector::MINUS:
         return cache(bv, make_constant(width, ls - rs));
       case SymBitVector::MOD:
+        return cache(bv, make_constant(width, ls % rs));
       case SymBitVector::MULT:
         return cache(bv, make_constant(width, ls * rs));
       case SymBitVector::OR:
