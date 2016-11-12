@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
   }
 
   return ret;
+}
 ```
 
 STOKE is a compiler and programming language agnostic optimization tool. It can
@@ -370,7 +371,7 @@ where `synthesize.conf` contains:
 
 --target bins/_Z6popcntm.s # Path to the function to optimize
 
---def_in "{ %rax %rdi }" # The registers that are defined on entry to the target
+--def_in "{ %rdi }" # The registers that are defined on entry to the target
 --live_out "{ %rax }" # The registers that are live on exit from the target
 
 --testcases popcnt.tc # Path to testcase file
