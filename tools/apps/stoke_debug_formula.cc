@@ -29,6 +29,8 @@
 #include "tools/gadgets/solver.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/validator.h"
+#include "tools/gadgets/testcases.h"
+#include "tools/gadgets/seed.h"
 
 using namespace cpputil;
 using namespace std;
@@ -112,8 +114,12 @@ int main(int argc, char** argv) {
     Console::error() << "At most one of --code and --target can be provided." << endl;
   }
 
+  SeedGadget seed;
+  TestcaseGadget tc(seed);
+
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
+
   Code code = target.get_code();
   if (code_arg.has_been_provided()) {
     code = code_arg.value();
@@ -131,12 +137,19 @@ int main(int argc, char** argv) {
 
   Console::msg() << endl;
 
-  ComboHandler ch;
-  SymState state("", true);
-  auto mem = new TrivialMemory();
-  state.memory = mem;
+  // build initial state
+  SymState state;
+  TrivialMemory* mem = NULL;
+  if (testcases_arg.value().empty()) {
+    state = SymState("", true);
+    mem = new TrivialMemory();
+    state.memory = mem;
+  } else {
+    state = SymState(tc);
+  }
 
   // test validator support
+  ComboHandler ch;
   for (auto it : code) {
     if (it.get_opcode() == Opcode::LABEL_DEFN) continue;
     if (it.get_opcode() == Opcode::RET) break; // only go until first break
@@ -221,36 +234,38 @@ int main(int argc, char** argv) {
   printed = false;
 
   // print memory reads and writes
-  auto reads = mem->get_reads();
-  auto writes = mem->get_writes();
-  if (reads.size() > 0) {
-    printed = true;
-    cout << "Information about memory reads:" << endl;
-    for (auto loc : reads) {
-      cout << "  Value ";
-      print(loc.value);
-      cout << " (" << loc.size << " bytes)" << endl;
-      cout << "    was read at address ";
-      print(loc.address);
-      cout << "." << endl;
+  if (mem != NULL) {
+    auto reads = mem->get_reads();
+    auto writes = mem->get_writes();
+    if (reads.size() > 0) {
+      printed = true;
+      cout << "Information about memory reads:" << endl;
+      for (auto loc : reads) {
+        cout << "  Value ";
+        print(loc.value);
+        cout << " (" << loc.size << " bytes)" << endl;
+        cout << "    was read at address ";
+        print(loc.address);
+        cout << "." << endl;
+      }
     }
-  }
-  if (printed) cout << endl;
-  printed = false;
-  if (writes.size() > 0) {
-    printed = true;
-    cout << "Information about memory writes:" << endl;
-    for (auto loc : writes) {
-      cout << "  Address ";
-      print(loc.address);
-      cout << " was updated to" << endl;
-      cout << "    ";
-      print(loc.value);
-      cout << " (" << loc.size << " bytes)." << endl;
+    if (printed) cout << endl;
+    printed = false;
+    if (writes.size() > 0) {
+      printed = true;
+      cout << "Information about memory writes:" << endl;
+      for (auto loc : writes) {
+        cout << "  Address ";
+        print(loc.address);
+        cout << " was updated to" << endl;
+        cout << "    ";
+        print(loc.value);
+        cout << " (" << loc.size << " bytes)." << endl;
+      }
     }
+    if (printed) cout << endl;
+    printed = false;
   }
-  if (printed) cout << endl;
-  printed = false;
 
   Console::msg() << "sigfpe  : ";
   print(state.sigfpe);
