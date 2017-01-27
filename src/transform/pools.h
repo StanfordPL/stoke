@@ -176,6 +176,8 @@ public:
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
 
+  /** Returns a random 32bit register */
+  x64asm::Operand get_r32();
 
   /** Get rid of mm pool. */
   TransformPools& clear_mm_pool() {

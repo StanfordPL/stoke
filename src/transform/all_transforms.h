@@ -23,3 +23,4 @@
 #include "src/transform/operand.h"
 #include "src/transform/rotate.h"
 #include "src/transform/weighted.h"
+#include "src/transform/add_xorid.h"

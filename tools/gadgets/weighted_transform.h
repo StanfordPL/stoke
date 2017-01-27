@@ -47,6 +47,7 @@ public:
     insert_transform(new LocalSwapTransform(pools), local_swap_mass_arg.value());
     insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
     insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
+    insert_transform(new AddXorIdTransform(pools), add_xorid_mass_arg.value());
 
     set_seed(seed);
   }

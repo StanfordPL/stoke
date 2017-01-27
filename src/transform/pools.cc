@@ -563,6 +563,13 @@ bool TransformPools::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operan
   }
 }
 
+Operand TransformPools::get_r32() {
+  Operand o = ecx;
+  auto b = get<R32>(gen_, r32_pool_, o);
+  assert(b);
+  return o;
+}
+
 bool TransformPools::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
   case Type::HINT:

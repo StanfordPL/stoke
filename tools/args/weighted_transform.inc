@@ -31,6 +31,12 @@ cpputil::ValueArg<size_t>& add_nops_mass_arg =
   .description("Add Nops proposal mass")
   .default_val(0);
 
+cpputil::ValueArg<size_t>& add_xorid_mass_arg =
+  cpputil::ValueArg<size_t>::create("add_xorid_mass")
+  .usage("<int>")
+  .description("Add xor r r proposal mass")
+  .default_val(0);
+
 cpputil::ValueArg<size_t>& delete_mass_arg =
   cpputil::ValueArg<size_t>::create("delete_mass")
   .usage("<int>")

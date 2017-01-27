@@ -148,6 +148,7 @@ SRC_OBJ=\
 	src/target/cpu_info.o	\
 	\
 	src/transform/add_nops.o \
+	src/transform/add_xorid.o \
 	src/transform/delete.o \
 	src/transform/global_swap.o \
 	src/transform/instruction.o \
