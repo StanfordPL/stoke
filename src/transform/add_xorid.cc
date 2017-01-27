@@ -33,7 +33,7 @@ TransformInfo AddXorIdTransform::operator()(Cfg& cfg) {
   ti.undo_index[0] = index;
 
   auto& function = cfg.get_function();
-  
+
   auto instr = Instruction(XOR_R32_R32);
   auto r = pools_.get_r32();
   instr.set_operand(0, r);
