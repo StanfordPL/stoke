@@ -24,7 +24,7 @@ namespace stoke {
 class Transform {
 public:
 
-  Transform(TransformPools& pools) : pools_(pools) {}
+  Transform(TransformPools& pools) : pools_(pools), start_(-1), end_(-1) {}
 
   /** Returns a name for this transform. */
   virtual std::string get_name() const = 0;
@@ -44,6 +44,9 @@ public:
   }
 
   size_t get_index(Cfg& cfg) {
+    if (start_ != -1) {
+      return (gen_() % (end_ - start_)) + start_;
+    }
     return (gen_() % (cfg.get_code().size() - 1)) + 1;
   }
 
@@ -51,6 +54,11 @@ public:
 
 protected:
 
+  /** Set start/end of the transform window. */
+  void set_window(int start, int end) {
+    start_ = start;
+    end_ = end;
+  }
 
   /** Does this instruction induce control flow? */
   static bool is_control_opcode(x64asm::Opcode o);
@@ -60,6 +68,8 @@ protected:
 
   TransformPools& pools_;
   std::default_random_engine gen_;
+  int start_;
+  int end_;
 
 private:
 

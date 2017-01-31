@@ -85,6 +85,18 @@ cpputil::ValueArg<size_t>& rotate_mass_arg =
   .description("Rotate move proposal mass (previously called \"resize\")")
   .default_val(1);
 
+cpputil::ValueArg<int>& transform_window_start =
+  cpputil::ValueArg<int>::create("transform_window_start")
+  .usage("<int>")
+  .description("Start index of the transform window (inclusive). -1 for disabled.")
+  .default_val(-1);
+
+cpputil::ValueArg<int>& transform_window_end =
+  cpputil::ValueArg<int>::create("transform_window_end")
+  .usage("<int>")
+  .description("End index of the transform window (inclusive). -1 for disabled.")
+  .default_val(-1);
+
 } // namespace stoke
 
 #endif

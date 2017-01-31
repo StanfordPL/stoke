@@ -49,6 +49,14 @@ public:
     insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
     insert_transform(new AddXorIdTransform(pools), add_xorid_mass_arg.value());
 
+    if (transform_window_start != -1 || transform_window_end != -1) {
+      if (transform_window_start == -1 || transform_window_end == -1) {
+        std::cerr << "transform_window_start and transform_window_end both need to be -1, or neither." << std::endl;
+        exit(1);
+      }
+      set_window(transform_window_start, transform_window_end);
+    }
+
     set_seed(seed);
   }
 
