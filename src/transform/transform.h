@@ -43,6 +43,10 @@ public:
     gen_.seed(seed);
   }
 
+  size_t get_index(Cfg& cfg) {
+    return (gen_() % (cfg.get_code().size() - 1)) + 1;
+  }
+
   virtual ~Transform() {}
 
 protected:
@@ -53,9 +57,6 @@ protected:
 
   /** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
   static bool is_control_other_than_call(x64asm::Opcode op);
-
-  /** Get the index of some non-control flow instruction in the code. */
-  bool get_indices(const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx);
 
   TransformPools& pools_;
   std::default_random_engine gen_;

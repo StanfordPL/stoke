@@ -27,14 +27,15 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   ti.success = false;
 
   // Grab the index of an old instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(cfg, bb, block_idx, ti.undo_index[0])) {
-    return ti;
-  }
+  ti.undo_index[0] = get_index(cfg);
+  const auto& loc = cfg.get_loc(ti.undo_index[0]);
 
   // Record the old value
   ti.undo_instr = cfg.get_code()[ti.undo_index[0]];
+
+  if (is_control_other_than_call(ti.undo_instr.get_opcode())) {
+    return ti;
+  }
 
   // Try generating a new instruction
   auto instr = ti.undo_instr;
@@ -45,7 +46,7 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   }
   instr.set_opcode(opc);
 
-  const auto& rs = cfg.def_ins({bb, block_idx});
+  const auto& rs = cfg.def_ins(loc);
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
     Operand o = instr.get_operand<R64>(i);
     if (instr.maybe_read(i)) {

@@ -33,7 +33,7 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
   if (cfg.get_code().size() < 3)
     return ti;
 
-  size_t index = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  size_t index = get_index(cfg);
   ti.undo_index[0] = index;
   ti.undo_instr = cfg.get_code()[index];
 

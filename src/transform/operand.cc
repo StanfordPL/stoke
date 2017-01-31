@@ -27,7 +27,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   ti.success = false;
 
   // Grab the index of a random instruction
-  ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  ti.undo_index[0] = get_index(cfg);
 
   // If not reachable, don't bother
   if (!cfg.is_reachable(cfg.get_loc(ti.undo_index[0]).first)) {

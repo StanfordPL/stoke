@@ -27,7 +27,7 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
   ti.success = false;
 
   // Grab the index of a random instruction
-  ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  ti.undo_index[0] = get_index(cfg);
 
   ti.undo_instr = cfg.get_code()[ti.undo_index[0]];
   if (is_control_other_than_call(ti.undo_instr.get_opcode()))

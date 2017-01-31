@@ -29,8 +29,8 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
   if (cfg.get_code().size() < 3)
     return ti;
 
-  ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
-  ti.undo_index[1] = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  ti.undo_index[0] = get_index(cfg);
+  ti.undo_index[1] = get_index(cfg);
   if (ti.undo_index[0] == ti.undo_index[1]) {
     return ti;
   }
