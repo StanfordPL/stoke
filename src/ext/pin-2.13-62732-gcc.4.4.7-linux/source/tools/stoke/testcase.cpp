@@ -201,7 +201,9 @@ VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
   MemoryMap& current = memory_values_.top().back();
   for (size_t i = 0; i < size; ++i) {
     const auto ptr = (uint64_t)addr + i;
-    current[ptr] = read ? *((uint8_t*)(ptr)) : 0;
+    if (current.find(ptr) == current.end()) {
+      current[ptr] = read ? *((uint8_t*)(ptr)) : 0;
+    }
   }
 }
 
