@@ -243,83 +243,39 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   sep(os);
 }
 
-void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
-                       size_t total_restarts,
-                       size_t total_iterations, time_point<steady_clock> start,
-                       duration<double> search_elapsed,
-                       bool verified,
-                       bool timeout) {
-  auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
-  sep(Console::msg(), "#");
-  Console::msg() << "Final update:" << endl << endl;
-  Console::msg() << "Total search iterations:       " << total_iterations << endl;
-  Console::msg() << "Number of attempted searches:  " << total_restarts << endl;
-  Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
-  Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
-  Console::msg() << endl << "Statistics of last search" << endl << endl;
-  // get the state first (because it updates some static variables)
-  ostringstream stream;
-  show_state(state, stream);
-  show_statistics(stats, Console::msg());
-  Console::msg() << endl << endl;
-  Console::msg() << stream.str();
-  Console::msg() << endl << endl;
-  sep(Console::msg(), "#");
-
-  // output machine-readable result
-  if (machine_output_arg.has_been_provided()) {
-    auto code_to_string = [](x64asm::Code code) {
-      stringstream ss;
-      ss << code;
-      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
-      return res;
-    };
-
-    ofstream f;
-    f.open(machine_output_arg.value());
-    f << "{" << endl;
-    f << "  \"success\": " << (state.success ? "true" : "false") << "," << endl;
-    f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
-    f << "  \"timeout\": " << (timeout ? "true" : "false") << "," << endl;
-    f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
-    f << "  \"starting_cost\": " << starting_cost << "," << endl;
-    f << "  \"statistics\": {" << endl;
-    f << "    \"total_iterations\": " << total_iterations << "," << endl;
-    f << "    \"total_attempted_searches\": " << total_restarts << "," << endl;
-    f << "    \"total_search_time\": " << search_elapsed.count() << "," << endl;
-    f << "    \"total_time\": " << total_elapsed.count() << endl;
-    f << "  }," << endl;
-    f << "  \"best_yet\": {" << endl;
-    f << "    \"cost\": " << state.best_yet_cost << "," << endl;
-    f << "    \"code\": \"" << code_to_string(state.best_yet.get_code()) << "\"" << endl;
-    f << "  }," << endl;
-    f << "  \"best_correct\": {" << endl;
-    f << "    \"cost\": " << state.best_correct_cost << "," << endl;
-    f << "    \"code\": \"" << code_to_string(state.best_correct.get_code()) << "\"" << endl;
-    f << "  }" << endl;
-    f << "}" << endl;
-    f.close();
-  }
-}
-
 void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg) {
 
   if (results_arg.has_been_provided()) {
+    Console::msg() << "Verifying improved rewrite..." << endl;
 
     auto state = data.state;
     auto data = (pair<VerifierGadget&, TargetGadget&>*)arg;
     auto verifier = data->first;
     auto target = data->second;
 
+    // perform the postprocessing
+    Cfg res(state.current);
+    if (postprocessing_arg == Postprocessing::FULL) {
+      CfgTransforms::remove_redundant(res);
+      CfgTransforms::remove_unreachable(res);
+      CfgTransforms::remove_nop(res);
+    } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+      CfgTransforms::remove_unreachable(res);
+      CfgTransforms::remove_nop(res);
+    } else {
+      // Do nothing.
+    }
+
     // verify the new best correct rewrite
-    const auto verified = verifier.verify(target, state.best_correct);
+    const auto verified = verifier.verify(target, res);
 
     if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl;
+      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl << endl;
     }
 
     // save to file if verified
     if (verified) {
+      Console::msg() << "Verified!  Saving result..." << endl << endl;
       // next name for result file
       string name = "";
       bool done = false;
@@ -330,27 +286,80 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
         done = !f.good();
       } while (!done);
 
-      Cfg res(state.current);
-      if (postprocessing_arg == Postprocessing::FULL) {
-        CfgTransforms::remove_redundant(res);
-        CfgTransforms::remove_unreachable(res);
-        CfgTransforms::remove_nop(res);
-      } else if (postprocessing_arg == Postprocessing::SIMPLE) {
-        CfgTransforms::remove_unreachable(res);
-        CfgTransforms::remove_nop(res);
-      } else {
-        // Do nothing.
-      }
-
       // write output
       ofstream outfile;
       outfile.open(name);
       outfile << res.get_function();
       outfile.close();
+    } else {
+      Console::msg() << "Verification failed."  << endl << endl;
+      if (verifier.counter_examples_available()) {
+        Console::msg() << "Counterexample: " << endl;
+        for (auto it : verifier.get_counter_examples()) {
+          Console::msg() << it << endl;
+        }
+      }
     }
+
+  } else {
+    cout << "No action on new best correct" << endl;
 
   }
 
+}
+
+
+
+void generate_testcases(x64asm::RegSet def_in, TrainingSetGadget& set) {
+
+  mt19937_64 gen{0xc9e0b44164d52561};
+  // 1,0,-1 full cross product on up to two registers
+  for (int i = -1; i < 2; i++) {
+    for (int j = -1; j < 2; j++) {
+      CpuState state{};
+      int which = 0;
+      for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+        state.update(*reg, which ? i : j);
+        which = (which + 1) % 2;
+      }
+      set.push_back(state);
+    }
+  }
+
+
+  // sparse bit patterns, 1, 2, or 3 bits set.
+  for (int i = 0; i < 30; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      uint64_t sparse = 0;
+      int bits = gen() % 3 + 1;
+      for (int j = 0; j < bits; j++)
+        sparse |= 1 << (gen() % ((*reg).size()));
+      state.update(*reg, sparse);
+    }
+    set.push_back(state);
+  }
+  // complement of sparse bit patterns
+  for (int i = 0; i < 21; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      uint64_t sparse = 0;
+      int bits = gen() % 3 + 1;
+      for (int j = 0; j < bits; j++)
+        sparse |= 1 << (gen() % ((*reg).size()));
+      state.update(*reg, ~sparse);
+    }
+    set.push_back(state);
+  }
+
+  // totally random testcases
+  for (int i = 0; i < 50; i++) {
+    CpuState state{};
+    for (auto reg = def_in.gp_begin(); reg != def_in.gp_end(); ++reg) {
+      state.update(*reg, gen());
+    }
+    set.push_back(state);
+  }
 }
 
 vector<string>& split(string& s, const string& delim, vector<string>& result) {
@@ -384,7 +393,12 @@ int main(int argc, char** argv) {
   TargetGadget target(aux_fxns, init_arg == Init::ZERO);
 
   TrainingSetGadget training_set(seed);
+
+  if (generate_testcases_arg.value())
+    generate_testcases(def_in_arg.value(), training_set);
+
   SandboxGadget training_sb(training_set, aux_fxns);
+
 
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
   WeightedTransformGadget transform(transform_pools, seed);
@@ -409,7 +423,11 @@ int main(int argc, char** argv) {
   search.set_new_best_correct_callback(new_best_correct_callback, &nbcc_data);
 
   size_t total_iterations = 0;
-  size_t total_restarts = 0;
+  size_t total_searches = 0;
+  size_t total_counterexamples = 0;
+  size_t total_verifications = 0;
+  bool did_timeout = false;
+  bool was_verified = false;
 
   // attempt to parse cycle_timeout argument
   vector<string> parts;
@@ -428,33 +446,27 @@ int main(int argc, char** argv) {
     Console::error() << "No verification is performed, thus no counterexample can be added (--failed_verification_action add_counterexample and --strategy none are not compatible)." << endl;
   }
 
-  string final_msg;
   SearchStateGadget state(target, aux_fxns);
-  for (size_t i = 0; ; ++i) {
-    CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  bool finished = false;
+  size_t cycle = 0;
+  for (; !finished; ++cycle) {
 
-    // determine iteration timeout
-    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
-    function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
-    size_t cur_timeout = (*timeout_expr)(f2);
-    size_t timeout_left = cur_timeout;
+    // Determine iteration timeout for this cycle
+    Expr<size_t>* timeout_expr = cycle_timeouts[std::min(cycle_timeouts.size()-1, cycle)];
+    function<size_t (const string&)> f2 = [cycle](const string& s) -> size_t { return cycle+1; };
+    size_t cycle_iterations_remaining = (*timeout_expr)(f2);
     if (timeout_iterations_arg.value()) {
-      timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
-    }
-    search.set_timeout_itr(std::min(cur_timeout, timeout_left));
-
-    Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
-    // timeout in seconds
-    if (timeout_seconds_arg.value() != 0) {
-      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
-      if (time_remaining <= steady_clock::duration::zero()) {
-        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
-        Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      if (total_iterations < timeout_iterations_arg.value()) {
+        cycle_iterations_remaining = std::min(cycle_iterations_remaining, timeout_iterations_arg.value() - total_iterations);
+      } else {
+        cycle_iterations_remaining = 0;
       }
-      search.set_timeout_sec(time_remaining);
-      Console::msg() << " / " << time_remaining.count() << " seconds";
     }
-    Console::msg() << "):" << endl << endl;
+
+    Console::msg() << "Starting cycle " << cycle << " with " << cycle_iterations_remaining << " iterations" << endl;
+
+    // Initialize state to zero, target, etc.
     state = SearchStateGadget(target, aux_fxns);
 
     // Run the initial cost function
@@ -471,54 +483,82 @@ int main(int argc, char** argv) {
       lowest_correct = 0;
     }
 
-    const auto start_search = steady_clock::now();
-    search.run(target, fxn, init_arg, state, aux_fxns);
-    search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
-
-    total_iterations += search.get_statistics().iterations;
-    total_restarts++;
-
-    if (state.interrupted) {
-      Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
-      Console::msg() << "Search interrupted!" << endl;
-      exit(2);
-    }
-
-    const auto verified = verifier.verify(target, state.best_correct);
-
-    if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error:" << endl;
-      Console::msg() << verifier.error() << endl;
-    }
-
-    if (!state.success) {
-      Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
-    } else if (!verified) {
-      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
-    } else {
-      if (strategy_arg.value() == "none") {
-        final_msg = "Search terminated successfully (but no verification was performed)!";
-      } else {
-        final_msg = "Search terminated successfully with a verified rewrite!";
+    // Perform the epochs within a cycle
+    for (size_t epoch = 0; ; ++epoch) {
+      if (cycle_iterations_remaining == 0) {
+        did_timeout = true;
+        finished = true;
+        break;
       }
-      break;
-    }
+      search.set_timeout_itr(cycle_iterations_remaining);
 
-    sep(Console::msg());
+      // Timeout in seconds
+      if (timeout_seconds_arg.value() != 0) {
+        auto time_remaining = duration<double>(timeout_seconds_arg.value()) - duration_cast<duration<double>>(steady_clock::now() - start);
+        if (time_remaining <= steady_clock::duration::zero()) {
+          Console::msg() << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+          did_timeout = true;
+          finished = true;
+          break;
+        }
+        search.set_timeout_sec(time_remaining);
+      }
 
+      Console::msg() << "Running search (epoch:" << epoch << " timeout is " << cycle_iterations_remaining << " iterations):";
+      const auto start_search = steady_clock::now();
+      search.run(target, fxn, init_arg, state, aux_fxns);
+      search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
 
-    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
-      Console::error(2) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
-    }
+      total_iterations += search.get_statistics().iterations;
+      cycle_iterations_remaining -= search.get_statistics().iterations;
+      total_searches++;
 
-    if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
-      Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
-      Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
-      training_sb.insert_input(verifier.get_counter_examples()[0]);
-    } else {
-      Console::msg() << "Restarting search" << endl;
+      if (state.interrupted) {
+        Console::msg() << endl << "Search interrupted!" << endl;
+        finished = true;
+        break;
+      }
+      if (!state.success) {
+        Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
+        // End this cycle
+        break;
+      }
+
+      const auto verified = verifier.verify(target, state.best_correct);
+      total_verifications ++;
+
+      if (verifier.has_error()) {
+        Console::msg() << "The verifier encountered an error:" << endl;
+        Console::msg() << verifier.error() << endl;
+        finished = true;
+        break;
+      }
+
+      if (verified) {
+        if (strategy_arg.value() == "none") {
+          Console::msg() << "Search terminated successfully (but no verification was performed)!" << endl;
+        } else {
+          Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+        }
+        was_verified = true;
+        finished = true;
+        break;
+      }
+
+      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
+      sep(Console::msg());
+
+      if (verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
+        Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
+        Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
+        training_sb.insert_input(verifier.get_counter_examples()[0]);
+        total_counterexamples++;
+      } else {
+        // Search was successful, but we didn't verify and couldn't add a new
+        // counterexample, so just end the search
+        finished = true;
+        break;
+      }
     }
   }
 
@@ -533,9 +573,61 @@ int main(int argc, char** argv) {
     // Do nothing.
   }
 
-  auto final_stats = search.get_statistics();
-  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, true, false);
-  Console::msg() << final_msg << endl;
+  auto stats = search.get_statistics();
+
+  auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
+  sep(Console::msg(), "#");
+  Console::msg() << "Final update:" << endl << endl;
+  Console::msg() << "Total search iterations:       " << total_iterations << endl;
+  Console::msg() << "Number of attempted searches:  " << total_searches << endl;
+  Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
+  Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
+  Console::msg() << endl << "Statistics of last search" << endl << endl;
+  // get the state first (because it updates some static variables)
+  ostringstream stream;
+  show_state(state, stream);
+  show_statistics(stats, Console::msg());
+  Console::msg() << endl << endl;
+  Console::msg() << stream.str();
+  Console::msg() << endl << endl;
+  sep(Console::msg(), "#");
+
+  // output machine-readable result
+  if (machine_output_arg.has_been_provided()) {
+    auto code_to_string = [](x64asm::Code code) {
+      stringstream ss;
+      ss << code;
+      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
+      return res;
+    };
+
+    ofstream f;
+    f.open(machine_output_arg.value());
+    f << "{" << endl;
+    f << "  \"success\": " << (state.success ? "true" : "false") << "," << endl;
+    f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
+    f << "  \"timeout\": " << (did_timeout ? "true" : "false") << "," << endl;
+    f << "  \"verified\": " << (was_verified ? "true" : "false") << "," << endl;
+    f << "  \"statistics\": {" << endl;
+    f << "    \"total_iterations\": " << total_iterations << "," << endl;
+    f << "    \"total_attempted_searches\": " << total_searches << "," << endl;
+    f << "    \"total_attempted_verifications\": " << total_verifications << "," << endl;
+    f << "    \"total_counterexamples\": " << total_counterexamples << "," << endl;
+    f << "    \"total_search_time\": " << search_elapsed.count() << "," << endl;
+    f << "    \"total_cycles\": " << (cycle+1) << "," << endl;
+    f << "    \"total_time\": " << total_elapsed.count() << endl;
+    f << "  }," << endl;
+    f << "  \"best_yet\": {" << endl;
+    f << "    \"cost\": " << state.best_yet_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_yet.get_code()) << "\"" << endl;
+    f << "  }," << endl;
+    f << "  \"best_correct\": {" << endl;
+    f << "    \"cost\": " << state.best_correct_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_correct.get_code()) << "\"" << endl;
+    f << "  }" << endl;
+    f << "}" << endl;
+    f.close();
+  }
 
   ofstream ofs(out.value());
   ofs << state.best_correct.get_function();

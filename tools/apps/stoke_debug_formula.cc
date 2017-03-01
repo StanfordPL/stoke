@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
   auto print = [&smtlib, &pretty](const auto cc) {
     auto c = SymSimplify().simplify(cc);
     if (no_simplify_arg.value()) {
-      c = c;
+      c = cc;
     }
     if (use_smtlib_format_arg.value()) {
       smtlib((c));

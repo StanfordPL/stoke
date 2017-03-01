@@ -165,6 +165,86 @@ void SimpleHandler::add_all() {
     ss.set(eflags_pf, SymBool::tmp_var());
     ss.set(dst, temp);
   });
+  // Handle the BT, BTC, BTR, BTS family of instructions. Modify is true if the
+  // instruction is not BT, and "operation" combines a mask with a value to complement,
+  // set, or reset the bit as appropriate.
+  auto handle_bt_instr =
+    [this] (bool modify, std::function<SymBitVector(SymBitVector, SymBitVector)> operation,
+  Operand op_base, Operand op_offset, SymBitVector base_bvec, SymBitVector offset_bvec, SymState& ss) {
+    // in the immediate & register case, must mask offset by size of register
+    int width = op_base.size();
+    // Note: there is no byte width version of these instructions, so no width == 8
+    auto size_mask = width == 16 ? SymBitVector::constant(op_offset.size(), 0xF):
+                     width == 32 ? SymBitVector::constant(op_offset.size(), 0x1F):
+                     SymBitVector::constant(op_offset.size(), 0x3F);
+    if (!op_base.is_typical_memory()) {
+      // Register case.
+      auto shift_amount = (offset_bvec & size_mask).extend(base_bvec.width());
+      auto shifted = base_bvec >> shift_amount;
+      ss.set(eflags_cf, shifted[0]);
+      if (modify) {
+        auto mask = SymBitVector::constant(base_bvec.width(), 0x1) << shift_amount;
+        ss.set(op_base, operation(base_bvec, mask));
+      }
+    } else {
+      // Memory case. Immediates are masked to the lowest bits, registers are sign
+      // extended from their original width, and not masked.
+      auto bit_offset = op_offset.is_immediate() ? (SymBitVector::constant(56, 0) || (offset_bvec & size_mask)):
+                        offset_bvec.extend(64);
+
+      // Compute the byte offset to access with, and the bit within that byte
+      // TODO: add a zero extension convenience function
+      auto bit_offset_div_8 = (SymBitVector::constant(3, 0) || bit_offset[63][3]);
+      auto bit_offset_mod_8 = SymBitVector::constant(5, 0) || bit_offset[2][0];
+      auto addr = ss.get_addr(*(reinterpret_cast<M8*>(&op_base))) + bit_offset_div_8;
+      // Retrive byte and segfault flag from memory. We need to manually segfault
+      // because normally that is handled in SymState::operator[Operand] which we are bypassing.
+      auto byte_sigsev = ss.memory->read(addr, 8, ss.get_lineno());
+      ss.set_sigsegv(byte_sigsev.second);
+      ss.set(eflags_cf, (byte_sigsev.first >> bit_offset_mod_8)[0]);
+      if (modify) {
+        // Construct a mask with a 1 bit in the affected bit and 0's elsewhere
+        auto mask = SymBitVector::constant(8, 0x1) << bit_offset_mod_8;
+        auto write_byte = operation(byte_sigsev.first, mask);
+        auto sigsev = ss.memory->write(addr, write_byte, 8, ss.get_lineno());
+        ss.set_sigsegv(sigsev);
+      }
+    }
+
+    // Set other flags, doesn't depend on operation
+    // zflag explicitly preserved, others are undefined
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+  };
+
+  // The actual operations for the BT* family. The size is encoded in the Operand
+  // so only the lambdas change for each case.
+  add_opcode_str({"btw", "btl", "btq"},
+  [this, handle_bt_instr] (Operand op_base, Operand op_offset, SymBitVector base_bvec, SymBitVector offset_bvec, SymState& ss) {
+    handle_bt_instr(false, [](SymBitVector v, SymBitVector mask) {
+      return v;
+    }, op_base, op_offset, base_bvec, offset_bvec, ss);
+  });
+  add_opcode_str({"btcw", "btcl", "btcq"},
+  [this, handle_bt_instr] (Operand op_base, Operand op_offset, SymBitVector base_bvec, SymBitVector offset_bvec, SymState& ss) {
+    handle_bt_instr(true, [](SymBitVector v, SymBitVector mask) {
+      return v ^ mask;
+    }, op_base, op_offset, base_bvec, offset_bvec, ss);
+  });
+  add_opcode_str({"btrw", "btrl", "btrq"},
+  [this, handle_bt_instr] (Operand op_base, Operand op_offset, SymBitVector base_bvec, SymBitVector offset_bvec, SymState& ss) {
+    handle_bt_instr(true, [](SymBitVector v, SymBitVector mask) {
+      return v & !mask;
+    }, op_base, op_offset, base_bvec, offset_bvec, ss);
+  });
+  add_opcode_str({"btsw", "btsl", "btsq"},
+  [this, handle_bt_instr] (Operand op_base, Operand op_offset, SymBitVector base_bvec, SymBitVector offset_bvec, SymState& ss) {
+    handle_bt_instr(true, [](SymBitVector v, SymBitVector mask) {
+      return v | mask;
+    }, op_base, op_offset, base_bvec, offset_bvec, ss);
+  });
 
   // to convert between Intel/AT&T mnemonics, see:
   // https://sourceware.org/binutils/docs/as/i386_002dMnemonics.html

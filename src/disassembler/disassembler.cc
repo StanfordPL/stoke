@@ -16,6 +16,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <ios>
 #include <regex>
 
 #include "src/ext/cpputil/include/io/fail.h"
@@ -145,11 +146,15 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 map<string, uint64_t> Disassembler::parse_section_offsets(ipstream& ips) {
   map<string, uint64_t> section_offsets;
 
+  string line;
   // Skip ahead to table
-  strip_lines(ips, 5);
+  while (getline(ips, line)) {
+    if (line == "Sections:")
+      break;
+  }
+  strip_lines(ips, 1);
 
   // Read entries one at a time
-  string line;
   while (getline(ips, line)) {
     istringstream iss(line);
     string section, temp;
@@ -277,15 +282,22 @@ string Disassembler::fix_instruction(const string& line) {
 }
 
 bool Disassembler::parse_line(const string& s, LineInfo& line) {
+  line.hex_bytes = 0;
+
   // Some character landmarks
   const auto tab1 = s.find_first_of('\t');
   const auto tab2 = s.find_first_of('\t', tab1 + 1);
   const auto colon = s.find_first_of(':');
 
   // Record line offset
-  line.offset = hex_to_int(s.substr(2, colon-2));
+  const auto offset_start = s.find_first_of("0123456789abcdefABCDEF");
+
+  if (offset_start == string::npos || colon == string::npos || offset_start > colon)
+    return false; //error
+
+  line.offset = hex_to_int(s.substr(offset_start, colon-offset_start));
+
   // Count hex bytes
-  line.hex_bytes = 0;
   for (auto i = tab1+1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
     line.hex_bytes += isxdigit(s[i]) ? 1 : 0;
   }
@@ -354,7 +366,12 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       lines.push_back(line);
       parse_ptr(s, ptrs);
     } else {
-      lines.back().hex_bytes += line.hex_bytes;
+      if (lines.size()) {
+        lines.back().hex_bytes += line.hex_bytes;
+      } else {
+        // this is an error
+        return lines;
+      }
     }
   }
 
@@ -384,7 +401,6 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       }
     }
   }
-
   // Insert label definitions where necessary and fix instruction text
   // @todo The fact that we split lock into two instructions is going to bite us here
   vector<LineInfo> result;
@@ -401,17 +417,15 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   return result;
 }
 
-int Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
+int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
     return 0;
   }
 
   // Get the name of the function
-  string name;
-  getline(ips, name);
-  const auto begin = name.find_first_of('<') + 1;
-  const auto len = name.find_last_of('>') - begin;
-  name = mangle_lable(name.substr(begin, len));
+  const auto begin = line.find_first_of('<') + 1;
+  const auto len = line.find_last_of('>') - begin;
+  string name = mangle_lable(line.substr(begin, len));
 
   // Parse the contents of this function
   // This function inserts missing lines such as labels and splits lock into two instructions
@@ -450,7 +464,7 @@ int Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint
     }
   }
 
-  if (failed(ss)) {
+  if (failed(ss) || lines.size() == 0) {
     Console::warn() << "Cannot parse function '" << name << "', skipping.  Error(s): " << fail_msg(ss);
     return -1;
   }
@@ -505,23 +519,30 @@ void Disassembler::disassemble(const std::string& filename) {
   if (has_error()) {
     return;
   }
-  // Skip the first four lines of output and lines starting with 'D'
-  strip_lines(*body, 4);
-  for (string line; getline(*body, line) && line[0] == 'D';) {
-    // Does nothing
-  }
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
   int retval = 0;
-  while ((retval = parse_function(*body, data, text_offset)) != 0) {
-    if (retval == 1) {
-      if (!callback_closure_) {
-        fxn_cb_(data, fxn_cb_arg_);
-      } else {
-        (*callback_closure_)(data);
+
+
+  string line;
+  while (getline(*body, line)) {
+    // Skip lines until we find a function name
+    if (line[0] == '0' && line.find_first_of('<') != line.npos && line.find_first_of('>') != line.npos) {
+      // we found a function!
+      retval = parse_function(*body, line, data, text_offset);
+      if (retval == 1) {
+        if (!callback_closure_) {
+          fxn_cb_(data, fxn_cb_arg_);
+        } else {
+          (*callback_closure_)(data);
+        }
+      } else if (retval == 0) {
+        // reached EOF?  this is strange.
+        break;
       }
     }
   }
+
 }
 
 } // namespace stoke

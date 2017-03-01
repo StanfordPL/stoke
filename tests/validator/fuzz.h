@@ -61,10 +61,13 @@ public:
     set_def_ins(reads);
     set_live_outs(liveouts);
 
+    bool do_simplify = rand() % 2;
+    set_simplify(do_simplify);
+
     if (check_circuit(cs))
       success_count_++;
     else
-      fuzz_print() << "Check circuit failed." << std::endl;
+      fuzz_print() << "Check circuit failed (" << (do_simplify ? "" : "not ") << "simplified)." << std::endl;
   }
 
 protected:

@@ -200,7 +200,7 @@ bool Z3Solver::get_model_bool(const std::string& var) {
 }
 
 
-std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
+pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
   const std::string& var, uint16_t key_bits, uint16_t value_bits) {
 
   map<uint64_t, cpputil::BitVector> addr_val_map;
@@ -234,7 +234,8 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     // On the other hand, there might be no memory at all or the memory
     // does not matter
     //cout << "got empty addr-value map" << endl;
-    return addr_val_map;
+    pair<map<uint64_t, cpputil::BitVector>, uint8_t> result(addr_val_map, 0);
+    return result;
   }
 
   auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
@@ -267,12 +268,16 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
 
   // TODO: if default_value is non-zero our counterexample will be spurious
   z3::expr default_value = fun_interp.else_value();
+  pair<map<uint64_t, cpputil::BitVector>, uint8_t> result;
+  result.first = addr_val_map;
+  result.second = default_value;
+
   //std::cout << "\nDefault value:" << default_value;
 
   // TODO: "complete" the map with the default value
 
 
-  return addr_val_map;
+  return result;
 }
 
 ///////  The following is for converting bit-vectors.  Very tedious.  //////////////////////////////
