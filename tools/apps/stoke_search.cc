@@ -444,7 +444,7 @@ int main(int argc, char** argv) {
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
-    CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+    CostFunctionGadget fxn(target, &training_sb, &perf_sb, cost_step_size_arg.value());
 
     // determine iteration timeout
     Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];

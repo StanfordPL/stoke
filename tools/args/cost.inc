@@ -31,6 +31,12 @@ cpputil::ValueArg<Cost>& max_cost_arg =
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);
 
+cpputil::ValueArg<Cost>& cost_step_size_arg =
+  cpputil::ValueArg<Cost>::create("cost_step")
+  .usage("<int>")
+  .description("Rounds the cost to the nearest multiple of this value.")
+  .default_val(1);
+
 cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
       cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("cost")
       .usage("<string>")

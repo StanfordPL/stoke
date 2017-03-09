@@ -34,20 +34,31 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, Cost cost_step_size) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)), cost_step_size_(cost_step_size) {
   }
 
   result_type operator()(const Cfg& cfg, Cost max) {
-    return (*fxn_)(cfg, max);
+    result_type res = (*fxn_)(cfg, max);
+    if (cost_step_size_ > 1) {
+      // round to nearest multiple of cost_step_size_
+      res.second = res.second / cost_step_size_ * cost_step_size_;
+    }
+    return res;
   }
 
   result_type operator()(const Cfg& cfg) {
-    return (*fxn_)(cfg);
+    result_type res = (*fxn_)(cfg);
+    if (cost_step_size_ > 1) {
+      // round to nearest multiple of cost_step_size_
+      res.second = res.second / cost_step_size_ * cost_step_size_;
+    }
+    return res;
   }
 
 private:
 
   CostFunction* fxn_;
+  Cost cost_step_size_;
 
   static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) {
 

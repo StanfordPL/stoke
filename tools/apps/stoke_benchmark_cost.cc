@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   SandboxGadget training_sb(train_tcs, aux_fxns);
   PerformanceSetGadget perf_tcs(seed);
   SandboxGadget perf_sb(perf_tcs, aux_fxns);
-  CostFunctionGadget fxn(target, &training_sb, &perf_sb);
+  CostFunctionGadget fxn(target, &training_sb, &perf_sb, cost_step_size_arg.value());
 
   Console::msg() << "CostFunction::operator()..." << endl;
 
