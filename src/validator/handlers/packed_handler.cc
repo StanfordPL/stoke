@@ -74,11 +74,6 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   bool has_immediate;
   Operand last = instr.get_operand<Operand>(arity-1);
   has_immediate = last.is_immediate();
-  SymBitVector immediate;
-  if (has_immediate) {
-    immediate = state[last];
-    arity--;
-  }
 
   if (arity == 2) {
     op1 = instr.get_operand<Operand>(0);
@@ -103,7 +98,8 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   if (output_width == 0)
     output_width = input_width;
   bool limit = entry.get_only_one();
-  bool clear = entry.get_clear();
+  bool avx = instr.is_avx() || instr.is_avx2();
+  bool clear = avx;
   bool avx_alignment = entry.get_avx_alignment();
 
   // Check for memory alignment problems
@@ -127,15 +123,15 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     auto arg2_bits = min(input_width, op2.size());
 
     if (has_immediate) {
-      result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state, immediate, 0);
+      result = entry(op1, arg1[arg1_bits-1][0], op2, arg2, state);
     } else {
       result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state);
     }
-    if (clear) {
-      result = SymBitVector::constant(dest.size() - output_width, 0) || result;
-    }
-    else {
-      if (dest.size() != output_width) {
+    if (dest.size() != output_width) {
+      if (clear) {
+        result = SymBitVector::constant(dest.size() - output_width, 0) || result;
+      }
+      else {
         result = state[dest][dest.size() - 1][output_width] || result;
       }
     }
@@ -145,18 +141,18 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     // operator in a pairwise way.  Stop when we get to the end of the input/output
     // and clear or preserve the remaining bits.
     if (has_immediate) {
-      result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state, immediate, 0);
+      result = entry(op1, arg1[input_width-1][0], op2, arg2, state);
     } else {
       result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state);
     }
 
     size_t i,j,k;
     for (i = input_width, j = output_width, k = 1;
-         i < op1.size() && i < op2.size() && j < dest.size();
+         i < op1.size() && (has_immediate || i < op2.size()) && j < dest.size();
          i = i + input_width, j = j + output_width, ++k) {
       if (has_immediate) {
         result = entry(op1, arg1[i + input_width - 1][i],
-                       op2, arg2[i + input_width - 1][i], state, immediate, k) || result;
+                       op2, arg2, state) || result;
       } else {
         result = entry(op1, arg1[i + input_width - 1][i],
                        op2, arg2[i + input_width - 1][i], state) || result;
@@ -173,7 +169,6 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   }
 
   // Store in the right place
-  bool avx = instr.is_avx() || instr.is_avx2();
   state.set(instr.get_operand<Operand>(0), result, avx);
 
 }
