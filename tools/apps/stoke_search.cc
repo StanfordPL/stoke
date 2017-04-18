@@ -134,24 +134,24 @@ void show_state(const SearchState& state, ostream& os) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
-  auto best_yet = state.best_yet;
-  CfgTransforms::remove_unreachable(best_yet);
-  CfgTransforms::remove_nop(best_yet);
+  // auto best_yet = state.best_yet;
+  // CfgTransforms::remove_unreachable(best_yet);
+  // CfgTransforms::remove_nop(best_yet);
 
   lowest_cost = state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
   ofs << endl;
-  ofs << best_yet.get_code();
+  // ofs << best_yet.get_code();
   ofs.filter().next();
 
-  auto best_correct = state.best_correct;
-  CfgTransforms::remove_unreachable(best_correct);
-  CfgTransforms::remove_nop(best_correct);
+  // auto best_correct = state.best_correct;
+  // CfgTransforms::remove_unreachable(best_correct);
+  // CfgTransforms::remove_nop(best_correct);
 
   lowest_correct = state.best_correct_cost;
   ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
   ofs << endl;
-  ofs << best_correct.get_code();
+  // ofs << best_correct.get_code();
   ofs.filter().done();
 }
 
@@ -344,6 +344,8 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
         done = !f.good();
       } while (!done);
 
+      Console::msg() << dec << "cost=" << state.current_cost << " " << "id=" << state.last_result_id << endl;
+
       // write output
       ofstream outfile;
       outfile.open(name);
@@ -353,9 +355,9 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
       Console::msg() << "Verification failed."  << endl << endl;
       if (verifier.counter_examples_available()) {
         Console::msg() << "Counterexample: " << endl;
-        for (auto it : verifier.get_counter_examples()) {
-          Console::msg() << it << endl;
-        }
+        // for (auto it : verifier.get_counter_examples()) {
+        //   Console::msg() << it << endl;
+        // }
       }
     }
 

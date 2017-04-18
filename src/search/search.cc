@@ -120,6 +120,8 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
 
+    // cout << "correct=" << is_correct << " / accept=" << (!(new_cost > max)) << " / lowest=" << ((new_cost < state.best_yet_cost)) << " / cost=" << new_cost << endl;
+
     if (new_cost > max) {
       (*transform_).undo(state.current, ti);
       continue;
