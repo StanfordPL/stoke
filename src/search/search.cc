@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <string>
 #include <fstream>
+#include <chrono>
 
 #include "src/search/search.h"
 #include "src/transform/weighted.h"
@@ -105,6 +106,16 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       break;
     }
 
+    // every 1000 iterations, print the cost of the initial program
+    if (iterations % 1000 == 0) {
+      const auto tmp = fxn(state.initial, state.current_cost + 1000000);
+      const auto cost = tmp.second;
+      const auto ts = chrono::duration_cast< chrono::milliseconds >(
+        chrono::system_clock::now().time_since_epoch()
+      ).count();
+      cout << "cost_check=" << cost << " time=" << ts << endl;
+    }
+
 
     ti = (*transform_)(state.current);
     move_statistics[ti.move_type].num_proposed++;
@@ -120,7 +131,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
 
-    // cout << "correct=" << is_correct << " / accept=" << (!(new_cost > max)) << " / lowest=" << ((new_cost < state.best_yet_cost)) << " / cost=" << new_cost << endl;
+    // cout << "correct=" << is_correct << " / accept=" << (!(new_cost > max)) << " / lowest=" << ((new_cost < state.best_yet_cost)) << " / cost=" << new_cost << " / current_cost=" << state.current_cost << endl;
 
     if (new_cost > max) {
       (*transform_).undo(state.current, ti);

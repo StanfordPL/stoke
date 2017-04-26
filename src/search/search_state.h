@@ -31,6 +31,7 @@ public:
 
   /** The current rewrite. */
   Cfg current;
+  Cfg initial;
   /** The cost of the current rewrite. */
   Cost current_cost;
 
