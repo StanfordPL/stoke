@@ -107,14 +107,14 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     }
 
     // every 1000 iterations, print the cost of the initial program
-    if (iterations % 1000 == 0) {
-      const auto tmp = fxn(state.initial, state.current_cost + 1000000);
-      const auto cost = tmp.second;
-      const auto ts = chrono::duration_cast< chrono::milliseconds >(
-        chrono::system_clock::now().time_since_epoch()
-      ).count();
-      cout << "cost_check=" << cost << " time=" << ts << endl;
-    }
+    // if (iterations % 1000 == 0) {
+    //   const auto tmp = fxn(state.initial, state.current_cost + 1000000);
+    //   const auto cost = tmp.second;
+    //   const auto ts = chrono::duration_cast< chrono::milliseconds >(
+    //                     chrono::system_clock::now().time_since_epoch()
+    //                   ).count();
+    //   cout << "cost_check=" << cost << " time=" << ts << endl;
+    // }
 
 
     ti = (*transform_)(state.current);
