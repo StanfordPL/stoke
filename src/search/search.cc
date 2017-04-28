@@ -154,6 +154,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
       new_best_correct_cb_({state}, new_best_correct_cb_arg_);
     }
+    // randomly also accept correct programs
+    if (is_correct && prob_(gen_) < 0.001) {
+      new_best_correct_cb_({state}, new_best_correct_cb_arg_);
+    }
 
     if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
       progress_cb_({state}, progress_cb_arg_);
