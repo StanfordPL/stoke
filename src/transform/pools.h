@@ -25,7 +25,7 @@ class TransformPools {
 public:
 
   /** Initializes data structures */
-  TransformPools();
+  TransformPools(std::mt19937_64* generator);
 
   /** Learn memory operands and whether to propose memory reads/writes from this target. */
   TransformPools& add_target(const Cfg& target);
@@ -254,7 +254,7 @@ protected:
   std::vector<x64asm::Imm32> rip_pool_;
 
   /** Random generator. */
-  std::default_random_engine gen_;
+  std::mt19937_64& gen_;
 
 
 };

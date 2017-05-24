@@ -36,9 +36,7 @@ namespace stoke {
 class TransformPoolsGadget : public TransformPools {
 public:
   TransformPoolsGadget(const Cfg& cfg, const std::vector<TUnit>& aux_fxns,
-                       std::default_random_engine::result_type seed) : TransformPools() {
-
-    set_seed(seed);
+                       std::mt19937_64* generator) : TransformPools(generator) {
 
     // The semantics of the --whitelist command line argument is to say "only
     // include opcodes if they're in this list, and not contradicted by any of

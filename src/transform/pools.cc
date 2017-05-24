@@ -114,8 +114,8 @@ void fill_pool(vector<T>& pool, const array<T, N>& src, const RegSet& omit) {
 }
 
 /** Set o to a random element from a pool. Returns true on success. */
-template <typename T>
-bool get(default_random_engine& gen, const vector<T>& pool, Operand& o) {
+template <typename T, class Random>
+bool get(Random& gen, const vector<T>& pool, Operand& o) {
   if (pool.empty()) {
     return false;
   }
@@ -134,8 +134,8 @@ bool get(const vector<T>& pool, const T& val, Operand& o) {
 }
 
 /** Set o to a random element in a register set. Returns true on success. */
-template <typename T>
-bool get(default_random_engine& gen, const vector<T>& pool, const RegSet& rs, Operand& o) {
+template <typename T, class Random>
+bool get(Random& gen, const vector<T>& pool, const RegSet& rs, Operand& o) {
   vector<T> ts;
   for (const auto& t : pool) {
     if (rs.contains(t)) {
@@ -150,8 +150,8 @@ bool get(default_random_engine& gen, const vector<T>& pool, const RegSet& rs, Op
 }
 
 /** Replaces base register using an element of a reg set. Returns true on success. */
-template <class T>
-bool get_base(default_random_engine& gen, const vector<R32> r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
+template <class T, class Random>
+bool get_base(Random& gen, const vector<R32> r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
   if (gen() % 2) {
     m.clear_base();
     return true;
@@ -172,8 +172,8 @@ bool get_base(default_random_engine& gen, const vector<R32> r32_pool, const vect
 }
 
 /** Replaces index register using an element of a reg set. Returns true on success. */
-template <class T>
-bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
+template <class T, class Random>
+bool get_index(Random& gen, const vector<R32>& r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
   if (gen() % 2) {
     m.clear_index();
   } else if (m.addr_or()) {
@@ -196,7 +196,7 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
 
 namespace stoke {
 
-TransformPools::TransformPools() {
+TransformPools::TransformPools(std::mt19937_64* generator) : gen_(*generator){
 
   validator_ = NULL;
   memory_read_ = false;

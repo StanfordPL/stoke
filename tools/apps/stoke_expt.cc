@@ -64,11 +64,11 @@ auto& machine_output_arg = ValueArg<string>::create("machine_output")
                            .usage("<path/to/file.s>")
                            .description("Machine-readable output (result and statistics)");
 
-auto& restore_arg = ValueArg<string>::create("restore")
+auto& restore_arg = ValueArg<string>::create("restore_state")
                           .usage("<path/to/file.state>")
                           .description("State to restore.");
 
-auto& save_arg = ValueArg<string>::create("save")
+auto& save_arg = ValueArg<string>::create("save_state")
                            .usage("<path/to/file.state>")
                            .description("Path to save state");
 
@@ -163,7 +163,7 @@ public:
     aux_fxns = new FunctionsGadget();
     target = new TargetGadget(*aux_fxns, init_arg == Init::ZERO);
     
-    transform_pools = new TransformPoolsGadget(*target, *aux_fxns, *seed);
+    transform_pools = new TransformPoolsGadget(*target, *aux_fxns, &generator);
     transform = new WeightedTransformGadget(*transform_pools, &generator);
     
     training_set = new TrainingSetGadget(*seed);
@@ -268,16 +268,19 @@ public:
     TransformInfo ti;
     ti = (*transform)(current);
     if (!ti.success) {
+      //Console::msg() << ti.move_type << " didn't succeed\n";
       return;
     }
     const auto p = prob(generator);
     const auto max = current_cost - (log(p) / beta);
     const auto new_cost = (*fxn)(current, max + 1).second;
-
+    
     if (new_cost > max) {
+      //Console::msg() << ti.move_type << " wasn't accepted\n";
       (*transform).undo(current, ti);
       return;
     }
+    //Console::msg() << ti.move_type << " accepted\n";
     current_cost = new_cost;
   }
   
@@ -314,10 +317,37 @@ public:
     }
   }
   void restore(ifstream& s) {
+    s >> current_cost;
+    
+    // these only have meaning within an invocation:
+    // bool verified, success, interrupted;
+    
+    s >> iterations;
+    s >> search_elapsed >> total_elapsed;
+    s >> total_verifications >> total_counterexamples;
+    s >> generator;
+    current.get_function().read_text(s);
+    current.recompute();
     
   }
   void save(ofstream& s) {
+
+    // This should also be handled to save testcases across invocations
+    //CpuStates* training_set;
     
+    //Write out current cost
+    s << current_cost << "\n";
+    
+    // these only have meaning within an invocation:
+    // bool verified, success, interrupted;
+    
+    s << iterations << "\n";
+    s << search_elapsed << " " << total_elapsed << "\n";
+    s << total_verifications << " " << total_counterexamples << "\n";
+    
+    s << generator << "\n";
+    current.recompute();
+    current.get_function().write_text(s);
   }
   
   SeedGadget* seed;
@@ -367,18 +397,15 @@ int main(int argc, char** argv) {
 
   const auto start_search = steady_clock::now();
   
+  size_t i = 0;
   while (true) {
-    if (search.current_cost == 0) {
-      if (search.verify()) {
-        break;
-      }
-    }
     if (search.iterations > timeout_iterations_arg.value())
       break;
     if (have_received_sigint) {
       search.interrupted = true;
       break;
     }
+    
     if (interrupt_seconds_arg.has_been_provided()) {
       auto elapsed = duration_cast<duration<double>>(steady_clock::now() - start_search).count();
       if (elapsed > interrupt_seconds_arg.value()) {
@@ -386,8 +413,15 @@ int main(int argc, char** argv) {
         break;
       }
     }
+    
+    if (search.current_cost == 0) {
+      if (search.verify()) {
+        break;
+      }
+    }
     search.iteration();
     search.iterations++;
+        
   }
   
   search.search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search).count();
