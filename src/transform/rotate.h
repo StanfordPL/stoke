@@ -28,7 +28,7 @@ public:
     return "Rotate";
   }
 
-  RotateTransform(TransformPools& pools) : Transform(pools) { }
+  RotateTransform(TransformPools& pools, std::mt19937_64* generator) : Transform(pools, generator) { }
 
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo

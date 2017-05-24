@@ -401,7 +401,8 @@ int main(int argc, char** argv) {
 
 
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
-  WeightedTransformGadget transform(transform_pools, seed);
+  std::mt19937_64* generator = new std::mt19937_64((std::mt19937_64::result_type)seed);
+  WeightedTransformGadget transform(transform_pools, generator);
   SearchGadget search(&transform, seed);
 
   TestSetGadget test_set(seed);

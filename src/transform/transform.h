@@ -24,7 +24,7 @@ namespace stoke {
 class Transform {
 public:
 
-  Transform(TransformPools& pools) : pools_(pools) {}
+  Transform(TransformPools& pools, std::mt19937_64* generator) : pools_(pools), gen_(*generator) {}
 
   /** Returns a name for this transform. */
   virtual std::string get_name() const = 0;
@@ -37,11 +37,6 @@ public:
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
   virtual void undo(Cfg& cfg, const TransformInfo& transform_info) const = 0;
-
-  /** Set a seed for the random number generator. */
-  virtual void set_seed(std::default_random_engine::result_type seed) {
-    gen_.seed(seed);
-  }
 
   virtual ~Transform() {}
 
@@ -58,7 +53,7 @@ protected:
   bool get_indices(const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx);
 
   TransformPools& pools_;
-  std::default_random_engine gen_;
+  std::mt19937_64& gen_;
 
 private:
 

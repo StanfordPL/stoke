@@ -41,7 +41,8 @@ int main(int argc, char** argv) {
   TargetGadget target(aux_fxns, false);
 
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
-  WeightedTransformGadget transform(transform_pools, seed);
+  std::mt19937_64* generator = new std::mt19937_64((std::mt19937_64::result_type)seed);
+  WeightedTransformGadget transform(transform_pools, generator);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

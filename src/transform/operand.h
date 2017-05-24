@@ -28,7 +28,7 @@ public:
     return "Operand";
   }
 
-  OperandTransform(TransformPools& pools) : Transform(pools) { }
+  OperandTransform(TransformPools& pools, std::mt19937_64* generator) : Transform(pools, generator) { }
 
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo

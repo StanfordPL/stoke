@@ -36,20 +36,19 @@ namespace stoke {
 class WeightedTransformGadget : public WeightedTransform {
 public:
   WeightedTransformGadget(TransformPools& pools,
-                          std::default_random_engine::result_type seed) : WeightedTransform(pools) {
+                          std::mt19937_64* generator) : WeightedTransform(pools, generator) {
 
-    insert_transform(new AddNopsTransform(pools), add_nops_mass_arg.value());
-    insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
-    insert_transform(new DoubleTransform(pools), double_mass_arg.value());
-    insert_transform(new InstructionTransform(pools), instruction_mass_arg.value());
-    insert_transform(new OpcodeTransform(pools), opcode_mass_arg.value());
-    insert_transform(new OpcodeWidthTransform(pools), opcode_width_mass_arg.value());
-    insert_transform(new OperandTransform(pools), operand_mass_arg.value());
-    insert_transform(new LocalSwapTransform(pools), local_swap_mass_arg.value());
-    insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
-    insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
+    insert_transform(new AddNopsTransform(pools, generator), add_nops_mass_arg.value());
+    insert_transform(new DeleteTransform(pools, generator), delete_mass_arg.value());
+    insert_transform(new DoubleTransform(pools, generator), double_mass_arg.value());
+    insert_transform(new InstructionTransform(pools, generator), instruction_mass_arg.value());
+    insert_transform(new OpcodeTransform(pools, generator), opcode_mass_arg.value());
+    insert_transform(new OpcodeWidthTransform(pools, generator), opcode_width_mass_arg.value());
+    insert_transform(new OperandTransform(pools, generator), operand_mass_arg.value());
+    insert_transform(new LocalSwapTransform(pools, generator), local_swap_mass_arg.value());
+    insert_transform(new GlobalSwapTransform(pools, generator), global_swap_mass_arg.value());
+    insert_transform(new RotateTransform(pools, generator), rotate_mass_arg.value());
 
-    set_seed(seed);
   }
 
 };

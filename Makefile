@@ -222,7 +222,7 @@ OBJS=$(wildcard tools/apps/*.cc) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ)
 BIN=\
 	bin/stoke_extract \
 	bin/stoke_replace \
-	bin/stoke_search \
+	bin/stoke_expt \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
 	bin/stoke_rename \
@@ -233,7 +233,6 @@ BIN=\
 	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
 	bin/stoke_debug_sandbox \
-	bin/stoke_debug_search \
 	bin/stoke_debug_simplify \
 	bin/stoke_debug_state \
 	bin/stoke_debug_tunit \
@@ -242,7 +241,6 @@ BIN=\
 	bin/stoke_benchmark_cfg \
 	bin/stoke_benchmark_cost \
 	bin/stoke_benchmark_sandbox \
-	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify
 

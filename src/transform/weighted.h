@@ -28,7 +28,7 @@ namespace stoke {
 class WeightedTransform : public Transform {
 public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
-  WeightedTransform(TransformPools& pools) : Transform(pools) {
+  WeightedTransform(TransformPools& pools, std::mt19937_64* generator) : Transform(pools, generator) {
   }
 
   std::string get_name() const {
@@ -67,13 +67,6 @@ public:
   /** Returns the number of transforms available to choose from. */
   size_t size() const {
     return transforms_.size();
-  }
-
-  /** Set a seed for the random number generator. */
-  virtual void set_seed(std::default_random_engine::result_type seed) {
-    for (auto tform : transforms_)
-      tform->set_seed(seed);
-    gen_.seed(seed);
   }
 
 protected:
