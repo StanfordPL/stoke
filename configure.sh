@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help {
-  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg]"
+  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4]"
   echo ""
 }
 
@@ -36,6 +36,7 @@ fi
 ## Now do some parsing, look for options
 
 BUILD_TYPE="release"
+NOCVC4=""
 
 while :; do
   case $1 in
@@ -54,7 +55,11 @@ while :; do
     -d|--debug-default-target)
       BUILD_TYPE="debug"
       shift
-      ;; 
+      ;;
+    --no-cvc4)
+      NOCVC4=1
+      shift
+      ;;
     -?*)
       echo "WARNING: unknown option $1"
       error
@@ -75,6 +80,15 @@ rm -f .stoke_config
 echo "STOKE_PLATFORM=\"$PLATFORM\"" >> .stoke_config
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
 echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
+
+if [ -z $NOCVC4 ]; then
+    cp -r scripts/tocopy/nocvc4/ .
+    echo ""
+    echo "Build without CVC4 solver"
+else
+    cp -r scripts/tocopy/origin/ .
+fi
+
 
 ## All done!
 
