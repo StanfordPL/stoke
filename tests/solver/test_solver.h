@@ -11,8 +11,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#ifndef NOCVC4
 #include "src/solver/cvc4solver.h"
+#endif
 #include "src/solver/z3solver.h"
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
@@ -22,7 +23,9 @@ class TestSolver : public SMTSolver {
 
 public:
   TestSolver() {
+#ifndef NOCVC4
     solvers_.push_back(new Cvc4Solver());
+#endif
     solvers_.push_back(new Z3Solver());
   }
 

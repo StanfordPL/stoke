@@ -74,6 +74,9 @@ ifndef EXT_TARGET
 endif
 
 #CXX_FLAGS are any extra flags the user might want to pass to the compiler
+ifdef NOCVC4
+CXX_FLAGS += -DNOCVC4=1
+endif
 
 WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
@@ -83,8 +86,10 @@ INC_FOLDERS=\
 						src/ext/cpputil/ \
 						src/ext/x64asm \
 						src/ext/gtest-1.7.0/include \
-						src/ext/z3/src/api \
-						src/ext/cvc4-1.4-build/include
+						src/ext/z3/src/api
+ifndef NOCVC4
+INC_FOLDERS += src/ext/cvc4-1.4-build/include
+endif
 
 INC=$(addprefix -I./, $(INC_FOLDERS))
 
@@ -97,10 +102,17 @@ LIB=\
 	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread \
 	-lcln \
 	-liml -lgmp \
-	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
+	-lcblas -latlas \
 	-L src/ext/z3/build -lz3
+ifndef NOCVC4
+LIB += -L src/ext/cvc4-1.4-build/lib -lcvc4
+endif
 
+ifndef NOCVC4
 LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
+else
+LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build,--enable-new-dtags
+endif
 
 SRC_OBJ=\
 	src/cfg/cfg.o \
@@ -123,7 +135,6 @@ SRC_OBJ=\
 	src/search/search_state.o \
 	\
 	src/solver/z3solver.o \
-	src/solver/cvc4solver.o \
 	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
@@ -186,7 +197,12 @@ SRC_OBJ=\
 	\
 	src/verifier/hold_out.o
 
-
+ifndef NOCVC4
+SRC_OBJ += 	src/solver/cvc4solver.o
+endif
+#ifdef NOCVC4
+#$(error NOCVC4 define)
+#endif
 TOOL_ARGS_OBJ=\
 	tools/args/benchmark.o \
 	tools/args/cost.o \
