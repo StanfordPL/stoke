@@ -30,13 +30,12 @@ elif [ $AVX -eq 0 ]; then
   PLATFORM="sandybridge"
 else
   echo "ERROR: STOKE is currently only supported on sandybridge or haswell machines.  You appear to have an older CPU."
-  exit 1
+exit 1
 fi
 
 ## Now do some parsing, look for options
 
 BUILD_TYPE="release"
-NOCVC4=""
 
 while :; do
   case $1 in
@@ -81,12 +80,8 @@ echo "STOKE_PLATFORM=\"$PLATFORM\"" >> .stoke_config
 echo "BUILD_TYPE=$BUILD_TYPE" >> .stoke_config
 echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
-if [ -z $NOCVC4 ]; then
-    cp -r scripts/tocopy/nocvc4/ .
-    echo ""
-    echo "Build without CVC4 solver"
-else
-    cp -r scripts/tocopy/origin/ .
+if [ ! -z $NOCVC4 ]; then
+echo "NOCVC4=$NOCVC4" >> .stoke_config
 fi
 
 
