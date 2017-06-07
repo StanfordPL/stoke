@@ -16,7 +16,9 @@
 #define STOKE_TOOLS_GADGETS_SOLVER_H
 
 #include "src/solver/smtsolver.h"
+#ifndef NOCVC4
 #include "src/solver/cvc4solver.h"
+#endif
 #include "src/solver/z3solver.h"
 #include "tools/args/solver.inc"
 
@@ -30,9 +32,11 @@ public:
     case Solver::Z3:
       solver_ = new Z3Solver();
       break;
-    case Solver::CVC4:
-      solver_ = new Cvc4Solver();
-      break;
+#ifndef NOCVC4
+   case Solver::CVC4:
+     solver_ = new Cvc4Solver();
+     break;
+#endif
     default:
       assert(false);
     }

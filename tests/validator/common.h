@@ -689,7 +689,11 @@ private:
   /* The validator we're using */
   BoundedValidator v_;
   /* The solver we're using */
+#ifndef NOCVC4
   Cvc4Solver s_;
+#else
+  Z3Solver s_;
+#endif
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;
