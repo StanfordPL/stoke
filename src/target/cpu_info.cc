@@ -30,7 +30,7 @@ typedef tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags
 vector<pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   // level 1
   make_pair(1, make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
-              // edx
+    // edx
   {
     make_pair(0, Flag::FPU),
     make_pair(4, Flag::TSC),
@@ -66,10 +66,10 @@ vector<pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   {},
   // eax
   {}
-            )),
+  )),
   // level 7
   make_pair(7, make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
-              // edx
+    // edx
   {},
   // ecx
   {},
@@ -86,10 +86,10 @@ vector<pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   },
   // eax
   {}
-            )),
+  )),
   // level 0x80000001
   make_pair(0x80000001, make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
-              // edx
+    // edx
   {
     make_pair(11, Flag::SYSCALL),
     make_pair(27, Flag::RDTSCP),
@@ -103,10 +103,10 @@ vector<pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   {},
   // eax
   {}
-            )),
+  )),
   // level 0x8000000d
   make_pair(0x8000000d, make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
-              // edx
+    // edx
   {},
   // ecx
   {},
@@ -116,7 +116,7 @@ vector<pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   {
     make_pair(0, Flag::XSAVEOPT),
   }
-            )),
+  )),
 };
 
 void insert_flag(FlagSet& result, regbit_to_flags info, unsigned reg) {
