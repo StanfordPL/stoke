@@ -33,9 +33,9 @@ public:
       solver_ = new Z3Solver();
       break;
 #ifndef NOCVC4
-   case Solver::CVC4:
-     solver_ = new Cvc4Solver();
-     break;
+    case Solver::CVC4:
+      solver_ = new Cvc4Solver();
+      break;
 #endif
     default:
       assert(false);
