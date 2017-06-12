@@ -102,7 +102,6 @@ LIB=\
 	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread \
 	-lcln \
 	-liml -lgmp \
-	-lcblas -latlas \
 	-L src/ext/z3/build -lz3
 ifndef NOCVC4
 LIB += -L src/ext/cvc4-1.4-build/lib -lcvc4
