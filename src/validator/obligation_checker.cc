@@ -24,7 +24,7 @@
 #include "src/validator/invariants/true.h"
 
 
-#define OBLIG_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
@@ -34,7 +34,7 @@
 #ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
 #else
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 #endif
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
@@ -215,11 +215,6 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
   if (prove.check(target_output, rewrite_output)) {
     CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
-    return false;
-  }
-
-  if(target_output.code != ErrorCode::NORMAL || rewrite_output.code != ErrorCode::NORMAL) {
-    CEG_DEBUG(cout << "  (Counterexample causes target or rewrite to fail; it shouldn't)" << endl;);
     return false;
   }
 
