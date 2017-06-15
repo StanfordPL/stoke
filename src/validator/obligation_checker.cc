@@ -182,17 +182,9 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
-  LineMap line_map;
-
-  auto new_cfg = rewrite_cfg_with_path(cfg, P, line_map);
-  auto new_f = new_cfg.get_function();
-  new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
-  new_f.push_back(x64asm::Instruction(x64asm::RET));
-  new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
-
   sb.insert_input(state);
-  sb.insert_function(new_cfg);
-  sb.set_entrypoint(new_f.get_leading_label());
+  sb.insert_function(cfg);
+  sb.set_entrypoint(cfg.get_function().get_leading_label());
   sb.run();
 
   CpuState output = *(sb.get_output(0));
@@ -219,9 +211,9 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
 
   // Lastly, we check that the final states do not satisfy the invariant
+  CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
+  CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
   if (prove.check(target_output, rewrite_output)) {
-    CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
-    CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
     CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
     return false;
   }
