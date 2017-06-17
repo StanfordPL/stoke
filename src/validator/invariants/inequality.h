@@ -16,6 +16,7 @@
 #define STOKE_SRC_VALIDATOR_INVARIANT_INEQUALITY_H
 
 #include "src/validator/invariant.h"
+#include "src/validator/variable.h"
 
 namespace stoke {
 
@@ -24,20 +25,17 @@ class InequalityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  InequalityInvariant(const x64asm::R& reg1, const x64asm::R& reg2,
-                      bool reg1_is_rewrite, bool reg2_is_rewrite,
+  InequalityInvariant(const Variable& v1, const Variable& v2,
                       bool is_strict, bool is_signed=false) :
-    reg1_(reg1), reg2_(reg2),
-    reg1_is_rewrite_(reg1_is_rewrite), reg2_is_rewrite_(reg2_is_rewrite),
+    variable1_(v1), variable2_(v2),
     is_strict_(is_strict), is_signed_(is_signed) {
-
-    assert(reg1.size() == reg2.size());
+    assert(v1.size == v2.size);
   }
 
   SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
 
-    auto lhs = (reg1_is_rewrite_ ? rewrite : target).lookup(reg1_);
-    auto rhs = (reg2_is_rewrite_ ? rewrite : target).lookup(reg2_);
+    auto lhs = variable1_.from_state(target, rewrite);
+    auto rhs = variable2_.from_state(target, rewrite);
 
     if (!is_signed_) {
 
@@ -60,8 +58,8 @@ public:
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
 
-    auto lhs = (reg1_is_rewrite_ ? rewrite : target)[reg1_];
-    auto rhs = (reg2_is_rewrite_ ? rewrite : target)[reg2_];
+    auto lhs = variable1_.from_state(target, rewrite);
+    auto rhs = variable2_.from_state(target, rewrite);
 
     // Unsigned is easy!
     if (!is_signed_) {
@@ -73,9 +71,24 @@ public:
     }
 
     // Signed case;
-    switch (reg1_.size()) {
-    case 32:
+    switch (variable1_.size) {
+    case 1:
+      if (is_strict_) {
+        return (int8_t)lhs < (int8_t)rhs;
+      } else {
+        return (int8_t)lhs <= (int8_t)rhs;
+      }
+      break;
 
+    case 2:
+      if (is_strict_) {
+        return (int16_t)lhs < (int16_t)rhs;
+      } else {
+        return (int16_t)lhs <= (int16_t)rhs;
+      }
+      break;
+
+    case 3:
       if (is_strict_) {
         return (int32_t)lhs < (int32_t)rhs;
       } else {
@@ -83,7 +96,7 @@ public:
       }
 
       break;
-    case 64:
+    case 4:
 
       if (is_strict_) {
         return (int64_t)lhs < (int64_t)rhs;
@@ -101,9 +114,7 @@ public:
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << reg1_;
-    if (reg1_is_rewrite_)
-      os << "'";
+    os << variable1_;
 
     if (is_strict_)
       os << " <";
@@ -113,22 +124,24 @@ public:
     if (is_signed_) {
       os << "ₛ";
     }
-    os << " ";
-
-    os << reg2_;
-    if (reg2_is_rewrite_)
-      os << "'";
+    os << " " << variable2_;
 
     return os;
   }
 
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    result.push_back(variable1_);
+    result.push_back(variable2_);
+    return result;
+  }
+
+
+
 private:
 
-  x64asm::R reg1_;
-  x64asm::R reg2_;
-
-  bool reg1_is_rewrite_;
-  bool reg2_is_rewrite_;
+  Variable variable1_;
+  Variable variable2_;
 
   bool is_strict_;
   bool is_signed_;

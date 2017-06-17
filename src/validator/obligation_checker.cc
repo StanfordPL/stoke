@@ -1026,7 +1026,13 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   }
 }
 
-ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, const CfgPath& P, size_t i) {
+ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
+
+  auto P = P_copy;
+
+  if (i == 0 && P.size() == 1) {
+    P.insert(P.begin(), start_block);
+  }
 
   if (i == P.size() - 1)
     return JumpType::NONE;
@@ -1066,7 +1072,7 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
   }
 }
 
-bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -1156,10 +1162,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     // Build the circuits
     size_t line_no = 0;
     for (size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_map);
+      build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map);
     line_no = 0;
     for (size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_map);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map);
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));

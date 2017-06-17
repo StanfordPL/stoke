@@ -61,6 +61,8 @@ public:
   SymBool sigsegv;
   /** Current rip offset */
   SymBitVector rip;
+  /** Shadow registers */
+  std::map<std::string, SymBitVector> shadow;
 
   /** Should the memory be deleted? */
   void set_delete_memory(bool b) {
@@ -127,7 +129,8 @@ public:
 
   /** Generate constraints expressing equality of two states over a given regset */
   std::vector<SymBool> equality_constraints(const SymState& other,
-      const x64asm::RegSet& rs = x64asm::RegSet::universe()) const;
+      const x64asm::RegSet& rs = x64asm::RegSet::universe(),
+      const std::vector<std::string>& ghosts = {}) const;
 
   /** Set the line number.  Used as a parameter to access memory. */
   void set_lineno(size_t line) {

@@ -26,6 +26,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/memory_equality.h"
+#include "src/validator/variable.h"
 
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/solver.h"
@@ -244,19 +245,13 @@ private:
 // (helper for build_invariant)
 void generate_invariant(ConjunctionInvariant* ci, Operand r, Operand r2) {
   for (size_t i = 0; i < r.size()/64; ++i) {
-    EqualityInvariant::Term t1;
-    t1.reg = r;
-    t1.sign_extend = false;
-    t1.index = i;
+    Variable t1(r, false);
     t1.coefficient = 1;
-    t1.is_rewrite = false;
 
-    EqualityInvariant::Term t2 = t1;
-    t2.reg = r2;
+    Variable t2(r2, true);
     t2.coefficient = -1;
-    t2.is_rewrite = true;
 
-    vector<EqualityInvariant::Term> terms;
+    vector<Variable> terms;
     terms.push_back(t1);
     terms.push_back(t2);
 
@@ -331,7 +326,7 @@ int main(int argc, char** argv) {
       for (auto tp : target_paths) {
         for (auto rp : rewrite_paths) {
           auto res = obc.check(static_cast<Cfg&>(target),
-                               rewrite, tp, rp, *invariant, *invariant);
+                               rewrite, target.get_entry(), rewrite.get_entry(), tp, rp, *invariant, *invariant);
 
           if (!res) {
             verify_success = false;
