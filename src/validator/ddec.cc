@@ -79,7 +79,7 @@ Invariant* get_jump_inv(const Cfg& cfg, Cfg::id_type sb, const CfgPath& p, bool 
   }
 
   auto start_block = p[0];
-  if(p.size() == 1)
+  if (p.size() == 1)
     start_block = sb;
   auto start_bs = cfg.num_instrs(start_block);
   assert(start_bs > 0);
