@@ -107,7 +107,7 @@ public:
   static JumpType is_jump(const Cfg&, const Cfg::id_type start, const CfgPath& P, size_t i);
 
   /** Check. */
-  bool check(const Cfg& target, const Cfg& rewrite, 
+  bool check(const Cfg& target, const Cfg& rewrite,
              Cfg::id_type target_block, Cfg::id_type rewrite_block,
              const CfgPath& p, const CfgPath& q,
              const Invariant& assume, const Invariant& prove);
