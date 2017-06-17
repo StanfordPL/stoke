@@ -176,10 +176,12 @@ SRC_OBJ=\
 	src/validator/ddec.o \
 	src/validator/handler.o \
 	src/validator/invariant.o \
+  src/validator/learner.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
-	src/validator/validator.o \
 	src/validator/strata_support.o \
+	src/validator/validator.o \
+  src/validator/variable.o \
 	\
 	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
