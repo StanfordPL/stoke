@@ -17,6 +17,7 @@
 
 #include "src/state/cpu_state.h"
 #include "src/symstate/state.h"
+#include "src/validator/variable.h"
 
 namespace stoke {
 
@@ -57,13 +58,8 @@ public:
     return true;
   }
 
-  virtual std::vector<x64asm::Mem> target_memory_references() const {
-    std::vector<x64asm::Mem> empty;
-    return empty;
-  }
-
-  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
-    std::vector<x64asm::Mem> empty;
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> empty;
     return empty;
   }
 

@@ -67,7 +67,7 @@ using namespace x64asm;
 #include "tests/x64asm/alt_read_write_sets.h"
 #include "tests/validator/fuzz.h"
 #include "tests/validator/simple.h"
-// #include "tests/validator/ddec.h"
+#include "tests/validator/ddec.h"
 #include "tests/validator/bounded.h"
 
 #endif

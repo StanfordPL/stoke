@@ -12,43 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VALIDATOR_INVARIANT_NONZERO_H
-#define STOKE_SRC_VALIDATOR_INVARIANT_NONZERO_H
+#ifndef STOKE_SRC_VALIDATOR_INVARIANT_FLAG_SET_H
+#define STOKE_SRC_VALIDATOR_INVARIANT_FLAG_SET_H
 
+#include "src/validator/handler.h"
+#include "src/validator/handlers/conditional_handler.h"
 #include "src/validator/invariant.h"
+
 
 namespace stoke {
 
-class NonzeroInvariant : public Invariant {
+class FlagSetInvariant : public Invariant {
 
 public:
   using Invariant::check;
 
-  NonzeroInvariant(Variable v) : variable_(v) {
+  FlagSetInvariant(x64asm::Eflags ef, bool is_rewrite, bool invert = false) : flag_(ef) {
+    is_rewrite_ = is_rewrite;
+    invert_ = invert;
   }
 
   SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
-    return variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
+    auto& state = is_rewrite_ ? right : left;
+
+    if (invert_)
+      return !state[flag_];
+    else
+      return state[flag_];
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    return (variable_.from_state(target,rewrite) != 0);
-  }
+    auto& state = is_rewrite_ ? rewrite : target;
 
-  virtual std::vector<Variable> get_variables() const {
-    std::vector<Variable> result;
-    result.push_back(variable_);
-    return result;
+    if (invert_)
+      return !state[flag_];
+    else
+      return state[flag_];
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << variable_ << " != 0";
+    if (invert_)
+      os << "!";
+
+    if (is_rewrite_) {
+      os << flag_ << "'";
+    } else {
+      os << flag_;
+    }
+
     return os;
   }
 
 private:
 
-  Variable variable_;
+  x64asm::Eflags flag_;
+  bool is_rewrite_;
+  bool invert_;
 
 };
 
