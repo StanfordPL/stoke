@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
     }
 
     checker.set_filter(new DefaultFilter(handler));
-    checker.check(target, rewrite, p, rewrite_path, _true, _false);
+    checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false);
 
     if (checker.checker_has_ceg()) {
       auto tc = checker.checker_get_target_ceg();
@@ -278,7 +278,7 @@ int main(int argc, char** argv) {
 
         checker.set_filter(new ForbiddenDereferenceFilter(handler, low, high));
 
-        checker.check(target, rewrite, p, rewrite_path, _true, _false);
+        checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false);
 
         if (checker.checker_has_ceg()) {
           auto tc2 = checker.checker_get_target_ceg();

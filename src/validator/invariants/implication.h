@@ -53,6 +53,16 @@ public:
     return os;
   }
 
+  virtual std::vector<Variable> get_variables() const {
+    std::vector<Variable> result;
+    auto a = a_->get_variables();
+    auto b = b_->get_variables();
+    result.insert(result.begin(), a.begin(), a.end());
+    result.insert(result.begin(), b.begin(), b.end());
+    return result;
+  }
+
+
 private:
 
   Invariant* a_;
