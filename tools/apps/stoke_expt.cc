@@ -65,12 +65,12 @@ auto& machine_output_arg = ValueArg<string>::create("machine_output")
                            .description("Machine-readable output (result and statistics)");
 
 auto& restore_arg = ValueArg<string>::create("restore_state")
-                          .usage("<path/to/file.state>")
-                          .description("State to restore.");
+                    .usage("<path/to/file.state>")
+                    .description("State to restore.");
 
 auto& save_arg = ValueArg<string>::create("save_state")
-                           .usage("<path/to/file.state>")
-                           .description("Path to save state");
+                 .usage("<path/to/file.state>")
+                 .description("Path to save state");
 
 auto& automation_heading = Heading::create("Automation Options:");
 
@@ -91,7 +91,7 @@ auto& failed_verification_action =
   .usage("(quit|add_counterexample)")
   .description("Action to take when the verification at the end fails")
   .default_val(FailedVerificationAction::ADD_COUNTEREXAMPLE);
-  
+
 void generate_testcases(x64asm::RegSet def_in, CpuStates& set) {
   mt19937_64 gen{0xc9e0b44164d52561};
   // 1,0,-1 full cross product on up to two registers
@@ -159,13 +159,13 @@ public:
   SearchExpt(): current(TUnit()) {
     seed = new SeedGadget();
     generator = mt19937_64((mt19937_64::result_type)*seed);
-    
+
     aux_fxns = new FunctionsGadget();
     target = new TargetGadget(*aux_fxns, init_arg == Init::ZERO);
-    
+
     transform_pools = new TransformPoolsGadget(*target, *aux_fxns, &generator);
     transform = new WeightedTransformGadget(*transform_pools, &generator);
-    
+
     training_set = new TrainingSetGadget(*seed);
     if (generate_testcases_arg.value())
       generate_testcases(def_in_arg.value(), *training_set);
@@ -179,9 +179,9 @@ public:
 
     holdout_fxn = new CorrectnessCostGadget(*target, test_sb);
     verifier = new VerifierGadget(*test_sb, *holdout_fxn);
-    
+
     fxn = new CostFunctionGadget(*target, training_sb, perf_sb);
-    
+
     current_cost = -1;
     iterations = 0;
     search_elapsed = 0.0;
@@ -192,9 +192,9 @@ public:
     success = false;
     verified = false;
     interrupted = false;
-    
+
     configure_zero(*target, max_instrs_arg.value());
-    
+
     // add dataflow information about function call targets
     for (const auto& fxn : *aux_fxns) {
       const auto& code = fxn.get_code();
@@ -211,7 +211,7 @@ public:
     }
 
     current_cost = (*fxn)(current).second;
-    
+
   }
   void configure_empty(const Cfg& target, size_t size) {
     // Start with initial label
@@ -262,7 +262,7 @@ public:
     // Recompute cfg (underlying function is kept sound automatically)
     current.recompute();
   }
-  
+
   void iteration() {
     std::uniform_real_distribution<double> prob;
     TransformInfo ti;
@@ -274,7 +274,7 @@ public:
     const auto p = prob(generator);
     const auto max = current_cost - (log(p) / beta);
     const auto new_cost = (*fxn)(current, max + 1).second;
-    
+
     if (new_cost > max) {
       //Console::msg() << ti.move_type << " wasn't accepted\n";
       (*transform).undo(current, ti);
@@ -283,7 +283,7 @@ public:
     //Console::msg() << ti.move_type << " accepted\n";
     current_cost = new_cost;
   }
-  
+
   bool verify() {
     const auto did_verify = verifier->verify(*target, current);
     if (verifier->has_error()) {
@@ -299,7 +299,7 @@ public:
         Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
         verified = true;
       }
-      
+
       return true;
     } else {
       if (verifier->counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
@@ -318,44 +318,44 @@ public:
   }
   void restore(ifstream& s) {
     s >> current_cost;
-    
+
     // these only have meaning within an invocation:
     // bool verified, success, interrupted;
-    
+
     s >> iterations;
     s >> search_elapsed >> total_elapsed;
     s >> total_verifications >> total_counterexamples;
     s >> generator;
     current.get_function().read_text(s);
     current.recompute();
-    
+
   }
   void save(ofstream& s) {
 
     // This should also be handled to save testcases across invocations
     //CpuStates* training_set;
-    
+
     //Write out current cost
     s << current_cost << "\n";
-    
+
     // these only have meaning within an invocation:
     // bool verified, success, interrupted;
-    
+
     s << iterations << "\n";
     s << search_elapsed << " " << total_elapsed << "\n";
     s << total_verifications << " " << total_counterexamples << "\n";
-    
+
     s << generator << "\n";
     current.recompute();
     current.get_function().write_text(s);
   }
-  
+
   SeedGadget* seed;
   FunctionsGadget* aux_fxns;
   Cfg* target;
   TransformPools* transform_pools;
   Transform* transform;
-  
+
   CpuStates* training_set;
   Sandbox* training_sb;
   CpuStates* test_set;
@@ -366,16 +366,16 @@ public:
   CorrectnessCost* holdout_fxn;
   Verifier* verifier;
   CostFunction* fxn;
-  
+
   Cfg current;
   Cost current_cost;
-  
+
   bool verified, success, interrupted;
   size_t iterations;
   double search_elapsed, total_elapsed;
   double beta;
   size_t total_verifications, total_counterexamples;
-  
+
   mt19937_64 generator;
 };
 
@@ -388,7 +388,7 @@ int main(int argc, char** argv) {
   setup_sigint_handler();
 
   SearchExpt search{};
-  
+
   if (restore_arg.has_been_provided()) {
     std::ifstream stream{restore_arg.value()};
     search.restore(stream);
@@ -396,7 +396,7 @@ int main(int argc, char** argv) {
   }
 
   const auto start_search = steady_clock::now();
-  
+
   size_t i = 0;
   while (true) {
     if (search.iterations > timeout_iterations_arg.value())
@@ -405,7 +405,7 @@ int main(int argc, char** argv) {
       search.interrupted = true;
       break;
     }
-    
+
     if (interrupt_seconds_arg.has_been_provided()) {
       auto elapsed = duration_cast<duration<double>>(steady_clock::now() - start_search).count();
       if (elapsed > interrupt_seconds_arg.value()) {
@@ -413,7 +413,7 @@ int main(int argc, char** argv) {
         break;
       }
     }
-    
+
     if (search.current_cost == 0) {
       if (search.verify()) {
         break;
@@ -421,18 +421,18 @@ int main(int argc, char** argv) {
     }
     search.iteration();
     search.iterations++;
-        
+
   }
-  
+
   search.search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search).count();
   search.total_elapsed += duration_cast<duration<double>>(steady_clock::now() - start).count();
-  
+
   if (save_arg.has_been_provided()) {
     std::ofstream stream{save_arg.value()};
     search.save(stream);
     stream.close();
   }
-  
+
   // output machine-readable result
   if (machine_output_arg.has_been_provided()) {
     auto code_to_string = [](x64asm::Code code) {

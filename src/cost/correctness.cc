@@ -373,8 +373,21 @@ Cost CorrectnessCost::undef_default(size_t num_bytes) const {
 
 Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y) const {
   switch (distance_) {
-  case Distance::HAMMING:
-    return hamming_distance(x, y);
+  case Distance::HAMMING: {
+    Cost min = hamming_distance(x, y);
+    if (relax_shift_) {
+      uint64_t xs = x, ys = y;
+      while (xs != 0) {
+        min = std::min(min, hamming_distance(xs, y) + shift_penalty_);
+        xs >>= 1;
+      }
+      while (ys != 0) {
+        min = std::min(min, hamming_distance(x, ys) + shift_penalty_);
+        ys >>= 1;
+      }
+    }
+    return min;
+  }
   case Distance::ULP:
     return ulp_distance(x, y);
   case Distance::DOUBLEWORD:

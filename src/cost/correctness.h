@@ -54,8 +54,8 @@ public:
     set_target(Cfg(TUnit(code), x64asm::RegSet::empty(), x64asm::RegSet::empty()), false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
-    set_relax(false, false, false);
-    set_penalty(0, 0);
+    set_relax(false, false, false, false);
+    set_penalty(0, 0, 0);
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
   }
@@ -74,16 +74,18 @@ public:
     return *this;
   }
   /** Toggles whether to relax the requirement that results must appear in the correct locations. */
-  CorrectnessCost& set_relax(bool reg, bool mem, bool block_heap) {
+  CorrectnessCost& set_relax(bool reg, bool mem, bool block_heap, bool shift) {
     relax_reg_ = reg;
     relax_mem_ = mem;
     block_heap_ = block_heap;
+    relax_shift_ = shift;
     return *this;
   }
   /** Set penalty values. */
-  CorrectnessCost& set_penalty(Cost misalign, Cost sig) {
+  CorrectnessCost& set_penalty(Cost misalign, Cost sig, Cost shift) {
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
+    shift_penalty_ = shift;
     return *this;
   }
   /** Set the minimum unacceptable ULP error for floating-point comparisons. */
@@ -150,6 +152,8 @@ private:
   size_t sse_count_;
   /** Allow correct values in incorrect register locations? */
   bool relax_reg_;
+  /** Allow shifted register contents? */
+  bool relax_shift_;
   /** Allow correct values in incorrect memory locations? */
   bool relax_mem_;
   /** Use optimized relax_mem computation that requires a blocked heap? */
@@ -158,6 +162,8 @@ private:
   Cost misalign_penalty_;
   /** Cost to return for rewrites that do not agree with target on exit code. */
   Cost sig_penalty_;
+  /** Cost for not having the correct shift value */
+  Cost shift_penalty_;
   /** Multiplier to apply to instructions that appear in loops. */
   Cost nesting_penalty_;
   /** Penalty for codes that mix avx and sse instructions. */

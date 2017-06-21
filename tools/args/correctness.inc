@@ -60,6 +60,11 @@ cpputil::FlagArg& relax_mem_arg =
   cpputil::FlagArg::create("relax_mem")
   .description("Allow correct values in incorrect memory locations");
 
+
+cpputil::FlagArg& relax_shift_arg =
+  cpputil::FlagArg::create("relax_shift")
+  .description("Allow incorrectly shifted results in registers");
+
 cpputil::FlagArg& blocked_heap_opt_arg =
   cpputil::FlagArg::create("blocked_heap_opt")
   .description("Enables an optimized version of relax_mem that assumes heap writes occur in 128-bit blocks");
@@ -68,6 +73,12 @@ cpputil::ValueArg<Cost>& misalign_penalty_arg =
   cpputil::ValueArg<Cost>::create("misalign_penalty")
   .usage("<int>")
   .description("Penalty for correct values in incorrect locations")
+  .default_val(1);
+
+cpputil::ValueArg<Cost>& shift_penalty_arg =
+  cpputil::ValueArg<Cost>::create("shift_penalty")
+  .usage("<int>")
+  .description("Penalty for incorrectly shifted results")
   .default_val(1);
 
 cpputil::ValueArg<Cost>& sig_penalty_arg =

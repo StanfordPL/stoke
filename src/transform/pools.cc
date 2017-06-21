@@ -196,7 +196,7 @@ bool get_index(Random& gen, const vector<R32>& r32_pool, const vector<R64>& r64_
 
 namespace stoke {
 
-TransformPools::TransformPools(std::mt19937_64* generator) : gen_(*generator){
+TransformPools::TransformPools(std::mt19937_64* generator) : gen_(*generator) {
 
   validator_ = NULL;
   memory_read_ = false;
