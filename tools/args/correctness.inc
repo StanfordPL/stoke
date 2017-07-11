@@ -60,6 +60,9 @@ cpputil::FlagArg& relax_mem_arg =
   cpputil::FlagArg::create("relax_mem")
   .description("Allow correct values in incorrect memory locations");
 
+cpputil::FlagArg& alternate_misalign_arg =
+  cpputil::FlagArg::create("alternate_misalign")
+  .description("Use alternative misalignment calculation");
 
 cpputil::FlagArg& relax_shift_arg =
   cpputil::FlagArg::create("relax_shift")

@@ -86,8 +86,12 @@ Cost CorrectnessCost::evaluate_correctness(const Cfg& cfg, const Cost max) {
   switch (reduction_) {
   case Reduction::MAX:
     return max_correctness(cfg, max);
-  case Reduction::SUM:
-    return sum_correctness(cfg, max);
+  case Reduction::SUM: {
+    if (alternate_misalign_)
+      return alternate_sum_correctness(cfg, max);
+    else
+      return sum_correctness(cfg, max);
+  }
   default:
     assert(false);
     return 0;
@@ -133,6 +137,109 @@ Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
 
   assert(res <= max_correctness_cost);
   return res;
+}
+
+
+Cost CorrectnessCost::alternate_sum_correctness(const Cfg& cfg, const Cost max) {
+  counter_example_testcase_ = -1;
+
+  CostTable cost_table{};
+  auto calculate_cost = [&cost_table]() -> Cost {
+    Cost total = 0;
+    for (const auto& pair: cost_table) {
+      const auto& costs = pair.first;
+      Cost m = max_correctness_cost;
+      for (Cost c: costs) {
+        m = std::min<Cost>(m, c);
+      }
+      total += m;
+    }
+    return total;
+  };
+
+  for (size_t i = 0; i < target_gp_out_.size(); i++) {
+    auto r_t = target_gp_out_[i];
+    cost_table.emplace_back(std::vector<Cost>(), std::vector<R>());
+    for (auto it = cfg.def_outs().gp_begin(); it != cfg.def_outs().gp_end(); ++it) {
+      R r_r = *it;
+      if (r_t != r_r && !relax_reg_) {
+        continue;
+      }
+      if (r_r.size() < r_t.size()) {
+        continue;
+      }
+      bool is_same = false;
+      auto is_r_rh = r_r.type() == Type::RH;
+      auto is_t_rh = r_t.type() == Type::RH;
+      if (!is_t_rh && !is_r_rh) {
+        is_same = ((uint64_t)r_t) == ((uint64_t)r_r);
+      } else if (is_t_rh && is_r_rh) {
+        is_same = r_t == r_r;
+      } else if (is_t_rh) {
+        r_r = Constants::rhs()[r_r];
+        is_same = r_r == r_t;
+      } else {
+        continue;
+      }
+      cost_table[i].first.push_back(is_same ? 0 : misalign_penalty_);
+      cost_table[i].second.push_back(r_r);
+    }
+    assert(cost_table[i].first.size() > 0);
+  }
+
+  for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
+    alternate_evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs(), cost_table);
+    if (calculate_cost() >= max)
+      return max;
+  }
+  return calculate_cost();
+}
+
+void CorrectnessCost::alternate_evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs, CostTable& cost_table) const {
+  Cost cost = 0;
+
+  if (t.code != r.code) {
+    cost += sig_penalty_;
+  } else if (t.code != ErrorCode::NORMAL) {
+    // zero cost for this case
+  } else {
+    // this directly fills the cost table
+    alternate_gp_error(t, r, cost_table);
+    cost += sse_error(t.sse, r.sse, defs);
+    cost += rflags_error(t.rf, r.rf, defs);
+    if (stack_out_) {
+      cost += mem_error(t.stack, r.stack);
+    }
+    if (heap_out_) {
+      cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
+    }
+  }
+
+  // Add the base costs to each entry of the table
+  for (auto& pair: cost_table) {
+    auto& costs = pair.first;
+    for (auto& c: pair.first) {
+      c += cost;
+    }
+  }
+}
+
+void CorrectnessCost::alternate_gp_error(const CpuState& t, const CpuState& r, CostTable& cost_table) const {
+  for (size_t i = 0; i < target_gp_out_.size(); i++) {
+    R r_t = target_gp_out_[i];
+    for (size_t j = 0, N = cost_table[i].first.size(); j < N; j++) {
+      R r_r = cost_table[i].second[j];
+      auto val_t = t[r_t];
+      uint64_t mask = 0;
+      if (r_t.size() == 64)
+        mask = -1;
+      else
+        mask = ((uint64_t)1 << r_t.size())-1;
+      auto val_r = r[r_r] & mask;
+      const auto eval = evaluate_distance(val_t, val_r);
+      cost_table[i].first[j] += eval;
+    }
+  }
 }
 
 Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {

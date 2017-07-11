@@ -54,7 +54,7 @@ public:
     set_target(Cfg(TUnit(code), x64asm::RegSet::empty(), x64asm::RegSet::empty()), false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
-    set_relax(false, false, false, false);
+    set_relax(false, false, false, false, false);
     set_penalty(0, 0, 0);
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
@@ -74,11 +74,12 @@ public:
     return *this;
   }
   /** Toggles whether to relax the requirement that results must appear in the correct locations. */
-  CorrectnessCost& set_relax(bool reg, bool mem, bool block_heap, bool shift) {
+  CorrectnessCost& set_relax(bool reg, bool mem, bool block_heap, bool shift, bool alternate) {
     relax_reg_ = reg;
     relax_mem_ = mem;
     block_heap_ = block_heap;
     relax_shift_ = shift;
+    alternate_misalign_ = alternate;
     return *this;
   }
   /** Set penalty values. */
@@ -152,6 +153,8 @@ private:
   size_t sse_count_;
   /** Allow correct values in incorrect register locations? */
   bool relax_reg_;
+  /** Allow correct values in incorrect register locations? */
+  bool alternate_misalign_;
   /** Allow shifted register contents? */
   bool relax_shift_;
   /** Allow correct values in incorrect memory locations? */
@@ -198,6 +201,18 @@ private:
   Cost max_correctness(const Cfg& cfg, const Cost max);
   /** Evaluate correctness by summing cost over testcases. */
   Cost sum_correctness(const Cfg& cfg, const Cost max);
+
+  typedef std::vector<std::pair<std::vector<Cost>, std::vector<x64asm::R>>> CostTable;
+
+  /** Evaluate correctness by summing cost over testcases. */
+  Cost alternate_sum_correctness(const Cfg& cfg, const Cost max);
+  /** Evaluate error between states. */
+  void alternate_evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs, CostTable& c) const;
+  /** Evaluate error between general purpose registers. */
+  void alternate_gp_error(const CpuState& t, const CpuState& r, CostTable& c) const;
+  /** Evaluate error between sse registers. */
+
+
 
   /** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;

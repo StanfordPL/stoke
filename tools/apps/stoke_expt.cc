@@ -396,10 +396,12 @@ int main(int argc, char** argv) {
   }
 
   const auto start_search = steady_clock::now();
+  Cost priorcost = -1;
+  std::ofstream searchlog{"search.log"};
 
   size_t i = 0;
   while (true) {
-    if (search.iterations > timeout_iterations_arg.value())
+    if (search.iterations >= timeout_iterations_arg.value())
       break;
     if (have_received_sigint) {
       search.interrupted = true;
@@ -414,15 +416,23 @@ int main(int argc, char** argv) {
       }
     }
 
+    if (search.current_cost != priorcost) {
+      searchlog << search.iterations << "," << search.current_cost << "\n";
+      priorcost = search.current_cost;
+    }
+
     if (search.current_cost == 0) {
       if (search.verify()) {
         break;
       }
     }
+
     search.iteration();
     search.iterations++;
 
   }
+
+  searchlog.close();
 
   search.search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search).count();
   search.total_elapsed += duration_cast<duration<double>>(steady_clock::now() - start).count();

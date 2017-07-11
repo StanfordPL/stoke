@@ -31,7 +31,7 @@ public:
 
     set_distance(distance_arg);
     set_sse(sse_width_arg, sse_count_arg);
-    set_relax(!no_relax_reg_arg, relax_mem_arg, blocked_heap_opt_arg, relax_shift_arg);
+    set_relax(!no_relax_reg_arg, relax_mem_arg, blocked_heap_opt_arg, relax_shift_arg, alternate_misalign_arg);
     set_penalty(misalign_penalty_arg, sig_penalty_arg, shift_penalty_arg);
     set_min_ulp(min_ulp_arg);
     set_reduction(reduction_arg);
