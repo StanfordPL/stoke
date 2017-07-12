@@ -236,7 +236,7 @@ void CorrectnessCost::alternate_gp_error(const CpuState& t, const CpuState& r, C
       else
         mask = ((uint64_t)1 << r_t.size())-1;
       auto val_r = r[r_r] & mask;
-      const auto eval = evaluate_distance(val_t, val_r);
+      const auto eval = evaluate_distance(val_t, val_r, r_t.size());
       cost_table[i].first[j] += eval;
     }
   }
@@ -317,7 +317,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
         continue;
       }
 
-      const auto eval = evaluate_distance(val_t, val_r) + (is_same ? 0 : misalign_penalty_);
+      const auto eval = evaluate_distance(val_t, val_r, size) + (is_same ? 0 : misalign_penalty_);
 
       delta = min(delta, eval);
     }
@@ -478,19 +478,20 @@ Cost CorrectnessCost::undef_default(size_t num_bytes) const {
   return res;
 }
 
-Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y) const {
+Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y, int size) const {
   switch (distance_) {
   case Distance::HAMMING: {
     Cost min = hamming_distance(x, y);
     if (relax_shift_) {
-      uint64_t xs = x, ys = y;
-      while (xs != 0) {
-        min = std::min(min, hamming_distance(xs, y) + shift_penalty_);
-        xs >>= 1;
-      }
-      while (ys != 0) {
-        min = std::min(min, hamming_distance(x, ys) + shift_penalty_);
-        ys >>= 1;
+      uint64_t mask = size == 64 ? ((int64_t)-1) : ((1ULL << size)-1);
+      int64_t ys = (int64_t)(y << (64-size)) >> (64-size);
+      for (int i = 1; i < size; i++) {
+        // Handle shl virtual suffix
+        min = std::min(min, hamming_distance(x & mask, (y << i) & mask) + shift_penalty_);
+        // Handle shr virtual suffix
+        min = std::min(min, hamming_distance(x & mask, (y >> i) & mask) + shift_penalty_);
+        // Handle sar virtual suffix
+        min = std::min(min, hamming_distance(x & mask, (uint64_t)(ys >> i) & mask) + shift_penalty_);
       }
     }
     return min;

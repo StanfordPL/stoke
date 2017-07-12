@@ -231,7 +231,7 @@ private:
   Cost undef_default(size_t num_bytes) const;
 
   /** Evaluate the distance between two 64-bit values. */
-  Cost evaluate_distance(uint64_t t, uint64_t r) const;
+  Cost evaluate_distance(uint64_t t, uint64_t r, int size = 64) const;
   /** Counts the number of bits that two values disagree on. */
   Cost hamming_distance(uint64_t t, uint64_t r) const {
     return cpputil::BitManip<uint64_t>::pop_count(t ^ r);
