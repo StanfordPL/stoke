@@ -398,8 +398,24 @@ int main(int argc, char** argv) {
   const auto start_search = steady_clock::now();
   Cost priorcost = -1;
   std::ofstream searchlog{"search.log"};
+  std::ofstream stateslog{"states.log"};
 
-  size_t i = 0;
+
+  stateslog << "target:\n";
+  search.target->get_code().write_att(stateslog);
+  stateslog << "\n#eof\n";
+
+  stateslog << "tests:\n";
+  search.training_set->write_bin(stateslog);
+  stateslog << "\n";
+
+  auto write_state = [&]() {
+    stateslog << "state " << search.iterations << "," << search.current_cost<<"\n";
+    search.current.get_code().write_att(stateslog);
+    stateslog << "\n#eof\n";
+  };
+
+  size_t left = 0;
   while (true) {
     if (search.iterations >= timeout_iterations_arg.value())
       break;
@@ -421,6 +437,11 @@ int main(int argc, char** argv) {
       priorcost = search.current_cost;
     }
 
+    if (left == 0) {
+      write_state();
+      left = 1000;
+    }
+
     if (search.current_cost == 0) {
       if (search.verify()) {
         break;
@@ -429,10 +450,12 @@ int main(int argc, char** argv) {
 
     search.iteration();
     search.iterations++;
+    left -= 1;
 
   }
 
   searchlog.close();
+  stateslog.close();
 
   search.search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search).count();
   search.total_elapsed += duration_cast<duration<double>>(steady_clock::now() - start).count();
