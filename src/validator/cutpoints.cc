@@ -76,6 +76,7 @@ void Cutpoints::compute() {
   CfgSccs rewrite_sccs(rewrite_);
 
   // Collect data
+  cout << "COLLECTING DATA..." << endl;
   for (size_t i = 0; i < sandbox_.size(); ++i) {
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
@@ -86,51 +87,94 @@ void Cutpoints::compute() {
     rewrite_traces_.push_back(trace);
   }
 
-  // Get all the possible cutpoint options.
-  auto computed_cutpoints = get_possible_cutpoints();
+  cout << "BUILDING MATRIX..." << endl;
+  // tc# -> segment# -> # of occurrences
+  map<size_t, map<size_t, size_t>> target_matrix;
+  map<size_t, map<size_t, size_t>> rewrite_matrix;
+  vector<CfgPath> target_segments;
+  vector<CfgPath> rewrite_segments;
 
-  // Check all the cutpoints
-  cutpoint_options_.clear();
-  pos_ = 0;
+  size_t segment_max_size = 2;
+  for(size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
+    auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
+    auto& segments = is_rewrite ? rewrite_segments : target_segments;
+    auto& matrix = is_rewrite ? rewrite_matrix : target_matrix;
 
-  for (auto option : computed_cutpoints) {
-    DEBUG_CUTPOINTS(cout << "=== CHECKING ===" << endl;)
-    print_option(option);
-    if (check_cutpoints(option)) {
-      cutpoint_options_.push_back(option);
-      DEBUG_CUTPOINTS(cout << " ----> PASS" << endl;)
-    } else {
-      DEBUG_CUTPOINTS(cout << " ----> FAIL" << endl;)
+    /** For each test case */
+    for(size_t i = 0; i < sandbox_.size(); ++i) {
+
+      /** For each segment size */
+      for(size_t sz = 0; sz < segment_max_size; ++sz) {
+        
+        /** For each segment that appears in the trace */
+        if(traces[i].size() >= sz) {
+          for(size_t j = 0; j < traces[i].size() - sz; ++j) {
+
+            /** Build the segment */
+            CfgPath this_segment;
+            for(size_t k = 0; k <= sz; ++k) {
+              this_segment.push_back(traces[i][j+k].block_id);
+            }
+
+            /** See if it is already listed, it not, list it. */
+            auto loc = find(segments.begin(), segments.end(), this_segment);
+            auto index = std::distance(segments.begin(), loc);
+            if(loc == segments.end()) {
+              segments.push_back(this_segment);
+              index = segments.size() - 1;
+            } 
+
+            /** Add to "matrix" */
+            matrix[i][index]++;
+          }
+        }
+      }
     }
   }
 
-  DEBUG_CUTPOINTS(
-    cout << "Total options: " << computed_cutpoints.size() << endl;
-    cout << "Viable options: " << cutpoint_options_.size() << endl;
-    cout << "Target traces: " << target_traces_.size() << endl;
-    cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
-    size_t cutpt_option;
-    /*
-    do {
-      cout << "Which cutpoint do you want to use?" << endl;
-      cin >> cutpt_option;
-    } while(cutpt_option >= viable_cutpoints.size());
-    chosen_cutpoints_ = viable_cutpoints[cutpt_option];
-    */
-  )
-
-  for (auto& option : cutpoint_options_) {
-    auto& target_cuts = option.first;
-    auto& rewrite_cuts = option.second;
-    target_cuts.insert(target_cuts.begin(), target_.get_entry());
-    rewrite_cuts.insert(rewrite_cuts.begin(), rewrite_.get_entry());
-    target_cuts.push_back(target_.get_exit());
-    rewrite_cuts.push_back(rewrite_.get_exit());
+  /** Write out the matrix. */
+  vector<vector<size_t>> matrix_with_dups;
+  for(size_t i = 0; i < sandbox_.size(); ++i) {
+    vector<size_t> row;
+    for(size_t j = 0; j < target_segments.size(); ++j) {
+      row.push_back(target_matrix[i][j]);
+    }
+    for(size_t j = 0; j < rewrite_segments.size(); ++j) {
+      row.push_back(rewrite_matrix[i][j]);
+    }
+    matrix_with_dups.push_back(row);
   }
 
-  if (!cutpoint_options_.size()) {
-    error_ = "Could not find any viable cutpoints.";
+  /** Remove duplicate rows */
+  vector<vector<size_t>> final_matrix;
+  for(size_t i = 0; i < matrix_with_dups.size(); ++i) {
+    bool ok = true;
+    for(size_t j = 0; j < final_matrix.size(); ++j) {
+      if(final_matrix[j] == matrix_with_dups[i]) {
+        ok = false;  
+        break;
+      }
+    }
+    if(ok)
+      final_matrix.push_back(matrix_with_dups[i]);
   }
+
+  /** Debug */
+  cout << "DEBUGGING TARGET SEGMENTS" << endl;
+  for(auto it : target_segments)
+    cout << it << endl;
+  cout << "DEBUGGING REWRITE SEGMENTS" << endl;
+  for(auto it : rewrite_segments)
+    cout << it << endl;
+
+  cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
+  for(size_t i = 0; i < final_matrix.size(); ++i) {
+    for(size_t j = 0; j < final_matrix[i].size(); ++j) {
+      cout << "  " << final_matrix[i][j];
+    }
+    cout << endl;
+  }
+
 }
 
 vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {

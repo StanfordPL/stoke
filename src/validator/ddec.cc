@@ -232,61 +232,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       return false;
     }
 
-    // Loop over choices of cutpoints
-    while (true) {
-
-      auto invariants = find_invariants(target, rewrite);
-      DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
-      if (!invariants.size()) {
-        DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
-        reset_mm();
-        return false;
-      }
-
-      map<size_t, vector<size_t>> failed_invariants;
-      // Loop over choices of invariants (Houdini loop)
-      while (true) {
-
-        failed_invariants.clear();
-        bool success = check_proof(target, rewrite, invariants, failed_invariants);
-        if (success) {
-          reset_mm();
-          return true;
-        }
-
-        // otherwise, remove invariants that failed to validate and try again...
-        // we want to be sure not to change the start/end invariants
-        DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
-        bool made_a_change = false;
-        for (size_t i = 1; i < invariants.size() - 1; ++i) {
-          auto to_remove = failed_invariants[i];
-          DDEC_DEBUG(cout << "For cutpoint " << i << " there are " << to_remove.size() << " failed invariants." << endl;)
-          sort(to_remove.begin(), to_remove.end());
-          size_t last = (size_t)-1;
-          for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
-            if (last == *it)
-              continue;
-            last = *it;
-            DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
-            invariants[i]->remove(*it);
-            made_a_change = true;
-          }
-        }
-
-        if (!made_a_change) {
-          DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
-          // got a fixed point, we can't validate this; try another cutpoint
-          break;
-        }
-      }
-
-      if (cutpoints_->has_more()) {
-        cutpoints_->next();
-      } else {
-        reset_mm();
-        return false;
-      }
-    }
 
   } catch (validator_error e) {
 
@@ -297,6 +242,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     reset_mm();
     return false;
   }
+
+  reset_mm();
+  return false;
+
 }
 
 bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vector<ConjunctionInvariant*>& invariants, map<size_t, vector<size_t>>& failed_invariants) {
