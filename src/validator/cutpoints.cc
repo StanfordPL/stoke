@@ -17,6 +17,7 @@
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
 #include "src/validator/cutpoints.h"
+#include <fstream>
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -68,6 +69,101 @@ vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
   return results;
 }
 
+vector<vector<size_t>> remove_duplicate_rows(vector<vector<size_t>> matrix) {
+  /** Remove duplicate rows */
+  vector<vector<size_t>> final_matrix;
+  for (size_t i = 0; i < matrix.size(); ++i) {
+    bool ok = true;
+    for (size_t j = 0; j < final_matrix.size(); ++j) {
+      if (final_matrix[j] == matrix[i]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok)
+      final_matrix.push_back(matrix[i]);
+  }
+  return final_matrix;
+}
+
+
+/** Remove all constant columns, except the first one. */
+vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
+  vector<size_t> constant_columns;
+  for(size_t i = 1; i < matrix[0].size(); ++i) {
+    bool col_constant = true;
+    size_t starting_value = matrix[0][i];
+    for(size_t j = 1; j < matrix.size(); ++j) {
+      if(matrix[j][i] != starting_value) {
+        col_constant = false;
+        break;
+      }
+    }
+    if(col_constant)
+      constant_columns.push_back(i);
+  }
+  vector<vector<size_t>> output_matrix;
+  for(size_t i = 0; i < matrix.size(); ++i) {
+    vector<size_t> new_row;
+    for(size_t j = 0; j < matrix[i].size(); ++j) {
+      if(find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
+        new_row.push_back(matrix[i][j]);
+      } else {
+        new_row.push_back(0);
+      }
+    }
+    output_matrix.push_back(new_row);
+  }
+  return output_matrix;
+}
+
+vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
+  cout << "Writing out sage code" << endl;
+  ofstream of("in.sage");
+  of << "rows=" << matrix.size() << endl;
+  of << "cols=" << matrix[0].size() << endl;
+  of << "ZZ=IntegerRing()" << endl;
+  of << "A = MatrixSpace(ZZ, rows, cols)([";
+  for (size_t i = 0; i < matrix.size(); ++i) {
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
+      of << matrix[i][j];
+      if(i < matrix.size() - 1 || j < matrix[i].size() - 1)
+        of << ", ";
+    }
+  }
+  of << "])" << endl;
+  of << "D,U,V=A.smith_form()" << endl;
+  of << "min_dim = min(rows,cols)" << endl;
+  of << "diagonals = [ D[i][i] for i in range(0,min_dim) if D[i][i] != 0]" << endl;
+  of << "nz_diag = len(diagonals)" << endl;
+  of << "basis = [ [0]*nz_diag + [0]*i + [1] + [0]*(min_dim-nz_diag-i-1) for i in range(0,min_dim-nz_diag)]" << endl; 
+  of << "dim = len(basis)" << endl;
+  of << "outputs = [ V*vector(b) for b in basis ]" << endl;
+  of << "print len(outputs), len(outputs[0])" << endl;
+  of << "for output in outputs:" << endl;
+  of << "\tprint \" \".join(map(lambda x:str(x), output))" << endl;
+  of << endl;
+  of.close();
+  int status = system("sage in.sage > sage.out 2>sage.err");
+
+  /** Read basis vectors from sage */
+  vector<vector<int64_t>> basis_vectors;
+  size_t output_rows, output_cols;
+  ifstream in("sage.out");
+  in >> output_rows >> output_cols;
+  for(size_t i = 0; i < output_rows; ++i) {
+    vector<int64_t> row;
+    for(size_t j = 0; j < output_cols; ++j) {
+      int64_t x;
+      in >> x;
+      row.push_back(x);
+    }
+    basis_vectors.push_back(row);
+  }
+
+  return basis_vectors;
+}
+
 
 void Cutpoints::compute() {
 
@@ -95,34 +191,34 @@ void Cutpoints::compute() {
   vector<CfgPath> rewrite_segments;
 
   size_t segment_max_size = 2;
-  for(size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
+  for (size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
     auto& segments = is_rewrite ? rewrite_segments : target_segments;
     auto& matrix = is_rewrite ? rewrite_matrix : target_matrix;
 
     /** For each test case */
-    for(size_t i = 0; i < sandbox_.size(); ++i) {
+    for (size_t i = 0; i < sandbox_.size(); ++i) {
 
       /** For each segment size */
-      for(size_t sz = 0; sz < segment_max_size; ++sz) {
-        
+      for (size_t sz = 0; sz < segment_max_size; ++sz) {
+
         /** For each segment that appears in the trace */
-        if(traces[i].size() >= sz) {
-          for(size_t j = 0; j < traces[i].size() - sz; ++j) {
+        if (traces[i].size() >= sz) {
+          for (size_t j = 0; j < traces[i].size() - sz; ++j) {
 
             /** Build the segment */
             CfgPath this_segment;
-            for(size_t k = 0; k <= sz; ++k) {
+            for (size_t k = 0; k <= sz; ++k) {
               this_segment.push_back(traces[i][j+k].block_id);
             }
 
             /** See if it is already listed, it not, list it. */
             auto loc = find(segments.begin(), segments.end(), this_segment);
             auto index = std::distance(segments.begin(), loc);
-            if(loc == segments.end()) {
+            if (loc == segments.end()) {
               segments.push_back(this_segment);
               index = segments.size() - 1;
-            } 
+            }
 
             /** Add to "matrix" */
             matrix[i][index]++;
@@ -133,48 +229,100 @@ void Cutpoints::compute() {
   }
 
   /** Write out the matrix. */
-  vector<vector<size_t>> matrix_with_dups;
-  for(size_t i = 0; i < sandbox_.size(); ++i) {
+  vector<vector<size_t>> starting_matrix;
+  for (size_t i = 0; i < sandbox_.size(); ++i) {
     vector<size_t> row;
-    for(size_t j = 0; j < target_segments.size(); ++j) {
+    row.push_back(1);
+    for (size_t j = 0; j < target_segments.size(); ++j) {
       row.push_back(target_matrix[i][j]);
     }
-    for(size_t j = 0; j < rewrite_segments.size(); ++j) {
+    for (size_t j = 0; j < rewrite_segments.size(); ++j) {
       row.push_back(rewrite_matrix[i][j]);
     }
-    matrix_with_dups.push_back(row);
+    starting_matrix.push_back(row);
   }
 
-  /** Remove duplicate rows */
-  vector<vector<size_t>> final_matrix;
-  for(size_t i = 0; i < matrix_with_dups.size(); ++i) {
-    bool ok = true;
-    for(size_t j = 0; j < final_matrix.size(); ++j) {
-      if(final_matrix[j] == matrix_with_dups[i]) {
-        ok = false;  
-        break;
-      }
-    }
-    if(ok)
-      final_matrix.push_back(matrix_with_dups[i]);
-  }
+  /** Remove columns that are constants */
+  //  auto cleaned = remove_constant_cols(starting_matrix);
+  auto cleaned = starting_matrix;
+  auto final_matrix = remove_duplicate_rows(cleaned);
 
   /** Debug */
   cout << "DEBUGGING TARGET SEGMENTS" << endl;
-  for(auto it : target_segments)
+  for (auto it : target_segments)
     cout << it << endl;
   cout << "DEBUGGING REWRITE SEGMENTS" << endl;
-  for(auto it : rewrite_segments)
+  for (auto it : rewrite_segments)
     cout << it << endl;
 
   cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
-  for(size_t i = 0; i < final_matrix.size(); ++i) {
-    for(size_t j = 0; j < final_matrix[i].size(); ++j) {
+  for (size_t i = 0; i < final_matrix.size(); ++i) {
+    for (size_t j = 0; j < final_matrix[i].size(); ++j) {
       cout << "  " << final_matrix[i][j];
     }
     cout << endl;
   }
 
+  auto basis_vectors = solve_diophantine(final_matrix);
+
+  auto column_is_target = [&target_segments, &rewrite_segments](size_t n) -> bool {
+    return (n != 0) && n <= target_segments.size();
+  };
+  auto column_is_rewrite = [&target_segments, &rewrite_segments](size_t n) -> bool {
+    return n > target_segments.size();
+  };
+  auto column_to_segment = [&target_segments, &rewrite_segments](size_t n) -> CfgPath {
+    assert(n > 0);
+    if(n <= target_segments.size())
+      return target_segments[n-1];
+    else
+      return rewrite_segments[n-target_segments.size()-1];
+  };
+
+  /** Choose rows to print */
+  vector<bool> to_print;
+  for(size_t i = 0; i < basis_vectors.size(); ++i) {
+    bool t_found = false;
+    bool r_found = false;
+    for(size_t j = 0; j < basis_vectors[0].size(); ++j) {
+      if(basis_vectors[i][j] != 0) {
+        if(column_is_target(j))
+          t_found = true;
+        if(column_is_rewrite(j))
+          r_found = true;
+      }
+    }
+    if(t_found && r_found)
+      to_print.push_back(true);
+    else
+      to_print.push_back(false);
+  }
+
+  /** Print what basis vectors say */
+  for(size_t i = 0; i < basis_vectors.size(); ++i) {
+    if(!to_print[i])
+      continue;
+
+    bool first = true;
+    auto v = basis_vectors[i];
+    for(size_t j = 0; j < v.size(); ++j) {
+      if(v[j] != 0 && j != 0) {
+        if(!first && v[j] > 0) {
+          cout << "+";
+        }
+        first = false;
+        cout << v[j] << "{" << column_to_segment(j) << "}";
+        if(column_is_rewrite(j))
+          cout << "R";
+        else
+          cout << "T";
+      } else if (v[j] != 0 && j == 0) {
+        cout << v[j];
+        first = false;
+      }
+    } 
+    cout << " = 0" << endl;
+  }
 }
 
 vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
