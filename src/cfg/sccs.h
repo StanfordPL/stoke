@@ -26,8 +26,6 @@ namespace stoke {
 class CfgSccs {
 public:
 
-  /** You only need to construct an object of this type if you want to 'learn'
-   * a path. */
   CfgSccs(const Cfg& cfg) : cfg_(cfg) {
     recompute();
   }
