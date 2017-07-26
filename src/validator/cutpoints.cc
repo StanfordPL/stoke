@@ -69,9 +69,10 @@ vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
   return results;
 }
 
-vector<vector<size_t>> remove_duplicate_rows(vector<vector<size_t>> matrix) {
+template <typename T>
+vector<vector<T>> remove_duplicate_rows(vector<vector<T>> matrix) {
   /** Remove duplicate rows */
-  vector<vector<size_t>> final_matrix;
+  vector<vector<T>> final_matrix;
   for (size_t i = 0; i < matrix.size(); ++i) {
     bool ok = true;
     for (size_t j = 0; j < final_matrix.size(); ++j) {
@@ -90,23 +91,23 @@ vector<vector<size_t>> remove_duplicate_rows(vector<vector<size_t>> matrix) {
 /** Remove all constant columns, except the first one. */
 vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
   vector<size_t> constant_columns;
-  for(size_t i = 1; i < matrix[0].size(); ++i) {
+  for (size_t i = 1; i < matrix[0].size(); ++i) {
     bool col_constant = true;
     size_t starting_value = matrix[0][i];
-    for(size_t j = 1; j < matrix.size(); ++j) {
-      if(matrix[j][i] != starting_value) {
+    for (size_t j = 1; j < matrix.size(); ++j) {
+      if (matrix[j][i] != starting_value) {
         col_constant = false;
         break;
       }
     }
-    if(col_constant)
+    if (col_constant)
       constant_columns.push_back(i);
   }
   vector<vector<size_t>> output_matrix;
-  for(size_t i = 0; i < matrix.size(); ++i) {
+  for (size_t i = 0; i < matrix.size(); ++i) {
     vector<size_t> new_row;
-    for(size_t j = 0; j < matrix[i].size(); ++j) {
-      if(find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
+      if (find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
         new_row.push_back(matrix[i][j]);
       } else {
         new_row.push_back(0);
@@ -117,7 +118,33 @@ vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
   return output_matrix;
 }
 
-vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
+vector<int64_t> matrix_vector_mult(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
+  assert(matrix[0].size == vect.size());
+  vector<int64_t> results;
+  for(size_t i = 0; i < matrix.size(); ++i) {
+    int64_t sum = 0;
+    for(size_t j = 1; j < vect.size(); ++j) {
+      sum += matrix[i][j]*vect[j];
+    } 
+    results.push_back(sum);
+  }
+  return results;
+}
+
+bool in_nullspace(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
+  assert(matrix[0].size == vect.size());
+  for(size_t i = 0; i < matrix.size(); ++i) {
+    int64_t sum = 0;
+    for(size_t j = 1; j < vect.size(); ++j) {
+      sum += matrix[i][j]*vect[j];
+    } 
+    if(sum != 0)
+      return false;
+  }
+  return true;
+}
+
+vector<vector<int64_t>> solve_diophantine(vector<vector<int64_t>> matrix) {
   cout << "Writing out sage code" << endl;
   ofstream of("in.sage");
   of << "rows=" << matrix.size() << endl;
@@ -127,7 +154,7 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
   for (size_t i = 0; i < matrix.size(); ++i) {
     for (size_t j = 0; j < matrix[i].size(); ++j) {
       of << matrix[i][j];
-      if(i < matrix.size() - 1 || j < matrix[i].size() - 1)
+      if (i < matrix.size() - 1 || j < matrix[i].size() - 1)
         of << ", ";
     }
   }
@@ -136,7 +163,7 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
   of << "min_dim = min(rows,cols)" << endl;
   of << "diagonals = [ D[i][i] for i in range(0,min_dim) if D[i][i] != 0]" << endl;
   of << "nz_diag = len(diagonals)" << endl;
-  of << "basis = [ [0]*nz_diag + [0]*i + [1] + [0]*(min_dim-nz_diag-i-1) for i in range(0,min_dim-nz_diag)]" << endl; 
+  of << "basis = [ [0]*nz_diag + [0]*i + [1] + [0]*(min_dim-nz_diag-i-1) for i in range(0,min_dim-nz_diag)]" << endl;
   of << "dim = len(basis)" << endl;
   of << "outputs = [ V*vector(b) for b in basis ]" << endl;
   of << "print len(outputs), len(outputs[0])" << endl;
@@ -151,9 +178,9 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
   size_t output_rows, output_cols;
   ifstream in("sage.out");
   in >> output_rows >> output_cols;
-  for(size_t i = 0; i < output_rows; ++i) {
+  for (size_t i = 0; i < output_rows; ++i) {
     vector<int64_t> row;
-    for(size_t j = 0; j < output_cols; ++j) {
+    for (size_t j = 0; j < output_cols; ++j) {
       int64_t x;
       in >> x;
       row.push_back(x);
@@ -164,6 +191,20 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<size_t>> matrix) {
   return basis_vectors;
 }
 
+void print_matrix(vector<vector<int64_t>> m) {
+  for(size_t i =0; i < m.size(); ++i) {
+    for(size_t j = 0; j < m[i].size(); ++j) {
+      cout << m[i][j] << "  ";
+    }
+    cout << endl;
+  }
+}
+
+void print_matrix(vector<int64_t> x) {
+  vector<vector<int64_t>> y;
+  y.push_back(x);
+  print_matrix(y);
+}
 
 void Cutpoints::compute() {
 
@@ -190,7 +231,7 @@ void Cutpoints::compute() {
   vector<CfgPath> target_segments;
   vector<CfgPath> rewrite_segments;
 
-  size_t segment_max_size = 2;
+  size_t segment_max_size = 1;
   for (size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
     auto& segments = is_rewrite ? rewrite_segments : target_segments;
@@ -229,15 +270,15 @@ void Cutpoints::compute() {
   }
 
   /** Write out the matrix. */
-  vector<vector<size_t>> starting_matrix;
+  vector<vector<int64_t>> starting_matrix;
   for (size_t i = 0; i < sandbox_.size(); ++i) {
-    vector<size_t> row;
+    vector<int64_t> row;
     row.push_back(1);
     for (size_t j = 0; j < target_segments.size(); ++j) {
-      row.push_back(target_matrix[i][j]);
+      row.push_back((int64_t)target_matrix[i][j]);
     }
     for (size_t j = 0; j < rewrite_segments.size(); ++j) {
-      row.push_back(rewrite_matrix[i][j]);
+      row.push_back((int64_t)rewrite_matrix[i][j]);
     }
     starting_matrix.push_back(row);
   }
@@ -265,54 +306,32 @@ void Cutpoints::compute() {
 
   auto basis_vectors = solve_diophantine(final_matrix);
 
+  /*
   auto column_is_target = [&target_segments, &rewrite_segments](size_t n) -> bool {
     return (n != 0) && n <= target_segments.size();
   };
+  */
   auto column_is_rewrite = [&target_segments, &rewrite_segments](size_t n) -> bool {
     return n > target_segments.size();
   };
   auto column_to_segment = [&target_segments, &rewrite_segments](size_t n) -> CfgPath {
     assert(n > 0);
-    if(n <= target_segments.size())
+    if (n <= target_segments.size())
       return target_segments[n-1];
     else
       return rewrite_segments[n-target_segments.size()-1];
   };
 
-  /** Choose rows to print */
-  vector<bool> to_print;
-  for(size_t i = 0; i < basis_vectors.size(); ++i) {
-    bool t_found = false;
-    bool r_found = false;
-    for(size_t j = 0; j < basis_vectors[0].size(); ++j) {
-      if(basis_vectors[i][j] != 0) {
-        if(column_is_target(j))
-          t_found = true;
-        if(column_is_rewrite(j))
-          r_found = true;
-      }
-    }
-    if(t_found && r_found)
-      to_print.push_back(true);
-    else
-      to_print.push_back(false);
-  }
-
-  /** Print what basis vectors say */
-  for(size_t i = 0; i < basis_vectors.size(); ++i) {
-    if(!to_print[i])
-      continue;
-
+  auto print_basis_vector = [&column_to_segment, &column_is_rewrite] (vector<int64_t>& v) {
     bool first = true;
-    auto v = basis_vectors[i];
-    for(size_t j = 0; j < v.size(); ++j) {
-      if(v[j] != 0 && j != 0) {
-        if(!first && v[j] > 0) {
+    for (size_t j = 0; j < v.size(); ++j) {
+      if (v[j] != 0 && j != 0) {
+        if (!first && v[j] > 0) {
           cout << "+";
         }
         first = false;
         cout << v[j] << "{" << column_to_segment(j) << "}";
-        if(column_is_rewrite(j))
+        if (column_is_rewrite(j))
           cout << "R";
         else
           cout << "T";
@@ -320,9 +339,68 @@ void Cutpoints::compute() {
         cout << v[j];
         first = false;
       }
-    } 
+    }
     cout << " = 0" << endl;
+
+  };
+
+  // Choose lines to print
+  /**
+  vector<bool> to_print;
+  for (size_t i = 0; i < basis_vectors.size(); ++i) {
+    bool t_found = false;
+    bool r_found = false;
+    for (size_t j = 0; j < basis_vectors[0].size(); ++j) {
+      if (basis_vectors[i][j] != 0) {
+        if (column_is_target(j))
+          t_found = true;
+        if (column_is_rewrite(j))
+          r_found = true;
+      }
+    }
+    if (t_found && r_found)
+      to_print.push_back(true);
+    else
+      to_print.push_back(false);
   }
+  */
+
+  // Print what basis vectors say 
+  for (size_t i = 0; i < basis_vectors.size(); ++i) {
+    //if (!to_print[i])
+    //  continue;
+    print_basis_vector(basis_vectors[i]);
+  }
+
+  cout << "MATRIX" << endl;
+  print_matrix(basis_vectors);
+  // Check pairs of segments to see if they're in the nullspace
+  for(size_t i = 0; i < target_segments.size(); ++i) {
+    auto target_segment = target_segments[i];
+    for(size_t j = 0; j < rewrite_segments.size(); ++j) {
+      auto rewrite_segment = rewrite_segments[j]; 
+      vector<int64_t> vect(target_segments.size() + rewrite_segments.size() + 1, 0);
+      vect[i+1] = 1;
+      vect[target_segments.size() + 1 + j] = 1;
+      cout << "Pair " << target_segment << "(" << i+1 << ") / " << rewrite_segment << " (" << target_segments.size()+1+j << ")";
+      auto mult = matrix_vector_mult(basis_vectors, vect);
+      if(in_nullspace(basis_vectors, vect)) {
+        cout << " OK" << endl;
+      } else {
+        cout << " BAD" << endl;
+        for(size_t i = 0; i < mult.size(); ++i) {
+          if(mult[i]) {
+            print_basis_vector(basis_vectors[i]);
+          }
+        }
+      }
+      cout << "VECT" << endl;
+      print_matrix(vect);
+      cout << "PRODUCT" << endl;
+      print_matrix(mult);
+    }
+  }
+
 }
 
 vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
