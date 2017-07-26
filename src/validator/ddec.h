@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_VALIDATOR_DDEC_H
 #define STOKE_SRC_VALIDATOR_DDEC_H
 
+#include "src/validator/control_learner.h"
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"

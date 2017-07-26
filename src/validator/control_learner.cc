@@ -16,7 +16,7 @@
 #include "src/cfg/sccs.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
-#include "src/validator/cutpoints.h"
+#include "src/validator/control_learner.h"
 #include <fstream>
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -28,46 +28,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-
-void Cutpoints::print_option(Cutpoints::CutpointList& option) {
-  DEBUG_CUTPOINTS(
-    cout << "Option" << endl;
-    cout << "Target: ";
-  for (auto n : option.first) {
-  cout << n << "  ";
-}
-cout << endl;
-     cout << "Rewrite: ";
-for (auto n : option.second) {
-  cout << n << "  ";
-}
-cout << endl;
-)
-}
-
-vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
-
-  if (n == 1) {
-    vector<vector<size_t>> result;
-    vector<size_t> one;
-    one.push_back(0);
-    result.push_back(one);
-    return result;
-  }
-
-  vector<vector<size_t>> results;
-  vector<vector<size_t>> recursive_step = get_permutations(n-1);
-  for (auto pi : recursive_step) {
-
-    for (size_t i = 0; i <= pi.size(); ++i) {
-      vector<size_t> copy = pi;
-      copy.insert(copy.begin() + i, n-1);
-      results.push_back(copy);
-    }
-  }
-
-  return results;
-}
 
 template <typename T>
 vector<vector<T>> remove_duplicate_rows(vector<vector<T>> matrix) {
@@ -89,11 +49,11 @@ vector<vector<T>> remove_duplicate_rows(vector<vector<T>> matrix) {
 
 
 /** Remove all constant columns, except the first one. */
-vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
+ControlLearner::Matrix ControlLearner::remove_constant_cols(Matrix matrix) {
   vector<size_t> constant_columns;
   for (size_t i = 1; i < matrix[0].size(); ++i) {
     bool col_constant = true;
-    size_t starting_value = matrix[0][i];
+    int64_t starting_value = matrix[0][i];
     for (size_t j = 1; j < matrix.size(); ++j) {
       if (matrix[j][i] != starting_value) {
         col_constant = false;
@@ -103,9 +63,9 @@ vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
     if (col_constant)
       constant_columns.push_back(i);
   }
-  vector<vector<size_t>> output_matrix;
+  Matrix output_matrix;
   for (size_t i = 0; i < matrix.size(); ++i) {
-    vector<size_t> new_row;
+    Vector new_row;
     for (size_t j = 0; j < matrix[i].size(); ++j) {
       if (find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
         new_row.push_back(matrix[i][j]);
@@ -118,12 +78,13 @@ vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
   return output_matrix;
 }
 
-vector<int64_t> matrix_vector_mult(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
+ControlLearner::Vector ControlLearner::matrix_vector_mult(Matrix matrix, Vector vect, bool ignore_first) {
   assert(matrix[0].size == vect.size());
-  vector<int64_t> results;
+  size_t start = ignore_first ? 1 : 0;
+  Vector results;
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;
-    for (size_t j = 1; j < vect.size(); ++j) {
+    for (size_t j = start; j < vect.size(); ++j) {
       sum += matrix[i][j]*vect[j];
     }
     results.push_back(sum);
@@ -131,8 +92,9 @@ vector<int64_t> matrix_vector_mult(vector<vector<int64_t>> matrix, vector<int64_
   return results;
 }
 
-bool in_nullspace(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
+bool ControlLearner::in_nullspace(Matrix matrix, Vector vect, bool ignore_first) {
   assert(matrix[0].size == vect.size());
+  size_t start = ignore_first ? 1 : 0;
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;
     for (size_t j = 1; j < vect.size(); ++j) {
@@ -144,7 +106,7 @@ bool in_nullspace(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
   return true;
 }
 
-vector<vector<int64_t>> solve_diophantine(vector<vector<int64_t>> matrix) {
+ControlLearner::Matrix ControlLearner::solve_diophantine(Matrix matrix) {
   cout << "Writing out sage code" << endl;
   ofstream of("in.sage");
   of << "rows=" << matrix.size() << endl;
@@ -174,12 +136,12 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<int64_t>> matrix) {
   int status = system("sage in.sage > sage.out 2>sage.err");
 
   /** Read basis vectors from sage */
-  vector<vector<int64_t>> basis_vectors;
+  Matrix basis_vectors;
   size_t output_rows, output_cols;
   ifstream in("sage.out");
   in >> output_rows >> output_cols;
   for (size_t i = 0; i < output_rows; ++i) {
-    vector<int64_t> row;
+    Vector row;
     for (size_t j = 0; j < output_cols; ++j) {
       int64_t x;
       in >> x;
@@ -191,7 +153,7 @@ vector<vector<int64_t>> solve_diophantine(vector<vector<int64_t>> matrix) {
   return basis_vectors;
 }
 
-void print_matrix(vector<vector<int64_t>> m) {
+void ControlLearner::print_matrix(Matrix m) {
   for (size_t i =0; i < m.size(); ++i) {
     for (size_t j = 0; j < m[i].size(); ++j) {
       cout << m[i][j] << "  ";
@@ -200,13 +162,13 @@ void print_matrix(vector<vector<int64_t>> m) {
   }
 }
 
-void print_matrix(vector<int64_t> x) {
-  vector<vector<int64_t>> y;
+void ControlLearner::print_matrix(Vector x) {
+  Matrix y;
   y.push_back(x);
   print_matrix(y);
 }
 
-void Cutpoints::compute() {
+void ControlLearner::compute() {
 
   CfgPaths cfg_paths;
   CfgSccs target_sccs(target_);
@@ -270,9 +232,9 @@ void Cutpoints::compute() {
   }
 
   /** Write out the matrix. */
-  vector<vector<int64_t>> starting_matrix;
+  Matrix starting_matrix;
   for (size_t i = 0; i < sandbox_.size(); ++i) {
-    vector<int64_t> row;
+    Vector row;
     row.push_back(1);
     for (size_t j = 0; j < target_segments.size(); ++j) {
       row.push_back((int64_t)target_matrix[i][j]);
@@ -322,7 +284,7 @@ void Cutpoints::compute() {
       return rewrite_segments[n-target_segments.size()-1];
   };
 
-  auto print_basis_vector = [&column_to_segment, &column_is_rewrite] (vector<int64_t>& v) {
+  auto print_basis_vector = [&column_to_segment, &column_is_rewrite] (Vector& v) {
     bool first = true;
     for (size_t j = 0; j < v.size(); ++j) {
       if (v[j] != 0 && j != 0) {
@@ -379,12 +341,12 @@ void Cutpoints::compute() {
     auto target_segment = target_segments[i];
     for (size_t j = 0; j < rewrite_segments.size(); ++j) {
       auto rewrite_segment = rewrite_segments[j];
-      vector<int64_t> vect(target_segments.size() + rewrite_segments.size() + 1, 0);
+      Vector vect(target_segments.size() + rewrite_segments.size() + 1, 0);
       vect[i+1] = 1;
       vect[target_segments.size() + 1 + j] = 1;
       cout << "Pair " << target_segment << "(" << i+1 << ") / " << rewrite_segment << " (" << target_segments.size()+1+j << ")";
-      auto mult = matrix_vector_mult(basis_vectors, vect);
-      if (in_nullspace(basis_vectors, vect)) {
+      auto mult = matrix_vector_mult(basis_vectors, vect, true);
+      if (in_nullspace(basis_vectors, vect, true)) {
         cout << " OK" << endl;
       } else {
         cout << " BAD" << endl;
@@ -403,99 +365,8 @@ void Cutpoints::compute() {
 
 }
 
-vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
 
-  CfgSccs target_sccs(target_);
-  CfgSccs rewrite_sccs(rewrite_);
-
-  vector<CutpointList> results;
-  size_t n = target_sccs.count();
-
-  if (target_sccs.count() != rewrite_sccs.count()) {
-    error_ = "DDEC only works when target/rewrite have the same number of SCCs/loops";
-    return results;
-  }
-
-  if (n == 0) {
-    CutpointList empty;
-    results.push_back(empty);
-    return results;
-  }
-
-  auto permutations = get_permutations(n);
-
-
-  for (auto pi : permutations) {
-    vector<CutpointList> working_set;
-
-    CutpointList empty_list;
-    working_set.push_back(empty_list);
-
-    for (size_t j = 0; j < n; ++j) {
-      // Working on SCC j of target
-      // Working on SCC pi[j] of rewrite
-      DEBUG_CUTPOINTS(cout << "Working on SCC pair " << j << " - " << pi[j] << endl;)
-      auto target_nodes = target_sccs.get_blocks(j);
-      auto rewrite_nodes = rewrite_sccs.get_blocks(pi[j]);
-
-      DEBUG_CUTPOINTS(
-        cout << "  - target nodes: ";
-      for (auto it : target_nodes) {
-      cout << "  " << it;
-    }
-    cout << endl;
-         cout << "  - rewrite nodes: ";
-    for (auto it : rewrite_nodes) {
-      cout << "  " << it;
-    }
-    cout << endl;);
-
-      // Create a place to put new cutpoints into.
-      vector<CutpointList> new_working_set;
-
-      // For every pair of nodes in (j, pi[j]) we extend each
-      for (auto tn : target_nodes) {
-        for (auto rn : rewrite_nodes) {
-          for (auto old_list : working_set) {
-            CutpointList new_list = old_list;
-            new_list.first.push_back(tn);
-            new_list.second.push_back(rn);
-            new_working_set.push_back(new_list);
-          }
-        }
-      }
-
-      working_set = new_working_set;
-
-    }
-
-    for (auto option : working_set) {
-      results.push_back(option);
-
-      /*
-      cout << "    Target: ";
-      for(auto n : option.first) {
-        cout << n << "  ";
-      }
-      cout << endl;
-      cout << "    Rewrite: ";
-      for(auto n : option.second) {
-        cout << n << "  ";
-      }
-      cout << endl;
-      cout << "    -------" << endl;
-      */
-
-    }
-  }
-
-  return results;
-
-}
-
-
-
-void Cutpoints::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
+void ControlLearner::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
 
   size_t index;
   auto label = cfg.get_function().get_leading_label();
@@ -542,7 +413,7 @@ void Cutpoints::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoin
 }
 
 
-bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
+bool ControlLearner::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   size_t instrs = cfg.num_instrs(block);
   if (instrs == 0)
     return false;
@@ -552,7 +423,7 @@ bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   return instr.is_any_jump() || instr.is_ret();
 }
 
-void Cutpoints::callback(const StateCallbackData& data, void* arg) {
+void ControlLearner::callback(const StateCallbackData& data, void* arg) {
   auto args = *((CallbackParam*)arg);
 
   TracePoint tp;
@@ -563,136 +434,10 @@ void Cutpoints::callback(const StateCallbackData& data, void* arg) {
 }
 
 
-/** Take an execution trace and extract the cutpoints/data that have been visited. */
-vector<Cutpoints::TracePoint> Cutpoints::filter_cutpoints(vector<TracePoint>& trace, vector<Cfg::id_type>& basic_blocks) {
-
-  vector<TracePoint> results;
-
-  for (auto state : trace) {
-    for (auto candidate : basic_blocks) {
-      if (candidate == state.block_id) {
-        results.push_back(state);
-      }
-    }
-  }
-  return results;
-}
-
-/** Find the cutpoint number that a particular trace point / basic block corresponds to */
-size_t Cutpoints::which_cutpoint(TracePoint pt, vector<Cfg::id_type>& basic_blocks) {
-  for (size_t i = 0; i < basic_blocks.size(); ++i) {
-    if (pt.block_id == basic_blocks[i]) {
-      return i;
-    }
-  }
-
-  return (size_t)(-1);
-}
 
 
 
-bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
 
-  // For every testcase, we need to see that:
-  // (i)   the same number of cutpoints are taken in target/rewrite
-  // (ii)  for cutpoint i, the memory of target/rewrite must agree
-  // (iii) static cutpoint i of target always aligns with static cutpoint i of rewrite in the traces
 
-  // Additionally, independent of testcases, we need to check that:
-  // (iv)  no infinite paths that don't have cutpoint
-
-  /** Sanity check: there are as many target traces as rewrite traces. */
-  assert(target_traces_.size() == rewrite_traces_.size());
-  /** Sanity check: as many cutpoints in target/rewrite */
-  assert(cutpoints.first.size() == cutpoints.second.size());
-
-  /** The main checks */
-  for (size_t i = 0; i < target_traces_.size(); ++i) {
-    auto target_trace = target_traces_[i];
-    auto rewrite_trace = rewrite_traces_[i];
-
-    auto target_cut_trace = filter_cutpoints(target_trace, cutpoints.first);
-    auto rewrite_cut_trace = filter_cutpoints(rewrite_trace, cutpoints.second);
-
-    // check (i)
-    if (target_cut_trace.size() != rewrite_cut_trace.size()) {
-      DEBUG_CUTPOINTS(cout << "On trace " << i << " target has " << target_cut_trace.size() <<
-                      " cutpoints while rewrite has " << rewrite_cut_trace.size() << endl;)
-      return false;
-    }
-
-    // check (ii)
-    for (size_t j = 0; j < target_cut_trace.size(); ++j) {
-      auto target_pt = target_cut_trace[j];
-      auto rewrite_pt = rewrite_cut_trace[j];
-
-      if (target_pt.cs.heap != rewrite_pt.cs.heap) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false;
-      }
-      if (target_pt.cs.stack != rewrite_pt.cs.stack) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false;
-      }
-      if (target_pt.cs.data != rewrite_pt.cs.data) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false;
-      }
-      if (target_pt.cs.segments.size() != rewrite_pt.cs.segments.size()) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false;
-      }
-      for (size_t k = 0; k < target_pt.cs.segments.size(); ++k) {
-        if (target_pt.cs.segments[k] != rewrite_pt.cs.segments[k]) {
-          DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-          return false;
-        }
-      }
-    }
-
-    // check (iii)
-    for (size_t j = 0; j < target_cut_trace.size(); ++j) {
-      auto target_pt = target_cut_trace[j];
-      auto rewrite_pt = rewrite_cut_trace[j];
-
-      int target_cutpt = which_cutpoint(target_pt, cutpoints.first);
-      int rewrite_cutpt = which_cutpoint(rewrite_pt, cutpoints.second);
-
-      assert(target_cutpt != -1);
-      assert(rewrite_cutpt != -1);
-
-      if (target_cutpt != rewrite_cutpt) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite cutpoints don't align." << endl;)
-        return false;
-      }
-    }
-  }
-
-  /** Check (iv) */
-  for (size_t i = 0; i < cutpoints.first.size(); ++i) {
-    for (size_t j = 0; j < cutpoints.first.size(); ++j) {
-      auto target_paths_ij =
-        CfgPaths::enumerate_paths(target_, 1, cutpoints.first[i], cutpoints.first[j], &cutpoints.first);
-      auto rewrite_paths_ij =
-        CfgPaths::enumerate_paths(rewrite_, 1, cutpoints.second[i], cutpoints.second[j], &cutpoints.second);
-
-      auto target_paths_ij_more =
-        CfgPaths::enumerate_paths(target_, 2, cutpoints.first[i], cutpoints.first[j], &cutpoints.first);
-      auto rewrite_paths_ij_more =
-        CfgPaths::enumerate_paths(rewrite_, 2, cutpoints.second[i], cutpoints.second[j], &cutpoints.second);
-
-      if (target_paths_ij.size() != target_paths_ij_more.size()) {
-        DEBUG_CUTPOINTS(cout << "Unbounded paths between cutpoints " << i << ", " << j << " in target.";)
-        return false;
-      }
-      if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
-        DEBUG_CUTPOINTS(cout << "Unbounded paths between cutpoints " << i << ", " << j << " in rewrite.";)
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
 
 
