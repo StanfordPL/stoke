@@ -431,12 +431,14 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
   }
 
   // DEBUGGING (find which relations didn't hold)
+  /*
   auto mult = matrix_vector_mult(kernel_generators_, test, true);
   for (size_t i = 0; i < mult.size(); ++i) {
     if (mult[i]) {
       print_basis_vector(kernel_generators_[i]);
     }
   }
+  */
 
   return in_nullspace(kernel_generators_, test, true);
 }
