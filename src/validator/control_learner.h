@@ -35,6 +35,8 @@ public:
     compute();
   }
 
+  bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
+
 private:
 
   typedef std::vector<std::vector<int64_t>> Matrix;
@@ -53,7 +55,7 @@ private:
 
   /** Helper: Check if a basic block ends with a jump or not. */
   static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
-  
+
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   Matrix remove_constant_cols(Matrix matrix);
@@ -63,6 +65,14 @@ private:
   void print_matrix(Matrix m);
   void print_matrix(Vector m);
 
+  ////////////////////////////// COLUMN TRACKING ////////////////////////////////
+
+  bool column_is_target(size_t n);
+  bool column_is_rewrite(size_t n);
+  Cfg::id_type column_to_segment(size_t n);
+  size_t target_block_to_col(Cfg::id_type);
+  size_t rewrite_block_to_col(Cfg::id_type);
+  void print_basis_vector(Vector& v);
 
   ////////////////////////////// DATA-STORAGE //////////////////////////////////
 
@@ -72,6 +82,11 @@ private:
 
   std::vector<std::vector<TracePoint>> target_traces_;
   std::vector<std::vector<TracePoint>> rewrite_traces_;
+
+  Matrix kernel_generators_;
+
+  std::vector<Cfg::id_type> target_segments_;
+  std::vector<Cfg::id_type> rewrite_segments_;
 
   ////////////////////////////// DATA-MINING CALLBACKS //////////////////////////////////
 
