@@ -169,16 +169,16 @@ void ControlLearner::print_matrix(Vector x) {
 }
 
 size_t ControlLearner::target_block_to_col(Cfg::id_type n) {
-  for(size_t i = 0; i < target_segments_.size(); ++i)
-    if(n == target_segments_[i])
+  for (size_t i = 0; i < target_segments_.size(); ++i)
+    if (n == target_segments_[i])
       return i+1;
   assert(false);
   return 0;
 }
 
 size_t ControlLearner::rewrite_block_to_col(Cfg::id_type n) {
-  for(size_t i = 0; i < rewrite_segments_.size(); ++i)
-    if(n == rewrite_segments_[i])
+  for (size_t i = 0; i < rewrite_segments_.size(); ++i)
+    if (n == rewrite_segments_[i])
       return i+1+target_segments_.size();
   assert(false);
   return 0;
@@ -339,31 +339,14 @@ void ControlLearner::compute() {
   cout << "MATRIX" << endl;
   print_matrix(kernel_generators_);
   // Check pairs of segments to see if they're in the nullspace
+  /*
   for (size_t i = 0; i < target_segments_.size(); ++i) {
     auto target_segment = target_segments_[i];
     for (size_t j = 0; j < rewrite_segments_.size(); ++j) {
       auto rewrite_segment = rewrite_segments_[j];
-      Vector vect(target_segments_.size() + rewrite_segments_.size() + 1, 0);
-      vect[i+1] = 1;
-      vect[target_segments_.size() + 1 + j] = 1;
-      cout << "Pair " << target_segment << "(" << i+1 << ") / " << rewrite_segment << " (" << target_segments_.size()+1+j << ")";
-      auto mult = matrix_vector_mult(kernel_generators_, vect, true);
-      if (in_nullspace(kernel_generators_, vect, true)) {
-        cout << " OK" << endl;
-      } else {
-        cout << " BAD" << endl;
-        for (size_t i = 0; i < mult.size(); ++i) {
-          if (mult[i]) {
-            print_basis_vector(kernel_generators_[i]);
-          }
-        }
-      }
-      cout << "VECT" << endl;
-      print_matrix(vect);
-      cout << "PRODUCT" << endl;
-      print_matrix(mult);
     }
   }
+  */
 
 }
 
@@ -440,12 +423,21 @@ void ControlLearner::callback(const StateCallbackData& data, void* arg) {
 
 bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
   Vector test(target_segments_.size() + rewrite_segments_.size() + 1);
-  for(auto it : tp) {
+  for (auto it : tp) {
     test[target_block_to_col(it)]++;
   }
-  for(auto it : rp) {
+  for (auto it : rp) {
     test[rewrite_block_to_col(it)]++;
   }
+
+  // DEBUGGING (find which relations didn't hold)
+  auto mult = matrix_vector_mult(kernel_generators_, test, true);
+  for (size_t i = 0; i < mult.size(); ++i) {
+    if (mult[i]) {
+      print_basis_vector(kernel_generators_[i]);
+    }
+  }
+
   return in_nullspace(kernel_generators_, test, true);
 }
 
