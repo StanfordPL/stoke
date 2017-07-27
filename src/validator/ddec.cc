@@ -223,6 +223,11 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     // Recompute the cutpoints
     ControlLearner control(target, rewrite, *sandbox_);
+    CfgPath v1({ 3 });
+    CfgPath v2({ 5, 2, 3 });
+    CfgPath v3({ 5, 2, 4 });
+    cout << "v1: " << v1 << " v2: " << v2 << " okay: " << control.inductive_pair_feasible(v1,v2) << endl;
+    cout << "v1: " << v1 << " v2: " << v3 << " okay: " << control.inductive_pair_feasible(v1,v3) << endl;
 
 
   } catch (validator_error e) {
