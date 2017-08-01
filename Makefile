@@ -116,6 +116,7 @@ endif
 SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
+	src/cfg/dominators.o \
 	src/cfg/dot_writer.o \
 	src/cfg/paths.o \
 	src/cfg/sccs.o \
