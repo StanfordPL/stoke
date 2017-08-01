@@ -35,31 +35,31 @@ void CfgDominators::recompute() {
 
   // Get a set with all the nodes
   set<Cfg::id_type> all_nodes;
-  for(size_t i = 0; i < cfg_.num_blocks(); ++i) {
+  for (size_t i = 0; i < cfg_.num_blocks(); ++i) {
     all_nodes.insert(i);
   }
 
   // Initialize dom_ data structure
   dom_[cfg_.get_entry()].insert(cfg_.get_entry());
-  for(size_t i = 0; i < cfg_.num_blocks(); ++i) {
-    if(i == cfg_.get_entry())
+  for (size_t i = 0; i < cfg_.num_blocks(); ++i) {
+    if (i == cfg_.get_entry())
       continue;
     dom_[i] = all_nodes;
   }
 
   // Fixpoint
   bool changes = true;
-  while(changes) {
+  while (changes) {
     changes = false;
-    for(Cfg::id_type n : all_nodes) {
-      if(n == cfg_.get_entry())
+    for (Cfg::id_type n : all_nodes) {
+      if (n == cfg_.get_entry())
         continue;
 
       auto old_set = dom_[n];
 
       // take the intersection of all predecessors
       auto new_set = all_nodes;
-      for(auto it = cfg_.pred_begin(n); it != cfg_.pred_end(n); ++it) {
+      for (auto it = cfg_.pred_begin(n); it != cfg_.pred_end(n); ++it) {
         new_set = intersect(dom_[*it], new_set);
       }
       new_set.insert(n);
