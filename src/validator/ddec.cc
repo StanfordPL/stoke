@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/cfg/dominators.h"
 #include "src/cfg/paths.h"
 #include "src/cfg/sccs.h"
 #include "src/validator/bounded.h"
@@ -135,6 +136,33 @@ T find_min(vector<T> v) {
   return x;
 };
 
+vector<Cfg::id_type> intersect(std::vector<Cfg::id_type>& s1, std::vector<Cfg::id_type>& s2) {
+  cout << "S1: " << s1 << endl;
+  cout << "S2: " << s2 << endl;
+  vector<Cfg::id_type> output;
+  std::sort(s1.begin(), s1.end());
+  std::sort(s2.begin(), s2.end());
+  set_intersection(s1.begin(), s1.end(), s2.begin(), s2.end(),
+                   std::inserter(output, output.begin()));
+  cout << "S1 intersect S2: " << output << endl;
+  return output;
+}
+
+vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& blocks) {
+  CfgDominators dominators(cfg);
+
+  auto all_blocks = blocks;
+  for(auto blk : blocks) {
+    auto doms = dominators.get_dominators(blk);
+
+    std::vector<Cfg::id_type> dom_vec(doms.begin(), doms.end());
+    cout << "Dominators for " << blk << ": " << dom_vec << endl;
+    all_blocks = intersect(all_blocks, dom_vec);
+  }
+
+  return all_blocks;
+}
+
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
@@ -175,11 +203,25 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     for (size_t i = 0; i < target_num_scc; ++i) {
       auto target_blocks = target_sccs.get_blocks(i);
       //TODO: replace find_min with a dominator
-      auto target_block = find_min(target_blocks);
+      auto target_block_options = dominator_intersect(target_, target_blocks);
+      if(target_block_options.size() == 0) {
+        // non-reducible control flow
+        cout << "Target blocks: " << target_blocks << endl;
+        cout << "Non-Reducible control flow" << endl;
+        return false;
+      }
+      auto target_block = target_block_options[0];
 
       for (size_t j = 0; j < rewrite_num_scc; ++j) {
         auto rewrite_blocks = rewrite_sccs.get_blocks(j);
-        auto rewrite_block = find_min(rewrite_blocks);
+        auto rewrite_block_options = dominator_intersect(rewrite_, rewrite_blocks);
+        if(rewrite_block_options.size() == 0) {
+          // non-reducible control flow
+          cout << "Rewrite blocks: " << rewrite_blocks << endl;
+          cout << "Non-Reducible control flow" << endl;
+          return false;
+        }
+        auto rewrite_block = rewrite_block_options[0];
 
         bool found_pair = false;
         // find all paths from target to target and rewrite to rewrite
