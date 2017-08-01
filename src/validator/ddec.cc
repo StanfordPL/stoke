@@ -152,7 +152,7 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
   CfgDominators dominators(cfg);
 
   auto all_blocks = blocks;
-  for(auto blk : blocks) {
+  for (auto blk : blocks) {
     auto doms = dominators.get_dominators(blk);
 
     std::vector<Cfg::id_type> dom_vec(doms.begin(), doms.end());
@@ -204,7 +204,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto target_blocks = target_sccs.get_blocks(i);
       //TODO: replace find_min with a dominator
       auto target_block_options = dominator_intersect(target_, target_blocks);
-      if(target_block_options.size() == 0) {
+      if (target_block_options.size() == 0) {
         // non-reducible control flow
         cout << "Target blocks: " << target_blocks << endl;
         cout << "Non-Reducible control flow" << endl;
@@ -215,7 +215,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       for (size_t j = 0; j < rewrite_num_scc; ++j) {
         auto rewrite_blocks = rewrite_sccs.get_blocks(j);
         auto rewrite_block_options = dominator_intersect(rewrite_, rewrite_blocks);
-        if(rewrite_block_options.size() == 0) {
+        if (rewrite_block_options.size() == 0) {
           // non-reducible control flow
           cout << "Rewrite blocks: " << rewrite_blocks << endl;
           cout << "Non-Reducible control flow" << endl;
