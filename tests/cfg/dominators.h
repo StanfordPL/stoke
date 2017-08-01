@@ -56,7 +56,7 @@ TEST(DominatorTest, NestedLoop) {
   answers[5] = { 0, 1, 3, 4, 5};
 
 
-  for(size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < 6; ++i) {
     EXPECT_EQ(answers[i], dominators.get_dominators(i));
   }
 }
@@ -91,7 +91,7 @@ TEST(DominatorTest, TwoLoops) {
   answers[5] = { 0, 1, 4, 5};
 
 
-  for(size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < 6; ++i) {
     EXPECT_EQ(answers[i], dominators.get_dominators(i));
   }
 
