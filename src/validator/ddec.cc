@@ -45,27 +45,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariants) {
-  cout << hex << endl;
-  cout << endl << "*********************************************************************";
-  cout << endl << "****************************   SUMMARY   ****************************";
-  cout << endl << "*********************************************************************";
-  cout << endl;
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  for (size_t i = 0; i < invariants.size(); ++i) {
-    cout << "Cutpoint " << i << " at blocks " << target_cuts[i] << " / " << rewrite_cuts[i] << endl;
-    auto invs = invariants[i];
-    for (size_t j = 0; j < invs->size(); ++j) {
-      cout << "    " << *(*invs)[j] << endl;
-    }
-  }
-
-  cout << dec << endl;
-}
-
 Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
   auto start_bs = cfg.num_instrs(block);
   return cfg.get_code()[cfg.get_index(Cfg::loc_type(block, start_bs - 1))];
@@ -110,57 +89,6 @@ ConjunctionInvariant* transform_with_assumption(Invariant* assume, ConjunctionIn
   return output;
 }
 
-/** This combines learning and checking invariants with a CEGAR-style search.
-  We learn using what testcases we have.  Then, we check that they actually
-  hold using a bounded validation approach.  If we don't, we take the testcases
-  produced by the bounded validator and feed it into the next search iteration.*/
-vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& rewrite) {
-
-  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
-  MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
-  vector<ConjunctionInvariant*> invariants;
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  // Learn invariants based on the data we have
-  invariants.clear();
-  for (size_t i = 0; i < target_cuts.size(); ++i) {
-
-    if (target_cuts[i] == target.get_entry()) {
-      // Entry
-      assert(rewrite_cuts[i] == rewrite.get_entry());
-
-      auto begin = new ConjunctionInvariant();
-      auto inv = new StateEqualityInvariant(target.def_ins());
-      begin->add_invariant(inv);
-      begin->add_invariant(no_sigs);
-      begin->add_invariant(mem_equ);
-      invariants.push_back(begin);
-    } else if (target_cuts[i] == target.get_exit()) {
-      // Exit
-      assert(rewrite_cuts[i] == rewrite.get_exit());
-
-      auto end = new ConjunctionInvariant();
-      auto inv = new StateEqualityInvariant(target.live_outs());
-      end->add_invariant(inv);
-      end->add_invariant(no_sigs);
-
-      if (heap_out_ || stack_out_)
-        end->add_invariant(mem_equ);
-
-      invariants.push_back(end);
-    } else {
-      auto inv = learn_disjunction_invariant(target, rewrite, i);
-      invariants.push_back(inv);
-      DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
-        DDEC_DEBUG(cout << *inv << endl;)
-    }
-  }
-
-  return invariants;
-
-}
 
 
 void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
@@ -182,14 +110,14 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
 
   for (auto p : target_paths) {
     DDEC_DEBUG(cout << "Trying path " << p << " ; on target" << endl;)
-      bool equiv = check(target, nop_cfg, target.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
+    bool equiv = check(target, nop_cfg, target.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
     if (!equiv && checker_has_ceg()) {
       sandbox_->insert_input(checker_get_target_ceg());
     }
   }
   for (auto p : rewrite_paths) {
     DDEC_DEBUG(cout << "Trying path " << p << " ; on rewrite" << endl;)
-      bool equiv = check(rewrite, nop_cfg, rewrite.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
+    bool equiv = check(rewrite, nop_cfg, rewrite.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
     if (!equiv && checker_has_ceg()) {
       sandbox_->insert_input(checker_get_target_ceg());
     }
@@ -201,8 +129,8 @@ template <typename T>
 T find_min(vector<T> v) {
   assert(v.size() > 0);
   T x = v[0];
-  for(size_t i = 1; i < v.size(); ++i)
-    if(v[i] < x)
+  for (size_t i = 1; i < v.size(); ++i)
+    if (v[i] < x)
       x = v[i];
   return x;
 };
@@ -214,233 +142,98 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
+  target_ = target;
+  rewrite_ = rewrite;
 
   DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
-    DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
+  DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
 
-    try {
+  try {
 
-      sanity_checks(target, rewrite);
+    sanity_checks(target_, rewrite_);
 
-      make_tcs(target, rewrite);
+    make_tcs(target_, rewrite_);
 
-      DDEC_TC_DEBUG(
-          cout << "DDEC sandbox at " << sandbox_ << endl;
-          for (size_t i = 0; i < sandbox_->size(); ++i) {
-          cout << "DDEC sees this TC: " << endl;
-          cout << *sandbox_->get_input(i) << endl;
+    DDEC_TC_DEBUG(
+      cout << "DDEC sandbox at " << sandbox_ << endl;
+    for (size_t i = 0; i < sandbox_->size(); ++i) {
+    cout << "DDEC sees this TC: " << endl;
+    cout << *sandbox_->get_input(i) << endl;
+    }
+    )
+
+    // Learn relations over basic blocks
+    ControlLearner control(target_, rewrite_, *sandbox_);
+    CfgSccs target_sccs(target_);
+    CfgSccs rewrite_sccs(rewrite_);
+
+    // Figure out the inductive program paths
+    size_t target_num_scc = target_sccs.count();
+    size_t rewrite_num_scc = rewrite_sccs.count();
+    vector<CfgPath> target_inductive_paths;
+    vector<CfgPath> rewrite_inductive_paths;
+    for (size_t i = 0; i < target_num_scc; ++i) {
+      auto target_blocks = target_sccs.get_blocks(i);
+      //TODO: replace find_min with a dominator
+      auto target_block = find_min(target_blocks);
+
+      for (size_t j = 0; j < rewrite_num_scc; ++j) {
+        auto rewrite_blocks = rewrite_sccs.get_blocks(j);
+        auto rewrite_block = find_min(rewrite_blocks);
+
+        bool found_pair = false;
+        // find all paths from target to target and rewrite to rewrite
+        for (size_t k = 0; k < 4; ++k) {
+          size_t bound = (1 << k);
+          auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
+          auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
+
+          for (auto& it : target_paths)
+            it.pop_back();
+          for (auto& it : rewrite_paths)
+            it.pop_back();
+
+
+          cout << "Target paths for " << target_block << endl;
+          for (auto it : target_paths) {
+            cout << it << endl;
           }
-          )
+          cout << "Rewrite paths for " << rewrite_block << endl;
+          for (auto it : rewrite_paths) {
+            cout << it << endl;
+          }
 
-        // Learn relations over basic blocks
-        ControlLearner control(target, rewrite, *sandbox_);
-      CfgPath v1({ 3 });
-      CfgPath v2({ 5, 2, 3 });
-      CfgPath v3({ 5, 2, 4 });
-      cout << "v1: " << v1 << " v2: " << v2 << " okay: " << control.inductive_pair_feasible(v1,v2) << endl;
-      cout << "v1: " << v1 << " v2: " << v3 << " okay: " << control.inductive_pair_feasible(v1,v3) << endl;
-
-      CfgSccs target_sccs(target);
-      CfgSccs rewrite_sccs(rewrite);
-
-      // Figure out the inductive program paths
-      size_t target_num_scc = target_sccs.count();
-      size_t rewrite_num_scc = rewrite_sccs.count();
-      vector<CfgPath> target_inductive_paths;
-      vector<CfgPath> rewrite_inductive_paths;
-      for(size_t i = 0; i < target_num_scc; ++i) {
-        auto target_blocks = target_sccs.get_blocks(i);
-        //TODO: replace find_min with a dominator
-        auto target_block = find_min(target_blocks);
-
-        for(size_t j = 0; j < rewrite_num_scc; ++j) {
-          auto rewrite_blocks = rewrite_sccs.get_blocks(j);
-          auto rewrite_block = find_min(rewrite_blocks);
-
-          bool found_pair = false;
-          // find all paths from target to target and rewrite to rewrite
-          for(size_t k = 0; k < 4; ++k) {
-            size_t bound = (1 << k);
-            auto target_paths = CfgPaths::enumerate_paths(target, bound, target_block, target_block);
-            auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound, rewrite_block, rewrite_block);
-            cout << "Target paths for " << target_block << endl;
-            for(auto it : target_paths) {
-              cout << it << endl;
-            }
-            cout << "Rewrite paths for " << rewrite_block << endl;
-            for(auto it : rewrite_paths) {
-              cout << it << endl;
-            }
-
-            for(auto& it : target_paths)
-              it.pop_back();
-            for(auto& it : rewrite_paths)
-              it.pop_back();
-
-            for(auto tp : target_paths) {
-              for(auto rp : rewrite_paths) {
-                if(control.inductive_pair_feasible(tp, rp)) {
-                  cout << "Found inductive pair " << tp << " and " << rp << endl;
-                  target_inductive_paths.push_back(tp);
-                  rewrite_inductive_paths.push_back(rp);
-                  found_pair = true;
-                } 
+          for (auto tp : target_paths) {
+            for (auto rp : rewrite_paths) {
+              if (control.inductive_pair_feasible(tp, rp)) {
+                cout << "Found inductive pair " << tp << " and " << rp << endl;
+                target_inductive_paths.push_back(tp);
+                rewrite_inductive_paths.push_back(rp);
+                found_pair = true;
               }
             }
-
-            if(found_pair)
-              break;
           }
+
+          if (found_pair)
+            break;
         }
       }
-
-    } catch (validator_error e) {
-
-      has_error_ = true;
-      error_ = e.get_message();
-      error_file_ = e.get_file();
-      error_line_ = e.get_line();
-      reset_mm();
-      return false;
     }
+
+  } catch (validator_error e) {
+
+    has_error_ = true;
+    error_ = e.get_message();
+    error_file_ = e.get_file();
+    error_line_ = e.get_line();
+    reset_mm();
+    return false;
+  }
 
   reset_mm();
   return false;
 
 }
-
-bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vector<ConjunctionInvariant*>& invariants, map<size_t, vector<size_t>>& failed_invariants) {
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  for (size_t i = 0; i < target_cuts.size(); ++i) {
-    for (size_t j = 0; j < rewrite_cuts.size(); ++j) {
-      // For each pair of cutpoints i, j, we need to do the following three checks:
-      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
-      // 2. P \in Paths_T(i, j), Q \in Paths_R(i, j) =>
-      //    inv(i) { P ; Q } inv(j)
-      // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) =>
-      //    inv(i) { P ; Q } false
-
-      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
-      auto target_paths_ij =
-        CfgPaths::enumerate_paths(target, 1, target_cuts[i], target_cuts[j], &target_cuts);
-      auto rewrite_paths_ij =
-        CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts[i], rewrite_cuts[j], &rewrite_cuts);
-
-      auto target_paths_ij_more =
-        CfgPaths::enumerate_paths(target, 2, target_cuts[i], target_cuts[j], &target_cuts);
-      auto rewrite_paths_ij_more =
-        CfgPaths::enumerate_paths(rewrite, 2, rewrite_cuts[i], rewrite_cuts[j], &rewrite_cuts);
-
-      DDEC_DEBUG(cout << "i=" << i << ", j=" << j
-          << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;)
-        if (target_paths_ij.size() != target_paths_ij_more.size()) {
-          DDEC_DEBUG(cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;)
-            return false;
-        }
-      DDEC_DEBUG(
-          cout << "i=" << i << ", j=" << j
-          << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;)
-        if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
-          DDEC_DEBUG(cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;)
-            return false;
-        }
-
-      DDEC_DEBUG(cout << "cutpoint blocks: " << target_cuts[i] << "  (and)  " << rewrite_cuts[j] << endl;)
-
-        // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
-        bool success = true;
-      for (auto p : target_paths_ij) {
-        auto target_jump_inv = get_jump_inv(target, target_cuts[i], p, false);
-        if (target.num_instrs(target_cuts[i]))
-          p.erase(p.begin());
-
-        for (auto q : rewrite_paths_ij) {
-          auto rewrite_jump_inv = get_jump_inv(rewrite, rewrite_cuts[i], q, true);
-          if (rewrite.num_instrs(rewrite_cuts[i]))
-            q.erase(q.begin());
-          auto copy = *static_cast<ConjunctionInvariant*>(invariants[i]);
-          copy.add_invariant(target_jump_inv);
-          copy.add_invariant(rewrite_jump_inv);
-
-          auto end_inv = static_cast<ConjunctionInvariant*>(invariants[j]);
-          /*
-             for(size_t k = 0; k < end_inv->size(); ++k) {
-             auto my_inv = (*end_inv)[k];
-             cout << endl << endl << "WORKING ON " << *my_inv << endl << endl;
-             bool ok = bv.verify_pair(target, rewrite, p, q, *invariants[i], *my_inv);
-             if(!ok)
-             return false;
-             }
-           */
-
-          for (size_t m = 0; m < end_inv->size(); ++m) {
-
-            DDEC_DEBUG(cout << "Checking " << copy << " { " << p << " ; " << q << " } "
-                << *(*end_inv)[m] << endl;)
-
-              bool equiv = check(target, rewrite, target_cuts[i], rewrite_cuts[i], p, q, copy, *(*end_inv)[m]);
-            if (!equiv) {
-              failed_invariants[j].push_back(m);
-              success = false;
-            }
-          }
-
-        }
-      }
-      if (!success) {
-        DDEC_DEBUG(print_summary(invariants);)
-          return false;
-      }
-
-      // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) => inv(i) { P ; Q } false
-      for (size_t k = 0; k < rewrite_cuts.size(); ++k) {
-        if (j == k)
-          continue;
-
-        auto rewrite_paths_ik =
-          CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts[i], rewrite_cuts[k], &rewrite_cuts);
-
-        for (auto p : target_paths_ij) {
-          auto target_jump_inv = get_jump_inv(target, target_cuts[i], p, false);
-          if (target.num_instrs(target_cuts[i]))
-            p.erase(p.begin());
-
-
-          for (auto q : rewrite_paths_ik) {
-            auto rewrite_jump_inv = get_jump_inv(rewrite, rewrite_cuts[i], q, true);
-            if (rewrite.num_instrs(rewrite_cuts[i]))
-              q.erase(q.begin());
-
-            auto copy = *static_cast<ConjunctionInvariant*>(invariants[i]);
-            copy.add_invariant(target_jump_inv);
-            copy.add_invariant(rewrite_jump_inv);
-
-            DDEC_DEBUG(cout << "Checking for cpt " << i << " -> " << j << " against " << i << " -> " << k << endl;)
-              DDEC_DEBUG(cout << "Checking " << copy << " { " << p << " ; " << q << " } false " << endl;)
-              FalseInvariant fi;
-            bool equiv = check(target, rewrite, target_cuts[i], rewrite_cuts[i], p, q, copy, fi);
-            if (!equiv) {
-              DDEC_DEBUG(print_summary(invariants);)
-                return false;
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  DDEC_DEBUG(print_summary(invariants);)
-
-    return true;
-
-}
-
-
-
 
 
 /** Assumption: given a disjunction of conjuncts.
@@ -448,9 +241,9 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
 ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
   DDEC_DEBUG(cout << "SIMPLIFYING DISJUNCTS" << endl;
-      cout << disjs << endl << endl;)
+             cout << disjs << endl << endl;)
 
-    FalseInvariant _false;
+  FalseInvariant _false;
 
   // Go through disjunctions and throw out any that have a conjunction involving false...
   for (size_t i = 0; i < disjs.size(); ++i) {
@@ -458,7 +251,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
     for (size_t j = 0; j < conj.size(); ++j) {
       if (*conj[j] == _false) {
         DDEC_DEBUG(cout << "Removing disjunct " << i << " due to index " << j << endl;)
-          disjs.remove(i);
+        disjs.remove(i);
         i--;
         break;
       }
@@ -467,16 +260,16 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
   DDEC_DEBUG(cout << "Finished removing dumb disjuncts" << endl;)
 
-    // Take the conjunctions in the first disjunct.
-    // If they're in the rest, then of the disjuncts, we remove it from all of them
-    auto common_conjunctions = new ConjunctionInvariant();
+  // Take the conjunctions in the first disjunct.
+  // If they're in the rest, then of the disjuncts, we remove it from all of them
+  auto common_conjunctions = new ConjunctionInvariant();
 
   auto& first_conjunct = *static_cast<ConjunctionInvariant*>(disjs[0]);
   for (size_t i = 0; i < first_conjunct.size(); ++i) {
     auto leaf = first_conjunct[i];
     DDEC_DEBUG(cout << "Looking for " << *leaf << " in all disjuncts" << endl;)
 
-      bool contained_in_all = true;
+    bool contained_in_all = true;
     for (size_t j = 1; j < disjs.size(); j++) {
       auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
       bool contained = false;
@@ -492,7 +285,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
     // remove the leaf from the conjunction
     if (contained_in_all) {
       DDEC_DEBUG(cout << "  found in all :)" << endl;)
-        common_conjunctions->add_invariant(leaf);
+      common_conjunctions->add_invariant(leaf);
       for (size_t j = 0; j < disjs.size(); j++) {
         auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
         bool contained = false;
@@ -518,13 +311,13 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
   DDEC_DEBUG(cout << "ALL DONE W/ SIMPLIFY" << endl;)
 
-    return common_conjunctions;
+  return common_conjunctions;
 
 }
 
-ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint) {
+ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(size_t cutpoint) {
 
-  InvariantLearner learner(target, rewrite);
+  InvariantLearner learner(target_, rewrite_);
 
   /** Lets get out the relevant data here... */
   vector<CpuState> target_states = cutpoints_->data_at(cutpoint, false);
@@ -532,14 +325,14 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
 
   DDEC_DEBUG(cout << "[ddec] learning cutpoint " << cutpoint << " invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
 
-    auto target_cuts = cutpoints_->target_cutpoint_locations();
+  auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
 
-  auto target_regs = target.def_outs(target_cuts[cutpoint]);
-  auto rewrite_regs = rewrite.def_outs(rewrite_cuts[cutpoint]);
+  auto target_regs = target_.def_outs(target_cuts[cutpoint]);
+  auto rewrite_regs = rewrite_.def_outs(rewrite_cuts[cutpoint]);
 
-  auto last_target_instr = get_last_instr(target, target_cuts[cutpoint]);
-  auto last_rewrite_instr = get_last_instr(rewrite, rewrite_cuts[cutpoint]);
+  auto last_target_instr = get_last_instr(target_, target_cuts[cutpoint]);
+  auto last_rewrite_instr = get_last_instr(rewrite_, rewrite_cuts[cutpoint]);
 
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);

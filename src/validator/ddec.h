@@ -29,7 +29,7 @@ class DdecValidator : public ObligationChecker {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : ObligationChecker(solver) {
+  DdecValidator(SMTSolver& solver) : ObligationChecker(solver), target_({}), rewrite_({}) {
     cutpoints_ = NULL;
     set_no_bv(false);
   }
@@ -56,18 +56,12 @@ public:
 
 private:
 
-  /** Find all invariants with CEGAR-style search. */
-  std::vector<ConjunctionInvariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
   /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint);
+  ConjunctionInvariant* learn_disjunction_invariant(size_t cutpoint);
   /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
-  /** Check that all the invariants work. */
-  bool check_proof(const Cfg& target, const Cfg& rewrite, const std::vector<ConjunctionInvariant*>& invariants, std::map<size_t, std::vector<size_t>>& failed_invariants);
+  ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
-  /** Print a summary of what we've done */
-  void print_summary(const std::vector<ConjunctionInvariant*>&);
 
   /** Bound */
   size_t bound_;
@@ -79,6 +73,9 @@ private:
   bool try_sign_extend_;
   /** Skip the bounded validator? */
   bool no_bv_;
+
+  Cfg target_;
+  Cfg rewrite_;
 };
 
 } // namespace stoke
