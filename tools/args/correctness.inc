@@ -72,6 +72,11 @@ cpputil::FlagArg& blocked_heap_opt_arg =
   cpputil::FlagArg::create("blocked_heap_opt")
   .description("Enables an optimized version of relax_mem that assumes heap writes occur in 128-bit blocks");
 
+cpputil::FlagArg& log_correctness_func_arg =
+  cpputil::FlagArg::create("log_correctness")
+  .description("Enables an logging of the correctness cost function");
+
+
 cpputil::ValueArg<Cost>& misalign_penalty_arg =
   cpputil::ValueArg<Cost>::create("misalign_penalty")
   .usage("<int>")

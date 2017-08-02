@@ -223,6 +223,7 @@ BIN=\
 	bin/stoke_extract \
 	bin/stoke_replace \
 	bin/stoke_expt \
+	bin/stoke_parselog \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
 	bin/stoke_rename \

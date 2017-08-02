@@ -32,7 +32,7 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, bool logging = false) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb, logging)) {
   }
 
   result_type operator()(const Cfg& cfg, Cost max) {
@@ -47,17 +47,18 @@ private:
 
   CostFunction* fxn_;
 
-  static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) {
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, bool logging) {
 
     CostParser::SymbolTable st;
     st["binsize"] =      new BinSizeCost();
-    st["correctness"] =  new CorrectnessCostGadget(target, test_sb);
+    auto correctness = new CorrectnessCostGadget(target, test_sb);
+    correctness->set_logging(logging);
+    st["correctness"] = correctness;
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target);
-
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
     if (cost_p.get_error().size()) {

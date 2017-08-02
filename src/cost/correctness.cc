@@ -124,13 +124,16 @@ Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   counter_example_testcase_ = -1;
 
   testcase_errors_.resize(test_sandbox_->size());
-
   for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
+    if (logging_)
+      std::cout << "{\"tc\":" << i << ",";
     const auto err = evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
     }
+    if (logging_)
+      std::cout << "\"cost\": " << err << "}\n";
     testcase_errors_[i] = err;
     res += err;
   }
@@ -186,16 +189,15 @@ Cost CorrectnessCost::alternate_sum_correctness(const Cfg& cfg, const Cost max) 
     }
     assert(cost_table[i].first.size() > 0);
   }
-
+  Cost base_cost = 0;
   for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
-    alternate_evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs(), cost_table);
-    if (calculate_cost() >= max)
-      return max;
+    base_cost += alternate_evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs(), cost_table);
   }
-  return calculate_cost();
+  //std::cout << "base cost: " << base_cost << " table cost: " << calculate_cost() << "\n";
+  return base_cost + calculate_cost();
 }
 
-void CorrectnessCost::alternate_evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs, CostTable& cost_table) const {
+Cost CorrectnessCost::alternate_evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs, CostTable& cost_table) const {
   Cost cost = 0;
 
   if (t.code != r.code) {
@@ -214,14 +216,7 @@ void CorrectnessCost::alternate_evaluate_error(const CpuState& t, const CpuState
       cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
     }
   }
-
-  // Add the base costs to each entry of the table
-  for (auto& pair: cost_table) {
-    auto& costs = pair.first;
-    for (auto& c: pair.first) {
-      c += cost;
-    }
-  }
+  return cost;
 }
 
 void CorrectnessCost::alternate_gp_error(const CpuState& t, const CpuState& r, CostTable& cost_table) const {
@@ -254,6 +249,7 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
     return 0;
   }
 
+
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
   cost += gp_error(t, r, defs);
@@ -265,7 +261,6 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
   if (heap_out_) {
     cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
   }
-
   return cost;
 }
 
@@ -273,8 +268,14 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
 
 Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
   Cost cost = 0;
+  if (logging_)
+    std::cout << "\"gp\":[";
 
   for (const auto& r_t : target_gp_out_) {
+    R misaligned = r_t;
+    size_t misaligned_val = 0;
+    bool is_misaligned = false;
+
     auto size = r_t.size();
     auto bytes = size/8;
     auto delta = undef_default(bytes);
@@ -318,12 +319,26 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
       }
 
       const auto eval = evaluate_distance(val_t, val_r, size) + (is_same ? 0 : misalign_penalty_);
-
+      if (eval < delta) {
+        delta = eval;
+        misaligned = *r_r;
+        misaligned_val = val_r;
+        is_misaligned = !is_same;
+      }
       delta = min(delta, eval);
+    }
+    if (logging_) {
+      std::cout << "{\"reg\":\"" << r_t << "\",";
+      std::cout << "\"target\":" << val_t << ",";
+      std::cout << "\"value\":" << misaligned_val << ",";
+      std::cout << "\"misalign\":" << (is_misaligned ? misalign_penalty_ : 0) << ",";
+      std::cout << "\"misalign_reg\":\"" << misaligned << "\",";
+      std::cout << "\"cost\":" << delta << "},";
     }
     cost += delta;
   }
-
+  if (logging_)
+    std::cout << "{}],";
   return cost;
 }
 

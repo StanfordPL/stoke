@@ -82,6 +82,11 @@ public:
     alternate_misalign_ = alternate;
     return *this;
   }
+  /** Toggles whether to log debugging of the computation of the cost to standard out. */
+  CorrectnessCost& set_logging(bool l) {
+    logging_ = l;
+    return *this;
+  }
   /** Set penalty values. */
   CorrectnessCost& set_penalty(Cost misalign, Cost sig, Cost shift) {
     misalign_penalty_ = misalign;
@@ -175,6 +180,8 @@ private:
   Cost min_ulp_;
   /** Reduction method. */
   Reduction reduction_;
+  /** Whether to do extened logging or not */
+  bool logging_;
 
   /** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
@@ -207,7 +214,7 @@ private:
   /** Evaluate correctness by summing cost over testcases. */
   Cost alternate_sum_correctness(const Cfg& cfg, const Cost max);
   /** Evaluate error between states. */
-  void alternate_evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs, CostTable& c) const;
+  Cost alternate_evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs, CostTable& c) const;
   /** Evaluate error between general purpose registers. */
   void alternate_gp_error(const CpuState& t, const CpuState& r, CostTable& c) const;
   /** Evaluate error between sse registers. */
