@@ -163,7 +163,8 @@ Cost CorrectnessCost::alternate_sum_correctness(const Cfg& cfg, const Cost max) 
   for (size_t i = 0; i < target_gp_out_.size(); i++) {
     auto r_t = target_gp_out_[i];
     cost_table.emplace_back(std::vector<Cost>(), std::vector<R>());
-    for (auto it = cfg.def_outs().gp_begin(); it != cfg.def_outs().gp_end(); ++it) {
+    RegSet outs = cfg.def_outs();
+    for (auto it = outs.gp_begin(), it_e = outs.gp_end(); it != it_e; ++it) {
       R r_r = *it;
       if (r_t != r_r && !relax_reg_) {
         continue;
@@ -193,7 +194,8 @@ Cost CorrectnessCost::alternate_sum_correctness(const Cfg& cfg, const Cost max) 
   for (size_t i = 0, ie = test_sandbox_->size(); i < ie; ++i) {
     base_cost += alternate_evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs(), cost_table);
   }
-  //std::cout << "base cost: " << base_cost << " table cost: " << calculate_cost() << "\n";
+  if (logging_)
+    std::cout << "base cost: " << base_cost << " table cost: " << calculate_cost() << "\n";
   return base_cost + calculate_cost();
 }
 
