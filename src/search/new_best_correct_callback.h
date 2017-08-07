@@ -21,7 +21,7 @@ namespace stoke {
 
 struct NewBestCorrectCallbackData {
   /** The current search state. */
-  const SearchState& state;
+  SearchState& state;
 };
 
 /** Callback signature */

@@ -90,7 +90,13 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
   give_up_now = false;
   size_t iterations = 0;
+
+  using namespace std::chrono;
+  state.start_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
+    state.iteration = iterations;
+
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
       elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
@@ -105,17 +111,6 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
                duration_cast<duration<double>>(steady_clock::now() - start) >= timeout_sec_) {
       break;
     }
-
-    // every 1000 iterations, print the cost of the initial program
-    // if (iterations % 1000 == 0) {
-    //   const auto tmp = fxn(state.initial, state.current_cost + 1000000);
-    //   const auto cost = tmp.second;
-    //   const auto ts = chrono::duration_cast< chrono::milliseconds >(
-    //                     chrono::system_clock::now().time_since_epoch()
-    //                   ).count();
-    //   cout << "cost_check=" << cost << " time=" << ts << endl;
-    // }
-
 
     ti = (*transform_)(state.current);
     move_statistics[ti.move_type].num_proposed++;
@@ -151,11 +146,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       state.success = true;
       state.best_correct = state.current;
       state.best_correct_cost = new_cost;
-
-      new_best_correct_cb_({state}, new_best_correct_cb_arg_);
     }
-    // randomly also accept correct programs
-    if (is_correct && prob_(gen_) < 0.001) {
+    // save correct programs
+    if (is_correct) {
       new_best_correct_cb_({state}, new_best_correct_cb_arg_);
     }
 

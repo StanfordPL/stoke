@@ -304,12 +304,8 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
 void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg) {
 
   if (results_arg.has_been_provided()) {
-    Console::msg() << "Verifying improved rewrite..." << endl;
 
-    auto state = data.state;
-    auto data = (pair<VerifierGadget&, TargetGadget&>*)arg;
-    auto verifier = data->first;
-    auto target = data->second;
+    auto& state = data.state;
 
     // perform the postprocessing
     Cfg res(state.current);
@@ -324,47 +320,89 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
       // Do nothing.
     }
 
-    // verify the new best correct rewrite
-    const auto verified = true; // verifier.verify(target, res);
+    string name = "";
+    bool done = false;
+    do {
+      state.last_result_id += 1;
+      name = results_arg.value() + "/result-" + to_string(state.last_result_id) + ".s";
+      ifstream f(name.c_str());
+      done = !f.good();
+      // cout << name << " - " << f.good() << endl;
+    } while (!done);
 
-    if (verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error: " << verifier.error() << endl << endl;
-    }
+    using namespace std::chrono;
+    auto ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    cout << dec << "cost=" << state.current_cost << " iteration=" << state.iteration << " id=" << state.last_result_id << " timestamp_ms=" << (ms - state.start_ms) << endl;
 
-    // save to file if verified
-    if (verified) {
-      Console::msg() << "Verified!  Saving result..." << endl << endl;
-      // next name for result file
-      string name = "";
-      bool done = false;
-      do {
-        name = results_arg.value() + "/result-" + to_string(state.last_result_id) + ".s";
-        state.last_result_id += 1;
-        ifstream f(name.c_str());
-        done = !f.good();
-      } while (!done);
-
-      Console::msg() << dec << "cost=" << state.current_cost << " " << "id=" << state.last_result_id << endl;
-
-      // write output
-      ofstream outfile;
-      outfile.open(name);
-      outfile << res.get_function();
-      outfile.close();
-    } else {
-      Console::msg() << "Verification failed."  << endl << endl;
-      if (verifier.counter_examples_available()) {
-        Console::msg() << "Counterexample: " << endl;
-        // for (auto it : verifier.get_counter_examples()) {
-        //   Console::msg() << it << endl;
-        // }
-      }
-    }
-
-  } else {
-    cout << "No action on new best correct" << endl;
-
+    // write output
+    ofstream outfile;
+    outfile.open(name);
+    outfile << res.get_function();
+    outfile.close();
   }
+
+  // if (results_arg.has_been_provided()) {
+  //   Console::msg() << "Verifying improved rewrite..." << endl;
+
+  //   auto state = data.state;
+  //   auto data = (pair<VerifierGadget&, TargetGadget&>*)arg;
+  //   auto verifier = data->first;
+  //   auto target = data->second;
+
+  //   // perform the postprocessing
+  //   Cfg res(state.current);
+  //   if (postprocessing_arg == Postprocessing::FULL) {
+  //     CfgTransforms::remove_redundant(res);
+  //     CfgTransforms::remove_unreachable(res);
+  //     CfgTransforms::remove_nop(res);
+  //   } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+  //     CfgTransforms::remove_unreachable(res);
+  //     CfgTransforms::remove_nop(res);
+  //   } else {
+  //     // Do nothing.
+  //   }
+
+  //   // verify the new best correct rewrite
+  //   const auto verified = true; // verifier.verify(target, res);
+
+  //   if (verifier.has_error()) {
+  //     Console::msg() << "The verifier encountered an error: " << verifier.error() << endl << endl;
+  //   }
+
+  //   // save to file if verified
+  //   if (verified) {
+  //     Console::msg() << "Verified!  Saving result..." << endl << endl;
+  //     // next name for result file
+  //     string name = "";
+  //     bool done = false;
+  //     do {
+  //       name = results_arg.value() + "/result-" + to_string(state.last_result_id) + ".s";
+  //       state.last_result_id += 1;
+  //       ifstream f(name.c_str());
+  //       done = !f.good();
+  //     } while (!done);
+
+  //     Console::msg() << dec << "cost=" << state.current_cost << " " << "id=" << state.last_result_id << endl;
+
+  //     // write output
+  //     ofstream outfile;
+  //     outfile.open(name);
+  //     outfile << res.get_function();
+  //     outfile.close();
+  //   } else {
+  //     Console::msg() << "Verification failed."  << endl << endl;
+  //     if (verifier.counter_examples_available()) {
+  //       Console::msg() << "Counterexample: " << endl;
+  //       // for (auto it : verifier.get_counter_examples()) {
+  //       //   Console::msg() << it << endl;
+  //       // }
+  //     }
+  //   }
+
+  // } else {
+  //   cout << "No action on new best correct" << endl;
+
+  // }
 
 }
 
