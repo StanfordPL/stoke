@@ -327,7 +327,6 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
       name = results_arg.value() + "/result-" + to_string(state.last_result_id) + ".s";
       ifstream f(name.c_str());
       done = !f.good();
-      // cout << name << " - " << f.good() << endl;
     } while (!done);
 
     using namespace std::chrono;
