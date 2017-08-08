@@ -79,7 +79,7 @@ ControlLearner::Matrix ControlLearner::remove_constant_cols(Matrix matrix) {
 }
 
 ControlLearner::Vector ControlLearner::matrix_vector_mult(Matrix matrix, Vector vect, bool ignore_first) {
-  assert(matrix[0].size == vect.size());
+  assert(matrix[0].size() == vect.size());
   size_t start = ignore_first ? 1 : 0;
   Vector results;
   for (size_t i = 0; i < matrix.size(); ++i) {

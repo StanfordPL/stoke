@@ -119,7 +119,7 @@ vector<vector<size_t>> remove_constant_cols(vector<vector<size_t>> matrix) {
 }
 
 vector<int64_t> matrix_vector_mult(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
-  assert(matrix[0].size == vect.size());
+  assert(matrix[0].size() == vect.size());
   vector<int64_t> results;
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;

@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_VALIDATOR_DDEC_H
 #define STOKE_SRC_VALIDATOR_DDEC_H
 
+#include "src/validator/abstraction.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
@@ -56,12 +57,19 @@ public:
 
 private:
 
+  Abstraction* target_automata_;
+  Abstraction* rewrite_automata_;
+
   /** Learn invariants from CpuStates */
   ConjunctionInvariant* learn_disjunction_invariant(size_t cutpoint);
   /** Learn invariants from CpuStates */
   ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
+  /** Learn inductive paths */
+  bool learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
+                             std::vector<CfgPath>& rewrite_inductive_paths);
+
 
   /** Bound */
   size_t bound_;
