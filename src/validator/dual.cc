@@ -122,10 +122,10 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
       for (auto edge : next_edges_[tr_state.state]) {
         cout << "  Considering edge: " << edge.from << " -> " << edge.to << endl;
         cout << "     ";
-        for(auto blk : edge.te)
+        for (auto blk : edge.te)
           cout << blk << "  ";
         cout << "; ";
-        for(auto blk : edge.re)
+        for (auto blk : edge.re)
           cout << blk << "  ";
         cout << endl;
 

@@ -39,17 +39,6 @@ vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t ma
   if (max_len > 0)
     enumerate_paths_helper(cfg, path_so_far, end, max_len, node_counts, results, nopass);
 
-  // Remove all blocks with zero instructions
-  for (auto& path : results) {
-    for (auto iter = path.begin(); iter != path.end(); ) {
-      if (!cfg.num_instrs(*iter)) {
-        iter = path.erase(iter);
-      } else {
-        ++iter;
-      }
-    }
-  }
-
   return results;
 }
 
