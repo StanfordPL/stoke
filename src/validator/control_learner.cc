@@ -29,10 +29,9 @@ using namespace stoke;
 using namespace x64asm;
 
 
-template <typename T>
-vector<vector<T>> remove_duplicate_rows(vector<vector<T>> matrix) {
+IntMatrix remove_duplicate_rows(IntMatrix matrix) {
   /** Remove duplicate rows */
-  vector<vector<T>> final_matrix;
+  IntMatrix final_matrix;
   for (size_t i = 0; i < matrix.size(); ++i) {
     bool ok = true;
     for (size_t j = 0; j < final_matrix.size(); ++j) {
@@ -49,7 +48,7 @@ vector<vector<T>> remove_duplicate_rows(vector<vector<T>> matrix) {
 
 
 /** Remove all constant columns, except the first one. */
-ControlLearner::Matrix ControlLearner::remove_constant_cols(Matrix matrix) {
+IntMatrix ControlLearner::remove_constant_cols(IntMatrix matrix) {
   vector<size_t> constant_columns;
   for (size_t i = 1; i < matrix[0].size(); ++i) {
     bool col_constant = true;
@@ -63,9 +62,9 @@ ControlLearner::Matrix ControlLearner::remove_constant_cols(Matrix matrix) {
     if (col_constant)
       constant_columns.push_back(i);
   }
-  Matrix output_matrix;
+  IntMatrix output_matrix;
   for (size_t i = 0; i < matrix.size(); ++i) {
-    Vector new_row;
+    IntVector new_row;
     for (size_t j = 0; j < matrix[i].size(); ++j) {
       if (find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
         new_row.push_back(matrix[i][j]);
@@ -78,94 +77,22 @@ ControlLearner::Matrix ControlLearner::remove_constant_cols(Matrix matrix) {
   return output_matrix;
 }
 
-ControlLearner::Vector ControlLearner::matrix_vector_mult(Matrix matrix, Vector vect, bool ignore_first) {
-  assert(matrix[0].size() == vect.size());
-  size_t start = ignore_first ? 1 : 0;
-  Vector results;
-  for (size_t i = 0; i < matrix.size(); ++i) {
-    int64_t sum = 0;
-    for (size_t j = start; j < vect.size(); ++j) {
-      sum += matrix[i][j]*vect[j];
-    }
-    results.push_back(sum);
+IntVector ControlLearner::matrix_vector_mult(IntMatrix matrix, IntVector vect, bool ignore_first) {
+  if(ignore_first) {
+    auto new_matrix = matrix.remove_column(0);
+    auto new_vect = vect.remove_entry(0);
+    return new_matrix*new_vect;
   }
-  return results;
+  return matrix*vect;
 }
 
-bool ControlLearner::in_nullspace(Matrix matrix, Vector vect, bool ignore_first) {
-  assert(matrix[0].size == vect.size());
-  size_t start = ignore_first ? 1 : 0;
-  for (size_t i = 0; i < matrix.size(); ++i) {
-    int64_t sum = 0;
-    for (size_t j = 1; j < vect.size(); ++j) {
-      sum += matrix[i][j]*vect[j];
-    }
-    if (sum != 0)
-      return false;
+bool ControlLearner::in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_first) {
+  if(ignore_first) {
+    auto new_matrix = matrix.remove_column(0);
+    auto new_vect = vect.remove_entry(0);
+    return new_matrix.in_nullspace(new_vect);
   }
-  return true;
-}
-
-ControlLearner::Matrix ControlLearner::solve_diophantine(Matrix matrix) {
-  cout << "Writing out sage code" << endl;
-  ofstream of("in.sage");
-  of << "rows=" << matrix.size() << endl;
-  of << "cols=" << matrix[0].size() << endl;
-  of << "ZZ=IntegerRing()" << endl;
-  of << "A = MatrixSpace(ZZ, rows, cols)([";
-  for (size_t i = 0; i < matrix.size(); ++i) {
-    for (size_t j = 0; j < matrix[i].size(); ++j) {
-      of << matrix[i][j];
-      if (i < matrix.size() - 1 || j < matrix[i].size() - 1)
-        of << ", ";
-    }
-  }
-  of << "])" << endl;
-  of << "D,U,V=A.smith_form()" << endl;
-  of << "min_dim = min(rows,cols)" << endl;
-  of << "diagonals = [ D[i][i] for i in range(0,min_dim) if D[i][i] != 0]" << endl;
-  of << "nz_diag = len(diagonals)" << endl;
-  of << "basis = [ [0]*nz_diag + [0]*i + [1] + [0]*(min_dim-nz_diag-i-1) for i in range(0,min_dim-nz_diag)]" << endl;
-  of << "dim = len(basis)" << endl;
-  of << "outputs = [ V*vector(b) for b in basis ]" << endl;
-  of << "print len(outputs), len(outputs[0])" << endl;
-  of << "for output in outputs:" << endl;
-  of << "\tprint \" \".join(map(lambda x:str(x), output))" << endl;
-  of << endl;
-  of.close();
-  int status = system("sage in.sage > sage.out 2>sage.err");
-
-  /** Read basis vectors from sage */
-  Matrix basis_vectors;
-  size_t output_rows, output_cols;
-  ifstream in("sage.out");
-  in >> output_rows >> output_cols;
-  for (size_t i = 0; i < output_rows; ++i) {
-    Vector row;
-    for (size_t j = 0; j < output_cols; ++j) {
-      int64_t x;
-      in >> x;
-      row.push_back(x);
-    }
-    basis_vectors.push_back(row);
-  }
-
-  return basis_vectors;
-}
-
-void ControlLearner::print_matrix(Matrix m) {
-  for (size_t i =0; i < m.size(); ++i) {
-    for (size_t j = 0; j < m[i].size(); ++j) {
-      cout << m[i][j] << "  ";
-    }
-    cout << endl;
-  }
-}
-
-void ControlLearner::print_matrix(Vector x) {
-  Matrix y;
-  y.push_back(x);
-  print_matrix(y);
+  return matrix.in_nullspace(vect);
 }
 
 size_t ControlLearner::target_block_to_col(Cfg::id_type n) {
@@ -200,7 +127,7 @@ Cfg::id_type ControlLearner::column_to_segment(size_t n) {
     return rewrite_segments_[n-target_segments_.size()-1];
 }
 
-void ControlLearner::print_basis_vector(Vector& v) {
+void ControlLearner::print_basis_vector(IntVector v) {
   bool first = true;
   for (size_t j = 0; j < v.size(); ++j) {
     if (v[j] != 0 && j != 0) {
@@ -272,9 +199,9 @@ void ControlLearner::compute() {
   }
 
   /** Write out the matrix. */
-  Matrix starting_matrix;
+  IntMatrix starting_matrix;
   for (size_t i = 0; i < sandbox_.size(); ++i) {
-    Vector row;
+    IntVector row;
     row.push_back(1);
     for (size_t j = 0; j < target_segments_.size(); ++j) {
       row.push_back((int64_t)target_matrix[i][j]);
@@ -306,7 +233,7 @@ void ControlLearner::compute() {
     cout << endl;
   }
 
-  kernel_generators_ = solve_diophantine(final_matrix);
+  kernel_generators_ = final_matrix.solve_diophantine();
 
   // Choose lines to print
   /**
@@ -337,7 +264,7 @@ void ControlLearner::compute() {
   }
 
   cout << "MATRIX" << endl;
-  print_matrix(kernel_generators_);
+  kernel_generators_.print();
   // Check pairs of segments to see if they're in the nullspace
   /*
   for (size_t i = 0; i < target_segments_.size(); ++i) {
@@ -422,7 +349,7 @@ void ControlLearner::callback(const StateCallbackData& data, void* arg) {
 
 
 bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
-  Vector test(target_segments_.size() + rewrite_segments_.size() + 1);
+  IntVector test(target_segments_.size() + rewrite_segments_.size() + 1);
   for (auto it : tp) {
     test[target_block_to_col(it)]++;
   }

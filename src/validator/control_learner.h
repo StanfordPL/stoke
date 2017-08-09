@@ -17,6 +17,8 @@
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
+#include "src/validator/int_matrix.h"
+#include "src/validator/int_vector.h"
 
 #include <vector>
 #include <map>
@@ -39,9 +41,6 @@ public:
 
 private:
 
-  typedef std::vector<std::vector<int64_t>> Matrix;
-  typedef std::vector<int64_t> Vector;
-
   struct TracePoint {
     Cfg::id_type block_id;
     CpuState cs;
@@ -58,12 +57,7 @@ private:
 
   ////////////////////////////// Matrix Functions //////////////////////////////
 
-  Matrix remove_constant_cols(Matrix matrix);
-  Vector matrix_vector_mult(Matrix matrix, Vector vect, bool ignore_first);
-  bool in_nullspace(Matrix matrix, Vector vect, bool ignore_first);
-  Matrix solve_diophantine(Matrix matrix);
-  void print_matrix(Matrix m);
-  void print_matrix(Vector m);
+  IntMatrix remove_constant_cols(IntMatrix matrix);
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
@@ -72,7 +66,12 @@ private:
   Cfg::id_type column_to_segment(size_t n);
   size_t target_block_to_col(Cfg::id_type);
   size_t rewrite_block_to_col(Cfg::id_type);
-  void print_basis_vector(Vector& v);
+  void print_basis_vector(IntVector v);
+
+  ////////////////////////////// MATRIX ///////////////////////////////////////
+
+  IntVector matrix_vector_mult(IntMatrix matrix, IntVector vect, bool ignore_first);
+  bool in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_first);
 
   ////////////////////////////// DATA-STORAGE //////////////////////////////////
 
@@ -83,7 +82,7 @@ private:
   std::vector<std::vector<TracePoint>> target_traces_;
   std::vector<std::vector<TracePoint>> rewrite_traces_;
 
-  Matrix kernel_generators_;
+  IntMatrix kernel_generators_;
 
   std::vector<Cfg::id_type> target_segments_;
   std::vector<Cfg::id_type> rewrite_segments_;

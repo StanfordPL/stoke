@@ -178,6 +178,8 @@ SRC_OBJ=\
 	src/validator/ddec.o \
 	src/validator/dual.o \
 	src/validator/handler.o \
+	src/validator/int_matrix.o \
+	src/validator/int_vector.o \
 	src/validator/invariant.o \
   src/validator/learner.o \
 	src/validator/null.o \

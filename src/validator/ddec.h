@@ -18,6 +18,7 @@
 #include "src/validator/abstraction.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/cutpoints.h"
+#include "src/validator/dual.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/learner.h"
@@ -70,6 +71,8 @@ private:
   bool learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
                              std::vector<CfgPath>& rewrite_inductive_paths);
 
+
+  DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
 
   /** Bound */
   size_t bound_;

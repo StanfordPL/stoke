@@ -67,6 +67,19 @@ public:
   /** Callback used for learning a path. */
   static void learn_path_callback(const StateCallbackData&, void*);
 
+  // Remove all blocks with zero instructions
+  static void removeZeroInstrs(Cfg& cfg, CfgPath& path) {
+    for (auto iter = path.begin(); iter != path.end(); ) {
+      if (!cfg.num_instrs(*iter)) {
+        iter = path.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  }
+
+
+
 private:
 
   /** Used for path learning. */
