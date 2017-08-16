@@ -18,6 +18,24 @@ bool DualAutomata::State::operator==(const DualAutomata::State& other) const {
   return (ts == other.ts && rs == other.rs);
 }
 
+bool DualAutomata::Edge::operator<(const DualAutomata::Edge& other) const {
+  if (from != other.from)
+    return from < other.from;
+  if (to != other.to)
+    return to < other.to;
+  if (te.size() != other.te.size())
+    return te.size() < other.te.size();
+  if (re.size() != other.re.size())
+    return re.size() < other.re.size();
+  for (size_t i = 0; i < te.size(); ++i)
+    if (te[i] != other.te[i])
+      return te[i] < other.te[i];
+  for (size_t i = 0; i < re.size(); ++i)
+    if (re[i] != other.re[i])
+      return re[i] < other.re[i];
+  return false;
+}
+
 bool DualAutomata::Edge::operator==(const DualAutomata::Edge& other) const {
   return (from == other.from && to == other.to && te == other.te && re == other.re);
 }
@@ -93,7 +111,7 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
   next.push_back(initial);
   reachable_states_.insert(initial.state);
 
-  auto exits = exit_states();
+  auto exit = exit_state();
 
   /** Let the fun begin! */
   while (next.size()) {
@@ -102,7 +120,7 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
 
     for (auto tr_state : current) {
 
-      if (exits.count(tr_state.state)) {
+      if (exit == tr_state.state) {
 
         if (tr_state.rewrite_trace.size() > 0) {
           cout << "problem: at exit state, but there's still unconsumed rewrite trace" << endl;
@@ -251,6 +269,36 @@ void DualAutomata::print_all() {
       cout << endl;
     }
   }
+}
+
+
+vector<vector<DualAutomata::Edge>> DualAutomata::get_paths(
+DualAutomata::State start, DualAutomata::State end) {
+  cout << "Calling get_paths with " << start << " and " << end << endl;
+
+  vector<vector<Edge>> results;
+
+  auto edges_from_start = next_edges(start);
+  for (auto e : edges_from_start) {
+    auto successor = e.to;
+
+    if (successor == e.from) //ignore self-loops
+      continue;
+
+    if (successor == end) {
+      vector<Edge> path;
+      path.push_back(e);
+      results.push_back(path);
+    } else {
+      auto continuation_paths = get_paths(successor, end);
+      for (auto path : continuation_paths) {
+        path.insert(path.begin(), e);
+        results.push_back(path);
+      }
+    }
+  }
+
+  return results;
 }
 
 

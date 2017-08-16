@@ -43,7 +43,7 @@ public:
   virtual State start_state() = 0;
 
   /** Get the set of exit states for this abstraction. */
-  virtual std::set<State> exit_states() = 0;
+  virtual State exit_state() = 0;
 
   /** Get the next states from a start state. */
   virtual std::vector<State> next_states(State) = 0;

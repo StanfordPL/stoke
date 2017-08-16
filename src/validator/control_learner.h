@@ -17,6 +17,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
+#include "src/validator/dual.h"
 #include "src/validator/int_matrix.h"
 #include "src/validator/int_vector.h"
 
@@ -38,6 +39,9 @@ public:
   }
 
   bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
+
+  /** Updates dual automata so that all the paths are feasible */
+  DualAutomata update_dual(DualAutomata&);
 
 private:
 
@@ -61,11 +65,14 @@ private:
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
-  bool column_is_target(size_t n);
-  bool column_is_rewrite(size_t n);
-  Cfg::id_type column_to_segment(size_t n);
-  size_t target_block_to_col(Cfg::id_type);
-  size_t rewrite_block_to_col(Cfg::id_type);
+  bool index_is_target(size_t n);
+  bool index_is_rewrite(size_t n);
+  Cfg::id_type index_to_block(size_t n);
+  size_t target_block_to_index(Cfg::id_type);
+  size_t rewrite_block_to_index(Cfg::id_type);
+  size_t total_block_indexes() {
+    return (target_.num_blocks() + rewrite_.num_blocks() + 1);
+  }
   void print_basis_vector(IntVector v);
 
   ////////////////////////////// MATRIX ///////////////////////////////////////
@@ -83,9 +90,6 @@ private:
   std::vector<std::vector<TracePoint>> rewrite_traces_;
 
   IntMatrix kernel_generators_;
-
-  std::vector<Cfg::id_type> target_segments_;
-  std::vector<Cfg::id_type> rewrite_segments_;
 
   ////////////////////////////// DATA-MINING CALLBACKS //////////////////////////////////
 

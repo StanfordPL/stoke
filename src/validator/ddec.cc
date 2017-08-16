@@ -19,6 +19,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/dual.h"
 #include "src/validator/ddec.h"
+#include "src/validator/indexer.h"
 #include "src/validator/null.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/disjunction.h"
@@ -168,7 +169,6 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
 bool DdecValidator::learn_inductive_paths(vector<CfgPath>& target_inductive_paths,
     vector<CfgPath>& rewrite_inductive_paths) {
   // Learn relations over basic blocks
-  ControlLearner control(target_, rewrite_, *sandbox_);
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
@@ -222,7 +222,7 @@ bool DdecValidator::learn_inductive_paths(vector<CfgPath>& target_inductive_path
 
         for (auto tp : target_paths) {
           for (auto rp : rewrite_paths) {
-            if (control.inductive_pair_feasible(tp, rp)) {
+            if (control_learner_->inductive_pair_feasible(tp, rp)) {
               cout << "Found inductive pair " << tp << " and " << rp << endl;
               target_inductive_paths.push_back(tp);
               rewrite_inductive_paths.push_back(rp);
@@ -312,6 +312,8 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
 }
 
 
+
+
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
@@ -323,6 +325,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   target_automata_ = new BlockAbstraction(target, *sandbox_);
   rewrite_automata_ = new BlockAbstraction(rewrite, *sandbox_);
+  control_learner_ = new ControlLearner(target, rewrite, *sandbox_);
 
   DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
   DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
@@ -349,7 +352,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
 
     auto dual = build_dual(target_inductive_paths, rewrite_inductive_paths);
+    dual.print_all();
 
+    dual = control_learner_->update_dual(dual);
     dual.print_all();
     InvariantLearner learner(target_, rewrite_);
     Sandbox sb(*sandbox_);
@@ -365,10 +370,12 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     error_ = e.get_message();
     error_file_ = e.get_file();
     error_line_ = e.get_line();
+    delete control_learner_;
     reset_mm();
     return false;
   }
 
+  delete control_learner_;
   reset_mm();
   return false;
 
