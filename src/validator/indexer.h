@@ -13,7 +13,7 @@ class Indexer {
 public:
   size_t add(T x) {
     if (map_.count(x) == 0) {
-      map_[x] = ++total_num;
+      map_[x] = total_num++;
       list_.push_back(x);
     }
     return map_[x];

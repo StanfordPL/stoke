@@ -59,6 +59,21 @@ private:
   /** Helper: Check if a basic block ends with a jump or not. */
   static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
 
+  ////////////////////////////// Edge Simplification /////////////////////
+
+  /** Simplify a cfg path */
+  static CfgPath simplify(const CfgPath& path);
+
+  /** Get divisors of a number */
+  static std::vector<int> get_divisors(int n);
+
+  /** Slice first n elements of vector */
+  static CfgPath slice(const CfgPath& path, int n);
+
+  /** Check if a path repeats in another path */
+  static bool does_repeat(const CfgPath& pattern, const CfgPath& total);
+
+
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);
@@ -74,11 +89,6 @@ private:
     return (target_.num_blocks() + rewrite_.num_blocks() + 1);
   }
   void print_basis_vector(IntVector v);
-
-  ////////////////////////////// MATRIX ///////////////////////////////////////
-
-  IntVector matrix_vector_mult(IntMatrix matrix, IntVector vect, bool ignore_first);
-  bool in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_first);
 
   ////////////////////////////// DATA-STORAGE //////////////////////////////////
 
