@@ -37,7 +37,7 @@ public:
   /** Muliply by constant */
   IntVector operator*(int64_t value) {
     IntVector result;
-    for(size_t i = 0; i < size(); ++i)
+    for (size_t i = 0; i < size(); ++i)
       result.push_back((*this)[i]*value);
     return result;
   }
