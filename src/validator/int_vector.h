@@ -34,6 +34,14 @@ public:
   /** Copy a 1d vector into us */
   IntVector(std::vector<int64_t>& m) : std::vector<int64_t>(m) { }
 
+  /** Muliply by constant */
+  IntVector operator*(int64_t value) {
+    IntVector result;
+    for(size_t i = 0; i < size(); ++i)
+      result.push_back((*this)[i]*value);
+    return result;
+  }
+
   void print();
 
   IntVector remove_entry(size_t index);

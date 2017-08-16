@@ -1,4 +1,3 @@
-// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -78,24 +77,6 @@ IntMatrix ControlLearner::remove_constant_cols(IntMatrix matrix) {
   return output_matrix;
 }
 
-IntVector ControlLearner::matrix_vector_mult(IntMatrix matrix, IntVector vect, bool ignore_first) {
-  if (ignore_first) {
-    auto new_matrix = matrix.remove_column(0);
-    auto new_vect = vect.remove_entry(0);
-    return new_matrix*new_vect;
-  }
-  return matrix*vect;
-}
-
-bool ControlLearner::in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_first) {
-  if (ignore_first) {
-    auto new_matrix = matrix.remove_column(0);
-    auto new_vect = vect.remove_entry(0);
-    return new_matrix.in_nullspace(new_vect);
-  }
-  return matrix.in_nullspace(vect);
-}
-
 size_t ControlLearner::target_block_to_index(Cfg::id_type n) {
   assert(n < target_.num_blocks());
   return n+1;
@@ -143,6 +124,49 @@ void ControlLearner::print_basis_vector(IntVector v) {
   cout << " = 0" << endl;
 };
 
+
+/** Simplify a cfg path */
+CfgPath ControlLearner::simplify(const CfgPath& path) {
+  cout << "SIMPLIFY " << path << endl;
+  auto divisors = get_divisors(path.size());
+  for(auto divisor : divisors) {
+    auto sub = slice(path, divisor);
+    if(does_repeat(sub, path)) {
+      cout << "GOT " << sub << endl;
+      return sub;
+    }
+  }
+  assert(false);
+  return path;
+}
+
+/** Get divisors of a number */
+std::vector<int> ControlLearner::get_divisors(int n) {
+  std::vector<int> results;
+  for(int i = 1; i <= n; ++i) {
+    if(n % i == 0)
+      results.push_back(i);
+  }
+  return results;
+}
+
+/** Slice first n elements of vector */
+CfgPath ControlLearner::slice(const CfgPath& path, int n) {
+  CfgPath result;
+  for(int i = 0; i < n; ++i)
+    result.push_back(path[i]);
+  return result;
+}
+
+/** Check if a path repeats in another path */
+bool ControlLearner::does_repeat(const CfgPath& pattern, const CfgPath& total) {
+  assert(total.size() % pattern.size() == 0);
+  for(size_t i = 0; i < total.size(); ++i) {
+    if(total[i] != pattern[i % pattern.size()]) 
+      return false;
+  }
+  return true;
+}
 
 void ControlLearner::compute() {
 
@@ -307,7 +331,7 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
   }
   */
 
-  return in_nullspace(kernel_generators_, test, true);
+  return kernel_generators_.in_nullspace(test);
 }
 
 
@@ -380,6 +404,16 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
   for (auto path : dual_paths) {
     IntMatrix temp_matrix(total_block_indexes(), edge_indexer.count());
     IntVector temp_vect(total_block_indexes());
+
+    /** Initialize the vector with entry blocks and constant term. */
+    temp_vect[0] = -1;
+    temp_vect[target_block_to_index(target_.get_entry())] = -1;
+    temp_vect[rewrite_block_to_index(rewrite_.get_entry())] = -1;
+
+
+    bool found_inductive_path = false;
+
+    /** Process the edges along the path. */
     for (auto edge : path) {
       cout << "Edge: ";
       for (auto it : edge.te)
@@ -395,9 +429,13 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
       size_t index;
 
       for (auto blk : edge.te) {
+        if(blk == target_.get_exit())
+          continue;
         temp_vect[target_block_to_index(blk)]--;
       }
       for (auto blk : edge.re) {
+        if(blk == rewrite_.get_exit())
+          continue;
         temp_vect[rewrite_block_to_index(blk)]--;
       }
 
@@ -405,32 +443,73 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
       auto inductive_end_paths = dual.get_inductive_edges(end);
 
       for (auto start_ind : inductive_start_paths) {
+        found_inductive_path = true;
+        /*
+        cout << "StartInd: ";
+        for (auto it : start_ind.te)
+          cout << it << " ";
+        cout << " ; ";
+        for (auto it : start_ind.re)
+          cout << it << " ";
+        cout << endl;
+        */
+
         EdgeVariable ev_target(edge, start_ind, false);
         EdgeVariable ev_rewrite(edge, start_ind, true);
-        for (auto blk : start_ind.te) {
+        for (auto blk : simplify(start_ind.te)) {
           temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
         }
-        for (auto blk : start_ind.re) {
+        for (auto blk : simplify(start_ind.re)) {
           temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
         }
       }
-      for (auto end_ind : inductive_start_paths) {
+      for (auto end_ind : inductive_end_paths) {
+        found_inductive_path = true;
+        /*
+        cout << "EndInd: ";
+        for (auto it : end_ind.te)
+          cout << it << " ";
+        cout << " ; ";
+        for (auto it : end_ind.re)
+          cout << it << " ";
+        cout << endl;
+        */
+
         EdgeVariable ev_target(edge, end_ind, false);
         EdgeVariable ev_rewrite(edge, end_ind, true);
-        for (auto blk : end_ind.te) {
+        for (auto blk : simplify(end_ind.te)) {
           temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
         }
-        for (auto blk : end_ind.re) {
+        for (auto blk : simplify(end_ind.re)) {
           temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
         }
       }
     }
-    temp_matrix = kernel_generators_*temp_matrix;
-    temp_vect = kernel_generators_*temp_vect;
+
+    if(!found_inductive_path)
+      continue;
+
+    cout << "CONSTRAINT MATRIX" << endl;
+    kernel_generators_.print();
     cout << "Matrix" << endl;
     temp_matrix.print();
     cout << "Vector" << endl;
     temp_vect.print();
+
+    temp_matrix = kernel_generators_*temp_matrix;
+    temp_vect = kernel_generators_*temp_vect;
+
+    cout << "New Matrix" << endl;
+    temp_matrix.print();
+    cout << "New Vector" << endl;
+    temp_vect.print();
+
+    for (size_t i = 0; i < temp_vect.size(); ++i) {
+      if (temp_vect[i]) {
+        print_basis_vector(kernel_generators_[i]);
+      }
+    }
+
 
     for (auto row : temp_matrix)
       final_matrix.push_back(row);
