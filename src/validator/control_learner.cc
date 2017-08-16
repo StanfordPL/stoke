@@ -129,9 +129,9 @@ void ControlLearner::print_basis_vector(IntVector v) {
 CfgPath ControlLearner::simplify(const CfgPath& path) {
   cout << "SIMPLIFY " << path << endl;
   auto divisors = get_divisors(path.size());
-  for(auto divisor : divisors) {
+  for (auto divisor : divisors) {
     auto sub = slice(path, divisor);
-    if(does_repeat(sub, path)) {
+    if (does_repeat(sub, path)) {
       cout << "GOT " << sub << endl;
       return sub;
     }
@@ -143,8 +143,8 @@ CfgPath ControlLearner::simplify(const CfgPath& path) {
 /** Get divisors of a number */
 std::vector<int> ControlLearner::get_divisors(int n) {
   std::vector<int> results;
-  for(int i = 1; i <= n; ++i) {
-    if(n % i == 0)
+  for (int i = 1; i <= n; ++i) {
+    if (n % i == 0)
       results.push_back(i);
   }
   return results;
@@ -153,7 +153,7 @@ std::vector<int> ControlLearner::get_divisors(int n) {
 /** Slice first n elements of vector */
 CfgPath ControlLearner::slice(const CfgPath& path, int n) {
   CfgPath result;
-  for(int i = 0; i < n; ++i)
+  for (int i = 0; i < n; ++i)
     result.push_back(path[i]);
   return result;
 }
@@ -161,8 +161,8 @@ CfgPath ControlLearner::slice(const CfgPath& path, int n) {
 /** Check if a path repeats in another path */
 bool ControlLearner::does_repeat(const CfgPath& pattern, const CfgPath& total) {
   assert(total.size() % pattern.size() == 0);
-  for(size_t i = 0; i < total.size(); ++i) {
-    if(total[i] != pattern[i % pattern.size()]) 
+  for (size_t i = 0; i < total.size(); ++i) {
+    if (total[i] != pattern[i % pattern.size()])
       return false;
   }
   return true;
@@ -322,14 +322,13 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
   }
 
   // DEBUGGING (find which relations didn't hold)
-  /*
-  auto mult = matrix_vector_mult(kernel_generators_, test, true);
+  cout << "For pair " << tp << " | " << rp << endl;
+  auto mult = kernel_generators_*test;
   for (size_t i = 0; i < mult.size(); ++i) {
     if (mult[i]) {
       print_basis_vector(kernel_generators_[i]);
     }
   }
-  */
 
   return kernel_generators_.in_nullspace(test);
 }
@@ -429,12 +428,12 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
       size_t index;
 
       for (auto blk : edge.te) {
-        if(blk == target_.get_exit())
+        if (blk == target_.get_exit())
           continue;
         temp_vect[target_block_to_index(blk)]--;
       }
       for (auto blk : edge.re) {
-        if(blk == rewrite_.get_exit())
+        if (blk == rewrite_.get_exit())
           continue;
         temp_vect[rewrite_block_to_index(blk)]--;
       }
@@ -486,7 +485,7 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
       }
     }
 
-    if(!found_inductive_path)
+    if (!found_inductive_path)
       continue;
 
     cout << "CONSTRAINT MATRIX" << endl;
@@ -516,6 +515,11 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
     for (auto entry : temp_vect)
       final_vector.push_back(entry);
   }
+
+  //find nullspace
+  auto nullspace = final_matrix.solve_diophantine();
+  cout << "NULLSPACE" << endl;
+  nullspace.print();
 
   return dual;
 
