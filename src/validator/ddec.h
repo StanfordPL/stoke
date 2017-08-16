@@ -60,6 +60,7 @@ private:
 
   Abstraction* target_automata_;
   Abstraction* rewrite_automata_;
+  ControlLearner* control_learner_;
 
   /** Learn invariants from CpuStates */
   ConjunctionInvariant* learn_disjunction_invariant(size_t cutpoint);

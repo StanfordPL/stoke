@@ -22,6 +22,9 @@ public:
 
     bool operator<(const State& other) const;
     bool operator==(const State& other) const;
+    bool operator!=(const State& other) const {
+      return !(*this == other);
+    }
 
     State() { }
 
@@ -36,6 +39,10 @@ public:
     Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&);
 
     bool operator==(const Edge& other) const;
+    bool operator<(const Edge& other) const;
+    bool operator!=(const Edge& other) const {
+      return !(*this == other);
+    }
 
     State from;
     State to;
@@ -56,17 +63,11 @@ public:
   }
 
   /** Get the exit states */
-  std::set<State> exit_states() {
-    auto t_exit = target_->exit_states();
-    auto r_exit = rewrite_->exit_states();
-
-    std::set<State> output;
-    for (auto t : t_exit) {
-      for (auto r : r_exit) {
-        output.insert(State(t,r));
-      }
-    }
-    return output;
+  State exit_state() {
+    State exit;
+    exit.ts = target_->exit_state();
+    exit.rs = rewrite_->exit_state();
+    return exit;
   }
 
   /** Add a feastible path. */
@@ -110,6 +111,19 @@ public:
   std::vector<Edge> prev_edges(State s) {
     return prev_edges_[s];
   }
+
+  /** Get the list of edges from this state to this state. */
+  std::vector<Edge> get_inductive_edges(State s) {
+    std::vector<Edge> result;
+    for (auto e : next_edges(s)) {
+      if (e.to == s)
+        result.push_back(e);
+    }
+    return result;
+  }
+
+  /** Get edges on each path from start to end. */
+  std::vector<std::vector<Edge>> get_paths(State start, State end);
 
   /** Learn invariants.  Returns 'true' if no error. */
   bool learn_invariants(Sandbox&, InvariantLearner&);

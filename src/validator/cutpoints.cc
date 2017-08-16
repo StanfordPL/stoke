@@ -132,7 +132,7 @@ vector<int64_t> matrix_vector_mult(vector<vector<int64_t>> matrix, vector<int64_
 }
 
 bool in_nullspace(vector<vector<int64_t>> matrix, vector<int64_t> vect) {
-  assert(matrix[0].size == vect.size());
+  assert(matrix[0].size() == vect.size());
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;
     for (size_t j = 1; j < vect.size(); ++j) {

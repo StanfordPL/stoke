@@ -17,6 +17,7 @@
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
 #include "src/validator/control_learner.h"
+#include "src/validator/indexer.h"
 #include <fstream>
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -78,7 +79,7 @@ IntMatrix ControlLearner::remove_constant_cols(IntMatrix matrix) {
 }
 
 IntVector ControlLearner::matrix_vector_mult(IntMatrix matrix, IntVector vect, bool ignore_first) {
-  if(ignore_first) {
+  if (ignore_first) {
     auto new_matrix = matrix.remove_column(0);
     auto new_vect = vect.remove_entry(0);
     return new_matrix*new_vect;
@@ -87,7 +88,7 @@ IntVector ControlLearner::matrix_vector_mult(IntMatrix matrix, IntVector vect, b
 }
 
 bool ControlLearner::in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_first) {
-  if(ignore_first) {
+  if (ignore_first) {
     auto new_matrix = matrix.remove_column(0);
     auto new_vect = vect.remove_entry(0);
     return new_matrix.in_nullspace(new_vect);
@@ -95,36 +96,30 @@ bool ControlLearner::in_nullspace(IntMatrix matrix, IntVector vect, bool ignore_
   return matrix.in_nullspace(vect);
 }
 
-size_t ControlLearner::target_block_to_col(Cfg::id_type n) {
-  for (size_t i = 0; i < target_segments_.size(); ++i)
-    if (n == target_segments_[i])
-      return i+1;
-  assert(false);
-  return 0;
+size_t ControlLearner::target_block_to_index(Cfg::id_type n) {
+  assert(n < target_.num_blocks());
+  return n+1;
 }
 
-size_t ControlLearner::rewrite_block_to_col(Cfg::id_type n) {
-  for (size_t i = 0; i < rewrite_segments_.size(); ++i)
-    if (n == rewrite_segments_[i])
-      return i+1+target_segments_.size();
-  assert(false);
-  return 0;
+size_t ControlLearner::rewrite_block_to_index(Cfg::id_type n) {
+  assert(n < rewrite_.num_blocks());
+  return n+1+target_.num_blocks();
 }
 
-
-bool ControlLearner::column_is_target(size_t n) {
-  return (n != 0) && n <= target_segments_.size();
+bool ControlLearner::index_is_target(size_t n) {
+  return (n != 0) && n < target_.num_blocks() + 1;
 }
 
-bool ControlLearner::column_is_rewrite(size_t n) {
-  return n > target_segments_.size();
+bool ControlLearner::index_is_rewrite(size_t n) {
+  return (n >= target_.num_blocks() + 1);
 }
-Cfg::id_type ControlLearner::column_to_segment(size_t n) {
+
+Cfg::id_type ControlLearner::index_to_block(size_t n) {
   assert(n > 0);
-  if (n <= target_segments_.size())
-    return target_segments_[n-1];
+  if (n <= target_.num_blocks())
+    return n-1;
   else
-    return rewrite_segments_[n-target_segments_.size()-1];
+    return n-target_.num_blocks()-1;
 }
 
 void ControlLearner::print_basis_vector(IntVector v) {
@@ -135,8 +130,8 @@ void ControlLearner::print_basis_vector(IntVector v) {
         cout << "+";
       }
       first = false;
-      cout << v[j] << "{" << column_to_segment(j) << "}";
-      if (column_is_rewrite(j))
+      cout << v[j] << "{" << index_to_block(j) << "}";
+      if (index_is_rewrite(j))
         cout << "R";
       else
         cout << "T";
@@ -147,8 +142,6 @@ void ControlLearner::print_basis_vector(IntVector v) {
   }
   cout << " = 0" << endl;
 };
-
-
 
 
 void ControlLearner::compute() {
@@ -167,64 +160,37 @@ void ControlLearner::compute() {
 
   cout << "BUILDING MATRIX..." << endl;
   // tc# -> segment# -> # of occurrences
-  map<size_t, map<size_t, size_t>> target_matrix;
-  map<size_t, map<size_t, size_t>> rewrite_matrix;
+  IntMatrix starting_matrix(sandbox_.size(), total_block_indexes());
 
   for (size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
-    auto& segments = is_rewrite ? rewrite_segments_ : target_segments_;
-    auto& matrix = is_rewrite ? rewrite_matrix : target_matrix;
+    auto& cfg = is_rewrite ? rewrite_ : target_;
 
     /** For each test case */
     for (size_t i = 0; i < sandbox_.size(); ++i) {
 
+
+      /** Create columns of 1s */
+      starting_matrix[i][0] = 1;
+
+      auto this_trace = traces[i];
+
       /** For each block in the trace. */
-      for (size_t j = 0; j < traces[i].size(); ++j) {
+      for (size_t j = 0; j < this_trace.size(); ++j) {
 
         /** Build the segment */
-        auto this_block = traces[i][j].block_id;
-
-        /** See if it is already listed, it not, list it. */
-        auto loc = find(segments.begin(), segments.end(), this_block);
-        auto index = std::distance(segments.begin(), loc);
-        if (loc == segments.end()) {
-          segments.push_back(this_block);
-          index = segments.size() - 1;
-        }
+        auto this_block = this_trace[j].block_id;
 
         /** Add to matrix */
-        matrix[i][index]++;
+        auto index = is_rewrite ? rewrite_block_to_index(this_block) : target_block_to_index(this_block);
+        starting_matrix[i][index]++;
       }
     }
   }
 
-  /** Write out the matrix. */
-  IntMatrix starting_matrix;
-  for (size_t i = 0; i < sandbox_.size(); ++i) {
-    IntVector row;
-    row.push_back(1);
-    for (size_t j = 0; j < target_segments_.size(); ++j) {
-      row.push_back((int64_t)target_matrix[i][j]);
-    }
-    for (size_t j = 0; j < rewrite_segments_.size(); ++j) {
-      row.push_back((int64_t)rewrite_matrix[i][j]);
-    }
-    starting_matrix.push_back(row);
-  }
-
-  /** Remove columns that are constants */
-  //  auto cleaned = remove_constant_cols(starting_matrix);
-  auto cleaned = starting_matrix;
-  auto final_matrix = remove_duplicate_rows(cleaned);
+  auto final_matrix = remove_duplicate_rows(starting_matrix);
 
   /** Debug */
-  cout << "DEBUGGING TARGET SEGMENTS" << endl;
-  for (auto it : target_segments_)
-    cout << it << endl;
-  cout << "DEBUGGING REWRITE SEGMENTS" << endl;
-  for (auto it : rewrite_segments_)
-    cout << it << endl;
-
   cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
   for (size_t i = 0; i < final_matrix.size(); ++i) {
     for (size_t j = 0; j < final_matrix[i].size(); ++j) {
@@ -235,27 +201,6 @@ void ControlLearner::compute() {
 
   kernel_generators_ = final_matrix.solve_diophantine();
 
-  // Choose lines to print
-  /**
-    vector<bool> to_print;
-    for (size_t i = 0; i < kernel_generators_.size(); ++i) {
-    bool t_found = false;
-    bool r_found = false;
-    for (size_t j = 0; j < kernel_generators_[0].size(); ++j) {
-    if (kernel_generators_[i][j] != 0) {
-    if (column_is_target(j))
-    t_found = true;
-    if (column_is_rewrite(j))
-    r_found = true;
-    }
-    }
-    if (t_found && r_found)
-    to_print.push_back(true);
-    else
-    to_print.push_back(false);
-    }
-   */
-
   // Print what basis vectors say
   for (size_t i = 0; i < kernel_generators_.size(); ++i) {
     //if (!to_print[i])
@@ -265,15 +210,6 @@ void ControlLearner::compute() {
 
   cout << "MATRIX" << endl;
   kernel_generators_.print();
-  // Check pairs of segments to see if they're in the nullspace
-  /*
-  for (size_t i = 0; i < target_segments_.size(); ++i) {
-    auto target_segment = target_segments_[i];
-    for (size_t j = 0; j < rewrite_segments_.size(); ++j) {
-      auto rewrite_segment = rewrite_segments_[j];
-    }
-  }
-  */
 
 }
 
@@ -349,12 +285,16 @@ void ControlLearner::callback(const StateCallbackData& data, void* arg) {
 
 
 bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
-  IntVector test(target_segments_.size() + rewrite_segments_.size() + 1);
+  IntVector test(total_block_indexes());
   for (auto it : tp) {
-    test[target_block_to_col(it)]++;
+    if (target_.get_exit() == it)
+      continue;
+    test[target_block_to_index(it)]++;
   }
   for (auto it : rp) {
-    test[rewrite_block_to_col(it)]++;
+    if (rewrite_.get_exit() == it)
+      continue;
+    test[rewrite_block_to_index(it)]++;
   }
 
   // DEBUGGING (find which relations didn't hold)
@@ -372,6 +312,132 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
 
 
 
+DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
+
+  auto dual_paths = dual.get_paths(dual.start_state(), dual.exit_state());
+  cout << "PATHS THROUGH DUAL" << endl;
+  for (auto path : dual_paths) {
+    cout << "PATH" << endl;
+    for (auto edge : path) {
+      cout << "  " << edge.from << " -> " << edge.to << " ; " << edge.te << " ; "<< edge.re << endl;
+    }
+  }
+
+  struct EdgeVariable {
+    DualAutomata::Edge edge;
+    DualAutomata::Edge inductive_edge;
+    bool is_rewrite;
+
+  public:
+    EdgeVariable(DualAutomata::Edge a, DualAutomata::Edge b, bool c) :
+      edge(a), inductive_edge(b), is_rewrite(c) { }
+
+    ostream& print(ostream& os) const {
+      os << "edge: " << edge.from << " -> " << edge.to << " ; inductive " << inductive_edge.from << " rewrite=" << is_rewrite;
+      return os;
+    }
+
+    bool operator<(const EdgeVariable& other) const {
+      if (is_rewrite != other.is_rewrite)
+        return (int)is_rewrite < (int)other.is_rewrite;
+      if (edge != other.edge)
+        return edge < other.edge;
+      return inductive_edge < other.inductive_edge;
+    }
+  };
+
+  Indexer<EdgeVariable> edge_indexer;
+
+  /** Build set of all edge variables */
+  for (auto path : dual_paths) {
+    for (auto edge : path) {
+      auto start = edge.from;
+      auto end = edge.to;
+
+      auto inductive_start_paths = dual.get_inductive_edges(start);
+      for (auto q : inductive_start_paths) {
+        edge_indexer.add(EdgeVariable(edge, q, true));
+        edge_indexer.add(EdgeVariable(edge, q, false));
+      }
+
+      auto inductive_end_paths = dual.get_inductive_edges(end);
+      for (auto q : inductive_end_paths) {
+        edge_indexer.add(EdgeVariable(edge, q, true));
+        edge_indexer.add(EdgeVariable(edge, q, false));
+      }
+    }
+  }
+
+  IntMatrix final_matrix;
+  IntVector final_vector;
+
+  cout << "Columns" << endl;
+  for (size_t i = 0; i < edge_indexer.count(); ++i) {
+    edge_indexer.reverse(i).print(cout) << endl;
+  }
+
+  /** Augment the matrix for each path */
+  for (auto path : dual_paths) {
+    IntMatrix temp_matrix(total_block_indexes(), edge_indexer.count());
+    IntVector temp_vect(total_block_indexes());
+    for (auto edge : path) {
+      cout << "Edge: ";
+      for (auto it : edge.te)
+        cout << it << " ";
+      cout << " ; ";
+      for (auto it : edge.re)
+        cout << it << " ";
+      cout << endl;
 
 
+      auto start = edge.from;
+      auto end = edge.to;
+      size_t index;
 
+      for (auto blk : edge.te) {
+        temp_vect[target_block_to_index(blk)]--;
+      }
+      for (auto blk : edge.re) {
+        temp_vect[rewrite_block_to_index(blk)]--;
+      }
+
+      auto inductive_start_paths = dual.get_inductive_edges(start);
+      auto inductive_end_paths = dual.get_inductive_edges(end);
+
+      for (auto start_ind : inductive_start_paths) {
+        EdgeVariable ev_target(edge, start_ind, false);
+        EdgeVariable ev_rewrite(edge, start_ind, true);
+        for (auto blk : start_ind.te) {
+          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
+        }
+        for (auto blk : start_ind.re) {
+          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
+        }
+      }
+      for (auto end_ind : inductive_start_paths) {
+        EdgeVariable ev_target(edge, end_ind, false);
+        EdgeVariable ev_rewrite(edge, end_ind, true);
+        for (auto blk : end_ind.te) {
+          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
+        }
+        for (auto blk : end_ind.re) {
+          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
+        }
+      }
+    }
+    temp_matrix = kernel_generators_*temp_matrix;
+    temp_vect = kernel_generators_*temp_vect;
+    cout << "Matrix" << endl;
+    temp_matrix.print();
+    cout << "Vector" << endl;
+    temp_vect.print();
+
+    for (auto row : temp_matrix)
+      final_matrix.push_back(row);
+    for (auto entry : temp_vect)
+      final_vector.push_back(entry);
+  }
+
+  return dual;
+
+}
