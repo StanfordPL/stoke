@@ -148,6 +148,10 @@ public:
   bool contains_function(const x64asm::Label& l) const {
     return fxns_.find(l) != fxns_.end();
   }
+  /** Get the compiled function. */
+  x64asm::Function* get_compiled_function(const x64asm::Label& l) {
+    return fxns_[l];
+  }
 
   /** Returns a function */
   function_iterator get_function(const x64asm::Label& l) const {

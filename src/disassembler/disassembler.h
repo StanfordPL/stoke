@@ -33,6 +33,7 @@ public:
   Disassembler() {
     set_function_callback(nullptr, nullptr);
     set_flat_binary(false);
+    set_start_addr(0);
     clear_error();
   }
 
@@ -52,6 +53,12 @@ public:
   /** Tell objdump to parse a flat binary instead of ELF. */
   Disassembler& set_flat_binary(bool b) {
     flat_binary_ = b;
+    return *this;
+  }
+
+  /** Tell objdump to start parsing at a specific address. */
+  Disassembler& set_start_addr(size_t start_addr) {
+    start_addr_ = start_addr;
     return *this;
   }
 
@@ -83,6 +90,9 @@ private:
 
   /** Should we tell objdump that we want a flat binary, rather than ELF? */
   bool flat_binary_;
+
+  /** Tell objdump to start parsing at a specific address. */
+  size_t start_addr_;
 
   /** POD struct for recording line info */
   struct LineInfo {

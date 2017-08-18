@@ -238,6 +238,7 @@ BIN=\
 	bin/stoke_debug_simplify \
 	bin/stoke_debug_state \
 	bin/stoke_debug_tunit \
+	bin/stoke_debug_format \
 	bin/stoke_debug_verify \
 	\
 	bin/stoke_benchmark_cfg \

@@ -121,12 +121,18 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
   }
 
   string target = "";
+  string args = "";
+  if (start_addr_) {
+    std::stringstream stream;
+    stream << std::hex << start_addr_;
+    args = "--start-address=0x" + stream.str() + " ";
+  }
   if (only_header) {
-    target = "/usr/bin/objdump -h " + filename;
+    target = "/usr/bin/objdump -h " + args + filename;
   } else if (flat_binary_) {
-    target = "/usr/bin/objdump -D -Msuffix -b binary -m i386:x86-64 " + filename;
+    target = "/usr/bin/objdump -D -Msuffix -b binary -m i386:x86-64 " + args + filename;
   } else {
-    target = "/usr/bin/objdump -j .text -Msuffix -d " + filename;
+    target = "/usr/bin/objdump -j .text -Msuffix -d " + args + filename;
   }
 
   auto stream = new ipstream(target, pstreams::pstdout);
@@ -522,7 +528,6 @@ void Disassembler::disassemble(const std::string& filename) {
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
   int retval = 0;
-
 
   string line;
   while (getline(*body, line)) {

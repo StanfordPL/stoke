@@ -40,6 +40,7 @@ then
 	echo "  debug simplify      take an x86 program and simplify it (by removing redundant instructions)"
 	echo "  debug state         check bit-wise operations"
 	echo "  debug tunit         show the instruction sizes and RIP-offsets for a code"
+	echo "  debug format        encode and decode between the text and binary assembly formats of stoke"
 	echo "  debug verify        check the equivalence of two functions"
 	echo ""
 	echo "  benchmark cfg       benchmark Cfg::recompute() kernel"
@@ -80,6 +81,9 @@ then
 	elif [ "$SCMD" == "search" ]
 	then
 		exec $HERE/stoke_debug_search "$@"
+	elif [ "$SCMD" == "format" ]
+	then
+		exec $HERE/stoke_debug_format "$@"
 	elif [ "$SCMD" == "tunit" ]
 	then
 		exec $HERE/stoke_debug_tunit "$@"
