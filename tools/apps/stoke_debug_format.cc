@@ -33,8 +33,8 @@ using namespace stoke;
 
 auto& io = Heading::create("I/O Options:");
 auto& output_binary = FlagArg::create("output_binary")
-                       .alternate("b")
-                       .description("Output the target in binary format.");
+                      .alternate("b")
+                      .description("Output the target in binary format.");
 auto& out = ValueArg<string>::create("out")
             .alternate("o")
             .usage("<path/to/file.s>")
