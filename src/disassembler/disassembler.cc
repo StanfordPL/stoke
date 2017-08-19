@@ -46,6 +46,7 @@ void strip_lines(ipstream& ips, size_t lines) {
 
 /** Is this character sequence a hex string? */
 bool is_hex_string(const string& s) {
+  if (s.substr(0, 2) == "0x") return is_hex_string(s.substr(2, string::npos));
   for (auto c : s) {
     if (!isxdigit(c)) {
       return false;
@@ -56,6 +57,7 @@ bool is_hex_string(const string& s) {
 
 // Convert a hex string to an int */
 uint64_t hex_to_int(const string& s) {
+  if (s.substr(0, 2) == "0x") return hex_to_int(s.substr(2, string::npos));
   uint64_t val;
   istringstream iss(s);
   iss >> hex >> val;
@@ -403,7 +405,7 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
         l.instr = l.instr.substr(0, ops_begin) + "." + itr->second;
       } else {
         label_refs.insert(hex_to_int(ops));
-        l.instr = l.instr.substr(0, ops_begin) + ".L_" + ops;
+        l.instr = l.instr.substr(0, ops_begin) + ".L_" + (ops.substr(0,2)=="0x"?ops.substr(2,string::npos):ops);
       }
     }
   }

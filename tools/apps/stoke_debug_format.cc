@@ -23,12 +23,15 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 
+#include "src/ext/x64asm/src/reg_set.h"
+
 #include "src/cfg/dot_writer.h"
 #include "tools/gadgets/target.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
 
 auto& io = Heading::create("I/O Options:");
@@ -44,6 +47,7 @@ auto& out = ValueArg<string>::create("out")
 int main(int argc, char** argv) {
   // suppress some warnings
   live_out_arg.set_provided();
+  def_in_arg.default_val(RegSet::universe());
   def_in_arg.set_provided();
 
   CommandLineConfig::strict_with_convenience(argc, argv);
