@@ -223,6 +223,34 @@ void ControlLearner::compute() {
     cout << endl;
   }
 
+  cout << "... checking invariant" << endl;
+
+  for(size_t i = 0; i < final_matrix.size(); ++i) {
+    auto row = final_matrix[i];
+    int target_iterations = row[target_block_to_index(3)]+1;
+    int rewrite_iterations = 0;
+    rewrite_iterations += 8*row[rewrite_block_to_index(12)];
+    rewrite_iterations += 1*row[rewrite_block_to_index(17)];
+    rewrite_iterations += 2*row[rewrite_block_to_index(19)];
+    rewrite_iterations += 3*row[rewrite_block_to_index(21)];
+    rewrite_iterations += 4*row[rewrite_block_to_index(23)];
+    rewrite_iterations += 5*row[rewrite_block_to_index(25)];
+    rewrite_iterations += 6*row[rewrite_block_to_index(27)];
+    rewrite_iterations += 7*row[rewrite_block_to_index(29)];
+    rewrite_iterations += row[rewrite_block_to_index(4)];
+    rewrite_iterations += row[rewrite_block_to_index(2)];
+    if(target_iterations != rewrite_iterations) {
+      cout << "Mismatch!  Target " << target_iterations << "; Rewrite " << rewrite_iterations << endl;
+      for(size_t i = 0; i < target_.num_blocks(); ++i) {
+        cout << "   " << i << "T: " << row[target_block_to_index(i)] << endl;
+      }
+      for(size_t i = 0; i < rewrite_.num_blocks(); ++i) {
+        cout << "   " << i << "R: " << row[rewrite_block_to_index(i)] << endl;
+      }
+      cout << "---" << endl;
+    }
+  }
+
   kernel_generators_ = final_matrix.solve_diophantine();
 
   // Print what basis vectors say
@@ -520,6 +548,11 @@ DualAutomata ControlLearner::update_dual(DualAutomata& dual) {
   auto nullspace = final_matrix.solve_diophantine();
   cout << "NULLSPACE" << endl;
   nullspace.print();
+
+  //find solution
+  auto single_soln = final_matrix.solve_diophantine(final_vector);
+  cout << "SOLUTION" << endl;
+  single_soln.print();
 
   return dual;
 

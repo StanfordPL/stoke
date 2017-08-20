@@ -138,8 +138,64 @@ IntMatrix IntMatrix::solve_diophantine() const {
 }
 
 IntVector IntMatrix::solve_diophantine(IntVector b) const {
-  IntVector result;
-  return result;
+  auto& matrix = *this;
+  cout << "Writing out sage code" << endl;
+  ofstream of("in.sage");
+  of << "rows=" << matrix.size() << endl;
+  of << "cols=" << matrix[0].size() << endl;
+  of << "ZZ=IntegerRing()" << endl;
+  of << "A = MatrixSpace(ZZ, rows, cols)([";
+  for (size_t i = 0; i < matrix.size(); ++i) {
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
+      of << matrix[i][j];
+      if (i < matrix.size() - 1 || j < matrix[i].size() - 1)
+        of << ", ";
+    }
+  }
+  of << "])" << endl;
+  of << "C = MatrixSpace(ZZ, rows, 1)([";
+  for(size_t i = 0; i < b.size(); ++i) {
+    of << b[i] << ", ";
+  }
+  of << "])" << endl;
+  of << "B,U,V=A.smith_form()" << endl;
+  of << "min_dim = min(rows,cols)" << endl;
+  of << "diagonals = [ B[i][i] for i in range(0,min_dim) if B[i][i] != 0]" << endl;
+  of << "nz_diag = len(diagonals)" << endl;
+  of << "D = U*C" << endl;
+  of << "solution = [ D[i][0] // B[i][i] for i in range(0, nz_diag) ] + [0]*(cols-nz_diag)" << endl;
+  of << "output = V*vector(solution)" << endl;
+  of << "print len(output)" << endl;
+  of << "for entry in output:" << endl;
+  of << "\tprint entry" << endl;
+  of << endl;
+
+  of.close();
+  int status = system("sage in.sage > sage.out 2>sage.err");
+
+  /** Read basis vectors from sage */
+  IntVector output;
+  size_t output_rows;
+  ifstream in("sage.out");
+  in >> output_rows;
+  if (!in.good()) {
+    assert(false);
+    return output;
+  }
+  for (size_t i = 0; i < output_rows; ++i) {
+    int64_t x;
+    in >> x;
+
+    /** Check to make sure that we don't have any parser errors */
+    if (!in.good()) {
+      assert(false);
+      return output;
+    }
+
+    output.push_back(x);
+  }
+
+  return output;
 }
 
 void IntMatrix::print() const {
