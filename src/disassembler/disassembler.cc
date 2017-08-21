@@ -447,12 +447,14 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
     // If we have to go up, then we fail.
 
     bool success = false;
+    string tmperror = "";
     for (int attempt = l.hex_bytes; attempt >= 0; attempt--) {
       stringstream tmp;
       tmp << l.instr << " # SIZE=" << attempt << endl;
       Code c;
       tmp >> c;
       if (failed(tmp)) {
+        tmperror = fail_msg(tmp);
         continue;
       }
 
@@ -468,7 +470,7 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
 
     if (!success) {
       //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
-      fail(ss) << "Could not encode '" << l.instr << "' within " << l.hex_bytes << " bytes." << endl;
+      fail(ss) << "Could not encode '" << l.instr << "' within " << l.hex_bytes << " bytes (" << tmperror << ")" << endl;
     }
   }
 
