@@ -26,103 +26,137 @@ namespace x64asm {
 
 map<Opcode, vector<Opcode>> synonyms;
 
+void add_synonym(Opcode a, Opcode b) {
+  // close transitively
+  for (Opcode c : synonyms[a]) {
+    synonyms[b].push_back(c);
+  }
+  for (Opcode c : synonyms[b]) {
+    synonyms[a].push_back(c);
+  }
+  synonyms[a].push_back(b);
+  synonyms[b].push_back(a);
+}
+
 // identifies opcodes that are synonyms (they mean EXACTLY the same thing, i.e. assemble to the same thing)
 void init_synonyms() {
   if (synonyms.size()) return;
 
-  map<Opcode, vector<Opcode>> res;
-
   // fill everything with empty list
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     Opcode op = (Opcode) i;
-    res[op] = vector<Opcode>();
+    synonyms[op] = vector<Opcode>();
   }
 
   // add synonyms
-  res[SETA_R8] = vector<Opcode>({ SETNBE_R8 });
-  res[SETA_RH] = vector<Opcode>({ SETNBE_RH });
-  res[SETA_M8] = vector<Opcode>({ SETNBE_M8 });
+  add_synonym(SETNB_R8, SETAE_R8);
+  add_synonym(SETNB_RH, SETAE_RH);
+  add_synonym(SETNB_M8, SETAE_M8);
+  add_synonym(SETNB_R8, SETNC_R8);
+  add_synonym(SETNB_RH, SETNC_RH);
+  add_synonym(SETNB_M8, SETNC_M8);
+  add_synonym(SETA_R8, SETNBE_R8);
+  add_synonym(SETA_RH, SETNBE_RH);
+  add_synonym(SETA_M8, SETNBE_M8);
+  add_synonym(SETNA_R8, SETBE_R8);
+  add_synonym(SETNA_RH, SETBE_RH);
+  add_synonym(SETNA_M8, SETBE_M8);
+  add_synonym(SETNAE_R8, SETB_R8);
+  add_synonym(SETNAE_RH, SETB_RH);
+  add_synonym(SETNAE_M8, SETB_M8);
+  add_synonym(SETLE_R8, SETNG_R8);
+  add_synonym(SETLE_RH, SETNG_RH);
+  add_synonym(SETLE_M8, SETNG_M8);
+  add_synonym(SETNLE_R8, SETG_R8);
+  add_synonym(SETNLE_RH, SETG_RH);
+  add_synonym(SETNLE_M8, SETG_M8);
+  add_synonym(SETE_R8, SETZ_R8);
+  add_synonym(SETE_RH, SETZ_RH);
+  add_synonym(SETE_M8, SETZ_M8);
+  add_synonym(SETNE_R8, SETNZ_R8);
+  add_synonym(SETNE_RH, SETNZ_RH);
+  add_synonym(SETNE_M8, SETNZ_M8);
+  add_synonym(SETB_R8, SETC_R8);
+  add_synonym(SETB_RH, SETC_RH);
+  add_synonym(SETB_M8, SETC_M8);
+  add_synonym(SETGE_R8, SETNL_R8);
+  add_synonym(SETGE_RH, SETNL_RH);
+  add_synonym(SETGE_M8, SETNL_M8);
+  add_synonym(SETNGE_R8, SETL_R8);
+  add_synonym(SETNGE_RH, SETL_RH);
+  add_synonym(SETNGE_M8, SETL_M8);
+  add_synonym(SETNP_R8, SETPO_R8);
+  add_synonym(SETNP_RH, SETPO_RH);
+  add_synonym(SETNP_M8, SETPO_M8);
+  add_synonym(SETP_R8, SETPE_R8);
+  add_synonym(SETP_RH, SETPE_RH);
+  add_synonym(SETP_M8, SETPE_M8);
+  add_synonym(SAL_M16_CL, SHL_M16_CL);
+  add_synonym(SAL_M16_IMM8, SHL_M16_IMM8);
+  add_synonym(SAL_M16_ONE, SHL_M16_ONE);
+  add_synonym(SAL_M32_CL, SHL_M32_CL);
+  add_synonym(SAL_M32_IMM8, SHL_M32_IMM8);
+  add_synonym(SAL_M32_ONE, SHL_M32_ONE);
+  add_synonym(SAL_M64_CL, SHL_M64_CL);
+  add_synonym(SAL_M64_IMM8, SHL_M64_IMM8);
+  add_synonym(SAL_M64_ONE, SHL_M64_ONE);
+  add_synonym(SAL_M8_CL, SHL_M8_CL);
+  add_synonym(SAL_M8_IMM8, SHL_M8_IMM8);
+  add_synonym(SAL_M8_ONE, SHL_M8_ONE);
+  add_synonym(SAL_R16_CL, SHL_R16_CL);
+  add_synonym(SAL_R16_IMM8, SHL_R16_IMM8);
+  add_synonym(SAL_R16_ONE, SHL_R16_ONE);
+  add_synonym(SAL_R32_CL, SHL_R32_CL);
+  add_synonym(SAL_R32_IMM8, SHL_R32_IMM8);
+  add_synonym(SAL_R32_ONE, SHL_R32_ONE);
+  add_synonym(SAL_R64_CL, SHL_R64_CL);
+  add_synonym(SAL_R64_IMM8, SHL_R64_IMM8);
+  add_synonym(SAL_R64_ONE, SHL_R64_ONE);
+  add_synonym(SAL_R8_CL, SHL_R8_CL);
+  add_synonym(SAL_R8_IMM8, SHL_R8_IMM8);
+  add_synonym(SAL_R8_ONE, SHL_R8_ONE);
+  add_synonym(SAL_RH_CL, SHL_RH_CL);
+  add_synonym(SAL_RH_IMM8, SHL_RH_IMM8);
+  add_synonym(SAL_RH_ONE, SHL_RH_ONE);
+  add_synonym(PEXTRW_R32_MM_IMM8, PEXTRW_R64_MM_IMM8);
+  add_synonym(PEXTRW_R32_XMM_IMM8, PEXTRW_R64_XMM_IMM8);
+  add_synonym(PEXTRW_R32_XMM_IMM8_1, PEXTRW_R64_XMM_IMM8_1);
+  add_synonym(EXTRACTPS_R32_XMM_IMM8, EXTRACTPS_R64_XMM_IMM8);
+  add_synonym(VPEXTRW_R32_XMM_IMM8, VPEXTRW_R64_XMM_IMM8);
+  add_synonym(VPEXTRW_R32_XMM_IMM8_1, VPEXTRW_R64_XMM_IMM8_1);
+  add_synonym(MOVMSKPD_R32_XMM, MOVMSKPD_R64_XMM);
+  add_synonym(MOVMSKPS_R32_XMM, MOVMSKPS_R64_XMM);
+  add_synonym(XCHG_AX_R16, XCHG_R16_AX);
+  add_synonym(XCHG_EAX_R32, XCHG_R32_EAX);
+  add_synonym(XCHG_M16_R16, XCHG_R16_M16);
+  add_synonym(XCHG_M32_R32, XCHG_R32_M32);
+  add_synonym(XCHG_M64_R64, XCHG_R64_M64);
+  add_synonym(XCHG_M8_R8, XCHG_R8_M8);
+  add_synonym(XCHG_M8_RH, XCHG_RH_M8);
+  add_synonym(XCHG_R64_RAX, XCHG_RAX_R64);
+  add_synonym(PMOVMSKB_R32_MM, PMOVMSKB_R64_MM);
+  add_synonym(PMOVMSKB_R32_XMM, PMOVMSKB_R64_XMM);
+  add_synonym(VMOVMSKPD_R32_XMM, VMOVMSKPD_R64_XMM);
+  add_synonym(VMOVMSKPS_R32_XMM, VMOVMSKPS_R64_XMM);
+  add_synonym(VMOVMSKPD_R32_YMM, VMOVMSKPD_R64_YMM);
+  add_synonym(VMOVMSKPS_R32_YMM, VMOVMSKPS_R64_YMM);
+  add_synonym(XCHG_R8_R8, XCHG_R8_R8_1);
+  add_synonym(XCHG_R16_R16, XCHG_R16_R16_1);
+  add_synonym(XCHG_R32_R32, XCHG_R32_R32_1);
+  add_synonym(XCHG_R64_R64, XCHG_R64_R64_1);
+  add_synonym(LEA_R16_M32, LEA_R16_M16);
+  add_synonym(LEA_R16_M32, LEA_R16_M64);
+  add_synonym(LEA_R32_M32, LEA_R32_M16);
+  add_synonym(LEA_R32_M32, LEA_R32_M64);
+  add_synonym(LEA_R64_M32, LEA_R64_M16);
+  add_synonym(LEA_R64_M32, LEA_R64_M64);
+  add_synonym(XCHG_R32_R32, XCHG_R32_EAX); // I don't think these are technically a full synonym
+  add_synonym(VPMOVMSKB_R32_XMM, VPMOVMSKB_R64_XMM);
+  add_synonym(VPMOVMSKB_R32_YMM, VPMOVMSKB_R64_YMM);
 
-  res[SETNA_R8] = vector<Opcode>({ SETBE_R8 });
-  res[SETNA_RH] = vector<Opcode>({ SETBE_RH });
-  res[SETNA_M8] = vector<Opcode>({ SETBE_M8 });
-
-  res[SETLE_R8] = vector<Opcode>({ SETNG_R8 });
-  res[SETLE_RH] = vector<Opcode>({ SETNG_RH });
-  res[SETLE_M8] = vector<Opcode>({ SETNG_M8 });
-
-  res[SETNLE_R8] = vector<Opcode>({ SETG_R8 });
-  res[SETNLE_RH] = vector<Opcode>({ SETG_RH });
-  res[SETNLE_M8] = vector<Opcode>({ SETG_M8 });
-
-  res[SETNB_R8] = vector<Opcode>({ SETAE_R8 });
-  res[SETNB_RH] = vector<Opcode>({ SETAE_RH });
-  res[SETNB_M8] = vector<Opcode>({ SETAE_M8 });
-
-  res[SETE_R8] = vector<Opcode>({ SETZ_R8 });
-  res[SETE_RH] = vector<Opcode>({ SETZ_RH });
-  res[SETE_M8] = vector<Opcode>({ SETZ_M8 });
-
-  res[SETNE_R8] = vector<Opcode>({ SETNZ_R8 });
-  res[SETNE_RH] = vector<Opcode>({ SETNZ_RH });
-  res[SETNE_M8] = vector<Opcode>({ SETNZ_M8 });
-
-  res[SETB_R8] = vector<Opcode>({ SETC_R8 });
-  res[SETB_RH] = vector<Opcode>({ SETC_RH });
-  res[SETB_M8] = vector<Opcode>({ SETC_M8 });
-
-  res[SETNB_R8] = vector<Opcode>({ SETNC_R8 });
-  res[SETNB_RH] = vector<Opcode>({ SETNC_RH });
-  res[SETNB_M8] = vector<Opcode>({ SETNC_M8 });
-
-  res[SETGE_R8] = vector<Opcode>({ SETNL_R8 });
-  res[SETGE_RH] = vector<Opcode>({ SETNL_RH });
-  res[SETGE_M8] = vector<Opcode>({ SETNL_M8 });
-
-  res[SETNGE_R8] = vector<Opcode>({ SETL_R8 });
-  res[SETNGE_RH] = vector<Opcode>({ SETL_RH });
-  res[SETNGE_M8] = vector<Opcode>({ SETL_M8 });
-
-  res[SETNP_R8] = vector<Opcode>({ SETPO_R8 });
-  res[SETNP_RH] = vector<Opcode>({ SETPO_RH });
-  res[SETNP_M8] = vector<Opcode>({ SETPO_M8 });
-
-  res[SAL_M16_CL] = vector<Opcode>({ SHL_M16_CL });
-  res[SAL_M16_IMM8] = vector<Opcode>({ SHL_M16_IMM8 });
-  res[SAL_M16_ONE] = vector<Opcode>({ SHL_M16_ONE });
-  res[SAL_M32_CL] = vector<Opcode>({ SHL_M32_CL });
-  res[SAL_M32_IMM8] = vector<Opcode>({ SHL_M32_IMM8 });
-  res[SAL_M32_ONE] = vector<Opcode>({ SHL_M32_ONE });
-  res[SAL_M64_CL] = vector<Opcode>({ SHL_M64_CL });
-  res[SAL_M64_IMM8] = vector<Opcode>({ SHL_M64_IMM8 });
-  res[SAL_M64_ONE] = vector<Opcode>({ SHL_M64_ONE });
-  res[SAL_M8_CL] = vector<Opcode>({ SHL_M8_CL });
-  res[SAL_M8_IMM8] = vector<Opcode>({ SHL_M8_IMM8 });
-  res[SAL_M8_ONE] = vector<Opcode>({ SHL_M8_ONE });
-  res[SAL_R16_CL] = vector<Opcode>({ SHL_R16_CL });
-  res[SAL_R16_IMM8] = vector<Opcode>({ SHL_R16_IMM8 });
-  res[SAL_R16_ONE] = vector<Opcode>({ SHL_R16_ONE });
-  res[SAL_R32_CL] = vector<Opcode>({ SHL_R32_CL });
-  res[SAL_R32_IMM8] = vector<Opcode>({ SHL_R32_IMM8 });
-  res[SAL_R32_ONE] = vector<Opcode>({ SHL_R32_ONE });
-  res[SAL_R64_CL] = vector<Opcode>({ SHL_R64_CL });
-  res[SAL_R64_IMM8] = vector<Opcode>({ SHL_R64_IMM8 });
-  res[SAL_R64_ONE] = vector<Opcode>({ SHL_R64_ONE });
-  res[SAL_R8_CL] = vector<Opcode>({ SHL_R8_CL });
-  res[SAL_R8_IMM8] = vector<Opcode>({ SHL_R8_IMM8 });
-  res[SAL_R8_ONE] = vector<Opcode>({ SHL_R8_ONE });
-  res[SAL_RH_CL] = vector<Opcode>({ SHL_RH_CL });
-  res[SAL_RH_IMM8] = vector<Opcode>({ SHL_RH_IMM8 });
-  res[SAL_RH_ONE] = vector<Opcode>({ SHL_RH_ONE });
-
-  // make sure inverse synonyms are added
-  synonyms.insert(res.begin(), res.end());
-  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-    Opcode op = (Opcode) i;
-    for (Opcode op2 : res[op]) {
-      synonyms[op2].push_back(op);
-    }
-  }
+  add_synonym(VPEXTRB_R32_XMM_IMM8, VPEXTRB_R64_XMM_IMM8);
+  add_synonym(PEXTRB_R32_XMM_IMM8, PEXTRB_R64_XMM_IMM8);
+  add_synonym(PEXTRW_R32_XMM_IMM8_1, PEXTRW_R64_XMM_IMM8_1);
 }
 
 
@@ -134,9 +168,9 @@ string bytes_of(Instruction instr) {
   assm.finish();
 
   stringstream ss;
-  ss << std::setw(sizeof(unsigned char) * 2) << std::setfill('0') << std::hex;
+  ss << std::setw(2) << std::setfill('0') << std::hex;
   for (size_t i = 0; i < fun.size(); ++i) {
-    ss << " " << ((uint8_t) fun.get_buffer()[i]);
+    ss << " " << ((int) fun.get_buffer()[i]);
   }
   return ss.str();
 }
