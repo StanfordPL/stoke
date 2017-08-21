@@ -505,6 +505,7 @@ void Disassembler::disassemble(const std::string& filename) {
 
     // Parse the headers
     const auto section_offsets = parse_section_offsets(*headers);
+    delete headers;
     const auto text_itr = section_offsets.find(".text");
     if (text_itr == section_offsets.end()) {
       set_error("Unable to find value for text section offset");
@@ -542,6 +543,8 @@ void Disassembler::disassemble(const std::string& filename) {
       }
     }
   }
+
+  delete body;
 
 }
 
