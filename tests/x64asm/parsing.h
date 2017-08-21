@@ -18,10 +18,128 @@
 
 #include "tests/fuzzer.h"
 #include "src/disassembler/disassembler.h"
+#include "src/ext/x64asm/src/opcode.h"
+
 using namespace stoke;
 
-
 namespace x64asm {
+
+map<Opcode, vector<Opcode>> synonyms;
+
+// identifies opcodes that are synonyms (they mean EXACTLY the same thing, i.e. assemble to the same thing)
+void init_synonyms() {
+  if (synonyms.size()) return;
+
+  map<Opcode, vector<Opcode>> res;
+
+  // fill everything with empty list
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    Opcode op = (Opcode) i;
+    res[op] = vector<Opcode>();
+  }
+
+  // add synonyms
+  res[SETA_R8] = vector<Opcode>({ SETNBE_R8 });
+  res[SETA_RH] = vector<Opcode>({ SETNBE_RH });
+  res[SETA_M8] = vector<Opcode>({ SETNBE_M8 });
+
+  res[SETNA_R8] = vector<Opcode>({ SETBE_R8 });
+  res[SETNA_RH] = vector<Opcode>({ SETBE_RH });
+  res[SETNA_M8] = vector<Opcode>({ SETBE_M8 });
+
+  res[SETLE_R8] = vector<Opcode>({ SETNG_R8 });
+  res[SETLE_RH] = vector<Opcode>({ SETNG_RH });
+  res[SETLE_M8] = vector<Opcode>({ SETNG_M8 });
+
+  res[SETNLE_R8] = vector<Opcode>({ SETG_R8 });
+  res[SETNLE_RH] = vector<Opcode>({ SETG_RH });
+  res[SETNLE_M8] = vector<Opcode>({ SETG_M8 });
+
+  res[SETNB_R8] = vector<Opcode>({ SETAE_R8 });
+  res[SETNB_RH] = vector<Opcode>({ SETAE_RH });
+  res[SETNB_M8] = vector<Opcode>({ SETAE_M8 });
+
+  res[SETE_R8] = vector<Opcode>({ SETZ_R8 });
+  res[SETE_RH] = vector<Opcode>({ SETZ_RH });
+  res[SETE_M8] = vector<Opcode>({ SETZ_M8 });
+
+  res[SETNE_R8] = vector<Opcode>({ SETNZ_R8 });
+  res[SETNE_RH] = vector<Opcode>({ SETNZ_RH });
+  res[SETNE_M8] = vector<Opcode>({ SETNZ_M8 });
+
+  res[SETB_R8] = vector<Opcode>({ SETC_R8 });
+  res[SETB_RH] = vector<Opcode>({ SETC_RH });
+  res[SETB_M8] = vector<Opcode>({ SETC_M8 });
+
+  res[SETNB_R8] = vector<Opcode>({ SETNC_R8 });
+  res[SETNB_RH] = vector<Opcode>({ SETNC_RH });
+  res[SETNB_M8] = vector<Opcode>({ SETNC_M8 });
+
+  res[SETGE_R8] = vector<Opcode>({ SETNL_R8 });
+  res[SETGE_RH] = vector<Opcode>({ SETNL_RH });
+  res[SETGE_M8] = vector<Opcode>({ SETNL_M8 });
+
+  res[SETNGE_R8] = vector<Opcode>({ SETL_R8 });
+  res[SETNGE_RH] = vector<Opcode>({ SETL_RH });
+  res[SETNGE_M8] = vector<Opcode>({ SETL_M8 });
+
+  res[SETNP_R8] = vector<Opcode>({ SETPO_R8 });
+  res[SETNP_RH] = vector<Opcode>({ SETPO_RH });
+  res[SETNP_M8] = vector<Opcode>({ SETPO_M8 });
+
+  res[SAL_M16_CL] = vector<Opcode>({ SHL_M16_CL });
+  res[SAL_M16_IMM8] = vector<Opcode>({ SHL_M16_IMM8 });
+  res[SAL_M16_ONE] = vector<Opcode>({ SHL_M16_ONE });
+  res[SAL_M32_CL] = vector<Opcode>({ SHL_M32_CL });
+  res[SAL_M32_IMM8] = vector<Opcode>({ SHL_M32_IMM8 });
+  res[SAL_M32_ONE] = vector<Opcode>({ SHL_M32_ONE });
+  res[SAL_M64_CL] = vector<Opcode>({ SHL_M64_CL });
+  res[SAL_M64_IMM8] = vector<Opcode>({ SHL_M64_IMM8 });
+  res[SAL_M64_ONE] = vector<Opcode>({ SHL_M64_ONE });
+  res[SAL_M8_CL] = vector<Opcode>({ SHL_M8_CL });
+  res[SAL_M8_IMM8] = vector<Opcode>({ SHL_M8_IMM8 });
+  res[SAL_M8_ONE] = vector<Opcode>({ SHL_M8_ONE });
+  res[SAL_R16_CL] = vector<Opcode>({ SHL_R16_CL });
+  res[SAL_R16_IMM8] = vector<Opcode>({ SHL_R16_IMM8 });
+  res[SAL_R16_ONE] = vector<Opcode>({ SHL_R16_ONE });
+  res[SAL_R32_CL] = vector<Opcode>({ SHL_R32_CL });
+  res[SAL_R32_IMM8] = vector<Opcode>({ SHL_R32_IMM8 });
+  res[SAL_R32_ONE] = vector<Opcode>({ SHL_R32_ONE });
+  res[SAL_R64_CL] = vector<Opcode>({ SHL_R64_CL });
+  res[SAL_R64_IMM8] = vector<Opcode>({ SHL_R64_IMM8 });
+  res[SAL_R64_ONE] = vector<Opcode>({ SHL_R64_ONE });
+  res[SAL_R8_CL] = vector<Opcode>({ SHL_R8_CL });
+  res[SAL_R8_IMM8] = vector<Opcode>({ SHL_R8_IMM8 });
+  res[SAL_R8_ONE] = vector<Opcode>({ SHL_R8_ONE });
+  res[SAL_RH_CL] = vector<Opcode>({ SHL_RH_CL });
+  res[SAL_RH_IMM8] = vector<Opcode>({ SHL_RH_IMM8 });
+  res[SAL_RH_ONE] = vector<Opcode>({ SHL_RH_ONE });
+
+  // make sure inverse synonyms are added
+  synonyms.insert(res.begin(), res.end());
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    Opcode op = (Opcode) i;
+    for (Opcode op2 : res[op]) {
+      synonyms[op2].push_back(op);
+    }
+  }
+}
+
+
+string bytes_of(Instruction instr) {
+  Assembler assm;
+  Function fun;
+  assm.start(fun);
+  assm.assemble(instr);
+  assm.finish();
+
+  stringstream ss;
+  ss << std::setw(sizeof(unsigned char) * 2) << std::setfill('0') << std::hex;
+  for (size_t i = 0; i < fun.size(); ++i) {
+    ss << " " << ((uint8_t) fun.get_buffer()[i]);
+  }
+  return ss.str();
+}
 
 class X64AsmParseTest : public ::testing::Test {
 
@@ -30,6 +148,8 @@ public:
   // Check that writing code to string and back
   // doesn't change anything
   void check_code(x64asm::Code c) {
+
+    init_synonyms();
 
     stoke::TUnit test;
 
@@ -108,7 +228,17 @@ public:
     Disassembler::Callback callback =
     [&](const FunctionCallbackData& data) {
       succeeded = true;
-      EXPECT_EQ(data.tunit.get_code()[1], d[1]);
+      auto after_parsing = data.tunit.get_code()[1];
+      auto original = d[1];
+      if (after_parsing != original) {
+        // ignore synonyms
+        auto& syns = synonyms[original.get_opcode()];
+        if (find(syns.begin(), syns.end(), after_parsing.get_opcode()) == syns.end()) {
+          EXPECT_EQ(after_parsing, original);
+          cout << "Bytes for original:      " << bytes_of(original) << endl;
+          cout << "Bytes for after parsing: " << bytes_of(after_parsing) << endl;
+        }
+      }
     };
     disassm.set_function_callback(&callback);
     streambuf* orig_buf = cerr.rdbuf();
