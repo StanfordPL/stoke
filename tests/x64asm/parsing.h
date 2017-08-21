@@ -17,6 +17,9 @@
 #define _STOKE_TEST_X64ASM_PARSING_H
 
 #include "tests/fuzzer.h"
+#include "src/disassembler/disassembler.h"
+using namespace stoke;
+
 
 namespace x64asm {
 
@@ -89,6 +92,37 @@ public:
     for (size_t i = 0; i < orig.size(); ++i) {
       EXPECT_EQ(orig.get_buffer()[i], reparse.get_buffer()[i]);
     }
+
+    // take assembled code and disassemble again
+    const char *tmpfilename = tmpnam(NULL);
+    FILE *fp = fopen(tmpfilename, "wb");
+    int ch;
+    for (size_t i = 0; i < orig.size(); ++i) {
+      fwrite(&(orig.get_buffer()[i]), 1, 1, fp);
+    }
+    fclose(fp);
+
+    Disassembler disassm;
+    bool succeeded = false;
+    disassm.set_flat_binary(true);
+    Disassembler::Callback callback =
+    [&](const FunctionCallbackData& data) {
+      succeeded = true;
+      EXPECT_EQ(data.tunit.get_code()[1], d[1]);
+    };
+    disassm.set_function_callback(&callback);
+    streambuf* orig_buf = cerr.rdbuf();
+    std::stringstream buffer;
+    cerr.rdbuf(buffer.rdbuf());
+    disassm.disassemble(tmpfilename);
+    cerr.rdbuf(orig_buf);
+    std::remove(tmpfilename);
+
+    if (disassm.has_error()) {
+      FAIL() << "Disassembler failed on binary input.  Error: " << disassm.get_error();
+    }
+
+    EXPECT_TRUE(succeeded) << "Parsing failed for " << d[1] << " with error:" << endl << buffer.str() << endl;
 
   }
 
@@ -221,7 +255,7 @@ TEST_F(X64AsmParseTest, FuzzTest) {
   tp.recompute_pools();
 
 
-  stoke::fuzz(tp, iterations, &x64asm_parse_fuzz_callback, (void*)this, 20);
+  stoke::fuzz(tp, iterations, &x64asm_parse_fuzz_callback, (void*)this, 1);
 
 }
 
