@@ -261,6 +261,23 @@ string Disassembler::fix_instruction(const string& line) {
   if (is_prefix(line, "vcvt", 4)) {
     ll = regex_replace(ll, regex("vcvtpd2psx"), "vcvtpd2ps");
     ll = regex_replace(ll, regex("vcvtpd2psy"), "vcvtpd2ps");
+    ll = regex_replace(ll, regex("vcvtpd2dqx"), "vcvtpd2dq");
+    ll = regex_replace(ll, regex("vcvtpd2dqy"), "vcvtpd2dq");
+    ll = regex_replace(ll, regex("vcvttpd2dqy"), "vcvttpd2dq");
+    ll = regex_replace(ll, regex("vcvttpd2dqx"), "vcvttpd2dq");
+    ll = regex_replace(ll, regex("vcvttss2siq"), "vcvttss2si");
+    ll = regex_replace(ll, regex("vcvttss2sil"), "vcvttss2si");
+    ll = regex_replace(ll, regex("vcvttsd2sil"), "vcvttsd2si");
+    ll = regex_replace(ll, regex("vcvttsd2siq"), "vcvttsd2si");
+    ll = regex_replace(ll, regex("vcvtsd2siq"), "vcvtsd2si");
+    ll = regex_replace(ll, regex("vcvtsd2sil"), "vcvtsd2si");
+  } else if (is_prefix(line, "cvt", 3)) {
+    ll = regex_replace(ll, regex("cvttss2siq"), "cvttss2si");
+    ll = regex_replace(ll, regex("cvttss2sil"), "cvttss2si");
+    ll = regex_replace(ll, regex("cvttsd2sil"), "cvttsd2si");
+    ll = regex_replace(ll, regex("cvttsd2siq"), "cvttsd2si");
+    ll = regex_replace(ll, regex("cvtsd2siq"), "cvtsd2si");
+    ll = regex_replace(ll, regex("cvtsd2sil"), "cvtsd2si");
   } else if (is_prefix(line, "mova", 4)) {
     ll = regex_replace(ll, regex("movapd\\.s"), "movapd");
     ll = regex_replace(ll, regex("movaps\\.s"), "movaps");
@@ -277,6 +294,7 @@ string Disassembler::fix_instruction(const string& line) {
     ll = regex_replace(ll, regex("vmovupd\\.s"), "vmovupd");
     ll = regex_replace(ll, regex("vmovups\\.s"), "vmovups");
   }
+
 
   return ll;
 }
