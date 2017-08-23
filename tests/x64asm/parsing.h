@@ -21,6 +21,7 @@
 #include "src/ext/x64asm/src/opcode.h"
 
 using namespace stoke;
+using namespace cpputil;
 
 namespace x64asm {
 
@@ -133,6 +134,7 @@ void init_synonyms() {
   add_synonym(XCHG_M64_R64, XCHG_R64_M64);
   add_synonym(XCHG_M8_R8, XCHG_R8_M8);
   add_synonym(XCHG_M8_RH, XCHG_RH_M8);
+  add_synonym(XCHG_RH_RH, XCHG_RH_RH_1);
   add_synonym(XCHG_R64_RAX, XCHG_RAX_R64);
   add_synonym(PMOVMSKB_R32_MM, PMOVMSKB_R64_MM);
   add_synonym(PMOVMSKB_R32_XMM, PMOVMSKB_R64_XMM);
@@ -153,10 +155,8 @@ void init_synonyms() {
   add_synonym(XCHG_R32_R32, XCHG_R32_EAX); // I don't think these are technically a full synonym
   add_synonym(VPMOVMSKB_R32_XMM, VPMOVMSKB_R64_XMM);
   add_synonym(VPMOVMSKB_R32_YMM, VPMOVMSKB_R64_YMM);
-
   add_synonym(VPEXTRB_R32_XMM_IMM8, VPEXTRB_R64_XMM_IMM8);
-  add_synonym(PEXTRB_R32_XMM_IMM8, PEXTRB_R64_XMM_IMM8);
-  add_synonym(PEXTRW_R32_XMM_IMM8_1, PEXTRW_R64_XMM_IMM8_1);
+  add_synonym(VPEXTRW_R32_XMM_IMM8_1, VPEXTRW_R64_XMM_IMM8_1);
 }
 
 
@@ -269,6 +269,8 @@ public:
         auto& syns = synonyms[original.get_opcode()];
         if (find(syns.begin(), syns.end(), after_parsing.get_opcode()) == syns.end()) {
           EXPECT_EQ(after_parsing, original);
+          cout << "Opcode of original:      " << original.get_opcode() << endl;
+          cout << "Opcode of after parsing: " << after_parsing.get_opcode() << endl;
           cout << "Bytes for original:      " << bytes_of(original) << endl;
           cout << "Bytes for after parsing: " << bytes_of(after_parsing) << endl;
         }
@@ -384,6 +386,62 @@ TEST_F(X64AsmParseTest, Issue189) {
   EXPECT_TRUE(o.is_immediate());
   EXPECT_EQ((uint64_t)0, (uint64_t)*static_cast<Imm64*>(&o));
 
+}
+
+TEST_F(X64AsmParseTest, ImmSize0) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "orw $0xffff, %ax" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  ASSERT_FALSE(failed(ss));
+
+  Instruction instr = c[1];
+  EXPECT_EQ(instr.get_opcode(), OR_R16_IMM8);
+}
+
+TEST_F(X64AsmParseTest, ImmSize1) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "orw $0xff, %ax" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  ASSERT_FALSE(failed(ss));
+
+  Instruction instr = c[1];
+  EXPECT_EQ(instr.get_opcode(), OR_AX_IMM16);
+}
+
+TEST_F(X64AsmParseTest, ImmSize2) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "orw $0xff, %ax" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  ASSERT_FALSE(failed(ss));
+
+  Instruction instr = c[1];
+  EXPECT_EQ(instr.get_opcode(), OR_AX_IMM16);
+}
+
+TEST_F(X64AsmParseTest, ImmSize3) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "orw $0xffffffff, %ax" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  ASSERT_FALSE(failed(ss));
+
+  Instruction instr = c[1];
+  EXPECT_EQ(instr.get_opcode(), OR_R16_IMM8);
 }
 
 void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
