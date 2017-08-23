@@ -440,6 +440,10 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
 
     bool success = false;
     for (int attempt = l.hex_bytes; attempt >= 0; attempt--) {
+      if (attempt == 0) {
+        if (l.hex_bytes != 0) continue;
+      }
+
       stringstream tmp;
       tmp << l.instr << " # SIZE=" << attempt << endl;
       Code c;
