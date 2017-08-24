@@ -329,7 +329,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   // (remember to add 7 b/c of instruction length)
-  ssr << "movq $0xcafef014, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef014, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xd00dface);
 
@@ -348,14 +348,14 @@ TEST_F(BoundedValidatorBaseTest, RipWritingEquiv) {
   std::stringstream sst;
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
-  sst << "movq $0xc0ded00d, 0x4(%rax)" << std::endl;
+  sst << "movq $0xffffffffc0ded00d, 0x4(%rax)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xc0ded00d, (%rip)" << std::endl;
+  ssr << "movq $0xffffffffc0ded00d, (%rip)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xcafef00d);
