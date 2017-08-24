@@ -477,20 +477,6 @@ TEST_F(X64AsmParseTest, ImmSize2) {
   EXPECT_EQ(instr.get_opcode(), OR_AX_IMM16);
 }
 
-TEST_F(X64AsmParseTest, ImmSize3) {
-  std::stringstream ss;
-  ss << ".foo:" << std::endl;
-  ss << "orw $0xffffffff, %ax" << std::endl;
-
-  Code c;
-  ss >> c;
-
-  ASSERT_FALSE(failed(ss));
-
-  Instruction instr = c[1];
-  EXPECT_EQ(instr.get_opcode(), OR_R16_IMM8);
-}
-
 void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
   X64AsmParseTest* xpt = (X64AsmParseTest*)data;
   xpt->check_code(cfg.get_code());

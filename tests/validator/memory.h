@@ -106,7 +106,7 @@ TEST_F(ValidatorMemoryTest, Read16AfterTwoWrite8) {
 TEST_F(ValidatorMemoryTest, ReadByteFromQuadword) {
 
   target_ << ".foo:" << std::endl;
-  target_ << "movq $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movq $0xffffffffc0deface, (%rsp)" << std::endl;
   target_ << "movzbq 0x2(%rsp), %rax" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -120,7 +120,7 @@ TEST_F(ValidatorMemoryTest, ReadByteFromQuadword) {
 TEST_F(ValidatorMemoryTest, ReadWordFromQuadword) {
 
   target_ << ".foo:" << std::endl;
-  target_ << "movq $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movq $0xffffffffc0deface, (%rsp)" << std::endl;
   target_ << "movzwq 0x1(%rsp), %rax" << std::endl;
   target_ << "retq" << std::endl;
 
