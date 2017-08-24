@@ -324,7 +324,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
   sst << "retq" << std::endl;
-  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+  auto target = make_cfg(sst, all(), live_outs, 0xffffffffcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
@@ -380,7 +380,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef00d, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
