@@ -308,6 +308,9 @@ string Disassembler::fix_instruction(const string& line) {
   } else if (is_prefix(line, "vmovu", 5)) {
     ll = regex_replace(ll, regex("vmovupd\\.s"), "vmovupd");
     ll = regex_replace(ll, regex("vmovups\\.s"), "vmovups");
+  } else if (is_prefix(line, "movnti", 6)) {
+    ll = regex_replace(ll, regex("movntil"), "movnti");
+    ll = regex_replace(ll, regex("movntiq"), "movnti");
   }
 
 
