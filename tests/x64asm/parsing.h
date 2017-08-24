@@ -122,6 +122,7 @@ void init_synonyms() {
   add_synonym(PEXTRW_R32_MM_IMM8, PEXTRW_R64_MM_IMM8);
   add_synonym(PEXTRW_R32_XMM_IMM8, PEXTRW_R64_XMM_IMM8);
   add_synonym(PEXTRW_R32_XMM_IMM8_1, PEXTRW_R64_XMM_IMM8_1);
+  add_synonym(PEXTRB_R32_XMM_IMM8, PEXTRB_R64_XMM_IMM8);
   add_synonym(EXTRACTPS_R32_XMM_IMM8, EXTRACTPS_R64_XMM_IMM8);
   add_synonym(VPEXTRW_R32_XMM_IMM8, VPEXTRW_R64_XMM_IMM8);
   add_synonym(VPEXTRW_R32_XMM_IMM8_1, VPEXTRW_R64_XMM_IMM8_1);
@@ -152,11 +153,22 @@ void init_synonyms() {
   add_synonym(LEA_R32_M32, LEA_R32_M64);
   add_synonym(LEA_R64_M32, LEA_R64_M16);
   add_synonym(LEA_R64_M32, LEA_R64_M64);
-  add_synonym(XCHG_R32_R32, XCHG_R32_EAX); // I don't think these are technically a full synonym
   add_synonym(VPMOVMSKB_R32_XMM, VPMOVMSKB_R64_XMM);
   add_synonym(VPMOVMSKB_R32_YMM, VPMOVMSKB_R64_YMM);
   add_synonym(VPEXTRB_R32_XMM_IMM8, VPEXTRB_R64_XMM_IMM8);
   add_synonym(VPEXTRW_R32_XMM_IMM8_1, VPEXTRW_R64_XMM_IMM8_1);
+
+
+  // now we'll add some instructions that aren't synonyms, but that we can't distinguish properly
+  add_synonym(XCHG_R32_R32, XCHG_R32_EAX);
+  add_synonym(XCHG_RH_R8_1, XCHG_R8_RH);
+  add_synonym(MOVUPD_XMM_XMM, MOVUPD_XMM_XMM_1);
+  add_synonym(MOVAPD_XMM_XMM, MOVAPD_XMM_XMM_1);
+  add_synonym(XCHG_R8_RH_1, XCHG_RH_R8);
+  add_synonym(VMOVUPS_XMM_XMM_1, VMOVUPS_XMM_XMM);
+  add_synonym(VCVTTPD2DQ_XMM_M256, VCVTTPD2DQ_XMM_M128);
+  add_synonym(SUB_AX_IMM16, SUB_R16_IMM8);
+  add_synonym(MOVUPS_XMM_XMM_1, MOVUPS_XMM_XMM);
 }
 
 
@@ -273,6 +285,8 @@ public:
           cout << "Opcode of after parsing: " << after_parsing.get_opcode() << endl;
           cout << "Bytes for original:      " << bytes_of(original) << endl;
           cout << "Bytes for after parsing: " << bytes_of(after_parsing) << endl;
+          cout << "If this is a suprious error, suppress it by adding:" << endl;
+          cout << "  add_synonym(" << original.get_opcode() << ", " << after_parsing.get_opcode() << ");" << endl;
         }
       }
     };
