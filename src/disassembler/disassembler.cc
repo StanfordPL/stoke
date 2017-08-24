@@ -175,10 +175,21 @@ string Disassembler::fix_instruction(const string& line) {
   constexpr array<const char*, 8> rots {{"shl", "shr", "sal", "sar", "rcl", "rcr", "rol", "ror"}};
   if (line.length() >= 3) {
     const auto in_list = find(rots.begin(), rots.end(), line.substr(0, 3)) != rots.end();
-    const auto missing = line.find_first_of(',') == string::npos;
-    if (in_list && missing) {
-      const auto split = line.find_first_of(' ');
-      return line.substr(0, split) + " $0x1," + line.substr(split + 1);
+
+    if (in_list) {
+      const auto missing = line.find_first_of(',') == string::npos;
+      const auto paren = line.find_first_of('(');
+
+      bool need_one = missing;
+      if (!need_one && paren != string::npos) {
+        const auto missing = line.substr(0, paren).find_first_of(',') == string::npos;
+        need_one = missing;
+      }
+
+      if (need_one) {
+        const auto split = line.find_first_of(' ');
+        return line.substr(0, split) + " $0x1," + line.substr(split + 1);
+      }
     }
   }
 
@@ -271,6 +282,8 @@ string Disassembler::fix_instruction(const string& line) {
     ll = regex_replace(ll, regex("vcvttsd2siq"), "vcvttsd2si");
     ll = regex_replace(ll, regex("vcvtsd2siq"), "vcvtsd2si");
     ll = regex_replace(ll, regex("vcvtsd2sil"), "vcvtsd2si");
+    ll = regex_replace(ll, regex("vcvtss2siq"), "vcvtsd2si");
+    ll = regex_replace(ll, regex("vcvtss2sil"), "vcvtsd2si");
   } else if (is_prefix(line, "cvt", 3)) {
     ll = regex_replace(ll, regex("cvttss2siq"), "cvttss2si");
     ll = regex_replace(ll, regex("cvttss2sil"), "cvttss2si");
@@ -278,6 +291,8 @@ string Disassembler::fix_instruction(const string& line) {
     ll = regex_replace(ll, regex("cvttsd2siq"), "cvttsd2si");
     ll = regex_replace(ll, regex("cvtsd2siq"), "cvtsd2si");
     ll = regex_replace(ll, regex("cvtsd2sil"), "cvtsd2si");
+    ll = regex_replace(ll, regex("cvtss2siq"), "cvtsd2si");
+    ll = regex_replace(ll, regex("cvtss2sil"), "cvtsd2si");
   } else if (is_prefix(line, "mova", 4)) {
     ll = regex_replace(ll, regex("movapd\\.s"), "movapd");
     ll = regex_replace(ll, regex("movaps\\.s"), "movaps");
