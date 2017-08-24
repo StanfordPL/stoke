@@ -233,39 +233,39 @@ string Disassembler::fix_instruction(const string& line) {
   auto ll = line;
 
   // The whole family of (v)cmp synonyms
-  if (is_prefix(line, "cmp", 4) || is_prefix(line, "vcmp", 4)) {
-    ll = regex_replace(ll, regex("(v?cmp)eq([^ ]+)"),       "$1$2 \\$0x00,$3");
-    ll = regex_replace(ll, regex("(v?cmp)lt([^ ]+)"),       "$1$2 \\$0x01,$3");
-    ll = regex_replace(ll, regex("(v?cmp)le([^ ]+)"),       "$1$2 \\$0x02,$3");
-    ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 \\$0x03,$3");
-    ll = regex_replace(ll, regex("(v?cmp)neq([^ ]+)"),      "$1$2 \\$0x04,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nlt([^ ]+)"),      "$1$2 \\$0x05,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nle([^ ]+)"),      "$1$2 \\$0x06,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ord([^ ]+)"),      "$1$2 \\$0x07,$3");
-    ll = regex_replace(ll, regex("(v?cmp)eq_uq([^ ]+)"),    "$1$2 \\$0x08,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nge([^ ]+)"),      "$1$2 \\$0x09,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ngt([^ ]+)"),      "$1$2 \\$0x0a,$3");
-    ll = regex_replace(ll, regex("(v?cmp)false([^ ]+)"),    "$1$2 \\$0x0b,$3");
-    ll = regex_replace(ll, regex("(v?cmp)neq_oq([^ ]+)"),   "$1$2 \\$0x0c,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ge([^ ]+)"),       "$1$2 \\$0x0d,$3");
-    ll = regex_replace(ll, regex("(v?cmp)gt([^ ]+)"),       "$1$2 \\$0x0e,$3");
-    ll = regex_replace(ll, regex("(v?cmp)true([^ ]+)"),     "$1$2 \\$0x0f,$3");
-    ll = regex_replace(ll, regex("(v?cmp)eq_os([^ ]+)"),    "$1$2 \\$0x10,$3");
-    ll = regex_replace(ll, regex("(v?cmp)lt_oq([^ ]+)"),    "$1$2 \\$0x11,$3");
-    ll = regex_replace(ll, regex("(v?cmp)le_oq([^ ]+)"),    "$1$2 \\$0x12,$3");
-    ll = regex_replace(ll, regex("(v?cmp)unord_s([^ ]+)"),  "$1$2 \\$0x13,$3");
-    ll = regex_replace(ll, regex("(v?cmp)neq_us([^ ]+)"),   "$1$2 \\$0x14,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nlt_uq([^ ]+)"),   "$1$2 \\$0x15,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nle_uq([^ ]+)"),   "$1$2 \\$0x16,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ord_s([^ ]+)"),    "$1$2 \\$0x17,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ueq_us([^ ]+)"),   "$1$2 \\$0x18,$3");
-    ll = regex_replace(ll, regex("(v?cmp)nge_uq([^ ]+)"),   "$1$2 \\$0x19,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ngt_uq([^ ]+)"),   "$1$2 \\$0x1a,$3");
-    ll = regex_replace(ll, regex("(v?cmp)false_os([^ ]+)"), "$1$2 \\$0x1b,$3");
-    ll = regex_replace(ll, regex("(v?cmp)neq_os([^ ]+)"),   "$1$2 \\$0x1c,$3");
-    ll = regex_replace(ll, regex("(v?cmp)ge_oq([^ ]+)"),    "$1$2 \\$0x1d,$3");
-    ll = regex_replace(ll, regex("(v?cmp)gt_oq([^ ]+)"),    "$1$2 \\$0x1e,$3");
-    ll = regex_replace(ll, regex("(v?cmp)true_us([^ ]+)"),  "$1$2 \\$0x1f,$3");
+  if (is_prefix(line, "cmp", 3) || is_prefix(line, "vcmp", 4)) {
+    ll = regex_replace(ll, regex("(v?cmp)eq([^ ]+)"),       "$1$2 $$0x00,");
+    ll = regex_replace(ll, regex("(v?cmp)lt([^ ]+)"),       "$1$2 $$0x01,");
+    ll = regex_replace(ll, regex("(v?cmp)le([^ ]+)"),       "$1$2 $$0x02,");
+    ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 $$0x03,");
+    ll = regex_replace(ll, regex("(v?cmp)neq([^ ]+)"),      "$1$2 $$0x04,");
+    ll = regex_replace(ll, regex("(v?cmp)nlt([^ ]+)"),      "$1$2 $$0x05,");
+    ll = regex_replace(ll, regex("(v?cmp)nle([^ ]+)"),      "$1$2 $$0x06,");
+    ll = regex_replace(ll, regex("(v?cmp)ord([^ ]+)"),      "$1$2 $$0x07,");
+    ll = regex_replace(ll, regex("(v?cmp)eq_uq([^ ]+)"),    "$1$2 $$0x08,");
+    ll = regex_replace(ll, regex("(v?cmp)nge([^ ]+)"),      "$1$2 $$0x09,");
+    ll = regex_replace(ll, regex("(v?cmp)ngt([^ ]+)"),      "$1$2 $$0x0a,");
+    ll = regex_replace(ll, regex("(v?cmp)false([^ ]+)"),    "$1$2 $$0x0b,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_oq([^ ]+)"),   "$1$2 $$0x0c,");
+    ll = regex_replace(ll, regex("(v?cmp)ge([^ ]+)"),       "$1$2 $$0x0d,");
+    ll = regex_replace(ll, regex("(v?cmp)gt([^ ]+)"),       "$1$2 $$0x0e,");
+    ll = regex_replace(ll, regex("(v?cmp)true([^ ]+)"),     "$1$2 $$0x0f,");
+    ll = regex_replace(ll, regex("(v?cmp)eq_os([^ ]+)"),    "$1$2 $$0x10,");
+    ll = regex_replace(ll, regex("(v?cmp)lt_oq([^ ]+)"),    "$1$2 $$0x11,");
+    ll = regex_replace(ll, regex("(v?cmp)le_oq([^ ]+)"),    "$1$2 $$0x12,");
+    ll = regex_replace(ll, regex("(v?cmp)unord_s([^ ]+)"),  "$1$2 $$0x13,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_us([^ ]+)"),   "$1$2 $$0x14,");
+    ll = regex_replace(ll, regex("(v?cmp)nlt_uq([^ ]+)"),   "$1$2 $$0x15,");
+    ll = regex_replace(ll, regex("(v?cmp)nle_uq([^ ]+)"),   "$1$2 $$0x16,");
+    ll = regex_replace(ll, regex("(v?cmp)ord_s([^ ]+)"),    "$1$2 $$0x17,");
+    ll = regex_replace(ll, regex("(v?cmp)ueq_us([^ ]+)"),   "$1$2 $$0x18,");
+    ll = regex_replace(ll, regex("(v?cmp)nge_uq([^ ]+)"),   "$1$2 $$0x19,");
+    ll = regex_replace(ll, regex("(v?cmp)ngt_uq([^ ]+)"),   "$1$2 $$0x1a,");
+    ll = regex_replace(ll, regex("(v?cmp)false_os([^ ]+)"), "$1$2 $$0x1b,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_os([^ ]+)"),   "$1$2 $$0x1c,");
+    ll = regex_replace(ll, regex("(v?cmp)ge_oq([^ ]+)"),    "$1$2 $$0x1d,");
+    ll = regex_replace(ll, regex("(v?cmp)gt_oq([^ ]+)"),    "$1$2 $$0x1e,");
+    ll = regex_replace(ll, regex("(v?cmp)true_us([^ ]+)"),  "$1$2 $$0x1f,");
   }
 
   // I *think* these suffixe function as annotations and can be removed
