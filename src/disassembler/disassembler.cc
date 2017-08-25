@@ -32,7 +32,8 @@ using namespace x64asm;
 namespace {
 
 /** Returns true if the first n characters of a string match a prefix */
-bool is_prefix(const std::string& s, const char* prefix, size_t len) {
+bool is_prefix(const std::string& s, const string prefix) {
+  auto len = prefix.size();
   return s.length() >= len && s.substr(0,len) == prefix;
 }
 
@@ -194,37 +195,39 @@ string Disassembler::fix_instruction(const string& line) {
   }
 
   // Remove documentation arg from string instructions
-  if (is_prefix(line, "stos", 4)) {
+  if (is_prefix(line, "stos")) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, 6) + line.substr(comma + 1);
   }
-  if (is_prefix(line, "rep stos", 8)) {
+  if (is_prefix(line, "rep stos")) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, 10) + line.substr(comma + 1);
   }
-  if (is_prefix(line, "repnz scas", 10)) {
+  if (is_prefix(line, "repnz scas")) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, comma);
   }
 
   // Synonyms
-  if (is_prefix(line, "hlt", 3) || is_prefix(line, "repz retq", 9)) {
+  if (is_prefix(line, "hlt")) {
     return "retq";
-  } else if (is_prefix(line, "nop", 3) || is_prefix(line, "data", 4) || is_prefix(line, "rex.W nop", 9)) {
+  } else if (is_prefix(line, "repz retq")) {
+    return "repz retq";
+  } else if (is_prefix(line, "nop") || is_prefix(line, "data") || is_prefix(line, "rex.W nop")) {
     return "nop";
-  } else if (is_prefix(line, "movabsq", 7)) {
+  } else if (is_prefix(line, "movabsq")) {
     return "movq" + line.substr(7);
   }
 
   // Append q to the end of call and jump
-  if (is_prefix(line, "call ", 5)) {
+  if (is_prefix(line, "call ")) {
     return "callq " + line.substr(5);
   } else if (line.length() >= 4 && line.substr(0,4) == "jmp ") {
     return "jmpq " + line.substr(4);
   }
 
   // Make lock its own instruction
-  if (is_prefix(line, "lock", 4)) {
+  if (is_prefix(line, "lock")) {
     return "lock\n" + line.substr(4);
   }
 
@@ -233,7 +236,7 @@ string Disassembler::fix_instruction(const string& line) {
   auto ll = line;
 
   // The whole family of (v)cmp synonyms
-  if (is_prefix(line, "cmp", 3) || is_prefix(line, "vcmp", 4)) {
+  if (is_prefix(line, "cmp") || is_prefix(line, "vcmp")) {
     ll = regex_replace(ll, regex("(v?cmp)unord_s([^ ]+)"),  "$1$2 $$0x13,");
     ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 $$0x03,");
     ll = regex_replace(ll, regex("(v?cmp)ueq_us([^ ]+)"),   "$1$2 $$0x18,");
@@ -269,7 +272,7 @@ string Disassembler::fix_instruction(const string& line) {
   }
 
   // I *think* these suffixe function as annotations and can be removed
-  if (is_prefix(line, "vcvt", 4)) {
+  if (is_prefix(line, "vcvt")) {
     ll = regex_replace(ll, regex("vcvtpd2psx"), "vcvtpd2ps");
     ll = regex_replace(ll, regex("vcvtpd2psy"), "vcvtpd2ps");
     ll = regex_replace(ll, regex("vcvtpd2dqx"), "vcvtpd2dq");
@@ -284,7 +287,7 @@ string Disassembler::fix_instruction(const string& line) {
     ll = regex_replace(ll, regex("vcvtsd2sil"), "vcvtsd2si");
     ll = regex_replace(ll, regex("vcvtss2siq"), "vcvtsd2si");
     ll = regex_replace(ll, regex("vcvtss2sil"), "vcvtsd2si");
-  } else if (is_prefix(line, "cvt", 3)) {
+  } else if (is_prefix(line, "cvt")) {
     ll = regex_replace(ll, regex("cvttss2siq"), "cvttss2si");
     ll = regex_replace(ll, regex("cvttss2sil"), "cvttss2si");
     ll = regex_replace(ll, regex("cvttsd2sil"), "cvttsd2si");
@@ -293,22 +296,22 @@ string Disassembler::fix_instruction(const string& line) {
     ll = regex_replace(ll, regex("cvtsd2sil"), "cvtsd2si");
     ll = regex_replace(ll, regex("cvtss2siq"), "cvtsd2si");
     ll = regex_replace(ll, regex("cvtss2sil"), "cvtsd2si");
-  } else if (is_prefix(line, "mova", 4)) {
+  } else if (is_prefix(line, "mova")) {
     ll = regex_replace(ll, regex("movapd\\.s"), "movapd");
     ll = regex_replace(ll, regex("movaps\\.s"), "movaps");
-  } else if (is_prefix(line, "movu", 4)) {
+  } else if (is_prefix(line, "movu")) {
     ll = regex_replace(ll, regex("movupd\\.s"), "movupd");
     ll = regex_replace(ll, regex("movups\\.s"), "movups");
-  } else if (is_prefix(line, "vmova", 5)) {
+  } else if (is_prefix(line, "vmova")) {
     ll = regex_replace(ll, regex("vmovapd\\.s"), "vmovapd");
     ll = regex_replace(ll, regex("vmovaps\\.s"), "vmovaps");
-  } else if (is_prefix(line, "vmovd", 5)) {
+  } else if (is_prefix(line, "vmovd")) {
     ll = regex_replace(ll, regex("vmovdqa\\.s"), "vmovdqa");
     ll = regex_replace(ll, regex("vmovdqu\\.s"), "vmovdqu");
-  } else if (is_prefix(line, "vmovu", 5)) {
+  } else if (is_prefix(line, "vmovu")) {
     ll = regex_replace(ll, regex("vmovupd\\.s"), "vmovupd");
     ll = regex_replace(ll, regex("vmovups\\.s"), "vmovups");
-  } else if (is_prefix(line, "movnti", 6)) {
+  } else if (is_prefix(line, "movnti")) {
     ll = regex_replace(ll, regex("movntil"), "movnti");
     ll = regex_replace(ll, regex("movntiq"), "movnti");
   }
@@ -478,6 +481,9 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
       for (size_t i = 0; i < l.hex_bytes; i++) {
         ss << l.instr << " # SIZE=1" << endl;
       }
+    } else if (l.instr == "repz retq" && l.hex_bytes == 2) {
+      ss << "nop # SIZE=1" << endl;
+      ss << "repz # SIZE=1" << endl;
     } else {
       stringstream tmp;
       tmp << l.instr << " # SIZE=" << l.hex_bytes << endl;
