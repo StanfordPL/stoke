@@ -487,7 +487,7 @@ void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
 TEST_F(X64AsmParseTest, FuzzTest) {
 
   // Parameters for the test
-  unsigned long iterations = 80000;
+  unsigned long iterations = 800;
   stoke::TransformPools tp = stoke::default_fuzzer_pool();
 
   set_total(iterations);
