@@ -203,7 +203,9 @@ void init_synonyms() {
   add_synonym(VMOVDQA_YMM_YMM_1, VMOVDQA_YMM_YMM);
   add_synonym(VMOVQ_XMM_M64_1, VMOVQ_XMM_M64);
   add_synonym(XCHG_EAX_R32, NOP);
+  add_synonym(XCHG_R32_EAX, NOP);
   add_synonym(XCHG_R64_RAX, NOP);
+  add_synonym(XCHG_RAX_R64, NOP);
 }
 
 
