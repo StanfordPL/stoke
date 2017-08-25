@@ -210,7 +210,7 @@ string Disassembler::fix_instruction(const string& line) {
   // Synonyms
   if (is_prefix(line, "hlt", 3) || is_prefix(line, "repz retq", 9)) {
     return "retq";
-  } else if (is_prefix(line, "nop", 3) || is_prefix(line, "data", 4)) {
+  } else if (is_prefix(line, "nop", 3) || is_prefix(line, "data", 4) || is_prefix(line, "rex.W nop", 9)) {
     return "nop";
   } else if (is_prefix(line, "movabsq", 7)) {
     return "movq" + line.substr(7);
@@ -234,38 +234,38 @@ string Disassembler::fix_instruction(const string& line) {
 
   // The whole family of (v)cmp synonyms
   if (is_prefix(line, "cmp", 3) || is_prefix(line, "vcmp", 4)) {
-    ll = regex_replace(ll, regex("(v?cmp)eq([^ ]+)"),       "$1$2 $$0x00,");
-    ll = regex_replace(ll, regex("(v?cmp)lt([^ ]+)"),       "$1$2 $$0x01,");
-    ll = regex_replace(ll, regex("(v?cmp)le([^ ]+)"),       "$1$2 $$0x02,");
-    ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 $$0x03,");
-    ll = regex_replace(ll, regex("(v?cmp)neq([^ ]+)"),      "$1$2 $$0x04,");
-    ll = regex_replace(ll, regex("(v?cmp)nlt([^ ]+)"),      "$1$2 $$0x05,");
-    ll = regex_replace(ll, regex("(v?cmp)nle([^ ]+)"),      "$1$2 $$0x06,");
-    ll = regex_replace(ll, regex("(v?cmp)ord([^ ]+)"),      "$1$2 $$0x07,");
-    ll = regex_replace(ll, regex("(v?cmp)eq_uq([^ ]+)"),    "$1$2 $$0x08,");
-    ll = regex_replace(ll, regex("(v?cmp)nge([^ ]+)"),      "$1$2 $$0x09,");
-    ll = regex_replace(ll, regex("(v?cmp)ngt([^ ]+)"),      "$1$2 $$0x0a,");
-    ll = regex_replace(ll, regex("(v?cmp)false([^ ]+)"),    "$1$2 $$0x0b,");
-    ll = regex_replace(ll, regex("(v?cmp)neq_oq([^ ]+)"),   "$1$2 $$0x0c,");
-    ll = regex_replace(ll, regex("(v?cmp)ge([^ ]+)"),       "$1$2 $$0x0d,");
-    ll = regex_replace(ll, regex("(v?cmp)gt([^ ]+)"),       "$1$2 $$0x0e,");
-    ll = regex_replace(ll, regex("(v?cmp)true([^ ]+)"),     "$1$2 $$0x0f,");
-    ll = regex_replace(ll, regex("(v?cmp)eq_os([^ ]+)"),    "$1$2 $$0x10,");
-    ll = regex_replace(ll, regex("(v?cmp)lt_oq([^ ]+)"),    "$1$2 $$0x11,");
-    ll = regex_replace(ll, regex("(v?cmp)le_oq([^ ]+)"),    "$1$2 $$0x12,");
     ll = regex_replace(ll, regex("(v?cmp)unord_s([^ ]+)"),  "$1$2 $$0x13,");
-    ll = regex_replace(ll, regex("(v?cmp)neq_us([^ ]+)"),   "$1$2 $$0x14,");
-    ll = regex_replace(ll, regex("(v?cmp)nlt_uq([^ ]+)"),   "$1$2 $$0x15,");
-    ll = regex_replace(ll, regex("(v?cmp)nle_uq([^ ]+)"),   "$1$2 $$0x16,");
-    ll = regex_replace(ll, regex("(v?cmp)ord_s([^ ]+)"),    "$1$2 $$0x17,");
+    ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 $$0x03,");
     ll = regex_replace(ll, regex("(v?cmp)ueq_us([^ ]+)"),   "$1$2 $$0x18,");
-    ll = regex_replace(ll, regex("(v?cmp)nge_uq([^ ]+)"),   "$1$2 $$0x19,");
-    ll = regex_replace(ll, regex("(v?cmp)ngt_uq([^ ]+)"),   "$1$2 $$0x1a,");
-    ll = regex_replace(ll, regex("(v?cmp)false_os([^ ]+)"), "$1$2 $$0x1b,");
-    ll = regex_replace(ll, regex("(v?cmp)neq_os([^ ]+)"),   "$1$2 $$0x1c,");
-    ll = regex_replace(ll, regex("(v?cmp)ge_oq([^ ]+)"),    "$1$2 $$0x1d,");
-    ll = regex_replace(ll, regex("(v?cmp)gt_oq([^ ]+)"),    "$1$2 $$0x1e,");
     ll = regex_replace(ll, regex("(v?cmp)true_us([^ ]+)"),  "$1$2 $$0x1f,");
+    ll = regex_replace(ll, regex("(v?cmp)true([^ ]+)"),     "$1$2 $$0x0f,");
+    ll = regex_replace(ll, regex("(v?cmp)ord_s([^ ]+)"),    "$1$2 $$0x17,");
+    ll = regex_replace(ll, regex("(v?cmp)ord([^ ]+)"),      "$1$2 $$0x07,");
+    ll = regex_replace(ll, regex("(v?cmp)nlt_uq([^ ]+)"),   "$1$2 $$0x15,");
+    ll = regex_replace(ll, regex("(v?cmp)nlt([^ ]+)"),      "$1$2 $$0x05,");
+    ll = regex_replace(ll, regex("(v?cmp)nle_uq([^ ]+)"),   "$1$2 $$0x16,");
+    ll = regex_replace(ll, regex("(v?cmp)nle([^ ]+)"),      "$1$2 $$0x06,");
+    ll = regex_replace(ll, regex("(v?cmp)ngt_uq([^ ]+)"),   "$1$2 $$0x1a,");
+    ll = regex_replace(ll, regex("(v?cmp)ngt([^ ]+)"),      "$1$2 $$0x0a,");
+    ll = regex_replace(ll, regex("(v?cmp)nge_uq([^ ]+)"),   "$1$2 $$0x19,");
+    ll = regex_replace(ll, regex("(v?cmp)nge([^ ]+)"),      "$1$2 $$0x09,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_us([^ ]+)"),   "$1$2 $$0x14,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_os([^ ]+)"),   "$1$2 $$0x1c,");
+    ll = regex_replace(ll, regex("(v?cmp)neq_oq([^ ]+)"),   "$1$2 $$0x0c,");
+    ll = regex_replace(ll, regex("(v?cmp)neq([^ ]+)"),      "$1$2 $$0x04,");
+    ll = regex_replace(ll, regex("(v?cmp)lt_oq([^ ]+)"),    "$1$2 $$0x11,");
+    ll = regex_replace(ll, regex("(v?cmp)lt([^ ]+)"),       "$1$2 $$0x01,");
+    ll = regex_replace(ll, regex("(v?cmp)le_oq([^ ]+)"),    "$1$2 $$0x12,");
+    ll = regex_replace(ll, regex("(v?cmp)le([^ ]+)"),       "$1$2 $$0x02,");
+    ll = regex_replace(ll, regex("(v?cmp)gt_oq([^ ]+)"),    "$1$2 $$0x1e,");
+    ll = regex_replace(ll, regex("(v?cmp)gt([^ ]+)"),       "$1$2 $$0x0e,");
+    ll = regex_replace(ll, regex("(v?cmp)ge_oq([^ ]+)"),    "$1$2 $$0x1d,");
+    ll = regex_replace(ll, regex("(v?cmp)ge([^ ]+)"),       "$1$2 $$0x0d,");
+    ll = regex_replace(ll, regex("(v?cmp)false_os([^ ]+)"), "$1$2 $$0x1b,");
+    ll = regex_replace(ll, regex("(v?cmp)false([^ ]+)"),    "$1$2 $$0x0b,");
+    ll = regex_replace(ll, regex("(v?cmp)eq_uq([^ ]+)"),    "$1$2 $$0x08,");
+    ll = regex_replace(ll, regex("(v?cmp)eq_os([^ ]+)"),    "$1$2 $$0x10,");
+    ll = regex_replace(ll, regex("(v?cmp)eq([^ ]+)"),       "$1$2 $$0x00,");
   }
 
   // I *think* these suffixe function as annotations and can be removed
@@ -474,33 +474,20 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
     // found in the disassembly.  If we have to go down, then insert nops to pad it out.
     // If we have to go up, then we fail.
 
-    bool success = false;
-    for (int attempt = l.hex_bytes; attempt >= 0; attempt--) {
-      if (attempt == 0) {
-        if (l.hex_bytes != 0) continue;
+    if (l.instr == "nop") {
+      for (size_t i = 0; i < l.hex_bytes; i++) {
+        ss << l.instr << " # SIZE=1" << endl;
       }
-
+    } else {
       stringstream tmp;
-      tmp << l.instr << " # SIZE=" << attempt << endl;
+      tmp << l.instr << " # SIZE=" << l.hex_bytes << endl;
       Code c;
       tmp >> c;
       if (failed(tmp)) {
-        continue;
+        fail(ss) << "Could not encode '" << l.instr << "' within " << l.hex_bytes << " bytes." << endl;
+      } else {
+        ss << l.instr << " # SIZE=" << l.hex_bytes << endl;
       }
-
-      // we've found a match
-      //cout << "Size " << attempt << " worked for " << l.instr << endl;
-      ss << l.instr << " # SIZE=" << attempt << endl;
-      for (size_t i = 0; i < l.hex_bytes - attempt; ++i) {
-        ss << "nop # SIZE=1" << endl;
-      }
-      success = true;
-      break;
-    }
-
-    if (!success) {
-      //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
-      fail(ss) << "Could not encode '" << l.instr << "' within " << l.hex_bytes << " bytes." << endl;
     }
   }
 

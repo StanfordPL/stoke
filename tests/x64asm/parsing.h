@@ -202,6 +202,8 @@ void init_synonyms() {
   add_synonym(VPEXTRW_R64_XMM_IMM8_1, VPEXTRW_R32_XMM_IMM8);
   add_synonym(VMOVDQA_YMM_YMM_1, VMOVDQA_YMM_YMM);
   add_synonym(VMOVQ_XMM_M64_1, VMOVQ_XMM_M64);
+  add_synonym(XCHG_EAX_R32, NOP);
+  add_synonym(XCHG_R64_RAX, NOP);
 }
 
 
@@ -485,7 +487,7 @@ void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
 TEST_F(X64AsmParseTest, FuzzTest) {
 
   // Parameters for the test
-  unsigned long iterations = 800;
+  unsigned long iterations = 80000;
   stoke::TransformPools tp = stoke::default_fuzzer_pool();
 
   set_total(iterations);
