@@ -88,7 +88,7 @@ TEST(X64AsmInstructionInfo, FunctionSize2) {
 
   Assembler assm;
   auto fxn = assm.assemble(c).second;
-  EXPECT_EQ(150ul, fxn.size());
+  EXPECT_EQ(147U, fxn.size());
 
 }
 
