@@ -483,7 +483,7 @@ int Disassembler::parse_function(ipstream& ips, const string& line, FunctionCall
       }
     } else if (l.instr == "repz retq" && l.hex_bytes == 2) {
       ss << "nop # SIZE=1" << endl;
-      ss << "repz # SIZE=1" << endl;
+      ss << "retq # SIZE=1" << endl;
     } else {
       stringstream tmp;
       tmp << l.instr << " # SIZE=" << l.hex_bytes << endl;
