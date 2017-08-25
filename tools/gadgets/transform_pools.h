@@ -23,7 +23,10 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/cfg/cfg.h"
+#ifndef NOCVC4
 #include "src/solver/cvc4solver.h"
+#endif
+#include "src/solver/z3solver.h"
 #include "src/target/cpu_info.h"
 #include "src/transform/pools.h"
 #include "src/tunit/tunit.h"
@@ -59,7 +62,11 @@ public:
     smt_ = nullptr;
     validator_ = nullptr;
     if (validator_must_support_arg.value()) {
+#ifndef NOCVC4
       smt_ = (SMTSolver*)new Cvc4Solver();
+#else
+      smt_ = (SMTSolver*)new Z3Solver();
+#endif
       validator_ = new Validator(*smt_);
       set_validator(validator_);
     }

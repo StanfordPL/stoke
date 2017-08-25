@@ -259,6 +259,17 @@ public:
     return live_outs_[get_index(loc)];
   }
 
+  /** Returns the set of registers that are live-out of a specific block
+      (undefined for unreachable blocks) */
+  x64asm::RegSet live_outs(id_type id) const {
+    if (id == 0) {
+      return live_outs({0,0});
+    } else {
+      assert(num_instrs(id) > 0);
+      return live_outs({id, num_instrs(id)-1});
+    }
+  }
+
   /** Returns the set of registers that are live on exit from this graph. */
   x64asm::RegSet live_outs() const {
     return fxn_live_outs_;

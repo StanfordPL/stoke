@@ -342,7 +342,8 @@ void SymState::set_szp_flags(const SymBitVector& v, SymBool condition) {
 }
 
 /** Generate constraints expressing equality of two states over a given regset */
-std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
+std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs,
+    const vector<string>& ghosts) const {
 
   std::vector<SymBool> constraints;
 
@@ -359,6 +360,10 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
   constraints.push_back(sigbus == other.sigbus);
   constraints.push_back(sigfpe == other.sigfpe);
   constraints.push_back(sigsegv == other.sigsegv);
+
+  for (auto ghost : ghosts) {
+    constraints.push_back(shadow.at(ghost) == other.shadow.at(ghost));
+  }
 
   return constraints;
 }

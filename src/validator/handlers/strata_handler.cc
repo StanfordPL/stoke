@@ -766,6 +766,13 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       TUnit t;
       file >> t;
 
+      if (failed(file)) {
+        cerr << "INTERNAL STOKE ERROR, please report" << endl;
+        cerr << "Failed to parse " << candidate_file << endl;
+        cerr << "Message: " << fail_msg(file) << endl;
+        exit(1);
+      }
+
       // build formula for program
       auto code = t.get_code();
       assert(code[0].get_opcode() == Opcode::LABEL_DEFN);

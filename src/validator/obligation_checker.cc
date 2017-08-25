@@ -182,17 +182,9 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
-  LineMap line_map;
-
-  auto new_cfg = rewrite_cfg_with_path(cfg, P, line_map);
-  auto new_f = new_cfg.get_function();
-  new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
-  new_f.push_back(x64asm::Instruction(x64asm::RET));
-  new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
-
   sb.insert_input(state);
-  sb.insert_function(new_cfg);
-  sb.set_entrypoint(new_f.get_leading_label());
+  sb.insert_function(cfg);
+  sb.set_entrypoint(cfg.get_function().get_leading_label());
   sb.run();
 
   CpuState output = *(sb.get_output(0));
@@ -219,9 +211,9 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
 
   // Lastly, we check that the final states do not satisfy the invariant
+  CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
+  CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
   if (prove.check(target_output, rewrite_output)) {
-    CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
-    CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
     CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
     return false;
   }
@@ -1034,7 +1026,13 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   }
 }
 
-ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, const CfgPath& P, size_t i) {
+ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
+
+  auto P = P_copy;
+
+  if (i == 0 && P.size() == 1) {
+    P.insert(P.begin(), start_block);
+  }
 
   if (i == P.size() - 1)
     return JumpType::NONE;
@@ -1074,7 +1072,7 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
   }
 }
 
-bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -1164,10 +1162,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     // Build the circuits
     size_t line_no = 0;
     for (size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_map);
+      build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map);
     line_no = 0;
     for (size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_map);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map);
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));
