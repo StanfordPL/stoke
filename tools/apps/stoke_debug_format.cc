@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
     res = &cout;
   } else {
     ofstream ofs(out.value());
-    res = &ofs
+    res = &ofs;
   }
   if (output_binary) {
     target.get_function().write_binary(*res);
