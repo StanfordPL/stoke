@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
       target.get_function().write_text(ofs);
     }
   }
-  
+
 
   return 0;
 }
