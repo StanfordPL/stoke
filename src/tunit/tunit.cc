@@ -388,6 +388,8 @@ istream& TUnit::read_text(istream& is) {
     read_formatted_text(ss);
   } else if (first_line == "SBIN") {
     read_binary_format(ss);
+  } else if (first_line == "DUMP") {
+    read_dump_format(ss);
   } else {
     read_naked_text(ss);
   }
@@ -547,6 +549,31 @@ void TUnit::adjust_rip(size_t index, int64_t delta) {
   instr.set_operand(mi, op);
 }
 
+string read_string(istream& is) {
+  uint64_t length;
+  is.read(reinterpret_cast<char*>(&length), sizeof(length));
+  char res[length+1];
+  is.read(reinterpret_cast<char*>(&res), length);
+  return string(res);
+}
+
+void write_string(ostream& os, string s) {
+  const char* ss = s.c_str();
+  uint64_t length = strlen(ss) + 1;
+  os.write(reinterpret_cast<char*>(&length), sizeof(length));
+  os.write(ss, length);
+}
+
+uint64_t read_int(istream& is) {
+  uint64_t res;
+  is.read(reinterpret_cast<char*>(&res), sizeof(res));
+  return res;
+}
+
+void write_int(ostream& os, uint64_t val) {
+  os.write(reinterpret_cast<char*>(&val), sizeof(val));
+}
+
 istream& TUnit::read_binary_format(istream& is) {
 
   const auto fmt = is.flags();
@@ -557,14 +584,9 @@ istream& TUnit::read_binary_format(istream& is) {
   for (unsigned i = 0; i < strlen(magic_marker) + 1; i++) is.get();
 
   // read meta data
-  uint64_t file_offset;
-  is.read(reinterpret_cast<char*>(&file_offset), sizeof(file_offset));
-  uint64_t rip_offset;
-  is.read(reinterpret_cast<char*>(&rip_offset), sizeof(rip_offset));
-  uint64_t name_length;
-  is.read(reinterpret_cast<char*>(&name_length), sizeof(name_length));
-  char name[name_length+1];
-  is.read(reinterpret_cast<char*>(&name), name_length);
+  uint64_t file_offset = read_int(is);
+  uint64_t rip_offset = read_int(is);
+  string name = read_string(is);
 
   // put binary into new file
   const char *tmpfilename = tmpnam(NULL);
@@ -585,7 +607,7 @@ istream& TUnit::read_binary_format(istream& is) {
     *this = data.tunit;
     file_offset_ = file_offset;
     rip_offset_ = rip_offset;
-    code_[0] = Instruction(LABEL_DEFN, { Label("." + string(name)) });
+    code_[0] = Instruction(LABEL_DEFN, { Label("." + name) });
   };
   disassm.set_function_callback(&callback);
   disassm.disassemble(tmpfilename);
@@ -618,22 +640,115 @@ ostream& TUnit::write_binary(ostream& os) const {
   const char* magic_marker = "SBIN\n";
   os.write(magic_marker, strlen(magic_marker)+1);
 
-  // file offset
-  uint64_t file_offset = get_file_offset();
-  os.write(reinterpret_cast<char*>(&file_offset), sizeof(file_offset));
-
-  // rip offset
-  uint64_t rip_offset = get_rip_offset();
-  os.write(reinterpret_cast<char*>(&rip_offset), sizeof(rip_offset));
+  // meta-data
+  write_int(os, get_file_offset());
+  write_int(os, get_rip_offset());
 
   // name
-  const char* name = get_name().c_str();
-  uint64_t length = strlen(name) + 1;
-  os.write(reinterpret_cast<char*>(&length), sizeof(length));
-  os.write(name, length);
+  write_string(os, get_name());
 
   // compiled function
   os.write(reinterpret_cast<char*>(buffer.get_entrypoint()), buffer.size());
+
+  return os;
+}
+
+istream& TUnit::read_dump_format(istream& is) {
+
+  const auto fmt = is.flags();
+
+  const char* magic_marker = "DUMP\n";
+
+  // skip magic marger
+  for (unsigned i = 0; i < strlen(magic_marker) + 1; i++) is.get();
+
+  // read meta data
+  file_offset_ = read_int(is);
+  rip_offset_ = read_int(is);
+  capacity_ = read_int(is);
+  uint64_t ninstr = read_int(is);
+
+  // read labels
+  map<uint64_t, Label> lbls;
+  auto nlbls = read_int(is);
+  for (uint64_t i = 0; i < nlbls; i++) {
+    auto id = read_int(is);
+    auto name = read_string(is);
+    lbls[id] = Label(name);
+  }
+
+  // read instructions
+  code_.clear();
+  for (size_t i = 0; i < ninstr; ++i) {
+    Instruction instr(NOP);
+    is.read(reinterpret_cast<char*>(&instr), sizeof(Instruction));
+
+    // fix up labels
+    for (size_t i = 0; i < instr.arity(); i++) {
+      if (instr.type(i) == Type::LABEL) {
+        Label lbl = instr.get_operand<Label>(i);
+        uint64_t lblid = (uint64_t)lbl;
+        instr.set_operand(i, lbls[lblid]);
+      }
+    }
+
+    code_.push_back(instr);
+  }
+
+  recompute();
+
+  is.flags(fmt);
+  return is;
+}
+
+
+ostream& TUnit::write_dump(ostream& os) const {
+  // assemble function
+  Function buffer;
+  Assembler assm;
+  assm.start(buffer);
+  for (size_t i = 0; i < code_.size(); i++) {
+    auto& instr = code_[i];
+    assm.assemble(instr);
+  }
+  bool ok = assm.finish();
+  assert(ok);
+
+  uint64_t ninstr = code_.size();
+
+  // magic marker
+  const char* magic_marker = "DUMP\n";
+  os.write(magic_marker, strlen(magic_marker)+1);
+
+  // meta-data
+  write_int(os, get_file_offset());
+  write_int(os, get_rip_offset());
+  write_int(os, capacity_);
+  write_int(os, ninstr);
+
+  // labels
+  vector<Label> lbls;
+  for (uint64_t i = 0; i < ninstr; i++) {
+    const Instruction& instr = code_[i];
+    for (size_t i = 0; i < instr.arity(); i++) {
+      if (instr.type(i) == Type::LABEL) {
+        Label lbl = instr.get_operand<Label>(i);
+        if (find(lbls.begin(), lbls.end(), lbl) == lbls.end()) {
+          lbls.push_back(lbl);
+        }
+      }
+    }
+  }
+  write_int(os, lbls.size());
+  for (Label& l : lbls) {
+    write_int(os, (uint64_t)l);
+    write_string(os, l.get_text());
+  }
+
+  // instruction bytes
+  for (uint64_t i = 0; i < ninstr; i++) {
+    os.write(reinterpret_cast<const char*>(&code_[i]), sizeof(Instruction));
+  }
 
   return os;
 }

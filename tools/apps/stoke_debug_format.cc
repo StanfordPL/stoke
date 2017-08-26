@@ -38,6 +38,9 @@ auto& io = Heading::create("I/O Options:");
 auto& output_binary = FlagArg::create("output_binary")
                       .alternate("b")
                       .description("Output the target in binary format.");
+auto& output_binary2 = FlagArg::create("output_dump")
+                      .alternate("d")
+                      .description("Output the target in the binary dump format.");
 auto& out = ValueArg<string>::create("out")
             .alternate("o")
             .usage("<path/to/file.s>")
@@ -61,6 +64,8 @@ int main(int argc, char** argv) {
   }
   if (output_binary) {
     target.get_function().write_binary(*res);
+  } else if (output_binary2) {
+    target.get_function().write_dump(*res);
   } else {
     target.get_function().write_text(*res);
   }

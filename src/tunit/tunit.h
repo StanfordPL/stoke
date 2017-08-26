@@ -209,6 +209,8 @@ struct TUnit {
   std::ostream& write_text(std::ostream& os) const;
   /** Write binary format to ostream. */
   std::ostream& write_binary(std::ostream& os) const;
+  /** Write second binary format to ostream. */
+  std::ostream& write_dump(std::ostream& os) const;
 
 private:
   /** The text of the code in this function. */
@@ -253,6 +255,8 @@ private:
   std::istream& read_formatted_text(std::istream& is);
   /** Read our custom binary format. */
   std::istream& read_binary_format(std::istream& is);
+  /** Read our second custom binary format. */
+  std::istream& read_dump_format(std::istream& is);
   /** Read a code sequence and fill in missing information */
   std::istream& read_naked_text(std::istream& is);
 };
