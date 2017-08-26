@@ -4,6 +4,7 @@
 
 #include <map>
 #include <vector>
+#include <ostream>
 
 #include "src/validator/abstraction.h"
 #include "src/validator/invariant.h"
@@ -26,6 +27,11 @@ public:
       return !(*this == other);
     }
 
+    std::ostream& print(std::ostream& os) const {
+      os << "(" << ts << ", " << rs << ")";
+      return os;
+    }
+
     State() { }
 
     State(Abstraction::State a_ts, Abstraction::State a_rs) {
@@ -36,6 +42,7 @@ public:
 
   struct Edge {
 
+    Edge() { empty_ = true; }
     Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&);
 
     bool operator==(const Edge& other) const;
@@ -44,10 +51,22 @@ public:
       return !(*this == other);
     }
 
+    std::ostream& print(std::ostream& os) const {
+      from.print(os) << " -> ";
+      to.print(os) << " ; ";
+      for(auto it : te)
+        os << it << " ";
+      os << " ; ";
+      for(auto it : re)
+        os << it << " ";
+      return os;
+    }
+
     State from;
     State to;
     std::vector<Abstraction::State> te;
     std::vector<Abstraction::State> re;
+    bool empty_;
   };
 
   DualAutomata(Abstraction* target, Abstraction* rewrite) : target_(target), rewrite_(rewrite) {
@@ -82,6 +101,14 @@ public:
 
     next_edges_[path.from].push_back(path);
     prev_edges_[path.to].push_back(path);
+  }
+
+  /** Remove an edge. */
+  void remove_edge(Edge e) {
+    auto& vec = next_edges_[e.from];
+    vec.erase(std::remove(vec.begin(), vec.end(), e), vec.end());
+    auto& vec2 = prev_edges_[e.to];
+    vec2.erase(std::remove(vec2.begin(), vec2.end(), e), vec2.end());
   }
 
   /** Get the list of next states from a starting point. */
@@ -205,6 +232,7 @@ private:
 
 namespace std {
 std::ostream& operator<<(std::ostream& os, const stoke::DualAutomata::State&);
+std::ostream& operator<<(std::ostream& os, const stoke::DualAutomata::Edge&);
 }
 
 #endif

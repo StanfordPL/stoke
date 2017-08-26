@@ -18,9 +18,11 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
 #include "src/validator/dual.h"
+#include "src/validator/indexer.h"
 #include "src/validator/int_matrix.h"
 #include "src/validator/int_vector.h"
 
+#include <functional>
 #include <vector>
 #include <map>
 
@@ -40,10 +42,49 @@ public:
 
   bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
 
-  /** Updates dual automata so that all the paths are feasible */
-  DualAutomata update_dual(DualAutomata&);
+  /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. */
+  void update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);
 
 private:
+
+  struct EdgeVariable {
+    DualAutomata::Edge edge;
+    DualAutomata::Edge inductive_edge;
+    bool is_rewrite;
+
+    bool inductive_at_to() {
+      return inductive_edge.from == edge.to;
+    }
+
+  public:
+    EdgeVariable() { }
+    EdgeVariable(DualAutomata::Edge a, DualAutomata::Edge b, bool c) :
+      edge(a), inductive_edge(b), is_rewrite(c) { }
+
+    std::ostream& print(std::ostream& os) const {
+      os << "edge: " << edge.from << " -> " << edge.to << " ; ";
+      for(auto it : edge.te) {
+        os << " " << it;
+      }
+      os << " ;";
+      for(auto it : edge.re) {
+        os << " " << it;
+      }
+      os << " inductive " << inductive_edge.from << " rewrite=" << is_rewrite;
+      return os;
+    }
+
+    bool operator<(const EdgeVariable& other) const {
+      if (is_rewrite != other.is_rewrite)
+        return (int)is_rewrite < (int)other.is_rewrite;
+      if (edge != other.edge)
+        return edge < other.edge;
+      return inductive_edge < other.inductive_edge;
+    }
+  };
+
+
+
 
   struct TracePoint {
     Cfg::id_type block_id;
@@ -74,9 +115,20 @@ private:
   static bool does_repeat(const CfgPath& pattern, const CfgPath& total);
 
 
+  bool dfs_find_path_vars(DualAutomata& dual, 
+                          std::map<size_t, std::set<size_t>>& output, 
+                          std::map<size_t, size_t> counts_so_far, 
+                          Indexer<EdgeVariable>& edge_indexer, 
+                          DualAutomata::State state,
+                          DualAutomata::Edge last_edge,
+                          bool, bool, bool, bool,
+                          Abstraction::FullTrace target_left, 
+                          Abstraction::FullTrace rewrite_left);
+
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);
+  IntVector find_best_solution_ilp(IntMatrix space, IntVector initial, int col);
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
