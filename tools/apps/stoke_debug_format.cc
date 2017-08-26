@@ -39,8 +39,8 @@ auto& output_binary = FlagArg::create("output_binary")
                       .alternate("b")
                       .description("Output the target in binary format.");
 auto& output_binary2 = FlagArg::create("output_dump")
-                      .alternate("d")
-                      .description("Output the target in the binary dump format.");
+                       .alternate("d")
+                       .description("Output the target in the binary dump format.");
 auto& out = ValueArg<string>::create("out")
             .alternate("o")
             .usage("<path/to/file.s>")
