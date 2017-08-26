@@ -154,7 +154,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   }
   of << "])" << endl;
   of << "C = MatrixSpace(ZZ, rows, 1)([";
-  for(size_t i = 0; i < b.size(); ++i) {
+  for (size_t i = 0; i < b.size(); ++i) {
     of << b[i] << ", ";
   }
   of << "])" << endl;

@@ -44,6 +44,7 @@ DualAutomata::Edge::Edge(DualAutomata::State tail, const vector<Abstraction::Sta
   from = tail;
   te = tp;
   re = rp;
+  empty_ = false;
 
   if (tp.size()) {
     to.ts = tp.back();
@@ -212,6 +213,15 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     auto target_trace = target_->learn_trace(*sb.get_input(i), true);
     auto rewrite_trace = rewrite_->learn_trace(*sb.get_input(i), true);
 
+    auto target_last = target_trace.back();
+    target_last.first = target_->exit_state();
+    target_trace.push_back(target_last);
+
+    auto rewrite_last = rewrite_trace.back();
+    rewrite_last.first = rewrite_->exit_state();
+    rewrite_trace.push_back(rewrite_last);
+
+
     cout << "target trace: ";
     for (size_t i = 0; i < target_trace.size(); ++i) {
       cout << target_trace[i].first << " ";
@@ -305,9 +315,13 @@ DualAutomata::State start, DualAutomata::State end) {
 namespace std {
 
 ostream& operator<<(ostream& os, const DualAutomata::State& s) {
-  os << "(" << s.ts << ", " << s.rs << ")";
-  return os;
+  return s.print(os);
 }
+ostream& operator<<(ostream& os, const DualAutomata::Edge& s) {
+  return s.print(os);
+}
+
+
 
 }
 

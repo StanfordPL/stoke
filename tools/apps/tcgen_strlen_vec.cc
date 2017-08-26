@@ -50,8 +50,8 @@ int main(int argc, char** argv) {
 
   Sandbox sb;
   StateGen sg(&sb);
-  for(size_t i = 0; i < 60; ++i) {
-    for(size_t j = 0; j < 8; ++j) {
+  for (size_t i = 0; i < 60; ++i) {
+    for (size_t j = 0; j < 8; ++j) {
       CpuState tc;
       sg.get(tc);
 
@@ -61,14 +61,14 @@ int main(int argc, char** argv) {
 
       tc.heap.resize(rdi_v, i+1);
 
-      for(uint64_t addr = rdi_v; addr < rdi_v+i; ++addr) {
+      for (uint64_t addr = rdi_v; addr < rdi_v+i; ++addr) {
         tc.heap.set_valid(addr, true);
         tc.heap[addr] = (rand()%255) + 1;
       }
       tc.heap.set_valid(rdi_v+i, true);
       tc.heap[rdi_v+i] = 0;
 
-      for(uint64_t addr = rdi_v+i; addr < rdi_v+i+8; ++addr)
+      for (uint64_t addr = rdi_v+i; addr < rdi_v+i+8; ++addr)
         tc.heap.set_valid(addr, true);
 
       outputs.push_back(tc);

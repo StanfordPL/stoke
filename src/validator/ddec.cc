@@ -292,11 +292,20 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
                             target_cutpoints[i],
                             target_cutpoints[j],
                             &no_pass_target);
+
       auto rewrite_paths = CfgPaths::enumerate_paths(
                              rewrite_, 1,
                              rewrite_cutpoints[i],
                              rewrite_cutpoints[j],
                              &no_pass_rewrite);
+
+      if(target_cutpoints[i] == target_cutpoints[j]) {
+        target_paths.push_back({target_cutpoints[i]});        
+      }
+      if(rewrite_cutpoints[i] == rewrite_cutpoints[j]) {
+        rewrite_paths.push_back({rewrite_cutpoints[i]});        
+      }
+
       auto state = DualAutomata::State(target_cutpoints[i], rewrite_cutpoints[i]);
       for (auto tp : target_paths) {
         tp.erase(tp.begin());
@@ -354,15 +363,22 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto dual = build_dual(target_inductive_paths, rewrite_inductive_paths);
     dual.print_all();
 
-    dual = control_learner_->update_dual(dual);
-    dual.print_all();
-    InvariantLearner learner(target_, rewrite_);
-    Sandbox sb(*sandbox_);
-    bool learning_successful = dual.learn_invariants(sb, learner);
-    if (!learning_successful) {
-      cout << "Learning invariants failed!" << endl;
-    }
-    dual.print_all();
+
+    function<bool (DualAutomata&)> dual_callback = [this](DualAutomata& dual) -> bool {
+      dual.print_all();
+      InvariantLearner learner(target_, rewrite_);
+      Sandbox sb(*sandbox_);
+      bool learning_successful = dual.learn_invariants(sb, learner);
+      if (!learning_successful) {
+        cout << "Learning invariants failed!" << endl;
+        return false;
+      }
+      dual.print_all();
+      cout << "Got some invariants!  Are they useful?" << endl;
+      return true;
+    };
+
+    control_learner_->update_dual(dual, dual_callback);
 
   } catch (validator_error e) {
 
