@@ -24,9 +24,15 @@
 #include "src/ext/cpputil/include/io/indent.h"
 #include "src/disassembler/disassembler.h"
 
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 using namespace cpputil;
 using namespace std;
 using namespace x64asm;
+using namespace boost;
+using namespace boost::iostreams;
 
 namespace {
 
@@ -662,18 +668,24 @@ istream& TUnit::read_dump_format(istream& is) {
   // skip magic marger
   for (unsigned i = 0; i < strlen(magic_marker) + 1; i++) is.get();
 
+  stringstream in;
+  filtering_streambuf<input> out;
+  out.push(gzip_decompressor());
+  out.push(is);
+  copy(out, in);
+
   // read meta data
-  file_offset_ = read_int(is);
-  rip_offset_ = read_int(is);
-  capacity_ = read_int(is);
-  uint64_t ninstr = read_int(is);
+  file_offset_ = read_int(in);
+  rip_offset_ = read_int(in);
+  capacity_ = read_int(in);
+  uint64_t ninstr = read_int(in);
 
   // read labels
   map<uint64_t, Label> lbls;
-  auto nlbls = read_int(is);
+  auto nlbls = read_int(in);
   for (uint64_t i = 0; i < nlbls; i++) {
-    auto id = read_int(is);
-    auto name = read_string(is);
+    auto id = read_int(in);
+    auto name = read_string(in);
     lbls[id] = Label(name);
   }
 
@@ -681,7 +693,7 @@ istream& TUnit::read_dump_format(istream& is) {
   code_.clear();
   for (size_t i = 0; i < ninstr; ++i) {
     Instruction instr(NOP);
-    is.read(reinterpret_cast<char*>(&instr), sizeof(Instruction));
+    in.read(reinterpret_cast<char*>(&instr), sizeof(Instruction));
 
     // fix up labels
     for (size_t i = 0; i < instr.arity(); i++) {
@@ -716,15 +728,18 @@ ostream& TUnit::write_dump(ostream& os) const {
 
   uint64_t ninstr = code_.size();
 
-  // magic marker
+  // magic marker (written without compression)
   const char* magic_marker = "DUMP\n";
   os.write(magic_marker, strlen(magic_marker)+1);
 
+  // write to this stream, then compress
+  stringstream out;
+
   // meta-data
-  write_int(os, get_file_offset());
-  write_int(os, get_rip_offset());
-  write_int(os, capacity_);
-  write_int(os, ninstr);
+  write_int(out, get_file_offset());
+  write_int(out, get_rip_offset());
+  write_int(out, capacity_);
+  write_int(out, ninstr);
 
   // labels
   vector<Label> lbls;
@@ -739,16 +754,22 @@ ostream& TUnit::write_dump(ostream& os) const {
       }
     }
   }
-  write_int(os, lbls.size());
+  write_int(out, lbls.size());
   for (Label& l : lbls) {
-    write_int(os, (uint64_t)l);
-    write_string(os, l.get_text());
+    write_int(out, (uint64_t)l);
+    write_string(out, l.get_text());
   }
 
   // instruction bytes
   for (uint64_t i = 0; i < ninstr; i++) {
-    os.write(reinterpret_cast<const char*>(&code_[i]), sizeof(Instruction));
+    out.write(reinterpret_cast<const char*>(&code_[i]), sizeof(Instruction));
   }
+
+  // compress
+  filtering_streambuf<input> filteredout;
+  filteredout.push(gzip_compressor());
+  filteredout.push(out);
+  copy(filteredout, os);
 
   return os;
 }

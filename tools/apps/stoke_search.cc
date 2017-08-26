@@ -336,7 +336,7 @@ void new_best_correct_callback(const NewBestCorrectCallbackData& data, void* arg
     // write output
     ofstream outfile;
     outfile.open(name);
-    outfile << res.get_function();
+    res.get_function().write_dump(outfile);
     outfile.close();
   }
 

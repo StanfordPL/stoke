@@ -33,7 +33,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-
 auto& io = Heading::create("I/O Options:");
 auto& output_binary = FlagArg::create("output_binary")
                       .alternate("b")
@@ -57,10 +56,12 @@ int main(int argc, char** argv) {
 
   TargetGadget target({}, false);
 
-  ofstream ofs(out.value());
-  ostream* res = &ofs;
+  ostream* res;
   if (out.value() == "-") {
     res = &cout;
+  } else {
+    ofstream ofs(out.value());
+    res = &ofs
   }
   if (output_binary) {
     target.get_function().write_binary(*res);
