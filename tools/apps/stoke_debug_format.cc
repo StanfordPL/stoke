@@ -56,20 +56,25 @@ int main(int argc, char** argv) {
 
   TargetGadget target({}, false);
 
-  ostream* res;
   if (out.value() == "-") {
-    res = &cout;
+    if (output_binary) {
+      target.get_function().write_binary(cout);
+    } else if (output_binary2) {
+      target.get_function().write_dump(cout);
+    } else {
+      target.get_function().write_text(cout);
+    }
   } else {
     ofstream ofs(out.value());
-    res = &ofs;
+    if (output_binary) {
+      target.get_function().write_binary(ofs);
+    } else if (output_binary2) {
+      target.get_function().write_dump(ofs);
+    } else {
+      target.get_function().write_text(ofs);
+    }
   }
-  if (output_binary) {
-    target.get_function().write_binary(*res);
-  } else if (output_binary2) {
-    target.get_function().write_dump(*res);
-  } else {
-    target.get_function().write_text(*res);
-  }
+  
 
   return 0;
 }
