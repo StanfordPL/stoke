@@ -77,7 +77,8 @@ bool replace(string& dest, TUnit& tunit) {
   int num_nops = 0, i = code.size()-1;
   while (i > 0) {
     if (code[i].get_opcode() != NOP) break;
-    i--; num_nops++;
+    i--;
+    num_nops++;
   }
 
   auto& fxn = result.second;
