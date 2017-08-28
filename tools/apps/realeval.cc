@@ -51,10 +51,15 @@ auto& out = ValueArg<string>::create("out")
             .description("File to write result to.  - for stdout")
             .default_val("-");
 
-auto& out = ValueArg<string>::create("path")
+auto& path = ValueArg<string>::create("path")
             .usage("<path/to/dir>")
-            .description("File to write result to.  - for stdout")
+            .description("Directory to collect data from")
             .default_val("-");
+
+bool is_prefix(const string& str, const string& prefix) {
+  auto len = prefix.size();
+  return str.length() >= len && str.substr(0,len) == prefix;
+}
 
 void replace(string& dest, TUnit& code) {
 
@@ -92,8 +97,8 @@ void replace(string& dest, TUnit& code) {
 
 uint64_t time() {
   return duration_cast<nanoseconds>(
-      system_clock::now().time_since_epoch()
-  ).count();
+           system_clock::now().time_since_epoch()
+         ).count();
 }
 
 uint64_t _last_time = 0;
@@ -153,6 +158,34 @@ int main(int argc, char** argv) {
 
   fxn_latency(cfg, max_cost_arg.value());
   timing("latency");
+
+  auto read = [](istringstream& iss, const string& what) {
+    if (iss.peek() == ' ') iss.ignore();
+    iss.ignore(what.length() + 1);
+    int a;
+    if (!(iss >> a)) {
+      cout << "Failed parsing for " << what << endl;
+      exit(1);
+    }
+    return a;
+  };
+
+  int c = 0;
+  ifstream infile("/home/sheule/dev/nibble/parout/costfun/latency/func/rogers/id/103/iters/1000000/stdout");
+  string line;
+  vector<vector<int>> results;
+  while (getline(infile, line)) {
+    if (is_prefix(line, "cost=")) {
+      istringstream iss(line);
+      auto cost = read(iss, "cost");
+      auto iteration = read(iss, "iteration");
+      auto id = read(iss, "id");
+      auto timestamp = read(iss, "timestamp_ms");
+      results.push_back(vector<int>({id, cost, iteration, timestamp}));
+    }
+  }
+  timing("reading file");
+  cout << c << endl;
 
   return 0;
 }
