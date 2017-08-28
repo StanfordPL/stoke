@@ -15,6 +15,7 @@
 #include "src/cfg/sccs.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/validator/abstractions/block.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/indexer.h"
 #include <fstream>
@@ -385,19 +386,20 @@ void remove_prefix(const vector<Abstraction::State>& tr1, Abstraction::FullTrace
 }
 
 
-bool ControlLearner::dfs_find_path_vars(DualAutomata& dual, 
-                        std::map<size_t, std::set<size_t>>& outputs, 
-                        std::map<size_t, size_t> counts_so_far, 
-                        Indexer<EdgeVariable>& edge_indexer, 
-                        DualAutomata::State state,
-                        DualAutomata::Edge last_edge,
-                        bool passed_preinductive_loop_target,
-                        bool passed_inductive_loop_target,
-                        bool passed_preinductive_loop_rewrite,
-                        bool passed_inductive_loop_rewrite,
-                        Abstraction::FullTrace target_left, 
-                        Abstraction::FullTrace rewrite_left) {
+bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
+                                        std::map<size_t, std::set<size_t>>& outputs,
+                                        std::map<size_t, size_t> counts_so_far,
+                                        Indexer<EdgeVariable>& edge_indexer,
+                                        DualAutomata::State state,
+                                        DualAutomata::Edge last_edge,
+                                        bool passed_preinductive_loop_target,
+                                        bool passed_inductive_loop_target,
+                                        bool passed_preinductive_loop_rewrite,
+                                        bool passed_inductive_loop_rewrite,
+                                        Abstraction::FullTrace target_left,
+                                        Abstraction::FullTrace rewrite_left) {
 
+  cout << "DFS CALLED state=" << state << endl;
   auto try_variable_edge = [&](DualAutomata::Edge edge, EdgeVariable v) -> bool {
 
     auto e = v.inductive_edge;
@@ -410,25 +412,35 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
     auto next_passed_preinductive_loop_rewrite = passed_inductive_loop_rewrite;
     auto next_passed_inductive_loop_rewrite = passed_inductive_loop_rewrite;
 
-    if(v.is_rewrite) {
-      if(!is_prefix(simplify(e.re), rewrite_left))
+    int index = edge_indexer[v];
+
+    if (v.is_rewrite) {
+      if (!is_prefix(simplify(e.re), rewrite_left)) {
+        if(counts_so_far.count(index) == 0)
+          counts_so_far[index] = 0;
         return false;
+      }
       remove_prefix(simplify(e.re), next_rewrite_left);
-      if(edge.to != state) {
+      if (edge.to != state) {
         next_passed_preinductive_loop_rewrite = true;
         next_passed_inductive_loop_rewrite = true;
       }
     } else {
-      if(!is_prefix(simplify(e.te), target_left))
+      if (!is_prefix(simplify(e.te), target_left)) {
+        if(counts_so_far.count(index) == 0)
+          counts_so_far[index] = 0;
         return false;
+      }
       remove_prefix(simplify(e.te), next_target_left);
-      if(edge.to != state) {
+      if (edge.to != state) {
         next_passed_preinductive_loop_target = true;
         next_passed_inductive_loop_target = true;
       }
     }
 
-    int index = edge_indexer[v];
+    cout << "Taking variable edge ";
+    v.print(cout) << endl;
+
     auto next_counts = counts_so_far;
     next_counts[index]++;
 
@@ -442,10 +454,14 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
 
   auto try_edge = [&](DualAutomata::Edge e, bool inductive_edge = false) -> bool {
-    if(!is_prefix(e.te, target_left))
+    cout << "Considering edge " << e << endl;
+
+    if (!is_prefix(e.te, target_left))
       return false;
-    if(!is_prefix(e.re, rewrite_left))
+    if (!is_prefix(e.re, rewrite_left))
       return false;
+
+    cout << "Taking edge " << e << endl;
 
     auto next_state = e.to;
     auto next_target_left = target_left;
@@ -458,12 +474,18 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
   };
 
   bool success = false;
-  
+
   // If we're starting in an exit state, then add counts_so_far to the outputs and return
-  if(state == dual.exit_state()) {
-    for(auto p : counts_so_far) {
+  if (state == dual.exit_state()) {
+    /*
+    for(size_t i = 0; i < edge_indexer.count(); ++i) {
+      outputs[i].insert(counts_so_far[i]);
+    }
+    */
+    for (auto p : counts_so_far) {
       outputs[p.first].insert(p.second);
     }
+    return true;
   }
 
   // Find edges where we're at
@@ -473,28 +495,28 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
   // easy case for non-inductive edges!
   // for each edge, check if the edge is a prefix of target_left and rewrite_left
-  for(auto e : edges) {
-    if(e.to == state) {
+  for (auto e : edges) {
+    if (e.to == state) {
       // it's an inductive edge, more complicated
 
-      if(!passed_preinductive_loop_target && !last_edge.empty_) {
+      if (!passed_preinductive_loop_target && !last_edge.empty_) {
         EdgeVariable ev(last_edge, e, false);
         success |= try_variable_edge(e, ev);
       }
-      if(!passed_preinductive_loop_rewrite && !last_edge.empty_) {
+      if (!passed_preinductive_loop_rewrite && !last_edge.empty_) {
         EdgeVariable ev(last_edge, e, true);
         success |= try_variable_edge(e, ev);
       }
-      if(!passed_inductive_loop_target) {
+      if (!passed_inductive_loop_target) {
         success |= try_edge(e, true);
       }
-      if(!passed_inductive_loop_rewrite) {
+      if (!passed_inductive_loop_rewrite) {
         success |= try_edge(e, true);
       }
       {
-        for(size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
-          for(auto next_edge : edges) {
-            if(next_edge.to == state)
+        for (size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
+          for (auto next_edge : edges) {
+            if (next_edge.to == state)
               continue;
             EdgeVariable ev(next_edge, e, is_rewrite);
             success |= try_variable_edge(e, ev);
@@ -527,247 +549,184 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   Indexer<EdgeVariable> edge_indexer;
   // put all the edge variables into a map so that we can go through them properly
-  map<DualAutomata::Edge, map<DualAutomata::Edge, pair<EdgeVariable, EdgeVariable>>> edge_to_vars;
+  vector<pair<EdgeVariable, EdgeVariable>> edge_list;
 
+  map<DualAutomata::Edge, bool> visited_edge;
 
   /** Build set of all edge variables */
   for (auto path : dual_paths) {
     for (auto edge : path) {
+      if(visited_edge[edge])
+        continue;
+      visited_edge[edge] = true;
+
       auto start = edge.from;
       auto end = edge.to;
 
       auto inductive_start_paths = dual.get_inductive_edges(start);
       for (auto q : inductive_start_paths) {
+        //cout << "For " << edge << " we have start inductive edge " << q << endl;
         auto a = EdgeVariable(edge, q, false);
         auto b = EdgeVariable(edge, q, true);
-        edge_to_vars[edge][q] = {a, b};
+        edge_list.push_back({a, b});
         edge_indexer.add(a);
         edge_indexer.add(b);
       }
 
       auto inductive_end_paths = dual.get_inductive_edges(end);
       for (auto q : inductive_end_paths) {
+        //cout << "For " << edge << " we have end inductive edge " << q << endl;
         auto a = EdgeVariable(edge, q, false);
         auto b = EdgeVariable(edge, q, true);
-        edge_to_vars[edge][q] = {a, b};
+        edge_list.push_back({a, b});
         edge_indexer.add(a);
         edge_indexer.add(b);
       }
     }
   }
 
-  IntMatrix final_matrix;
-  IntVector final_vector;
-
   cout << "Columns" << endl;
   for (size_t i = 0; i < edge_indexer.count(); ++i) {
+    cout << i << ": ";
     edge_indexer.reverse(i).print(cout) << endl;
   }
 
-  /** Augment the matrix for each path */
-  for (auto path : dual_paths) {
-    IntMatrix temp_matrix(total_block_indexes(), edge_indexer.count());
-    IntVector temp_vect(total_block_indexes());
+  IntVector assignment;
+  for(size_t i = 0; i < edge_indexer.count(); ++i) {
+    assignment.push_back(0);
+  }
 
-    /** Initialize the vector with entry blocks and constant term. */
-    temp_vect[0] = -1;
-    temp_vect[target_block_to_index(target_.get_entry())] = -1;
-    temp_vect[rewrite_block_to_index(rewrite_.get_entry())] = -1;
+  // 0 -> 3; 0 -> 1 -> 10 -> 13 should trigger target edge "3" at least once
+  assignment[36] = 1;
+
+  // block 17
+  assignment[44] = 1;
+  // block 19
+  assignment[46] = 2;
+  // block 21
+  assignment[48] = 3;
+  // block 23
+  assignment[50] = 4;
+  // block 25
+  assignment[52] = 5;
+  // block 27
+  assignment[54] = 6;
+  // block 29
+  assignment[56] = 7;
 
 
-    bool found_inductive_path = false;
+  /*
+  /////////////////
 
-    /** Process the edges along the path. */
-    for (auto edge : path) {
-      cout << "Edge: ";
-      for (auto it : edge.te)
-        cout << it << " ";
-      cout << " ; ";
-      for (auto it : edge.re)
-        cout << it << " ";
+  BlockAbstraction target_abs(target_, sandbox_);
+  BlockAbstraction rewrite_abs(rewrite_, sandbox_);
+
+  for(size_t i = 0; i < sandbox_.size(); ++i) {
+    auto target_ft = target_abs.learn_trace(*sandbox_.get_input(i), false);
+    auto rewrite_ft = rewrite_abs.learn_trace(*sandbox_.get_input(i), false);
+    target_ft.push_back(target_ft[target_ft.size()-1]);
+    rewrite_ft.push_back(rewrite_ft[rewrite_ft.size()-1]);
+    target_ft[target_ft.size()-1].first = target_.get_exit();
+    rewrite_ft[rewrite_ft.size()-1].first = rewrite_.get_exit();
+
+    std::map<size_t, std::set<size_t>> outputs;
+
+    // bookkeeping
+    std::map<size_t, size_t> counts_so_far;
+
+    bool success = dfs_find_path_vars(dual, 
+                                      outputs,
+                                      counts_so_far,
+                                      edge_indexer,
+                                      dual.start_state(),
+                                      DualAutomata::Edge(),
+                                      false, false, false, false,
+                                      target_ft, rewrite_ft);
+
+    cout << "TC " << i << " Success: " << success << endl;
+    for(auto it : outputs) {
+      cout << "Variable " << it.first << " has values ";
+      for(auto v : it.second) {
+        cout << v << " ";
+      }
       cout << endl;
-
-
-      auto start = edge.from;
-      auto end = edge.to;
-      size_t index;
-
-      for (auto blk : edge.te) {
-        if (blk == target_.get_exit())
-          continue;
-        temp_vect[target_block_to_index(blk)]--;
-      }
-      for (auto blk : edge.re) {
-        if (blk == rewrite_.get_exit())
-          continue;
-        temp_vect[rewrite_block_to_index(blk)]--;
-      }
-
-      auto inductive_start_paths = dual.get_inductive_edges(start);
-      auto inductive_end_paths = dual.get_inductive_edges(end);
-
-      for (auto start_ind : inductive_start_paths) {
-        found_inductive_path = true;
-        /*
-        cout << "StartInd: ";
-        for (auto it : start_ind.te)
-          cout << it << " ";
-        cout << " ; ";
-        for (auto it : start_ind.re)
-          cout << it << " ";
-        cout << endl;
-        */
-
-        EdgeVariable ev_target(edge, start_ind, false);
-        EdgeVariable ev_rewrite(edge, start_ind, true);
-        for (auto blk : simplify(start_ind.te)) {
-          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
-        }
-        for (auto blk : simplify(start_ind.re)) {
-          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
-        }
-      }
-      for (auto end_ind : inductive_end_paths) {
-        found_inductive_path = true;
-        /*
-        cout << "EndInd: ";
-        for (auto it : end_ind.te)
-          cout << it << " ";
-        cout << " ; ";
-        for (auto it : end_ind.re)
-          cout << it << " ";
-        cout << endl;
-        */
-
-        EdgeVariable ev_target(edge, end_ind, false);
-        EdgeVariable ev_rewrite(edge, end_ind, true);
-        for (auto blk : simplify(end_ind.te)) {
-          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
-        }
-        for (auto blk : simplify(end_ind.re)) {
-          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
-        }
-      }
     }
-
-    if (!found_inductive_path)
-      continue;
-
-    cout << "CONSTRAINT MATRIX" << endl;
-    kernel_generators_.print();
-    cout << "Matrix" << endl;
-    temp_matrix.print();
-    cout << "Vector" << endl;
-    temp_vect.print();
-
-    temp_matrix = kernel_generators_*temp_matrix;
-    temp_vect = kernel_generators_*temp_vect;
-
-    cout << "New Matrix" << endl;
-    temp_matrix.print();
-    cout << "New Vector" << endl;
-    temp_vect.print();
-
-    for (size_t i = 0; i < temp_vect.size(); ++i) {
-      if (temp_vect[i]) {
-        print_basis_vector(kernel_generators_[i]);
-      }
-    }
-
-
-    for (auto row : temp_matrix)
-      final_matrix.push_back(row);
-    for (auto entry : temp_vect)
-      final_vector.push_back(entry);
+  
   }
+  */
 
-  //find nullspace
-  auto nullspace = final_matrix.solve_diophantine();
-  cout << "NULLSPACE" << endl;
-  nullspace.print();
+  /////////////////
 
-  //find solution
-  auto single_soln = final_matrix.solve_diophantine(final_vector);
-  cout << "SOLUTION" << endl;
-  single_soln.print();
-
-  for(int col = -1; col < (int)single_soln.size(); ++col) {
-    // do ILP to find best solution in space
-    auto best_solution = find_best_solution_ilp(nullspace, single_soln, col);
-    if(best_solution.size() == 0) {
-      cout << "(timeout for col=" << col << ")" << endl;
-      continue;
-    }
-
-    auto dual_copy = dual;
-    cout << "BEST SOLUTION FOR COL=" << col << endl;
-    best_solution.print();
-    for(size_t i = 0; i < best_solution.size(); ++i) {
-      if(best_solution[i] != 0) {
-        cout << "Add " << best_solution[i] << " of ";
-        edge_indexer.reverse(i).print(cout) << endl;
-      }
-    }
-
-    // Update the dual automata with edges needed
-    for(auto edge_map_pair : edge_to_vars) {
-      auto edge_to_update = edge_map_pair.first;
-      
-      for(auto edge_vars_pair : edge_map_pair.second) {
-        auto inductive_edge = edge_vars_pair.first;
-        auto vars = edge_vars_pair.second;
-
-        auto target_count = best_solution[edge_indexer[vars.first]];
-        auto rewrite_count = best_solution[edge_indexer[vars.second]];
-
-        assert(target_count >= 0);
-        assert(rewrite_count >= 0);
-        if(target_count == 0 && rewrite_count == 0)
-          continue;
-
-        auto new_edge = edge_to_update;
-        if(vars.first.inductive_at_to()) {
-          cout << "Inductive -- to" << endl;
-          for(size_t i = 0; i < (size_t)target_count; ++i) {
-            auto simple = simplify(inductive_edge.te);
-            for(size_t j = 0; j < simple.size(); ++j) {
-              new_edge.te.push_back(simple[j]);
-            }
-          }
-          for(size_t i = 0; i < (size_t)rewrite_count; ++i) {
-            auto simple = simplify(inductive_edge.re);
-            for(size_t j = 0; j < simple.size(); ++j) {
-              new_edge.re.push_back(simple[j]);
-            }
-          }
-        } else {
-          cout << "Inductive -- from" << endl;
-          auto& te = new_edge.te;
-          for(size_t i = 0; i < (size_t)target_count; ++i) {
-            auto simple = simplify(inductive_edge.te);
-            te.insert(te.begin(), simple.begin(), simple.end());
-          }
-          auto& re = new_edge.re;
-          for(size_t i = 0; i < (size_t)rewrite_count; ++i) {
-            auto simple = simplify(inductive_edge.re);
-            re.insert(re.begin(), simple.begin(), simple.end());
-          }
-        }
-        cout << "target_count = " << target_count << " rewrite_count = " << rewrite_count << endl;
-
-        cout << "Replacing " << edge_to_update << " with " << new_edge << " via " << inductive_edge << endl;
-        dual_copy.remove_edge(edge_to_update);
-        dual_copy.add_edge(new_edge);
-      }
-    }
-
-    if(callback(dual_copy)) {
-      return;
-    }
-  }
+  auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
+  callback(new_dual);
 
 }
 
+DualAutomata ControlLearner::update_dual_with_vars(const DualAutomata& dual, Indexer<EdgeVariable>& edge_indexer, IntVector vars, vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
+  auto dual_copy = dual;
+  vars.print();
+  for (size_t i = 0; i < vars.size(); ++i) {
+    if (vars[i] != 0) {
+      cout << "Add " << vars[i] << " of ";
+      edge_indexer.reverse(i).print(cout) << endl;
+    }
+  }
+
+  // Update the dual automata with edges needed
+  for (auto edge_var_pair : edge_list) {
+    auto ev1 = edge_var_pair.first;
+    auto ev2 = edge_var_pair.second;
+    assert(ev1.edge == ev2.edge);
+    assert(ev1.inductive_edge == ev2.inductive_edge);
+
+    auto edge_to_update = ev1.edge;
+    auto inductive_edge = ev1.inductive_edge;
+
+    auto target_count = vars[edge_indexer[ev1]];
+    auto rewrite_count = vars[edge_indexer[ev2]];
+
+    assert(target_count >= 0);
+    assert(rewrite_count >= 0);
+    if (target_count == 0 && rewrite_count == 0)
+      continue;
+
+    auto new_edge = edge_to_update;
+    if (ev1.inductive_at_to()) {
+      cout << "Inductive -- to" << endl;
+      for (size_t i = 0; i < (size_t)target_count; ++i) {
+        auto simple = simplify(inductive_edge.te);
+        for (size_t j = 0; j < simple.size(); ++j) {
+          new_edge.te.push_back(simple[j]);
+        }
+      }
+      for (size_t i = 0; i < (size_t)rewrite_count; ++i) {
+        auto simple = simplify(inductive_edge.re);
+        for (size_t j = 0; j < simple.size(); ++j) {
+          new_edge.re.push_back(simple[j]);
+        }
+      }
+    } else {
+      cout << "Inductive -- from" << endl;
+      auto& te = new_edge.te;
+      for (size_t i = 0; i < (size_t)target_count; ++i) {
+        auto simple = simplify(inductive_edge.te);
+        te.insert(te.begin(), simple.begin(), simple.end());
+      }
+      auto& re = new_edge.re;
+      for (size_t i = 0; i < (size_t)rewrite_count; ++i) {
+        auto simple = simplify(inductive_edge.re);
+        re.insert(re.begin(), simple.begin(), simple.end());
+      }
+    }
+    cout << "target_count = " << target_count << " rewrite_count = " << rewrite_count << endl;
+
+    cout << "Replacing " << edge_to_update << " with " << new_edge << " via " << inductive_edge << endl;
+    dual_copy.remove_edge(edge_to_update);
+    dual_copy.add_edge(new_edge);
+  }
+
+  return dual_copy;
+}
 
 IntVector ControlLearner::find_best_solution_ilp(IntMatrix space, IntVector initial, int col_to_optimize = -1) {
   auto matrix = space;
@@ -794,7 +753,7 @@ IntVector ControlLearner::find_best_solution_ilp(IntMatrix space, IntVector init
   of << "p = MixedIntegerLinearProgram(maximization=false)" << endl;
   of << "x = p.new_variable(integer=true)" << endl;
   of << "p.add_constraint(A*x + initial_soln >= 0)" << endl;
-  if(col_to_optimize == -1) {
+  if (col_to_optimize == -1) {
     of << "p.set_objective(sum(A*x + initial_soln))" << endl;
   } else {
     of << "p.set_objective((A*x + initial_soln)[" << col_to_optimize << "])" << endl;

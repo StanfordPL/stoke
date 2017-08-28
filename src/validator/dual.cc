@@ -75,6 +75,22 @@ bool DualAutomata::is_prefix(const vector<Abstraction::State>& tr1, const Abstra
   return true;
 }
 
+bool DualAutomata::is_edge_prefix(const vector<Abstraction::State>& tr1, const vector<Abstraction::State>& tr2) {
+  if (tr1.size() > tr2.size()) {
+    //cout << "     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;
+    return false;
+  }
+
+  for (size_t i = 0; i < tr1.size(); ++i) {
+    //cout << "      tr1[" << i << "]=" << tr1[i] << "; tr2[" << i << "]=" << tr2[i].first << endl;
+    if (tr1[i] != tr2[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void DualAutomata::remove_prefix(const vector<Abstraction::State>& tr1, Abstraction::FullTrace& tr2) {
   assert(is_prefix(tr1, tr2));
 
@@ -190,7 +206,7 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
 
       if (!found_matching_edge) {
         std::cout << "  - Could not find matching edge" << std::endl;
-        return false;
+        //return false;
       }
     }
   }
@@ -311,6 +327,34 @@ DualAutomata::State start, DualAutomata::State end) {
   return results;
 }
 
+void DualAutomata::remove_prefixes() {
+
+  bool done = false;
+
+  while(!done) {
+    done = true;
+    for(auto state : reachable_states_) {
+      auto edges = next_edges_[state];
+
+      for(auto e1 : edges) {
+        for(auto e2 : edges) {
+          if(e1 == e2)
+            continue;
+
+          if (is_edge_prefix(e1.te, e2.te) && is_edge_prefix(e1.re, e2.re)) {
+            remove_edge(e2);
+            done = false;
+          }
+          break;
+        }
+        if(done == false)
+          break;
+      }
+      if(done == false)
+        break;
+    }
+  }
+}
 
 namespace std {
 

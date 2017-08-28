@@ -42,7 +42,9 @@ public:
 
   struct Edge {
 
-    Edge() { empty_ = true; }
+    Edge() {
+      empty_ = true;
+    }
     Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&);
 
     bool operator==(const Edge& other) const;
@@ -54,10 +56,10 @@ public:
     std::ostream& print(std::ostream& os) const {
       from.print(os) << " -> ";
       to.print(os) << " ; ";
-      for(auto it : te)
+      for (auto it : te)
         os << it << " ";
       os << " ; ";
-      for(auto it : re)
+      for (auto it : re)
         os << it << " ";
       return os;
     }
@@ -189,6 +191,8 @@ public:
   /** Print the automata to standard output. */
   void print_all();
 
+  /** Remove any edges that are a prefix of another edge from one state. */
+  void remove_prefixes();
 
 private:
 
@@ -208,9 +212,11 @@ private:
   bool learn_state_data(const Abstraction::FullTrace& target,
                         const Abstraction::FullTrace& rewrite);
 
-
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_prefix(const std::vector<Abstraction::State>& tr1, const Abstraction::FullTrace& tr2);
+  /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
+  bool is_edge_prefix(const std::vector<Abstraction::State>& tr1, const std::vector<Abstraction::State>& tr2);
+
 
   /** Remove an edge prefix from a trace. */
   void remove_prefix(const std::vector<Abstraction::State>& tr1, Abstraction::FullTrace& tr2);
