@@ -52,13 +52,13 @@ public:
 
   virtual ~Transform() {}
 
-protected:
-
   /** Set start/end of the transform window. */
   void set_window(int start, int end) {
     start_ = start;
     end_ = end;
   }
+
+protected:
 
   /** Does this instruction induce control flow? */
   static bool is_control_opcode(x64asm::Opcode o);

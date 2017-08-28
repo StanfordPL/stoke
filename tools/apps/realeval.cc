@@ -61,7 +61,7 @@ bool is_prefix(const string& str, const string& prefix) {
   return str.length() >= len && str.substr(0,len) == prefix;
 }
 
-void replace(string& dest, TUnit& code) {
+bool replace(string& dest, TUnit& code) {
 
   // Assemble the new function
   Assembler assm;
@@ -79,7 +79,7 @@ void replace(string& dest, TUnit& code) {
   if (fxn.size() > size) {
     Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
     Console::msg() << "." << endl;
-    exit(1);
+    return false;
   }
 
   // Overwrite the old function (fingers crossed!)
@@ -93,6 +93,7 @@ void replace(string& dest, TUnit& code) {
   for (size_t i = fxn.size(); i < size; ++i) {
     fs.put(0x90);
   }
+  return true;
 }
 
 uint64_t time() {
@@ -124,6 +125,8 @@ uint64_t real(string& bin) {
 
 int main(int argc, char** argv) {
 
+  target_arg.required(false);
+
   CommandLineConfig::strict_with_convenience(argc, argv);
 
   Cfg empty({}, RegSet::empty(), RegSet::empty());
@@ -140,25 +143,6 @@ int main(int argc, char** argv) {
 
   timing();
 
-  TUnit code;
-
-  ifstream ifs(path);
-  ifs >> code;
-  Cfg cfg(code, RegSet::empty(), RegSet::empty());
-  timing("parsing");
-
-  replace(bin, code);
-  timing("replacing");
-
-  real(bin);
-  timing("real");
-
-  fxn_realtime(cfg, max_cost_arg.value());
-  timing("realtime");
-
-  fxn_latency(cfg, max_cost_arg.value());
-  timing("latency");
-
   auto read = [](istringstream& iss, const string& what) {
     if (iss.peek() == ' ') iss.ignore();
     iss.ignore(what.length() + 1);
@@ -170,10 +154,8 @@ int main(int argc, char** argv) {
     return a;
   };
 
-  int c = 0;
-  ifstream infile("/home/sheule/dev/nibble/parout/costfun/latency/func/rogers/id/103/iters/1000000/stdout");
+  ifstream infile("/home/sheule/dev/nibble/parout/costfun/realtime/func/rogers/id/105/iters/1000000/stdout");
   string line;
-  vector<vector<int>> results;
   while (getline(infile, line)) {
     if (is_prefix(line, "cost=")) {
       istringstream iss(line);
@@ -181,11 +163,21 @@ int main(int argc, char** argv) {
       auto iteration = read(iss, "iteration");
       auto id = read(iss, "id");
       auto timestamp = read(iss, "timestamp_ms");
-      results.push_back(vector<int>({id, cost, iteration, timestamp}));
+
+      TUnit code;
+      ifstream ifs("/home/sheule/dev/nibble/data/rogers-realtime-1000000-105/intermediates/result-" + to_string(id) + ".s");
+      ifs >> code;
+      Cfg cfg(code, RegSet::empty(), RegSet::empty());
+
+      if (replace(bin, code)) {
+        real(bin);
+        fxn_realtime(cfg, max_cost_arg.value());
+        fxn_latency(cfg, max_cost_arg.value());
+      }
+
+      timing("one");
     }
   }
-  timing("reading file");
-  cout << c << endl;
-
+  
   return 0;
 }

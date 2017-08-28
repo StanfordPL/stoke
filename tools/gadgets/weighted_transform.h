@@ -55,6 +55,9 @@ public:
         exit(1);
       }
       set_window(transform_window_start, transform_window_end);
+      for (auto t : transforms_) {
+        t->set_window(transform_window_start, transform_window_end);
+      }
     }
 
     set_seed(seed);
