@@ -34,7 +34,7 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, Cost cost_step_size) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)), cost_step_size_(cost_step_size) {
+  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb, Cost cost_step_size) : CostFunction(), fxn_(build_fxn(cost_function_arg.value(), correctness_arg.value(), target, test_sb, perf_sb)), cost_step_size_(cost_step_size) {
   }
 
   result_type operator()(const Cfg& cfg, Cost max) {
@@ -55,12 +55,7 @@ public:
     return res;
   }
 
-private:
-
-  CostFunction* fxn_;
-  Cost cost_step_size_;
-
-  static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) {
+  static ExprCost* build_fxn(const std::string& expr, const std::string& corr_expr, const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) {
 
     CostParser::SymbolTable st;
     st["binsize"] =      new BinSizeCost();
@@ -72,7 +67,7 @@ private:
     st["nongoal"] =      new NonGoalCostGadget(target);
     st["realtime"] =      new RealtimeCostGadget(target);
 
-    CostParser cost_p(cost_function_arg.value(), st);
+    CostParser cost_p(expr, st);
     auto cost_fxn = cost_p.run();
     if (cost_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
@@ -81,7 +76,7 @@ private:
       cpputil::Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
 
-    CostParser correct_p(correctness_arg.value(), st);
+    CostParser correct_p(corr_expr, st);
     auto correctness_fxn = correct_p.run();
     if (correct_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
@@ -96,6 +91,11 @@ private:
     .setup_perf_sandbox(perf_sb);
     return cost_fxn;
   }
+
+private:
+
+  CostFunction* fxn_;
+  Cost cost_step_size_;
 
 };
 
