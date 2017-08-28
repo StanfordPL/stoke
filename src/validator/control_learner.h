@@ -62,15 +62,8 @@ private:
       edge(a), inductive_edge(b), is_rewrite(c) { }
 
     std::ostream& print(std::ostream& os) const {
-      os << "edge: " << edge.from << " -> " << edge.to << " ; ";
-      for(auto it : edge.te) {
-        os << " " << it;
-      }
-      os << " ;";
-      for(auto it : edge.re) {
-        os << " " << it;
-      }
-      os << " inductive " << inductive_edge.from << " rewrite=" << is_rewrite;
+      os << "edge: " << edge.from << " -> " << edge.to << " ; " << edge.te << " ; " << edge.re;
+      os << " inductive " << inductive_edge << " rewrite=" << is_rewrite;
       return os;
     }
 
@@ -80,6 +73,12 @@ private:
       if (edge != other.edge)
         return edge < other.edge;
       return inductive_edge < other.inductive_edge;
+    }
+
+    bool operator==(const EdgeVariable& other) const {
+      return is_rewrite == other.is_rewrite &&
+             edge == other.edge &&
+             inductive_edge == other.inductive_edge;
     }
   };
 
@@ -115,16 +114,20 @@ private:
   static bool does_repeat(const CfgPath& pattern, const CfgPath& total);
 
 
-  bool dfs_find_path_vars(DualAutomata& dual, 
-                          std::map<size_t, std::set<size_t>>& output, 
-                          std::map<size_t, size_t> counts_so_far, 
-                          Indexer<EdgeVariable>& edge_indexer, 
+  bool dfs_find_path_vars(DualAutomata& dual,
+                          std::map<size_t, std::set<size_t>>& output,
+                          std::map<size_t, size_t> counts_so_far,
+                          Indexer<EdgeVariable>& edge_indexer,
                           DualAutomata::State state,
                           DualAutomata::Edge last_edge,
                           bool, bool, bool, bool,
-                          Abstraction::FullTrace target_left, 
+                          Abstraction::FullTrace target_left,
                           Abstraction::FullTrace rewrite_left);
 
+  DualAutomata update_dual_with_vars(const DualAutomata& dual, 
+                                     Indexer<EdgeVariable>& indexer, 
+                                     IntVector vars, 
+                                     std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);

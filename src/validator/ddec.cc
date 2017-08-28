@@ -361,10 +361,12 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
 
     auto dual = build_dual(target_inductive_paths, rewrite_inductive_paths);
+    dual.remove_prefixes();
     dual.print_all();
 
 
     function<bool (DualAutomata&)> dual_callback = [this](DualAutomata& dual) -> bool {
+      dual.remove_prefixes();
       dual.print_all();
       InvariantLearner learner(target_, rewrite_);
       Sandbox sb(*sandbox_);
