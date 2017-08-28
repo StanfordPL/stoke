@@ -61,22 +61,30 @@ bool is_prefix(const string& str, const string& prefix) {
   return str.length() >= len && str.substr(0,len) == prefix;
 }
 
-bool replace(string& dest, TUnit& code) {
+bool replace(string& dest, TUnit& tunit) {
 
   // Assemble the new function
   Assembler assm;
-  auto result = assm.assemble(code.get_code());
+  auto code = tunit.get_code();
+  auto result = assm.assemble(code);
   if (!result.first) {
     Console::msg() << "Could not assemble rewrite; ";
     Console::msg() << "Requested 8-bit jump offset but jump target is too far." << endl;
     exit(1);
   }
 
+  // count noops at the end
+  int num_nops = 0, i = code.size()-1;
+  while (i > 0) {
+    if (code[i].get_opcode() != NOP) break;
+    i--; num_nops++;
+  }
+
   auto& fxn = result.second;
 
   // Fail if the new function is larger than the old
-  auto size = code.hex_capacity();
-  if (fxn.size() > size) {
+  auto size = tunit.hex_capacity();
+  if (fxn.size() - num_nops > size) {
     Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
     Console::msg() << "." << endl;
     return false;
@@ -84,13 +92,13 @@ bool replace(string& dest, TUnit& code) {
 
   // Overwrite the old function (fingers crossed!)
   fstream fs(dest, ios::binary | ios::in | ios::out);
-  fs.seekg(code.get_file_offset());
-  for (size_t i = 0; i < fxn.size(); ++i) {
+  fs.seekg(tunit.get_file_offset());
+  for (size_t i = 0; i < fxn.size() - num_nops; ++i) {
     fs.put(fxn.get_buffer()[i]);
   }
   // Add no-ops so that we don't write garbage and confuse
   // the disassembler.  See #452.
-  for (size_t i = fxn.size(); i < size; ++i) {
+  for (size_t i = fxn.size() - num_nops; i < size; ++i) {
     fs.put(0x90);
   }
   return true;
