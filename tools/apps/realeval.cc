@@ -52,9 +52,9 @@ auto& out = ValueArg<string>::create("out")
             .default_val("-");
 
 auto& path = ValueArg<string>::create("path")
-            .usage("<path/to/dir>")
-            .description("Directory to collect data from")
-            .default_val("-");
+             .usage("<path/to/dir>")
+             .description("Directory to collect data from")
+             .default_val("-");
 
 bool is_prefix(const string& str, const string& prefix) {
   auto len = prefix.size();
