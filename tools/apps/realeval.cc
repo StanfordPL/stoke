@@ -33,6 +33,7 @@
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/gadgets/target.h"
 
 
 using namespace cpputil;
@@ -122,30 +123,49 @@ void timing(const string& what = "start") {
   _last_time = time();
 }
 
+pair<int, string> exec(const char* cmd) {
+    char buffer[128];
+    string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) throw runtime_error("popen() failed!");
+    try {
+        while (!feof(pipe)) {
+            if (fgets(buffer, 128, pipe) != NULL)
+                result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    int status = pclose(pipe) / 256;
+    return pair<int, string>(status, result);
+}
+
 uint64_t real(string& bin) {
   auto start = time();
   const string cmd = bin + " rogers 10000";
-  auto res = system(cmd.c_str());
-  if (res) {
-    cout << res << endl;
-  }
+  auto res = exec(cmd.c_str());
+  auto& output = res.second;
+  if (res.first != 0) return -1;
+  if (output.find("rogers                0") == string::npos) return -2;
   return time() - start;
 }
 
 int main(int argc, char** argv) {
 
-  target_arg.required(false);
-
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  Cfg empty({}, RegSet::empty(), RegSet::empty());
+  TargetGadget target({}, false);
   SeedGadget seed;
   TrainingSetGadget train_tcs(seed);
   SandboxGadget training_sb(train_tcs, {});
   PerformanceSetGadget perf_tcs(seed);
   SandboxGadget perf_sb(perf_tcs, {});
-  ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", empty, &training_sb, &perf_sb);
-  ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", empty, &training_sb, &perf_sb);
+  auto max_jumps = 1000000000;
+  training_sb.set_max_jumps(max_jumps);
+  perf_sb.set_max_jumps(max_jumps);
+  ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
+  ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
 
   string path = "/home/sheule/dev/nibble/data/rogers-realtime-1000000-105/intermediates/result-1.s";
   string bin = "/home/sheule/dev/nibble/a.out";
@@ -180,11 +200,16 @@ int main(int argc, char** argv) {
 
       if (replace(bin, code)) {
         real(bin);
+        int i = 0;
+        while(i < 2) {
+          // cout << real(bin) << endl;
+          cout << fxn_realtime(cfg, max_cost_arg.value()).second << endl;
+          i++;
+        }
+        break;
         fxn_realtime(cfg, max_cost_arg.value());
         fxn_latency(cfg, max_cost_arg.value());
       }
-
-      timing("one");
     }
   }
 
