@@ -124,21 +124,21 @@ void timing(const string& what = "start") {
 }
 
 pair<int, string> exec(const char* cmd) {
-    char buffer[128];
-    string result = "";
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe) throw runtime_error("popen() failed!");
-    try {
-        while (!feof(pipe)) {
-            if (fgets(buffer, 128, pipe) != NULL)
-                result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
+  char buffer[128];
+  string result = "";
+  FILE* pipe = popen(cmd, "r");
+  if (!pipe) throw runtime_error("popen() failed!");
+  try {
+    while (!feof(pipe)) {
+      if (fgets(buffer, 128, pipe) != NULL)
+        result += buffer;
     }
-    int status = pclose(pipe) / 256;
-    return pair<int, string>(status, result);
+  } catch (...) {
+    pclose(pipe);
+    throw;
+  }
+  int status = pclose(pipe) / 256;
+  return pair<int, string>(status, result);
 }
 
 uint64_t real(string& bin) {
@@ -200,13 +200,6 @@ int main(int argc, char** argv) {
 
       if (replace(bin, code)) {
         real(bin);
-        int i = 0;
-        while(i < 2) {
-          // cout << real(bin) << endl;
-          cout << fxn_realtime(cfg, max_cost_arg.value()).second << endl;
-          i++;
-        }
-        break;
         fxn_realtime(cfg, max_cost_arg.value());
         fxn_latency(cfg, max_cost_arg.value());
       }
