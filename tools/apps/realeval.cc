@@ -268,9 +268,16 @@ int main(int argc, char** argv) {
     }
   }
 
+  timing("reading file");
+  random_shuffle(lines.begin(), lines.end());
+  timing("shuffle");
+
+  int count = 0;
   std::ofstream fout(out_arg.value());
   fout << fixed;
   for (auto& line : lines) {
+    count += 1;
+    if (count > 10000) break;
     istringstream iss(line);
     auto cost = read(iss, "cost");
     auto iteration = read(iss, "iteration");
