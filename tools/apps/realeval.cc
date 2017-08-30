@@ -23,6 +23,7 @@
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
+#include "src/ext/cpputil/include/debug/stl_print.h"
 
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/cost/expr.h"
@@ -46,20 +47,48 @@ auto& io = Heading::create("I/O Options:");
 // auto& output_binary = FlagArg::create("output_binary")
 //                       .alternate("b")
 //                       .description("Output the target in binary format.");
-auto& out = ValueArg<string>::create("out")
-            .alternate("o")
-            .usage("<path/to/file.s>")
-            .description("File to write result to.  - for stdout")
-            .default_val("-");
 
-auto& path = ValueArg<string>::create("path")
+auto& path_arg = ValueArg<string>::create("path")
              .usage("<path/to/dir>")
-             .description("Directory to collect data from")
-             .default_val("-");
+             .required()
+             .description("Directory to collect data from");
+
+auto& out_arg = ValueArg<string>::create("out")
+             .usage("<path/to/file>")
+             .required()
+             .description("Path to store log at.");
+
+auto& item_arg = ValueArg<string>::create("item")
+             .required()
+             .description("Item name");
 
 bool is_prefix(const string& str, const string& prefix) {
   auto len = prefix.size();
   return str.length() >= len && str.substr(0,len) == prefix;
+}
+
+vector<string> explode(const string& str, const char& ch) {
+    string next;
+    vector<string> result;
+
+    // For each character in the string
+    for (string::const_iterator it = str.begin(); it != str.end(); it++) {
+        // If we've hit the terminal character
+        if (*it == ch) {
+            // If we have some characters accumulated
+            if (!next.empty()) {
+                // Add them to the result vector
+                result.push_back(next);
+                next.clear();
+            }
+        } else {
+            // Accumulate the next character into the sequence
+            next += *it;
+        }
+    }
+    if (!next.empty())
+         result.push_back(next);
+    return result;
 }
 
 bool replace(string& dest, TUnit& tunit) {
@@ -151,6 +180,36 @@ uint64_t real(string& bin) {
   return time() - start;
 }
 
+vector<double> sample(function<double()>& f, int reps) {
+  vector<double> xs;
+  for (int i = 0; i < reps; i++) {
+    auto res = f();
+    xs.push_back(res);
+    if (res < 0) {
+      break;
+    }
+  }
+  return xs;
+}
+
+pair<double, double> mean(vector<double> xs) {
+  double sum = 0;
+  double n = xs.size();
+  for (auto& x : xs) {
+    if (x < 0) return pair<double, double>(-1, -1);
+    sum += x;
+  }
+  double mean = sum / n;
+  double var = 0;
+  var = 0;
+  for (auto& x : xs) {
+    var += (x - mean) * (x - mean);
+  }
+  var /= n;
+  double sd = sqrt(var);
+  return pair<double, double>(mean, sd);
+}
+
 int main(int argc, char** argv) {
 
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -167,8 +226,15 @@ int main(int argc, char** argv) {
   ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
   ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
 
-  string path = "/home/sheule/dev/nibble/data/rogers-realtime-1000000-105/intermediates/result-1.s";
-  string bin = "/home/sheule/dev/nibble/a.out";
+  string item = item_arg.value();
+  auto items = explode(item, '-');
+  auto item_fun = items[0];
+  auto item_cfun = items[1];
+  auto item_iters = items[2];
+  auto item_id = items[3];
+  string path = path_arg.value() + "/data/" + item;
+  string bin = path + "/a.out";
+
 
   timing();
 
@@ -183,26 +249,54 @@ int main(int argc, char** argv) {
     return a;
   };
 
-  ifstream infile("/home/sheule/dev/nibble/parout/costfun/realtime/func/rogers/id/105/iters/1000000/stdout");
+  function<double()> reall = [&](){ return real(bin); };
+
+  string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
+  ifstream infile(logfile);
+  if (!infile.good()) {
+    cout << "Logfile not found.  Exiting.." << endl;
+    cout << logfile << endl;
+    return 0;
+  }
   string line;
+  vector<string> lines;
   while (getline(infile, line)) {
     if (is_prefix(line, "cost=")) {
-      istringstream iss(line);
-      auto cost = read(iss, "cost");
-      auto iteration = read(iss, "iteration");
-      auto id = read(iss, "id");
-      auto timestamp = read(iss, "timestamp_ms");
+      lines.push_back(line);
+    }
+  }
 
-      TUnit code;
-      ifstream ifs("/home/sheule/dev/nibble/data/rogers-realtime-1000000-105/intermediates/result-" + to_string(id) + ".s");
-      ifs >> code;
-      Cfg cfg(code, RegSet::empty(), RegSet::empty());
+  std::ofstream fout(out_arg.value());
+  fout << fixed;
+  for (auto& line : lines) {
+    istringstream iss(line);
+    auto cost = read(iss, "cost");
+    auto iteration = read(iss, "iteration");
+    auto id = read(iss, "id");
+    auto timestamp = read(iss, "timestamp_ms");
 
-      if (replace(bin, code)) {
-        real(bin);
-        fxn_realtime(cfg, max_cost_arg.value());
-        fxn_latency(cfg, max_cost_arg.value());
-      }
+    TUnit code;
+    string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
+    ifstream ifs(fpath);
+    ifs >> code;
+    Cfg cfg(code, RegSet::empty(), RegSet::empty());
+
+    if (replace(bin, code)) {
+      function<double()> realtimel = [&](){ return fxn_realtime(cfg, max_cost_arg.value()).second; };
+      function<double()> latencyl = [&](){ return fxn_latency(cfg, max_cost_arg.value()).second; };
+      auto t_realtime = mean(sample(realtimel, 5));
+      auto t_real = mean(sample(reall, 5));
+      auto t_lat = latencyl();
+      fout << "intermediates/result-" + to_string(id) + ".s";
+      fout << "," << item;
+      fout << "," << cost;
+      fout << "," << iteration;
+      fout << "," << id;
+      fout << "," << timestamp;
+      fout << "," << t_real.first << "," << t_real.second;
+      fout << "," << t_realtime.first << "," << t_realtime.second;
+      fout << "," << t_lat;
+      fout << endl;
     }
   }
 
