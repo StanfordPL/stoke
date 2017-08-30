@@ -311,6 +311,8 @@ int main(int argc, char** argv) {
       fout << "," << t_lat;
       fout << endl;
     }
+
+    timing("one");
   }
 
   return 0;
