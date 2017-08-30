@@ -416,7 +416,7 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
     if (v.is_rewrite) {
       if (!is_prefix(simplify(e.re), rewrite_left)) {
-        if(counts_so_far.count(index) == 0)
+        if (counts_so_far.count(index) == 0)
           counts_so_far[index] = 0;
         return false;
       }
@@ -427,7 +427,7 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
       }
     } else {
       if (!is_prefix(simplify(e.te), target_left)) {
-        if(counts_so_far.count(index) == 0)
+        if (counts_so_far.count(index) == 0)
           counts_so_far[index] = 0;
         return false;
       }
@@ -556,7 +556,7 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   /** Build set of all edge variables */
   for (auto path : dual_paths) {
     for (auto edge : path) {
-      if(visited_edge[edge])
+      if (visited_edge[edge])
         continue;
       visited_edge[edge] = true;
 
@@ -592,12 +592,12 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   }
 
   IntVector assignment;
-  for(size_t i = 0; i < edge_indexer.count(); ++i) {
+  for (size_t i = 0; i < edge_indexer.count(); ++i) {
     assignment.push_back(0);
   }
 
   // 0 -> 3; 0 -> 1 -> 10 -> 13 should trigger target edge "3" at least once
-  assignment[36] = 1;
+  assignment[36] = 0;
 
   // block 17
   assignment[44] = 1;
@@ -634,7 +634,7 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     // bookkeeping
     std::map<size_t, size_t> counts_so_far;
 
-    bool success = dfs_find_path_vars(dual, 
+    bool success = dfs_find_path_vars(dual,
                                       outputs,
                                       counts_so_far,
                                       edge_indexer,
@@ -651,7 +651,7 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
       }
       cout << endl;
     }
-  
+
   }
   */
 

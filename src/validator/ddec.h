@@ -62,10 +62,6 @@ private:
   Abstraction* rewrite_automata_;
   ControlLearner* control_learner_;
 
-  /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_disjunction_invariant(size_t cutpoint);
-  /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
   /** Learn inductive paths */
@@ -74,6 +70,13 @@ private:
 
 
   DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
+
+  /** Try and prove all the invariants we can, starting from the initial one. */
+  void discharge_invariants(DualAutomata&);
+
+  /** Compute the initial invariant */
+  ConjunctionInvariant* get_initial_invariant() const;
+  ConjunctionInvariant* get_final_invariant() const;
 
   /** Bound */
   size_t bound_;

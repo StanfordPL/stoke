@@ -331,14 +331,14 @@ void DualAutomata::remove_prefixes() {
 
   bool done = false;
 
-  while(!done) {
+  while (!done) {
     done = true;
-    for(auto state : reachable_states_) {
+    for (auto state : reachable_states_) {
       auto edges = next_edges_[state];
 
-      for(auto e1 : edges) {
-        for(auto e2 : edges) {
-          if(e1 == e2)
+      for (auto e1 : edges) {
+        for (auto e2 : edges) {
+          if (e1 == e2)
             continue;
 
           if (is_edge_prefix(e1.te, e2.te) && is_edge_prefix(e1.re, e2.re)) {
@@ -347,10 +347,10 @@ void DualAutomata::remove_prefixes() {
           }
           break;
         }
-        if(done == false)
+        if (done == false)
           break;
       }
-      if(done == false)
+      if (done == false)
         break;
     }
   }
