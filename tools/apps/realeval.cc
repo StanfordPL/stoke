@@ -176,6 +176,7 @@ int64_t real(string& bin) {
   auto res = exec(cmd.c_str());
   auto& output = res.second;
   if (res.first != 0) {
+    if (res.first == 124) return -3;
     cout << "a.out failed with " << res.first << endl;
     cout << res.second << endl;
     return -1;
@@ -204,7 +205,7 @@ pair<double, double> mean(vector<double> xs) {
   double sum = 0;
   double n = xs.size();
   for (auto& x : xs) {
-    if (x < 0) return pair<double, double>(-1, -1);
+    if (x < 0) return pair<double, double>(x, -1);
     sum += x;
   }
   double mean = sum / n;
