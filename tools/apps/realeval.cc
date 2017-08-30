@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
   };
 
   function<double()> reall = [&]() {
-    return real(bin);
+    return (double)real(bin);
   };
 
   string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
@@ -292,10 +292,10 @@ int main(int argc, char** argv) {
 
     if (replace(bin, code)) {
       function<double()> realtimel = [&]() {
-        return fxn_realtime(cfg, max_cost_arg.value()).second;
+        return (double)fxn_realtime(cfg, max_cost_arg.value()).second;
       };
       function<double()> latencyl = [&]() {
-        return fxn_latency(cfg, max_cost_arg.value()).second;
+        return (double)fxn_latency(cfg, max_cost_arg.value()).second;
       };
       auto t_realtime = mean(sample(realtimel, 5));
       auto t_real = mean(sample(reall, 5));
@@ -310,6 +310,11 @@ int main(int argc, char** argv) {
       fout << "," << t_realtime.first << "," << t_realtime.second;
       fout << "," << t_lat;
       fout << endl;
+      // intermediates/result-45997.s,rogers-latency-1000000-181,
+      2206,315533,45997,2903969,
+      18446744073709551616.000000,0.000000,
+      107138.600000,151.927088,
+      2206.000000
     }
 
     timing("one");
