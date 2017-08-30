@@ -310,11 +310,6 @@ int main(int argc, char** argv) {
       fout << "," << t_realtime.first << "," << t_realtime.second;
       fout << "," << t_lat;
       fout << endl;
-      // intermediates/result-45997.s,rogers-latency-1000000-181,
-      2206,315533,45997,2903969,
-      18446744073709551616.000000,0.000000,
-      107138.600000,151.927088,
-      2206.000000
     }
 
     timing("one");
