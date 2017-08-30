@@ -299,11 +299,11 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
                              rewrite_cutpoints[j],
                              &no_pass_rewrite);
 
-      if(target_cutpoints[i] == target_cutpoints[j]) {
-        target_paths.push_back({target_cutpoints[i]});        
+      if (target_cutpoints[i] == target_cutpoints[j]) {
+        target_paths.push_back({target_cutpoints[i]});
       }
-      if(rewrite_cutpoints[i] == rewrite_cutpoints[j]) {
-        rewrite_paths.push_back({rewrite_cutpoints[i]});        
+      if (rewrite_cutpoints[i] == rewrite_cutpoints[j]) {
+        rewrite_paths.push_back({rewrite_cutpoints[i]});
       }
 
       auto state = DualAutomata::State(target_cutpoints[i], rewrite_cutpoints[i]);
@@ -321,6 +321,73 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
 }
 
 
+void DdecValidator::discharge_invariants(DualAutomata& dual) {
+
+  // Now we run a fixedpoint algorithm to get the provable invariants
+  vector<DualAutomata::State> worklist;
+  worklist.push_back(dual.start_state());
+
+  // TODO: we can make this faster if the worklist contains *edges* rather than
+  //   states.
+  while (worklist.size()) {
+    // Pick a state
+    auto current = worklist.begin();
+
+    bool ok = true;
+    for (auto edge : dual.next_edges(*current)) {
+      // check this edge
+      auto start_inv = dual.get_invariant(edge.from);
+      auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
+
+      cout << "_____________________________" << endl;
+      cout << "Edge: " << edge.from << " -> " << edge.to << endl;
+      cout << "target: ";
+      for(auto it : edge.te) {
+        cout << it << " ";
+      }
+      cout << endl;
+      cout << "rewrite: ";
+      for(auto it : edge.re) {
+        cout << it << " ";
+      }
+      cout << endl;
+      cout << "Assuming: " << *start_inv << endl << endl;
+
+      // check the invariants in the conjunction one at a time
+      for (size_t i = 0; i < end_inv->size(); ++i) {
+        auto partial_inv = (*end_inv)[i];
+        cout << "  Proving " << *partial_inv << endl;
+        bool valid = false;
+        try {
+          valid = check(target_, rewrite_, edge.from.ts, edge.from.rs, 
+                        edge.te, edge.re, *start_inv, *partial_inv);
+        } catch (validator_error e) {
+          valid = false;
+          cout << "   * encountered " << e.what() << "; assuming false.";
+        }
+        //bool valid = true;
+        cout << "    " << (valid ? "true" : "false") << endl;
+        if (!valid) {
+          ok = false;
+          end_inv->remove(i);
+          i--;
+        }
+      }
+    }
+
+    if (!ok) {
+      // add all successors of 'current' to the worklist
+      // remove 'current' from the worklist
+      auto tmp = *current;
+      worklist.erase(current);
+      auto to_add = dual.next_states(tmp);
+      worklist.insert(worklist.begin(), to_add.begin(), to_add.end());
+    } else {
+      // remove 'current' from the worklist
+      worklist.erase(current);
+    }
+  }  
+}
 
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -375,8 +442,24 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         cout << "Learning invariants failed!" << endl;
         return false;
       }
+      auto start_state = dual.start_state();
+      auto end_state = dual.exit_state();
+      dual.set_invariant(start_state, get_initial_invariant());
+      dual.set_invariant(end_state, get_final_invariant());
+
+      /** Hand-hold: add rax = rax' - rdi' */
+      DualAutomata::State hack_state(3,13);
+      auto hack_inv = dual.get_invariant(hack_state);
+      Variable hack_minus_rax(rax, true);
+      hack_minus_rax.coefficient = -1;
+      auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
+      hack_inv->add_invariant(hack_plus);
+      dual.set_invariant(hack_state, hack_inv);
+
       dual.print_all();
       cout << "Got some invariants!  Are they useful?" << endl;
+      discharge_invariants(dual);
+      dual.print_all();
       return true;
     };
 
@@ -400,235 +483,44 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 }
 
 
-/** Assumption: given a disjunction of conjuncts.
-  Returns a conjunction which *may* include disjuncts. */
-ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
-  DDEC_DEBUG(cout << "SIMPLIFYING DISJUNCTS" << endl;
-             cout << disjs << endl << endl;)
 
-  FalseInvariant _false;
+ConjunctionInvariant* DdecValidator::get_initial_invariant() const {
+  auto initial_invariant = new ConjunctionInvariant();
+  auto sei = new StateEqualityInvariant(target_.def_ins());
+  initial_invariant->add_invariant(sei);
+  initial_invariant->add_invariant(new MemoryEqualityInvariant());
+  initial_invariant->add_invariant(new NoSignalsInvariant());
 
-  // Go through disjunctions and throw out any that have a conjunction involving false...
-  for (size_t i = 0; i < disjs.size(); ++i) {
-    auto& conj = *static_cast<ConjunctionInvariant*>(disjs[i]);
-    for (size_t j = 0; j < conj.size(); ++j) {
-      if (*conj[j] == _false) {
-        DDEC_DEBUG(cout << "Removing disjunct " << i << " due to index " << j << endl;)
-        disjs.remove(i);
-        i--;
-        break;
-      }
-    }
+/*
+  for (auto r : string_params_) {
+    // rsi_start = rsi (for example) 
+    Variable start_var(string_ghost_start(r), false);
+    Variable string_reg(r, false);
+    string_reg.coefficient = -1;
+    auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+    initial_invariant->add_invariant(equiv);
+
+    // rsi_end = 0 (for example) 
+    Variable end_var(string_ghost_end(r), false);
+    auto end_mem = new PointerNullInvariant(end_var, 1);
+    initial_invariant->add_invariant(end_mem);
   }
+*/
 
-  DDEC_DEBUG(cout << "Finished removing dumb disjuncts" << endl;)
+  //initial_invariant->add_invariant(get_fixed_invariant());
 
-  // Take the conjunctions in the first disjunct.
-  // If they're in the rest, then of the disjuncts, we remove it from all of them
-  auto common_conjunctions = new ConjunctionInvariant();
-
-  auto& first_conjunct = *static_cast<ConjunctionInvariant*>(disjs[0]);
-  for (size_t i = 0; i < first_conjunct.size(); ++i) {
-    auto leaf = first_conjunct[i];
-    DDEC_DEBUG(cout << "Looking for " << *leaf << " in all disjuncts" << endl;)
-
-    bool contained_in_all = true;
-    for (size_t j = 1; j < disjs.size(); j++) {
-      auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
-      bool contained = false;
-      for (size_t k = 0; k < other_conjunct.size(); ++k) {
-        if (*other_conjunct[k] == *leaf) {
-          contained = true;
-          break;
-        }
-      }
-      contained_in_all &= contained;
-    }
-
-    // remove the leaf from the conjunction
-    if (contained_in_all) {
-      DDEC_DEBUG(cout << "  found in all :)" << endl;)
-      common_conjunctions->add_invariant(leaf);
-      for (size_t j = 0; j < disjs.size(); j++) {
-        auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
-        bool contained = false;
-        for (size_t k = 0; k < other_conjunct.size(); ++k) {
-          if (*other_conjunct[k] == *leaf) {
-            if (contained && j == 0) {
-              //we're in trouble
-              DDEC_DEBUG(cout << "OOPS!  Simplified and found same thing twice!  WARNING" << endl;)
-            }
-            other_conjunct.remove(k);
-            contained = true;
-            k--;
-          }
-        }
-      }
-      i--;
-    } else {
-      DDEC_DEBUG(cout << "  not found" << endl;)
-    }
-  }
-
-  common_conjunctions->add_invariant(&disjs);
-
-  DDEC_DEBUG(cout << "ALL DONE W/ SIMPLIFY" << endl;)
-
-  return common_conjunctions;
-
+  return initial_invariant;
 }
 
-ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(size_t cutpoint) {
+ConjunctionInvariant* DdecValidator::get_final_invariant() const {
+  auto final_invariant = new ConjunctionInvariant();
+  auto sei = new StateEqualityInvariant(target_.live_outs());
+  final_invariant->add_invariant(sei);
+  final_invariant->add_invariant(new MemoryEqualityInvariant());
+  final_invariant->add_invariant(new NoSignalsInvariant());
 
-  InvariantLearner learner(target_, rewrite_);
+  //final_invariant->add_invariant(get_fixed_invariant());
 
-  /** Lets get out the relevant data here... */
-  vector<CpuState> target_states = cutpoints_->data_at(cutpoint, false);
-  vector<CpuState> rewrite_states = cutpoints_->data_at(cutpoint, true);
-
-  DDEC_DEBUG(cout << "[ddec] learning cutpoint " << cutpoint << " invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  auto target_regs = target_.def_outs(target_cuts[cutpoint]);
-  auto rewrite_regs = rewrite_.def_outs(rewrite_cuts[cutpoint]);
-
-  auto last_target_instr = get_last_instr(target_, target_cuts[cutpoint]);
-  auto last_rewrite_instr = get_last_instr(rewrite_, rewrite_cuts[cutpoint]);
-
-  bool target_has_jcc = last_target_instr.is_jcc();
-  string target_opcode = Handler::get_opcode(last_target_instr);
-  string target_cc = target_opcode.substr(1, target_opcode.size() - 1);
-
-  bool rewrite_has_jcc = last_rewrite_instr.is_jcc();
-  string rewrite_opcode = Handler::get_opcode(last_rewrite_instr);
-  string rewrite_cc = rewrite_opcode.substr(1, rewrite_opcode.size() - 1);
-
-  /** Case 1: there's no conditional jump */
-  if (!target_has_jcc && !rewrite_has_jcc) {
-    return learner.learn(target_regs, rewrite_regs, target_states, rewrite_states);
-  } else if (target_has_jcc && !rewrite_has_jcc) {
-
-    vector<CpuState> target_jump_states;
-    vector<CpuState> target_fall_states;
-    vector<CpuState> rewrite_jump_states;
-    vector<CpuState> rewrite_fall_states;
-
-    for (size_t i = 0; i < target_states.size(); ++i) {
-      if (ConditionalHandler::condition_satisfied(target_cc, target_states[i])) {
-        target_jump_states.push_back(target_states[i]);
-        rewrite_jump_states.push_back(rewrite_states[i]);
-      } else {
-        target_fall_states.push_back(target_states[i]);
-        rewrite_fall_states.push_back(rewrite_states[i]);
-      }
-    }
-
-    auto jump_inv = new FlagInvariant(last_target_instr, false, false);
-    auto jump_simple = learner.learn(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
-    jump_simple = transform_with_assumption(jump_inv, jump_simple);
-
-    auto fall_inv = new FlagInvariant(last_target_instr, false, true);
-    auto fall_simple = learner.learn(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
-    fall_simple = transform_with_assumption(fall_inv, fall_simple);
-
-    fall_simple->add_invariants(jump_simple);
-
-    return fall_simple;
-
-  } else if (!target_has_jcc && rewrite_has_jcc) {
-
-    vector<CpuState> target_jump_states;
-    vector<CpuState> target_fall_states;
-
-    vector<CpuState> rewrite_jump_states;
-    vector<CpuState> rewrite_fall_states;
-
-    for (size_t i = 0; i < rewrite_states.size(); ++i) {
-      if (ConditionalHandler::condition_satisfied(rewrite_cc, rewrite_states[i])) {
-        target_jump_states.push_back(target_states[i]);
-        rewrite_jump_states.push_back(rewrite_states[i]);
-      } else {
-        target_fall_states.push_back(target_states[i]);
-        rewrite_fall_states.push_back(rewrite_states[i]);
-      }
-    }
-
-    auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
-    auto jump_simple = learner.learn(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
-    jump_simple = transform_with_assumption(jump_inv, jump_simple);
-
-    auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
-    auto fall_simple = learner.learn(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
-    fall_simple = transform_with_assumption(fall_inv, fall_simple);
-
-    fall_simple->add_invariants(jump_simple);
-
-    return fall_simple;
-  } else {
-    // Both have jumps!
-    vector<CpuState> jump_jump_states_target;
-    vector<CpuState> jump_fall_states_target;
-    vector<CpuState> fall_jump_states_target;
-    vector<CpuState> fall_fall_states_target;
-
-    vector<CpuState> jump_jump_states_rewrite;
-    vector<CpuState> jump_fall_states_rewrite;
-    vector<CpuState> fall_jump_states_rewrite;
-    vector<CpuState> fall_fall_states_rewrite;
-
-    for (size_t i = 0; i < target_states.size(); ++i) {
-      if ( ConditionalHandler::condition_satisfied( target_cc, target_states[i])) {
-        if ( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
-          jump_jump_states_target.push_back(target_states[i]);
-          jump_jump_states_rewrite.push_back(rewrite_states[i]);
-        } else {
-          jump_fall_states_target.push_back(target_states[i]);
-          jump_fall_states_rewrite.push_back(rewrite_states[i]);
-        }
-      } else {
-        if ( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
-          fall_jump_states_target.push_back(target_states[i]);
-          fall_jump_states_rewrite.push_back(rewrite_states[i]);
-        } else {
-          fall_fall_states_target.push_back(target_states[i]);
-          fall_fall_states_rewrite.push_back(rewrite_states[i]);
-        }
-      }
-    }
-
-    auto S1 = learner.learn(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
-    auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
-    auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
-
-    auto S2 = learner.learn(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
-    auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
-    auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
-
-    auto S3 = learner.learn(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
-    auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
-    auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
-
-    auto S4 = learner.learn(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
-    auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
-    auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);
-
-    S1->add_invariants(S2);
-    S1->add_invariants(S3);
-    S1->add_invariants(S4);
-
-    return S1;
-  }
-
-  assert(false);
-  return NULL;
-
+  return final_invariant;
 }
-
-

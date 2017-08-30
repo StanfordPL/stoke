@@ -124,9 +124,9 @@ private:
                           Abstraction::FullTrace target_left,
                           Abstraction::FullTrace rewrite_left);
 
-  DualAutomata update_dual_with_vars(const DualAutomata& dual, 
-                                     Indexer<EdgeVariable>& indexer, 
-                                     IntVector vars, 
+  DualAutomata update_dual_with_vars(const DualAutomata& dual,
+                                     Indexer<EdgeVariable>& indexer,
+                                     IntVector vars,
                                      std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
   ////////////////////////////// Matrix Functions //////////////////////////////
 
