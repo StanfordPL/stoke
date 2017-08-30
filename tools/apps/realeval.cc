@@ -172,7 +172,7 @@ pair<int, string> exec(const char* cmd) {
 
 uint64_t real(string& bin) {
   auto start = time();
-  const string cmd = bin + " rogers 10000";
+  const string cmd = "timeout 0.5s " + bin + " rogers 10000";
   auto res = exec(cmd.c_str());
   auto& output = res.second;
   if (res.first != 0) return -1;
