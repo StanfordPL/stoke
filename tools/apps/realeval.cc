@@ -177,12 +177,12 @@ int64_t real(string& bin) {
   auto& output = res.second;
   if (res.first != 0) {
     cout << "a.out failed with " << res.first << endl;
-    cout << a.second << endl;
+    cout << res.second << endl;
     return -1;
   }
   if (output.find("rogers                0") == string::npos) {
     cout << "has errors" << endl;
-    cout << a.second << endl;
+    cout << res.second << endl;
     return -2;
   }
   return time() - start;
