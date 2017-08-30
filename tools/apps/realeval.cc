@@ -170,13 +170,21 @@ pair<int, string> exec(const char* cmd) {
   return pair<int, string>(status, result);
 }
 
-uint64_t real(string& bin) {
+int64_t real(string& bin) {
   auto start = time();
   const string cmd = "timeout 0.5s " + bin + " rogers 10000";
   auto res = exec(cmd.c_str());
   auto& output = res.second;
-  if (res.first != 0) return -1;
-  if (output.find("rogers                0") == string::npos) return -2;
+  if (res.first != 0) {
+    cout << "a.out failed with " << res.first << endl;
+    cout << a.second << endl;
+    return -1;
+  }
+  if (output.find("rogers                0") == string::npos) {
+    cout << "has errors" << endl;
+    cout << a.second << endl;
+    return -2;
+  }
   return time() - start;
 }
 
