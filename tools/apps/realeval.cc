@@ -49,18 +49,18 @@ auto& io = Heading::create("I/O Options:");
 //                       .description("Output the target in binary format.");
 
 auto& path_arg = ValueArg<string>::create("path")
-             .usage("<path/to/dir>")
-             .required()
-             .description("Directory to collect data from");
+                 .usage("<path/to/dir>")
+                 .required()
+                 .description("Directory to collect data from");
 
 auto& out_arg = ValueArg<string>::create("out")
-             .usage("<path/to/file>")
-             .required()
-             .description("Path to store log at.");
+                .usage("<path/to/file>")
+                .required()
+                .description("Path to store log at.");
 
 auto& item_arg = ValueArg<string>::create("item")
-             .required()
-             .description("Item name");
+                 .required()
+                 .description("Item name");
 
 bool is_prefix(const string& str, const string& prefix) {
   auto len = prefix.size();
@@ -68,27 +68,27 @@ bool is_prefix(const string& str, const string& prefix) {
 }
 
 vector<string> explode(const string& str, const char& ch) {
-    string next;
-    vector<string> result;
+  string next;
+  vector<string> result;
 
-    // For each character in the string
-    for (string::const_iterator it = str.begin(); it != str.end(); it++) {
-        // If we've hit the terminal character
-        if (*it == ch) {
-            // If we have some characters accumulated
-            if (!next.empty()) {
-                // Add them to the result vector
-                result.push_back(next);
-                next.clear();
-            }
-        } else {
-            // Accumulate the next character into the sequence
-            next += *it;
-        }
+  // For each character in the string
+  for (string::const_iterator it = str.begin(); it != str.end(); it++) {
+    // If we've hit the terminal character
+    if (*it == ch) {
+      // If we have some characters accumulated
+      if (!next.empty()) {
+        // Add them to the result vector
+        result.push_back(next);
+        next.clear();
+      }
+    } else {
+      // Accumulate the next character into the sequence
+      next += *it;
     }
-    if (!next.empty())
-         result.push_back(next);
-    return result;
+  }
+  if (!next.empty())
+    result.push_back(next);
+  return result;
 }
 
 bool replace(string& dest, TUnit& tunit) {
@@ -249,7 +249,9 @@ int main(int argc, char** argv) {
     return a;
   };
 
-  function<double()> reall = [&](){ return real(bin); };
+  function<double()> reall = [&]() {
+    return real(bin);
+  };
 
   string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
   ifstream infile(logfile);
@@ -282,8 +284,12 @@ int main(int argc, char** argv) {
     Cfg cfg(code, RegSet::empty(), RegSet::empty());
 
     if (replace(bin, code)) {
-      function<double()> realtimel = [&](){ return fxn_realtime(cfg, max_cost_arg.value()).second; };
-      function<double()> latencyl = [&](){ return fxn_latency(cfg, max_cost_arg.value()).second; };
+      function<double()> realtimel = [&]() {
+        return fxn_realtime(cfg, max_cost_arg.value()).second;
+      };
+      function<double()> latencyl = [&]() {
+        return fxn_latency(cfg, max_cost_arg.value()).second;
+      };
       auto t_realtime = mean(sample(realtimel, 5));
       auto t_real = mean(sample(reall, 5));
       auto t_lat = latencyl();
