@@ -416,6 +416,8 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
       }
     }
   }
+
+  /*
   auto mem_vars = get_memory_variables(target_, rewrite_);
   for (auto var : mem_vars) {
     cout << "Checking mem var: " << var << endl;
@@ -426,6 +428,7 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
       cout << " * size " << var.size << endl;
     }
   }
+  */
 
   DDEC_DEBUG(
     cout << "Columns" << endl;
