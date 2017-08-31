@@ -165,9 +165,11 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
 
   return all_blocks;
 }
-
-bool DdecValidator::learn_inductive_paths(vector<CfgPath>& target_inductive_paths,
-    vector<CfgPath>& rewrite_inductive_paths) {
+bool DdecValidator::learn_inductive_paths(
+    vector<CfgPath>& target_inductive_paths,
+    vector<CfgPath>& rewrite_inductive_paths,
+    function<bool (vector<CfgPath>&, vector<CfgPath>&)>& callback
+) {
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
@@ -236,6 +238,8 @@ bool DdecValidator::learn_inductive_paths(vector<CfgPath>& target_inductive_path
       }
     }
   }
+  // for now...
+  callback(target_inductive_paths, rewrite_inductive_paths);
   return true;
 }
 
@@ -342,12 +346,12 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
       cout << "_____________________________" << endl;
       cout << "Edge: " << edge.from << " -> " << edge.to << endl;
       cout << "target: ";
-      for(auto it : edge.te) {
+      for (auto it : edge.te) {
         cout << it << " ";
       }
       cout << endl;
       cout << "rewrite: ";
-      for(auto it : edge.re) {
+      for (auto it : edge.re) {
         cout << it << " ";
       }
       cout << endl;
@@ -359,7 +363,7 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
         cout << "  Proving " << *partial_inv << endl;
         bool valid = false;
         try {
-          valid = check(target_, rewrite_, edge.from.ts, edge.from.rs, 
+          valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
                         edge.te, edge.re, *start_inv, *partial_inv);
         } catch (validator_error e) {
           valid = false;
@@ -386,11 +390,61 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
       // remove 'current' from the worklist
       worklist.erase(current);
     }
-  }  
+  }
 }
 
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+
+
+  function<bool (DualAutomata&)> dual_callback = [this](DualAutomata& dual) -> bool {
+    dual.remove_prefixes();
+    dual.print_all();
+    InvariantLearner learner(target_, rewrite_);
+    Sandbox sb(*sandbox_);
+    bool learning_successful = dual.learn_invariants(sb, learner);
+    if (!learning_successful) {
+      cout << "Learning invariants failed!" << endl;
+      return false;
+    }
+    auto start_state = dual.start_state();
+    auto end_state = dual.exit_state();
+    dual.set_invariant(start_state, get_initial_invariant());
+    dual.set_invariant(end_state, get_final_invariant());
+
+    /** Hand-hold: add rax = rax' - rdi' */
+    DualAutomata::State hack_state(5,30);
+    auto hack_inv = dual.get_invariant(hack_state);
+    Variable hack_minus_rax(rax, true);
+    hack_minus_rax.coefficient = -1;
+    auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
+    hack_inv->add_invariant(hack_plus);
+    dual.set_invariant(hack_state, hack_inv);
+
+    dual.print_all();
+    cout << "Got some invariants!  Are they useful?" << endl;
+    discharge_invariants(dual);
+    dual.print_all();
+
+    // for now, let's just assume it worked 
+    // we should be returning true here only if the proof actually succeeded
+    return true;
+  };
+
+  function<bool (vector<CfgPath>&, vector<CfgPath>&)> inductive_paths_callback =
+    [this, &dual_callback](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
+
+    auto dual = build_dual(target_paths, rewrite_paths);
+    dual.remove_prefixes();
+    dual.print_all();
+    control_learner_->update_dual(dual, dual_callback);
+
+    // let's just assume it worked the first time for now.
+    return true;
+
+  };
+
+
 
   init_mm();
 
@@ -422,48 +476,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     vector<CfgPath> target_inductive_paths;
     vector<CfgPath> rewrite_inductive_paths;
-    bool ok = learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
+    bool ok = learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths, inductive_paths_callback);
     if (!ok) {
       return false;
     }
-
-    auto dual = build_dual(target_inductive_paths, rewrite_inductive_paths);
-    dual.remove_prefixes();
-    dual.print_all();
-
-
-    function<bool (DualAutomata&)> dual_callback = [this](DualAutomata& dual) -> bool {
-      dual.remove_prefixes();
-      dual.print_all();
-      InvariantLearner learner(target_, rewrite_);
-      Sandbox sb(*sandbox_);
-      bool learning_successful = dual.learn_invariants(sb, learner);
-      if (!learning_successful) {
-        cout << "Learning invariants failed!" << endl;
-        return false;
-      }
-      auto start_state = dual.start_state();
-      auto end_state = dual.exit_state();
-      dual.set_invariant(start_state, get_initial_invariant());
-      dual.set_invariant(end_state, get_final_invariant());
-
-      /** Hand-hold: add rax = rax' - rdi' */
-      DualAutomata::State hack_state(3,13);
-      auto hack_inv = dual.get_invariant(hack_state);
-      Variable hack_minus_rax(rax, true);
-      hack_minus_rax.coefficient = -1;
-      auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
-      hack_inv->add_invariant(hack_plus);
-      dual.set_invariant(hack_state, hack_inv);
-
-      dual.print_all();
-      cout << "Got some invariants!  Are they useful?" << endl;
-      discharge_invariants(dual);
-      dual.print_all();
-      return true;
-    };
-
-    control_learner_->update_dual(dual, dual_callback);
 
   } catch (validator_error e) {
 
@@ -492,21 +508,21 @@ ConjunctionInvariant* DdecValidator::get_initial_invariant() const {
   initial_invariant->add_invariant(new MemoryEqualityInvariant());
   initial_invariant->add_invariant(new NoSignalsInvariant());
 
-/*
-  for (auto r : string_params_) {
-    // rsi_start = rsi (for example) 
-    Variable start_var(string_ghost_start(r), false);
-    Variable string_reg(r, false);
-    string_reg.coefficient = -1;
-    auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
-    initial_invariant->add_invariant(equiv);
+  /*
+    for (auto r : string_params_) {
+      // rsi_start = rsi (for example)
+      Variable start_var(string_ghost_start(r), false);
+      Variable string_reg(r, false);
+      string_reg.coefficient = -1;
+      auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+      initial_invariant->add_invariant(equiv);
 
-    // rsi_end = 0 (for example) 
-    Variable end_var(string_ghost_end(r), false);
-    auto end_mem = new PointerNullInvariant(end_var, 1);
-    initial_invariant->add_invariant(end_mem);
-  }
-*/
+      // rsi_end = 0 (for example)
+      Variable end_var(string_ghost_end(r), false);
+      auto end_mem = new PointerNullInvariant(end_var, 1);
+      initial_invariant->add_invariant(end_mem);
+    }
+  */
 
   //initial_invariant->add_invariant(get_fixed_invariant());
 

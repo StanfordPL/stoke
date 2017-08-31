@@ -222,34 +222,6 @@ void ControlLearner::compute() {
     cout << endl;
   }
 
-  cout << "... checking invariant" << endl;
-
-  for (size_t i = 0; i < final_matrix.size(); ++i) {
-    auto row = final_matrix[i];
-    int target_iterations = row[target_block_to_index(3)]+1;
-    int rewrite_iterations = 0;
-    rewrite_iterations += 8*row[rewrite_block_to_index(12)];
-    rewrite_iterations += 1*row[rewrite_block_to_index(17)];
-    rewrite_iterations += 2*row[rewrite_block_to_index(19)];
-    rewrite_iterations += 3*row[rewrite_block_to_index(21)];
-    rewrite_iterations += 4*row[rewrite_block_to_index(23)];
-    rewrite_iterations += 5*row[rewrite_block_to_index(25)];
-    rewrite_iterations += 6*row[rewrite_block_to_index(27)];
-    rewrite_iterations += 7*row[rewrite_block_to_index(29)];
-    rewrite_iterations += row[rewrite_block_to_index(4)];
-    rewrite_iterations += row[rewrite_block_to_index(2)];
-    if (target_iterations != rewrite_iterations) {
-      cout << "Mismatch!  Target " << target_iterations << "; Rewrite " << rewrite_iterations << endl;
-      for (size_t i = 0; i < target_.num_blocks(); ++i) {
-        cout << "   " << i << "T: " << row[target_block_to_index(i)] << endl;
-      }
-      for (size_t i = 0; i < rewrite_.num_blocks(); ++i) {
-        cout << "   " << i << "R: " << row[rewrite_block_to_index(i)] << endl;
-      }
-      cout << "---" << endl;
-    }
-  }
-
   kernel_generators_ = final_matrix.solve_diophantine();
 
   // Print what basis vectors say
@@ -349,7 +321,7 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
   }
 
   // DEBUGGING (find which relations didn't hold)
-  cout << "For pair " << tp << " | " << rp << endl;
+  //cout << "For pair " << tp << " | " << rp << endl;
   auto mult = kernel_generators_*test;
   for (size_t i = 0; i < mult.size(); ++i) {
     if (mult[i]) {
@@ -596,25 +568,6 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     assignment.push_back(0);
   }
 
-  // 0 -> 3; 0 -> 1 -> 10 -> 13 should trigger target edge "3" at least once
-  assignment[36] = 0;
-
-  // block 17
-  assignment[44] = 1;
-  // block 19
-  assignment[46] = 2;
-  // block 21
-  assignment[48] = 3;
-  // block 23
-  assignment[50] = 4;
-  // block 25
-  assignment[52] = 5;
-  // block 27
-  assignment[54] = 6;
-  // block 29
-  assignment[56] = 7;
-
-
   /*
   /////////////////
 
@@ -656,6 +609,16 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   */
 
   /////////////////
+
+  assignment[0] = 1; // along path from entry to main vectorized loop
+  assignment[5] = 1;
+  assignment[9] = 2;
+  assignment[13] = 3;
+  assignment[17] = 4;
+  assignment[21] = 5;
+  assignment[25] = 6;
+  assignment[29] = 7;
+  assignment[33] = 8;
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   callback(new_dual);
