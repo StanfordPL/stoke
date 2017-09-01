@@ -156,15 +156,15 @@ void show_state(const SearchState& state, ostream& os) {
 }
 
 void pcb(const ProgressCallbackData& data, void* arg) {
-  ostream& os = *((ostream*)arg);
+  // ostream& os = *((ostream*)arg);
 
-  os << "Progress Update: " << endl;
-  os << endl;
+  // os << "Progress Update: " << endl;
+  // os << endl;
 
-  show_state(data.state, os);
+  // show_state(data.state, os);
 
-  os << endl << endl;
-  sep(os);
+  // os << endl << endl;
+  // sep(os);
 }
 
 struct ScbArg {
