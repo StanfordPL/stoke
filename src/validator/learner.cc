@@ -233,6 +233,16 @@ bool invariant_holds(Invariant* invariant, const vector<CpuState>& target_states
   return true;
 }
 
+bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states);
+
+bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<CpuState>& ts, const vector<CpuState>& rs) {
+  vector<Invariant*> tmp;
+  bool b = add_or_delete_inv(tmp, inv, ts, rs);
+  for (auto it : tmp)
+    conj->add_invariant(it);
+  return b;
+}
+
 /** Returns true if the invariant is added. */
 bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
   if (invariant_holds(inv, target_states, rewrite_states)) {
@@ -417,8 +427,9 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
     }
   }
 
-  /*
   auto mem_vars = get_memory_variables(target_, rewrite_);
+  // add variable to columns
+  /*
   for (auto var : mem_vars) {
     cout << "Checking mem var: " << var << endl;
     if (var.size <= 8) {
@@ -429,6 +440,12 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
     }
   }
   */
+
+  // check if memory is always non-zero?
+  for (auto var : mem_vars) {
+    auto inv = new NonzeroInvariant(var);
+    add_or_delete_inv(conj, inv, target_states, rewrite_states);
+  }
 
   DDEC_DEBUG(
     cout << "Columns" << endl;

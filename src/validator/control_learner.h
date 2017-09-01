@@ -42,8 +42,8 @@ public:
 
   bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
 
-  /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. */
-  void update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);
+  /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. Returns true if the callback managed to return true. */
+  bool update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);
 
 private:
 

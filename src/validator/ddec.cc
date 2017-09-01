@@ -166,9 +166,9 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
   return all_blocks;
 }
 bool DdecValidator::learn_inductive_paths(
-    vector<CfgPath>& target_inductive_paths,
-    vector<CfgPath>& rewrite_inductive_paths,
-    function<bool (vector<CfgPath>&, vector<CfgPath>&)>& callback
+  vector<CfgPath>& target_inductive_paths,
+  vector<CfgPath>& rewrite_inductive_paths,
+  function<bool (vector<CfgPath>&, vector<CfgPath>&)>& callback
 ) {
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
@@ -239,8 +239,7 @@ bool DdecValidator::learn_inductive_paths(
     }
   }
   // for now...
-  callback(target_inductive_paths, rewrite_inductive_paths);
-  return true;
+  return callback(target_inductive_paths, rewrite_inductive_paths);
 }
 
 DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, vector<CfgPath>& rewrite_inductive_paths) {
@@ -328,14 +327,22 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
 void DdecValidator::discharge_invariants(DualAutomata& dual) {
 
   // Now we run a fixedpoint algorithm to get the provable invariants
-  vector<DualAutomata::State> worklist;
-  worklist.push_back(dual.start_state());
+  set<DualAutomata::State> worklist;
+
+  for (auto reachable : dual.get_reachable_states())
+    worklist.insert(reachable);
 
   // TODO: we can make this faster if the worklist contains *edges* rather than
   //   states.
   while (worklist.size()) {
     // Pick a state
     auto current = worklist.begin();
+
+    cout << "WORKLIST CURRENT " << *current << "; LIST=";
+    for (auto it : worklist) {
+      cout << it;
+    }
+    cout << endl;
 
     bool ok = true;
     for (auto edge : dual.next_edges(*current)) {
@@ -385,7 +392,7 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
       auto tmp = *current;
       worklist.erase(current);
       auto to_add = dual.next_states(tmp);
-      worklist.insert(worklist.begin(), to_add.begin(), to_add.end());
+      worklist.insert(to_add.begin(), to_add.end());
     } else {
       // remove 'current' from the worklist
       worklist.erase(current);
@@ -421,26 +428,41 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     hack_inv->add_invariant(hack_plus);
     dual.set_invariant(hack_state, hack_inv);
 
+    int good = 0;
+    int bad = 0;
+    auto target_data = dual.get_target_data(hack_state);
+    auto rewrite_data = dual.get_rewrite_data(hack_state);
+    for (size_t i = 0; i < target_data.size(); ++i) {
+      if (hack_plus->check(target_data[i], rewrite_data[i])) {
+        good++;
+      } else {
+        bad++;
+      }
+    }
+    cout << "Hack Invariant held for " << good << " states and failed for " << bad << endl;
+
     dual.print_all();
     cout << "Got some invariants!  Are they useful?" << endl;
     discharge_invariants(dual);
     dual.print_all();
 
-    // for now, let's just assume it worked 
-    // we should be returning true here only if the proof actually succeeded
-    return true;
+    /** Check if proof succeeds. */
+    auto actual_final = dual.get_invariant(end_state);
+    auto expected_final = get_final_invariant();
+
+    bool valid = check(target_, rewrite_, end_state.ts, end_state.rs,
+                       {}, {}, *actual_final, *expected_final);
+
+    return valid;
   };
 
   function<bool (vector<CfgPath>&, vector<CfgPath>&)> inductive_paths_callback =
-    [this, &dual_callback](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
+  [this, &dual_callback](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
 
     auto dual = build_dual(target_paths, rewrite_paths);
     dual.remove_prefixes();
     dual.print_all();
-    control_learner_->update_dual(dual, dual_callback);
-
-    // let's just assume it worked the first time for now.
-    return true;
+    return control_learner_->update_dual(dual, dual_callback);
 
   };
 
@@ -477,9 +499,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     vector<CfgPath> target_inductive_paths;
     vector<CfgPath> rewrite_inductive_paths;
     bool ok = learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths, inductive_paths_callback);
-    if (!ok) {
-      return false;
-    }
+    return ok;
 
   } catch (validator_error e) {
 
@@ -534,7 +554,6 @@ ConjunctionInvariant* DdecValidator::get_final_invariant() const {
   auto sei = new StateEqualityInvariant(target_.live_outs());
   final_invariant->add_invariant(sei);
   final_invariant->add_invariant(new MemoryEqualityInvariant());
-  final_invariant->add_invariant(new NoSignalsInvariant());
 
   //final_invariant->add_invariant(get_fixed_invariant());
 

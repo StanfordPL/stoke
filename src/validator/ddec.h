@@ -68,7 +68,7 @@ private:
   bool learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
                              std::vector<CfgPath>& rewrite_inductive_paths,
                              std::function<bool (std::vector<CfgPath>&, std::vector<CfgPath>&)>& callback
-                             );
+                            );
 
 
   DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
