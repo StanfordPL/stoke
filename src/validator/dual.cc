@@ -265,7 +265,7 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   rewrite.recompute();
 
   for (auto state : reachable_states_) {
-    auto inv = learner.learn(target_->defined_regs(state.ts), rewrite_->defined_regs(state.rs),
+    auto inv = learner.learn(target_->live_out_regs(state.ts), rewrite_->live_out_regs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state]);
     invariants_[state] = inv;
     cout << "Invariant at " << state << ": " << *inv << endl;

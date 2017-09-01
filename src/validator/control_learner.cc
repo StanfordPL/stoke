@@ -508,7 +508,7 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
 
 
-void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata&)>& callback) {
+bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata&)>& callback) {
 
   auto dual_paths = dual.get_paths(dual.start_state(), dual.exit_state());
   cout << "PATHS THROUGH DUAL" << endl;
@@ -610,18 +610,37 @@ void ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   /////////////////
 
-  assignment[0] = 1; // along path from entry to main vectorized loop
-  assignment[5] = 1;
-  assignment[9] = 2;
-  assignment[13] = 3;
-  assignment[17] = 4;
-  assignment[21] = 5;
-  assignment[25] = 6;
-  assignment[29] = 7;
-  assignment[33] = 8;
+  // along path from entry to main vectorized loop
+  assignment[0] = 1;
+
+  // exit from main loop
+  assignment[4] = 0;
+  assignment[8] = 1;
+  assignment[12] = 2;
+  assignment[16] = 3;
+  assignment[20] = 4;
+  assignment[24] = 5;
+  assignment[28] = 6;
+  assignment[32] = 7;
+
+  // path from alignment loop to main loop
+  assignment[68] = 1;
+
+  // exit from beginning?
+
+  // exit from pre-loop
+  assignment[44] = 1;
+  assignment[46] = 2;
+  assignment[48] = 3;
+  assignment[50] = 4;
+  assignment[52] = 5;
+  assignment[54] = 6;
+  assignment[56] = 7;
+
+
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
-  callback(new_dual);
+  return callback(new_dual);
 
 }
 
