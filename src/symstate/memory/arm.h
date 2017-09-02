@@ -47,7 +47,9 @@ public:
    *  Returns condition for segmentation fault */
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
-    access_list_[address.ptr] = size;
+    auto access_var = SymBitVector::tmp_var(64);
+    constraints_.push_back(access_var == address);
+    access_list_[access_var.ptr] = size;
 
     MemAccess m;
     m.address = address;
@@ -61,7 +63,9 @@ public:
 
   /** Reads from the memory.  Returns value and segv condition. */
   std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) {
-    access_list_[address.ptr] = size;
+    auto access_var = SymBitVector::tmp_var(64);
+    constraints_.push_back(access_var == address);
+    access_list_[access_var.ptr] = size;
 
     MemAccess m;
     m.address = address;
