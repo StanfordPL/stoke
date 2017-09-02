@@ -19,6 +19,8 @@
 #include <vector>
 #include <chrono>
 
+#include <stdio.h>
+
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
@@ -47,6 +49,10 @@ auto& io = Heading::create("I/O Options:");
 // auto& output_binary = FlagArg::create("output_binary")
 //                       .alternate("b")
 //                       .description("Output the target in binary format.");
+
+auto& step_arg = ValueArg<int>::create("step")
+                 .required()
+                 .description("1 for cleanup after search, 2 for evaluation");
 
 auto& path_arg = ValueArg<string>::create("path")
                  .usage("<path/to/dir>")
@@ -219,21 +225,17 @@ pair<double, double> mean(vector<double> xs) {
   return pair<double, double>(mean, sd);
 }
 
+struct compare_for_iteration {
+  inline bool operator() (const vector<int>& a, const vector<int>& b) {
+    return (a[1] < b[1]);
+  }
+};
+
 int main(int argc, char** argv) {
 
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  TargetGadget target({}, false);
-  SeedGadget seed;
-  TrainingSetGadget train_tcs(seed);
-  SandboxGadget training_sb(train_tcs, {});
-  PerformanceSetGadget perf_tcs(seed);
-  SandboxGadget perf_sb(perf_tcs, {});
-  auto max_jumps = 1000000000;
-  training_sb.set_max_jumps(max_jumps);
-  perf_sb.set_max_jumps(max_jumps);
-  ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
-  ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
+
 
   string item = item_arg.value();
   auto items = explode(item, '-');
@@ -245,7 +247,6 @@ int main(int argc, char** argv) {
   string bin = path + "/a.out";
 
 
-  timing();
 
   auto read = [](istringstream& iss, const string& what) {
     if (iss.peek() == ' ') iss.ignore();
@@ -258,70 +259,153 @@ int main(int argc, char** argv) {
     return a;
   };
 
-  function<double()> reall = [&]() {
-    return (double)real(bin);
-  };
 
-  string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
-  ifstream infile(logfile);
-  if (!infile.good()) {
-    cout << "Logfile not found.  Exiting.." << endl;
-    cout << logfile << endl;
-    return 0;
-  }
-  string line;
-  vector<string> lines;
-  while (getline(infile, line)) {
-    if (is_prefix(line, "cost=")) {
-      lines.push_back(line);
+  timing();
+
+  if (step_arg.value() == 1) {
+    const auto nsamples = 2000;
+
+    // read log file
+    string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
+    ifstream infile(logfile);
+    if (!infile.good()) {
+      cout << "Logfile not found.  Exiting.." << endl;
+      cout << logfile << endl;
+      return 1;
     }
-  }
+    string line;
+    vector<vector<int>> lines;
+    while (getline(infile, line)) {
+      if (is_prefix(line, "cost=")) {
+        istringstream iss(line);
+        vector<int> vals;
+        vals.push_back(read(iss, "cost"));
+        vals.push_back(read(iss, "iteration"));
+        vals.push_back(read(iss, "id"));
+        vals.push_back(read(iss, "timestamp_ms"));
+        vals.push_back(0); // best sample
+        vals.push_back(0); // random sample
+        lines.push_back(vals);
+      }
+    }
 
-  timing("reading file");
-  random_shuffle(lines.begin(), lines.end());
-  timing("shuffle");
+    // sample randomly
+    random_shuffle(lines.begin(), lines.end());
+    for (int i = 0; i < nsamples; i++) {
+      lines[i][5] = 1;
+    }
 
-  int count = 0;
-  std::ofstream fout(out_arg.value());
-  fout << fixed;
-  for (auto& line : lines) {
-    count += 1;
-    if (count > 10000) break;
-    istringstream iss(line);
-    auto cost = read(iss, "cost");
-    auto iteration = read(iss, "iteration");
-    auto id = read(iss, "id");
-    auto timestamp = read(iss, "timestamp_ms");
+    // sample best
+    sort(lines.begin(), lines.end());
+    for (int i = 0; i < nsamples; i++) {
+      lines[i][4] = 1;
+    }
 
-    TUnit code;
-    string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
-    ifstream ifs(fpath);
-    ifs >> code;
-    Cfg cfg(code, RegSet::empty(), RegSet::empty());
-
-    if (replace(bin, code)) {
-      function<double()> realtimel = [&]() {
-        return (double)fxn_realtime(cfg, max_cost_arg.value()).second;
-      };
-      function<double()> latencyl = [&]() {
-        return (double)fxn_latency(cfg, max_cost_arg.value()).second;
-      };
-      auto t_realtime = mean(sample(realtimel, 5));
-      auto t_real = mean(sample(reall, 5));
-      auto t_lat = latencyl();
-      fout << "intermediates/result-" + to_string(id) + ".s";
-      fout << "," << item;
-      fout << "," << cost;
-      fout << "," << iteration;
-      fout << "," << id;
-      fout << "," << timestamp;
-      fout << "," << t_real.first << "," << t_real.second;
-      fout << "," << t_realtime.first << "," << t_realtime.second;
-      fout << "," << t_lat;
+    // write everything
+    std::ofstream fout(out_arg.value());
+    fout << fixed;
+    sort(lines.begin(), lines.end(), compare_for_iteration());
+    for (auto& line : lines) {
+      fout << "cost=" << line[0];
+      fout << " iteration=" << line[1];
+      fout << " id=" << line[2];
+      fout << " timestamp_ms=" << line[3];
+      fout << " best_sample=" << line[4];
+      fout << " random_sample=" << line[5];
       fout << endl;
-    }
 
-    timing("one");
+      // delete files we didn't sample
+      if (line[4] == 0 && line[5] == 0) {
+        string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
+        remove(fpath.c_str());
+      }
+    }
+  } else {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    TargetGadget target({}, false);
+    SeedGadget seed;
+    TrainingSetGadget train_tcs(seed);
+    SandboxGadget training_sb(train_tcs, {});
+    PerformanceSetGadget perf_tcs(seed);
+    SandboxGadget perf_sb(perf_tcs, {});
+    auto max_jumps = 1000000000;
+    training_sb.set_max_jumps(max_jumps);
+    perf_sb.set_max_jumps(max_jumps);
+    ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
+    ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
+
+    function<double()> reall = [&]() {
+      return (double)real(bin);
+    };
+
+    string logfile = path + "/log.txt";
+    ifstream infile(logfile);
+    if (!infile.good()) {
+      cout << "Logfile not found.  Exiting.." << endl;
+      cout << logfile << endl;
+      return 1;
+    }
+    string line;
+    vector<string> lines;
+    std::ofstream fout(out_arg.value());
+    fout << fixed;
+    while (getline(infile, line)) {
+      istringstream iss(line);
+      auto cost = read(iss, "cost");
+      auto iteration = read(iss, "iteration");
+      auto id = read(iss, "id");
+      auto timestamp = read(iss, "timestamp_ms");
+      auto best_sample = read(iss, "best_sample");
+      auto random_sample = read(iss, "random_sample");
+
+      if (best_sample == 0 && random_sample == 0) continue;
+
+      TUnit code;
+      string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
+      ifstream ifs(fpath);
+      ifs >> code;
+      Cfg cfg(code, RegSet::empty(), RegSet::empty());
+
+      if (replace(bin, code)) {
+        function<double()> realtimel = [&]() {
+          return (double)fxn_realtime(cfg, max_cost_arg.value()).second;
+        };
+        function<double()> latencyl = [&]() {
+          return (double)fxn_latency(cfg, max_cost_arg.value()).second;
+        };
+        auto t_realtime = mean(sample(realtimel, 5));
+        auto t_real = mean(sample(reall, 5));
+        auto t_lat = latencyl();
+        fout << "intermediates/result-" + to_string(id) + ".s";
+        fout << "," << item;
+        fout << "," << cost;
+        fout << "," << iteration;
+        fout << "," << id;
+        fout << "," << timestamp;
+        fout << "," << best_sample;
+        fout << "," << random_sample;
+        fout << "," << t_real.first << "," << t_real.second;
+        fout << "," << t_realtime.first << "," << t_realtime.second;
+        fout << "," << t_lat;
+        fout << endl;
+      }
+    }
   }
 
   return 0;
