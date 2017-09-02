@@ -71,18 +71,18 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 }
 
 bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
-  cout << "Others: " << endl;
-  for(auto p : others) {
-    cout <<  "     " << p.first << " -> " << p.second << endl;
-  }
-
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
   auto str = symvar->name_;
+  cout << "Array name: " << str << endl;
 
   auto map_and_default = solver_.get_model_array(str, 64, 8);
   auto orig_map = map_and_default.first;
   auto default_value = map_and_default.second;
   unordered_map<uint64_t, BitVector> mem_map;
+  cout << "From array: "  << endl;
+  for (auto pair : mem_map) {
+    cout << pair.first << " -> " << pair.second.get_fixed_quad(0) << endl;
+  }
 
   BitVector default_value_bv(8);
   default_value_bv.get_fixed_byte(0) = default_value;
@@ -414,7 +414,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(con
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
     return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
-  case AliasStrategy::ARM: 
+  case AliasStrategy::ARM:
   case AliasStrategy::FLAT: {
     auto res = vector<pair<CellMemory*, CellMemory*>>();
     res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
@@ -1171,9 +1171,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     cout << "CONTROL FLOW CONSTRAINTS" << endl;
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
-    for(auto it : state_t.constraints)
+    for (auto it : state_t.constraints)
       cout << it << endl;
-    for(auto it : state_r.constraints)
+    for (auto it : state_r.constraints)
       cout << it << endl;
 
 

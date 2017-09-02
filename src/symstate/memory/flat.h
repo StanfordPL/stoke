@@ -61,7 +61,7 @@ public:
     return variable_;
   }
 
-  SymArray get_start_variable() { 
+  SymArray get_start_variable() {
     return start_variable_;
   }
 
