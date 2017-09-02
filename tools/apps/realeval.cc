@@ -38,6 +38,10 @@
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/target.h"
 
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
 
 using namespace cpputil;
 using namespace std;
@@ -302,7 +306,13 @@ int main(int argc, char** argv) {
     }
 
     // write everything
-    std::ofstream fout(out_arg.value());
+    ofstream fout_compress(path + "/log.txt", ios_base::out | ios_base::binary | ios_base::trunc);
+    boost::iostreams::filtering_streambuf<boost::iostreams::output> out;
+    out.push(boost::iostreams::gzip_compressor());
+    out.push(fout_compress);
+
+    std::ostream fout(&out);
+
     fout << fixed;
     sort(lines.begin(), lines.end(), compare_for_iteration());
     for (auto& line : lines) {
@@ -310,8 +320,8 @@ int main(int argc, char** argv) {
       fout << " iteration=" << line[1];
       fout << " id=" << line[2];
       fout << " timestamp_ms=" << line[3];
-      fout << " best_sample=" << line[4];
-      fout << " random_sample=" << line[5];
+      fout << " best=" << line[4];
+      fout << " random=" << line[5];
       fout << endl;
 
       // delete files we didn't sample
@@ -355,7 +365,14 @@ int main(int argc, char** argv) {
     };
 
     string logfile = path + "/log.txt";
-    ifstream infile(logfile);
+    ifstream infile_compressed(logfile);
+
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_decompressor());
+    in.push(infile_compressed);
+
+    std::istream infile(&in);
+
     if (!infile.good()) {
       cout << "Logfile not found.  Exiting.." << endl;
       cout << logfile << endl;
@@ -371,10 +388,10 @@ int main(int argc, char** argv) {
       auto iteration = read(iss, "iteration");
       auto id = read(iss, "id");
       auto timestamp = read(iss, "timestamp_ms");
-      auto best_sample = read(iss, "best_sample");
-      auto random_sample = read(iss, "random_sample");
+      auto best = read(iss, "best");
+      auto random = read(iss, "random");
 
-      if (best_sample == 0 && random_sample == 0) continue;
+      if (best == 0 && random == 0) continue;
 
       TUnit code;
       string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
@@ -398,8 +415,8 @@ int main(int argc, char** argv) {
         fout << "," << iteration;
         fout << "," << id;
         fout << "," << timestamp;
-        fout << "," << best_sample;
-        fout << "," << random_sample;
+        fout << "," << best;
+        fout << "," << random;
         fout << "," << t_real.first << "," << t_real.second;
         fout << "," << t_realtime.first << "," << t_realtime.second;
         fout << "," << t_lat;
