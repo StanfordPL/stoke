@@ -39,7 +39,7 @@ public:
     return heap_;
   }
 
-  SymArray get_start_variable() { 
+  SymArray get_start_variable() {
     return start_variable_;
   }
 
@@ -78,7 +78,7 @@ public:
   void generate_constraints(ArmMemory* am, std::vector<SymBool>&);
 
   /** Create a formula expressing these memory cells with another set. Also generates all the
-    constraints needed for this contraint to make sense (retrievable through get_constraints(). 
+    constraints needed for this contraint to make sense (retrievable through get_constraints().
     This can be computationally expensive. */
   SymBool equality_constraint(ArmMemory& other) {
     return heap_ == other.heap_;
@@ -94,7 +94,7 @@ public:
     return access_list_;
   }
 
-  private:
+private:
 
   struct Cell {
 
