@@ -223,7 +223,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetEqual) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -248,7 +248,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetUnequal) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -280,7 +280,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetLoopEqual) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -309,7 +309,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetLoopUnqual) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -336,7 +336,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -363,7 +363,7 @@ TEST_F(BoundedValidatorBaseTest, RipWritingEquiv) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -387,7 +387,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -457,7 +457,7 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -497,7 +497,7 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -509,23 +509,23 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
-  sst << "incq %rax" << std::endl;
+  //sst << "incq %rax" << std::endl;
   sst << "addl $0x5, (%rax)" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, live_outs, live_outs);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "incq %rax" << std::endl;
-  ssr << "addl $0x4, (%rax)" << std::endl;
-  ssr << "addl $0x1, (%rax)" << std::endl;
+  //ssr << "incq %rax" << std::endl;
+  ssr << "addl $0x5, (%rax)" << std::endl;
+  //ssr << "addl $0x1, (%rax)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -558,7 +558,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -594,7 +594,7 @@ TEST_F(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -625,7 +625,7 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -661,7 +661,7 @@ TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -690,7 +690,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -717,7 +717,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -747,7 +747,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -784,7 +784,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   // Takes way too long
   /*
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   validator->set_bound(1);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -821,7 +821,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -862,7 +862,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -928,7 +928,7 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -995,7 +995,7 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
   for (auto ceg : validator->get_counter_examples())
     check_ceg(ceg, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1040,7 +1040,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1088,7 +1088,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1145,7 +1145,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
     check_ceg(it, target, rewrite);
   }
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1245,7 +1245,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1283,7 +1283,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
     if (i == 0)
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
     else
-      validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+      validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
 
     EXPECT_FALSE(validator->verify(target, rewrite));
     EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -1378,7 +1378,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1420,7 +1420,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
     check_ceg(ceg, target, rewrite);
   }
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1563,7 +1563,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -1623,7 +1623,7 @@ TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
     check_ceg(it, target, rewrite);
   }
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
@@ -1695,7 +1695,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -1766,7 +1766,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -1842,7 +1842,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
@@ -1918,7 +1918,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -1994,7 +1994,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong4) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -2070,7 +2070,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -2144,7 +2144,7 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
@@ -2274,7 +2274,7 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
     std::cout << it << std::endl;
   }
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, inv_entry, inv_all));
   EXPECT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all));
   EXPECT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, inv_exit));
@@ -2308,7 +2308,7 @@ TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());

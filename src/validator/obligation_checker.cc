@@ -25,9 +25,9 @@
 #include "src/validator/invariants/true.h"
 
 
-#define OBLIG_DEBUG(X) { X }
-#define CONSTRAINT_DEBUG(X) { X }
-#define BUILD_TC_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { }
+#define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -74,16 +74,13 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
   auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
   assert(symvar != NULL);
   auto str = symvar->name_;
-  cout << "Array name: " << str << endl;
 
   auto map_and_default = solver_.get_model_array(str, 64, 8);
   auto orig_map = map_and_default.first;
   auto default_value = map_and_default.second;
   unordered_map<uint64_t, BitVector> mem_map;
-  cout << "From array: "  << endl;
   for (auto pair : orig_map) {
     mem_map[pair.first] = pair.second;
-    cout << pair.first << " -> " << pair.second.get_fixed_quad(0) << endl;
   }
 
   BitVector default_value_bv(8);
@@ -1171,17 +1168,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     for (size_t i = 0; i < Q.size(); ++i)
       build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map);
 
-    cout << "CONTROL FLOW CONSTRAINTS" << endl;
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
-    for (auto it : state_t.constraints)
-      cout << it << endl;
-    for (auto it : state_r.constraints)
-      cout << it << endl;
-
-
-    cout << "TARGET STATE " << endl << state_t << endl;
-    cout << "REWRITE STATE " << endl << state_r << endl;
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));
@@ -1392,9 +1380,6 @@ Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
 
   TUnit new_fxn(code, 0, function.get_rip_offset(), 0);
   Cfg new_cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
-
-  //cout << "path cfg for " << print(p) << " is " << endl;
-  //cout << TUnit(code) << endl;
 
   return new_cfg;
 
