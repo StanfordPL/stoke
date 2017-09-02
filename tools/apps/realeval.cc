@@ -246,6 +246,7 @@ int main(int argc, char** argv) {
   auto item_cfun = items[1];
   auto item_iters = items[2];
   auto item_id = items[3];
+  auto item_gamma = items[4];
   string path = path_arg.value() + "/data/" + item;
   string bin = path + "/a.out";
 
@@ -266,10 +267,10 @@ int main(int argc, char** argv) {
   timing();
 
   if (step_arg.value() == 1) {
-    const size_t nsamples = 50;
+    const size_t nsamples = 2000;
 
     // read log file
-    string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
+    string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/gamma/" + item_gamma + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
     ifstream infile(logfile);
     if (!infile.good()) {
       cout << "Logfile not found.  Exiting.." << endl;
