@@ -27,6 +27,7 @@
 #include "src/solver/smtsolver.h"
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
+#include "src/symstate/memory/arm.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 #include "src/validator/filters/default.h"
@@ -55,10 +56,11 @@ class ObligationChecker : public Validator {
 public:
 
   enum AliasStrategy {
-    BASIC,            // enumerate all cases, attempt to bound it (SOUND)
-    FLAT,             // model memory as an array in the SMT solver (SOUND)
-    STRING,           // look for continugous memory accesses and combine them (SOUND)
-    STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
+    BASIC,             // enumerate all cases, attempt to bound it (SOUND)
+    FLAT,              // model memory as an array in the SMT solver (SOUND)
+    STRING,            // look for continugous memory accesses and combine them (SOUND)
+    STRING_NO_ALIAS,   // assume strings don't overlap (UNSOUND)
+    ARM
   };
 
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
@@ -189,12 +191,12 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory,
+  bool build_testcase_cell_memory(CpuState& ceg, CellMemory* target_memory,
                                   const CellMemory* rewrite_memory,
                                   const Cfg& target, const Cfg& rewrite,
                                   bool begin) const;
 
-  bool build_testcase_flat_memory(CpuState&, FlatMemory&,
+  bool build_testcase_flat_memory(CpuState&, SymArray variable,
                                   const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
