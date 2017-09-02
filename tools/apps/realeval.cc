@@ -65,7 +65,6 @@ auto& path_arg = ValueArg<string>::create("path")
 
 auto& out_arg = ValueArg<string>::create("out")
                 .usage("<path/to/file>")
-                .required()
                 .description("Path to store log at.");
 
 auto& item_arg = ValueArg<string>::create("item")
@@ -267,7 +266,7 @@ int main(int argc, char** argv) {
   timing();
 
   if (step_arg.value() == 1) {
-    const auto nsamples = 2000;
+    const size_t nsamples = 50;
 
     // read log file
     string logfile = path_arg.value() + "/parout/costfun/" + item_cfun + "/func/" + item_fun + "/id/" + item_id + "/iters/" + item_iters + "/stdout";
@@ -295,13 +294,13 @@ int main(int argc, char** argv) {
 
     // sample randomly
     random_shuffle(lines.begin(), lines.end());
-    for (int i = 0; i < nsamples; i++) {
+    for (size_t i = 0; i < nsamples && i < lines.size(); i++) {
       lines[i][5] = 1;
     }
 
     // sample best
     sort(lines.begin(), lines.end());
-    for (int i = 0; i < nsamples; i++) {
+    for (size_t i = 0; i < nsamples && i < lines.size(); i++) {
       lines[i][4] = 1;
     }
 
@@ -382,19 +381,13 @@ int main(int argc, char** argv) {
     vector<string> lines;
     std::ofstream fout(out_arg.value());
     fout << fixed;
-    while (getline(infile, line)) {
-      istringstream iss(line);
-      auto cost = read(iss, "cost");
-      auto iteration = read(iss, "iteration");
-      auto id = read(iss, "id");
-      auto timestamp = read(iss, "timestamp_ms");
-      auto best = read(iss, "best");
-      auto random = read(iss, "random");
 
-      if (best == 0 && random == 0) continue;
-
+    auto eval = [&](int cost, int iteration, int id, int timestamp, int best, int random) {
       TUnit code;
       string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
+      if (id == -1) {
+        fpath = path_arg.value() + "/bins/nibble_sort_rogers.s";
+      }
       ifstream ifs(fpath);
       ifs >> code;
       Cfg cfg(code, RegSet::empty(), RegSet::empty());
@@ -422,6 +415,23 @@ int main(int argc, char** argv) {
         fout << "," << t_lat;
         fout << endl;
       }
+    };
+
+    // get baseline
+    eval(0, 0, -1, 0, 0, 0);
+
+    while (getline(infile, line)) {
+      istringstream iss(line);
+      auto cost = read(iss, "cost");
+      auto iteration = read(iss, "iteration");
+      auto id = read(iss, "id");
+      auto timestamp = read(iss, "timestamp_ms");
+      auto best = read(iss, "best");
+      auto random = read(iss, "random");
+
+      if (best == 0 && random == 0) continue;
+
+      eval(cost, iteration, id, timestamp, best, random);
     }
   }
 
