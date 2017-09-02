@@ -51,7 +51,6 @@ public:
       return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory));
     }
 
-    assert(false);
     return SymBool::_true();
   }
 

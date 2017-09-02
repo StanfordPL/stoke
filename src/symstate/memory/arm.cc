@@ -28,6 +28,9 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   // 0. Get all the memory accesses in one place to look at.
   auto other_accesses = am->accesses_;
   all_accesses_.insert(all_accesses_.begin(), accesses_.begin(), accesses_.end());
+  for (auto& it : all_accesses_) {
+    it.is_other = false;
+  }
   for (auto& it : other_accesses) {
     it.is_other = true;
     all_accesses_.push_back(it);
@@ -154,75 +157,97 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   for (auto& cell : cells_) {
     cell.cache = SymBitVector();
     for (size_t i = 0; i < cell.size; ++i)
-      cell.cache = cell.cache || heap_[cell.address + SymBitVector::constant(64, i)];
+      cell.cache = cell.cache || heap_[cell.address + SymBitVector::constant(64, cell.size - i - 1)];
 
     cell.other_cache = SymBitVector();
     for (size_t i = 0; i < cell.size; ++i)
-      cell.other_cache = cell.other_cache || am->heap_[cell.address + SymBitVector::constant(64, i)];
+      cell.other_cache = cell.other_cache || am->heap_[cell.address + SymBitVector::constant(64, cell.size - i - 1)];
   }
+
+  auto debug_state = [&]() {
+    cout << "HEAP 1: " << heap_ << endl; 
+    for(auto cell : cells_) {
+      cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
+    }
+    cout << "HEAP 2: " << am->heap_ << endl; 
+    for(auto cell : cells_) {
+      cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
+    }
+  };
+
+  auto flush_dirty = [&](size_t skip_index = (size_t)(-1)) -> bool{
+    /** write all dirty cells back into the heap */
+    bool update_required = false;
+    for (auto& cell : cells_) {
+      if(cell.index == skip_index)
+        continue;
+
+      if (cell.dirty) {
+        update_required = true;
+        for (size_t i = 0; i < cell.size; ++i)
+          heap_ = heap_.update(cell.address + SymBitVector::constant(64, i), cell.cache[8*i+7][8*i]);
+        cell.dirty = false;
+      }
+      if (cell.other_dirty) {
+        update_required = true;
+        for (size_t i = 0; i < cell.size; ++i)
+          am->heap_ = am->heap_.update(cell.address + SymBitVector::constant(64, i), cell.other_cache[8*i+7][8*i]);
+        cell.other_dirty = false;
+      }
+    }
+    return update_required;
+  };
 
   // now symbolically execute each of the accesses
   for (auto access : all_accesses_) {
+    cout << "PROCESSING ACCESS " << access.index << " IS OTHER: " << access.is_other << endl;
     auto& cell = cells_[access.cell];
     bool& dirty = access.is_other ? cell.other_dirty : cell.dirty;
     auto& cache = access.is_other ? cell.other_cache : cell.cache;
     auto& heap = access.is_other ? am->heap_ : heap_;
 
-    /* go through dirty cells and write them into heap*/
-    bool needs_update = false;
-    for (auto& oth_cell : cells_) {
-      if (oth_cell.index == access.cell)
-        continue;
-      if (oth_cell.dirty) {
-        auto& other_cache = access.is_other ? oth_cell.other_cache : oth_cell.cache;
-        needs_update = true;
-        for (size_t i = 0; i < oth_cell.size; ++i)
-          heap = heap.update(oth_cell.address + SymBitVector::constant(64, i), other_cache[8*i+7][8*i]);
-        oth_cell.dirty = false;
-      }
-    }
-
+    debug_state();
+    cout << "----------------- WRITING DIRTY CELLS INTO HEAP ---------------------" << endl;
+    bool needs_update = flush_dirty(cell.index);
+    debug_state();
+    cout << "----------------- UPDATING OUR CELL IF NEEDED : " << needs_update << "---------------------" << endl;
     /** if a dirty cell got written into the heap, read out this cell */
     if (needs_update) {
       cout << "Heap updated with dirty cells flushed: " << heap << endl;
       cache = SymBitVector();
       for (size_t i = 0; i < cell.size; ++i)
-        cache = cache || heap[cell.address + SymBitVector::constant(64, i)];
+        cache = cache || heap[cell.address + SymBitVector::constant(64, cell.size - i - 1)];
       cout << "Updated cell " << cell.index << " cache: " << cache;
+
+      debug_state();
     }
 
     /* perform the read/write on the cached copy; set dirty bit if needed. */
     if (access.write) {
-      cout << "access.cell_offset=" << access.cell_offset << endl;
 
       SymBitVector prefix, suffix;
-      if (access.cell_offset + access.size/8 - 1 < cell.size) {
+      if (access.cell_offset + access.size/8 < cell.size) {
         prefix = cache[cell.size*8-1][access.cell_offset*8 + access.size-1];
       }
       if (access.cell_offset > 0) {
         suffix = cache[access.cell_offset*8-1][0];
       }
       cache = prefix || access.value || suffix;
-      cout << "Performed write; new cache " << cache << endl;
       dirty = true;
+      cout << "--------------------- PERFORMED WRITE -----------------------" << endl;
+      cout << "access.cell_offset=" << access.cell_offset << endl;
+      debug_state();
     } else {
       constraints_.push_back(access.value ==
                              cache[access.cell_offset*8+access.size-1][access.cell_offset*8]);
-      cout << "performed read on " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;
+      cout << "------------------ PERFORMED READ ON " << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;
     }
   }
 
-  /** write all dirty cells back into the heap */
-  for (auto& cell : cells_) {
-    if (cell.dirty) {
-      for (size_t i = 0; i < cell.size; ++i)
-        heap_ = heap_.update(cell.address + SymBitVector::constant(64, i), cell.cache[8*i+7][8*i]);
-    }
-    if (cell.other_dirty) {
-      for (size_t i = 0; i < cell.size; ++i)
-        am->heap_ = am->heap_.update(cell.address + SymBitVector::constant(64, i), cell.other_cache[8*i+7][8*i]);
-    }
-  }
+  cout << "---------------------- WRITE DIRTY CELLS BACK INTO HEAP---------------" << endl;
+  flush_dirty();
+  cout << "---------------------- ALL DONE ---------------" << endl;
+  debug_state();
 
   /** get a final heap variable for reading out a model */
   cout << "final heap: " << heap_ << endl;
