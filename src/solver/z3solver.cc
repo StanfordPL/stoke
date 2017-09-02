@@ -233,7 +233,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     // The counterexample could be spurious, but we'll figure that out later.
     // On the other hand, there might be no memory at all or the memory
     // does not matter
-    //cout << "got empty addr-value map" << endl;
+    cout << "got empty addr-value map" << endl;
     pair<map<uint64_t, cpputil::BitVector>, uint8_t> result(addr_val_map, 0);
     return result;
   }
@@ -250,7 +250,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     z3::expr k = entry.arg(0);
     z3::expr v = entry.value();
 
-    //std::cout << "\n(key,value): (" << k << "," << v << ")";
+    std::cout << "\n(key,value): (" << k << "," << v << ")";
 
     uint64_t addr;
     uint64_t value;
@@ -263,19 +263,13 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     cpputil::BitVector bv_v(8);
     bv_v.get_fixed_byte(0) = value;
     addr_val_map[addr] = bv_v;
-    //cout << hex << "adding " << addr << "->" << value << endl;
+    cout << hex << "adding " << addr << "->" << value << endl;
   }
 
-  // TODO: if default_value is non-zero our counterexample will be spurious
   z3::expr default_value = fun_interp.else_value();
   pair<map<uint64_t, cpputil::BitVector>, uint8_t> result;
   result.first = addr_val_map;
   result.second = default_value;
-
-  //std::cout << "\nDefault value:" << default_value;
-
-  // TODO: "complete" the map with the default value
-
 
   return result;
 }

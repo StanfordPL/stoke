@@ -224,7 +224,14 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     }
   }
 
+  /** get a final heap variable for reading out a model */
   cout << "final heap: " << heap_ << endl;
+  SymArray fresh_heap = SymArray::tmp_var(64, 8);
+  SymArray fresh_other_heap  = SymArray::tmp_var(64, 8);
+  constraints_.push_back(fresh_heap == heap_);
+  constraints_.push_back(fresh_other_heap == am->heap_);
+  heap_ = fresh_heap;
+  am->heap_ = fresh_other_heap;
 
 }
 

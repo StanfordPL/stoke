@@ -71,7 +71,8 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 }
 
 bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
-  auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
+  auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
+  assert(symvar != NULL);
   auto str = symvar->name_;
   cout << "Array name: " << str << endl;
 
@@ -80,7 +81,8 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
   auto default_value = map_and_default.second;
   unordered_map<uint64_t, BitVector> mem_map;
   cout << "From array: "  << endl;
-  for (auto pair : mem_map) {
+  for (auto pair : orig_map) {
+    mem_map[pair.first] = pair.second;
     cout << pair.first << " -> " << pair.second.get_fixed_quad(0) << endl;
   }
 
@@ -89,9 +91,10 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
 
   for (auto p : others) {
     auto abs_var = p.first;
-    uint64_t size = p.second;
+    uint64_t size = p.second/8;
 
-    auto var = static_cast<const SymBitVectorVar*>(abs_var);
+    auto var = dynamic_cast<const SymBitVectorVar*>(abs_var);
+    assert(var != NULL);
     auto var_name = var->get_name();
     auto var_size = var->get_size();
     assert(var_size == 64);
