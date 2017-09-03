@@ -556,7 +556,7 @@ TEST(SandboxTest, PushImm16SignExtend) {
   ss << "pushw $0xaaaa" << std::endl;
 
   // this should push 0xffffffffffffc0de
-  ss << "pushq $0xc0de #OPC=pushq_imm16" << std::endl;
+  ss << "pushq $0xffffc0de #OPC=pushq_imm16" << std::endl;
 
   // make sure the right number of bytes were pushed
   ss << "popq %rax" << std::endl;
@@ -717,7 +717,7 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
 TEST(SandboxTest, PushfWorks) {
   std::stringstream ss;
   ss << ".foo:" << std::endl;
-  ss << "pushf" << std::endl;
+  ss << "pushfw" << std::endl;
   ss << "pushfq" << std::endl;
   ss << "retq" << std::endl;
 
@@ -741,7 +741,7 @@ TEST(SandboxTest, PopfFailCase) {
   ss << ".foo:" << std::endl;
   ss << "movq $-0x1, %rax" << std::endl;
   ss << "pushq %rax" << std::endl;
-  ss << "popf" << std::endl;
+  ss << "popfw" << std::endl;
   ss << "retq" << std::endl;
 
   x64asm::Code c;
