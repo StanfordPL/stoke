@@ -111,6 +111,10 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();

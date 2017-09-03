@@ -45,6 +45,12 @@ public:
       return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
     }
 
+    auto arm_left = dynamic_cast<ArmMemory*>(left.memory);
+    if (arm_left != 0) {
+      assert(dynamic_cast<ArmMemory*>(right.memory) != 0);
+      return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory));
+    }
+
     return SymBool::_true();
   }
 
