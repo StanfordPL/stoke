@@ -27,6 +27,8 @@ using namespace z3;
 using namespace std;
 using namespace std::chrono;
 
+#define DEBUG_Z3(X) { X }
+
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
 uint64_t Z3Solver::typecheck_time_ = 0;
@@ -211,6 +213,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
   expr e = model_->eval(v, true);
   auto array_eval_func_decl = e.decl();
 
+  DEBUG_Z3(cout << "Expression for array model: " << e << endl;)
   //cout << *model_ << endl;
 
   // CREDIT: this was written with A LOT of help from
@@ -233,7 +236,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     // The counterexample could be spurious, but we'll figure that out later.
     // On the other hand, there might be no memory at all or the memory
     // does not matter
-    cout << "got empty addr-value map" << endl;
+    DEBUG_Z3(cout << "Couldn't parse Z3's AST for array model; may have spurious CEG. " << endl;)
     pair<map<uint64_t, cpputil::BitVector>, uint8_t> result(addr_val_map, 0);
     return result;
   }
@@ -250,8 +253,6 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     z3::expr k = entry.arg(0);
     z3::expr v = entry.value();
 
-    std::cout << "\n(key,value): (" << k << "," << v << ")";
-
     uint64_t addr;
     uint64_t value;
     Z3_get_numeral_uint64(context_, k, (long long unsigned int*)&addr);
@@ -263,7 +264,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     cpputil::BitVector bv_v(8);
     bv_v.get_fixed_byte(0) = value;
     addr_val_map[addr] = bv_v;
-    cout << hex << "adding " << addr << "->" << value << endl;
+    DEBUG_Z3(cout << hex << "adding " << addr << "->" << value << endl;)
   }
 
   z3::expr default_value = fun_interp.else_value();

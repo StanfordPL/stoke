@@ -18,6 +18,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/memory_equality.h"
+#include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
@@ -35,6 +36,7 @@ using namespace x64asm;
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
   StateEqualityInvariant assume_state(target.def_ins());
   StateEqualityInvariant prove_state(target.live_outs());
+  NoSignalsInvariant no_sig;
 
   MemoryEqualityInvariant memory_equal;
 

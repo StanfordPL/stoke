@@ -19,6 +19,8 @@
 using namespace std;
 using namespace stoke;
 
+#define DEBUG_ARM(X) { }
+
 void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints) {
 
   all_accesses_.clear();
@@ -37,7 +39,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   // 1. For every pair of memory accesses, perform up to three queries to determine if they belong in the same cell
-  cout << "==== ARM ON " << all_accesses_.size() << " ACCESSES " << endl;
+  DEBUG_ARM(cout << "==== ARM ON " << all_accesses_.size() << " ACCESSES " << endl;)
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
     for (size_t j = i+1; j < all_accesses_.size(); ++j) {
       auto a1 = all_accesses_[i];
@@ -52,7 +54,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       if (is_same) {
         access_offsets_[i][j] = 0;
         access_offsets_[j][i] = 0;
-        cout << "-> accesses " << i << " , " << j << " are the same" << endl;
+        DEBUG_ARM(cout << "-> accesses " << i << " , " << j << " are the same" << endl;)
         continue;
       }
 
@@ -65,7 +67,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       if (is_a1first) {
         access_offsets_[i][j] = a1.size/8;
         access_offsets_[j][i] = (int64_t)-a1.size/8;
-        cout << "-> accesses " << i << " , " << j << " are offset by " << a1.size/8 << endl;
+        DEBUG_ARM(cout << "-> accesses " << i << " , " << j << " are offset by " << a1.size/8 << endl;)
         continue;
       }
 
@@ -78,14 +80,14 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       if (is_a2first) {
         access_offsets_[i][j] = (int64_t)-a2.size/8;
         access_offsets_[j][i] = a2.size/8;
-        cout << "-> accesses " << i << " , " << j << " are offset by " << (int64_t)-a2.size/8 << endl;
+        DEBUG_ARM(cout << "-> accesses " << i << " , " << j << " are offset by " << (int64_t)-a2.size/8 << endl;)
         continue;
       }
-      cout << "-> accesses " << i << " , " << j << " not related." << endl;
+      DEBUG_ARM(cout << "-> accesses " << i << " , " << j << " not related." << endl;)
     }
   }
 
-  /*
+  DEBUG_ARM(
   for(size_t i = 0; i < access_offsets_.size(); ++i) {
     for(size_t j = 0; j < access_offsets_.size(); ++j) {
       if(access_offsets_[i].count(j))
@@ -94,8 +96,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
         cout << " X  ";
     }
     cout << endl;
-  }
-  */
+  })
 
   // 2. Enumerate cells
 
@@ -132,6 +133,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     }
   }
   // (d) check for debugging
+  DEBUG_ARM(
   for (auto& cell : cells_) {
     cout << "Cell " << cell.index << " has size " << cell.size << endl;
     cout << "   tmp_min_offset " << cell.tmp_min_offset << " max " << cell.tmp_max_offset << endl;
@@ -145,8 +147,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
     auto& access = all_accesses_[i];
     cout << "i=" << i << " access " << access.index << " size " << access.size/8 << " cell " << access.cell << " offset " << access.cell_offset << endl;
-  }
-
+  })
 
   // 3. Simulate execution
   //      ... each "cell" is like a cache.
@@ -165,6 +166,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   auto debug_state = [&]() {
+    DEBUG_ARM(
     cout << "HEAP 1: " << heap_ << endl;
     for (auto cell : cells_) {
       cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
@@ -172,7 +174,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     cout << "HEAP 2: " << am->heap_ << endl;
     for (auto cell : cells_) {
       cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
-    }
+    })
   };
 
   auto flush_dirty = [&](size_t skip_index = (size_t)(-1)) -> bool{
@@ -200,27 +202,32 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
   // now symbolically execute each of the accesses
   for (auto& access : all_accesses_) {
-    cout << "PROCESSING ACCESS " << access.index << " IS OTHER: " << access.is_other
-         << " ISWRITE: " << access.write << " CELL: " << access.cell << " OFFSET: " << access.cell_offset;
+    DEBUG_ARM(
+    cout << "==================== PROCESSING ACCESS " << access.index 
+         << " IS OTHER: " << access.is_other
+         << " IS WRITE: " << access.write 
+         << " CELL: " << access.cell 
+         << " OFFSET: " << access.cell_offset << endl;
     debug_state();
+    )
 
     auto& cell = cells_[access.cell];
     bool& dirty = access.is_other ? cell.other_dirty : cell.dirty;
     auto& cache = access.is_other ? cell.other_cache : cell.cache;
     auto& heap = access.is_other ? am->heap_ : heap_;
 
-    cout << "----------------- WRITING DIRTY CELLS INTO HEAP ---------------------" << endl;
+    DEBUG_ARM(cout << "==================== WRITING DIRTY CELLS INTO HEAP" << endl;)
     bool needs_update = flush_dirty(cell.index);
     debug_state();
 
-    cout << "----------------- UPDATING OUR CELL IF NEEDED : " << needs_update << "---------------------" << endl;
+    DEBUG_ARM(cout << "==================== UPDATING OUR CELL IF NEEDED : " << needs_update << endl;)
     /** if a dirty cell got written into the heap, read out this cell */
     if (needs_update) {
-      cout << "Heap updated with dirty cells flushed: " << heap << endl;
+      DEBUG_ARM(cout << "Heap updated with dirty cells flushed: " << heap << endl;)
       cache = SymBitVector();
       for (size_t i = 0; i < cell.size; ++i)
         cache = cache || heap[cell.address + SymBitVector::constant(64, cell.size - i - 1)];
-      cout << "Updated cell " << cell.index << " cache: " << cache;
+      DEBUG_ARM(cout << "Updated cell " << cell.index << " cache: " << cache;)
 
       debug_state();
     }
@@ -237,23 +244,24 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       }
       cache = prefix || access.value || suffix;
       dirty = true;
-      cout << "--------------------- PERFORMED WRITE -----------------------" << endl;
+      DEBUG_ARM(cout << "==================== PERFORMED WRITE " << endl;)
       debug_state();
     } else {
       constraints_.push_back(access.value ==
                              cache[access.cell_offset*8+access.size-1][access.cell_offset*8]);
-      cout << "------------------ PERFORMED READ ------------------------"  << endl;
-      cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;
+      DEBUG_ARM(
+      cout << "==================== PERFORMED READ "  << endl;
+      cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;)
     }
   }
 
-  cout << "---------------------- FINAL: WRITE DIRTY CELLS BACK INTO HEAP---------------" << endl;
   flush_dirty();
-  cout << "---------------------- ALL DONE ---------------" << endl;
-  debug_state();
+  DEBUG_ARM(
+  cout << "==================== FINAL: WRITE DIRTY CELLS BACK INTO HEAP" << endl;
+  cout << "==================== ALL DONE" << endl;
+  debug_state();)
 
   /** get a final heap variable for reading out a model */
-  cout << "final heap: " << heap_ << endl;
   SymArray fresh_heap = SymArray::tmp_var(64, 8);
   SymArray fresh_other_heap  = SymArray::tmp_var(64, 8);
   constraints_.push_back(fresh_heap == heap_);
@@ -265,15 +273,12 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
 void ArmMemory::recurse_cell_assignment(size_t access_index) {
 
-//  cout << "~ Recursing " << access_index;
-
   auto& access = all_accesses_[access_index];
   auto cell_index = access.cell;
   auto& cell = cells_[cell_index];
 
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
 
-//    cout << "  ~~ considering " << i << endl;
     // check if this access belongs to a cell
     if (all_accesses_[i].cell != (size_t)(-1))
       continue;
@@ -285,10 +290,7 @@ void ArmMemory::recurse_cell_assignment(size_t access_index) {
     // now we have another offset to put into this cell
     all_accesses_[i].cell = cell_index;
     all_accesses_[i].cell_offset = access.cell_offset + access_offsets_[access_index][i];
-    /*  cout << "   ~~~ Access " << i << " has cell offset " << all_accesses_[i].cell_offset << endl;
-        cout << "     - becaue access.cell_offset = " << access.cell_offset;
-        cout << " and access_offsets_[access_index][i] = " << access_offsets_[access_index][i] << endl;
-    */
+
     // update the cell min/max offsets
     if (all_accesses_[i].cell_offset < cell.tmp_min_offset)
       cell.tmp_min_offset = all_accesses_[i].cell_offset;
