@@ -143,6 +143,8 @@ public:
   /** Replace symbolic values with variables and add constraints.*/
   void simplify();
 
+  std::ostream& write_text(std::ostream& os) const;
+
 private:
 
   /** Builds a symbolic CPU state from a concerete one */
@@ -158,6 +160,16 @@ private:
 };
 
 }; //namespace stoke
+
+namespace std {
+
+inline std::ostream& operator<<(std::ostream& os, const stoke::SymState& cs) {
+  return cs.write_text(os);
+}
+
+} // namespace std
+
+
 
 
 #endif

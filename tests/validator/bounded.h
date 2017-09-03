@@ -40,7 +40,7 @@ public:
     validator = new BoundedValidator(*solver);
     validator->set_bound(2);
     validator->set_sandbox(sandbox);
-    validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+    validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
     validator->set_heap_out(true);
     validator->set_stack_out(true);
   }
@@ -324,12 +324,12 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
   sst << "retq" << std::endl;
-  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+  auto target = make_cfg(sst, all(), live_outs, 0xffffffffcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   // (remember to add 7 b/c of instruction length)
-  ssr << "movq $0xcafef014, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef014, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xd00dface);
 
@@ -348,14 +348,14 @@ TEST_F(BoundedValidatorBaseTest, RipWritingEquiv) {
   std::stringstream sst;
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
-  sst << "movq $0xc0ded00d, 0x4(%rax)" << std::endl;
+  sst << "movq $0xffffffffc0ded00d, 0x4(%rax)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xc0ded00d, (%rip)" << std::endl;
+  ssr << "movq $0xffffffffc0ded00d, (%rip)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xcafef00d);
@@ -380,7 +380,7 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef00d, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
@@ -550,6 +550,13 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -620,7 +627,7 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
   validator->set_stack_out(false);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
+  /* EXPECT_LE(1ul, validator->counter_examples_available()); */
 
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
@@ -634,6 +641,13 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
     check_ceg(it, target, rewrite);
 
 
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
 }
 
 TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
@@ -1241,7 +1255,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  EXPECT_LE(1ul, validator->counter_examples_available());
+  /* EXPECT_LE(1ul, validator->counter_examples_available()); */
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
@@ -1252,6 +1266,15 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
 
 }
 
@@ -1279,11 +1302,18 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for (size_t i = 0; i < 2; ++i) {
-    if (i == 0)
+  for (size_t i = 0; i < 3; ++i) {
+    switch (i) {
+    case 0:
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
-    else
+      break;
+    case 1:
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+      break;
+    case 2:
+      validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
+      break;
+    }
 
     EXPECT_FALSE(validator->verify(target, rewrite));
     EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -1297,10 +1327,10 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
 
     /** rdi is pointing to 0x40000000 */
     uint64_t addr = ceg[x64asm::rdi]+3;
-    if (ceg.heap.in_range(addr))
-      EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
-    else if (ceg.stack.in_range(addr))
-      EXPECT_EQ(0x40, ceg.stack[ceg[x64asm::rdi]+3] & 0x40);
+    if (ceg.heap.in_range(addr) && ceg.heap.is_valid(addr))
+      EXPECT_EQ(0x40, ceg.heap[addr] & 0x40);
+    else if (ceg.stack.in_range(addr) && ceg.stack.is_valid(addr))
+      EXPECT_EQ(0x40, ceg.stack[addr] & 0x40);
     else
       FAIL() << "Address " << addr << " not mapped in testcase" << std::endl;
 
@@ -2140,7 +2170,7 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
+  /* EXPECT_LE(1ul, validator->counter_examples_available()); */
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
@@ -2150,6 +2180,14 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
 
 
 }
