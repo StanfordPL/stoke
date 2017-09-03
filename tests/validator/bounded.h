@@ -509,16 +509,16 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
-  //sst << "incq %rax" << std::endl;
+  sst << "incq %rax" << std::endl;
   sst << "addl $0x5, (%rax)" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, live_outs, live_outs);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  //ssr << "incq %rax" << std::endl;
-  ssr << "addl $0x5, (%rax)" << std::endl;
-  //ssr << "addl $0x1, (%rax)" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "addl $0x4, (%rax)" << std::endl;
+  ssr << "addl $0x1, (%rax)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 

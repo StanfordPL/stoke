@@ -126,7 +126,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   for (auto& cell : cells_) {
     cell.size = cell.tmp_max_offset - cell.tmp_min_offset;
 
-    for (auto& access : accesses_) {
+    for (auto& access : all_accesses_) {
       if (access.cell == cell.index)
         access.cell_offset = access.cell_offset - cell.tmp_min_offset;
     }
@@ -165,12 +165,12 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   auto debug_state = [&]() {
-    cout << "HEAP 1: " << heap_ << endl; 
-    for(auto cell : cells_) {
+    cout << "HEAP 1: " << heap_ << endl;
+    for (auto cell : cells_) {
       cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
     }
-    cout << "HEAP 2: " << am->heap_ << endl; 
-    for(auto cell : cells_) {
+    cout << "HEAP 2: " << am->heap_ << endl;
+    for (auto cell : cells_) {
       cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
     }
   };
@@ -179,7 +179,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     /** write all dirty cells back into the heap */
     bool update_required = false;
     for (auto& cell : cells_) {
-      if(cell.index == skip_index)
+      if (cell.index == skip_index)
         continue;
 
       if (cell.dirty) {
@@ -199,17 +199,20 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   };
 
   // now symbolically execute each of the accesses
-  for (auto access : all_accesses_) {
-    cout << "PROCESSING ACCESS " << access.index << " IS OTHER: " << access.is_other << endl;
+  for (auto& access : all_accesses_) {
+    cout << "PROCESSING ACCESS " << access.index << " IS OTHER: " << access.is_other
+         << " ISWRITE: " << access.write << " CELL: " << access.cell << " OFFSET: " << access.cell_offset;
+    debug_state();
+
     auto& cell = cells_[access.cell];
     bool& dirty = access.is_other ? cell.other_dirty : cell.dirty;
     auto& cache = access.is_other ? cell.other_cache : cell.cache;
     auto& heap = access.is_other ? am->heap_ : heap_;
 
-    debug_state();
     cout << "----------------- WRITING DIRTY CELLS INTO HEAP ---------------------" << endl;
     bool needs_update = flush_dirty(cell.index);
     debug_state();
+
     cout << "----------------- UPDATING OUR CELL IF NEEDED : " << needs_update << "---------------------" << endl;
     /** if a dirty cell got written into the heap, read out this cell */
     if (needs_update) {
@@ -227,7 +230,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
       SymBitVector prefix, suffix;
       if (access.cell_offset + access.size/8 < cell.size) {
-        prefix = cache[cell.size*8-1][access.cell_offset*8 + access.size-1];
+        prefix = cache[cell.size*8-1][access.cell_offset*8 + access.size];
       }
       if (access.cell_offset > 0) {
         suffix = cache[access.cell_offset*8-1][0];
@@ -235,16 +238,16 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       cache = prefix || access.value || suffix;
       dirty = true;
       cout << "--------------------- PERFORMED WRITE -----------------------" << endl;
-      cout << "access.cell_offset=" << access.cell_offset << endl;
       debug_state();
     } else {
       constraints_.push_back(access.value ==
                              cache[access.cell_offset*8+access.size-1][access.cell_offset*8]);
-      cout << "------------------ PERFORMED READ ON " << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;
+      cout << "------------------ PERFORMED READ ------------------------"  << endl;
+      cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;
     }
   }
 
-  cout << "---------------------- WRITE DIRTY CELLS BACK INTO HEAP---------------" << endl;
+  cout << "---------------------- FINAL: WRITE DIRTY CELLS BACK INTO HEAP---------------" << endl;
   flush_dirty();
   cout << "---------------------- ALL DONE ---------------" << endl;
   debug_state();
