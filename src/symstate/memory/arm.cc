@@ -88,9 +88,9 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   DEBUG_ARM(
-  for(size_t i = 0; i < access_offsets_.size(); ++i) {
-    for(size_t j = 0; j < access_offsets_.size(); ++j) {
-      if(access_offsets_[i].count(j))
+  for (size_t i = 0; i < access_offsets_.size(); ++i) {
+  for (size_t j = 0; j < access_offsets_.size(); ++j) {
+      if (access_offsets_[i].count(j))
         cout << setw(2) << access_offsets_[i][j] << "  ";
       else
         cout << " X  ";
@@ -135,9 +135,9 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   // (d) check for debugging
   DEBUG_ARM(
   for (auto& cell : cells_) {
-    cout << "Cell " << cell.index << " has size " << cell.size << endl;
-    cout << "   tmp_min_offset " << cell.tmp_min_offset << " max " << cell.tmp_max_offset << endl;
-    for (auto& access : all_accesses_) {
+  cout << "Cell " << cell.index << " has size " << cell.size << endl;
+  cout << "   tmp_min_offset " << cell.tmp_min_offset << " max " << cell.tmp_max_offset << endl;
+  for (auto& access : all_accesses_) {
       if (access.cell != cell.index)
         continue;
       cout << "  Access " << access.index << " has size " << access.size/8 << " and offset " << access.cell_offset << endl;
@@ -145,7 +145,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
-    auto& access = all_accesses_[i];
+  auto& access = all_accesses_[i];
     cout << "i=" << i << " access " << access.index << " size " << access.size/8 << " cell " << access.cell << " offset " << access.cell_offset << endl;
   })
 
@@ -167,14 +167,14 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
   auto debug_state = [&]() {
     DEBUG_ARM(
-    cout << "HEAP 1: " << heap_ << endl;
+      cout << "HEAP 1: " << heap_ << endl;
     for (auto cell : cells_) {
-      cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
-    }
-    cout << "HEAP 2: " << am->heap_ << endl;
-    for (auto cell : cells_) {
-      cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
-    })
+    cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
+  }
+  cout << "HEAP 2: " << am->heap_ << endl;
+  for (auto cell : cells_) {
+    cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
+  })
   };
 
   auto flush_dirty = [&](size_t skip_index = (size_t)(-1)) -> bool{
@@ -203,12 +203,12 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   // now symbolically execute each of the accesses
   for (auto& access : all_accesses_) {
     DEBUG_ARM(
-    cout << "==================== PROCESSING ACCESS " << access.index 
-         << " IS OTHER: " << access.is_other
-         << " IS WRITE: " << access.write 
-         << " CELL: " << access.cell 
-         << " OFFSET: " << access.cell_offset << endl;
-    debug_state();
+      cout << "==================== PROCESSING ACCESS " << access.index
+      << " IS OTHER: " << access.is_other
+      << " IS WRITE: " << access.write
+      << " CELL: " << access.cell
+      << " OFFSET: " << access.cell_offset << endl;
+      debug_state();
     )
 
     auto& cell = cells_[access.cell];
@@ -250,16 +250,16 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       constraints_.push_back(access.value ==
                              cache[access.cell_offset*8+access.size-1][access.cell_offset*8]);
       DEBUG_ARM(
-      cout << "==================== PERFORMED READ "  << endl;
-      cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;)
+        cout << "==================== PERFORMED READ "  << endl;
+        cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;)
     }
   }
 
   flush_dirty();
   DEBUG_ARM(
-  cout << "==================== FINAL: WRITE DIRTY CELLS BACK INTO HEAP" << endl;
-  cout << "==================== ALL DONE" << endl;
-  debug_state();)
+    cout << "==================== FINAL: WRITE DIRTY CELLS BACK INTO HEAP" << endl;
+    cout << "==================== ALL DONE" << endl;
+    debug_state();)
 
   /** get a final heap variable for reading out a model */
   SymArray fresh_heap = SymArray::tmp_var(64, 8);

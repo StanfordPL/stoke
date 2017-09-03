@@ -1303,14 +1303,14 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
   for (size_t i = 0; i < 3; ++i) {
-    switch(i) {
-      case 0:
+    switch (i) {
+    case 0:
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
       break;
-      case 1:
+    case 1:
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
       break;
-      case 2:
+    case 2:
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::ARM);
       break;
     }
