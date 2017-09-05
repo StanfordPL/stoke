@@ -19,7 +19,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { }
+#define DEBUG_ARM(X) { X }
 
 void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints) {
 
@@ -262,12 +262,11 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     debug_state();)
 
   /** get a final heap variable for reading out a model */
-  SymArray fresh_heap = SymArray::tmp_var(64, 8);
-  SymArray fresh_other_heap  = SymArray::tmp_var(64, 8);
-  constraints_.push_back(fresh_heap == heap_);
-  constraints_.push_back(fresh_other_heap == am->heap_);
-  heap_ = fresh_heap;
-  am->heap_ = fresh_other_heap;
+  constraints_.push_back(final_heap_ == heap_);
+  constraints_.push_back(am->final_heap_ == am->heap_);
+
+  cout << "[arm] Adding constraints " << final_heap_ << " = " << heap_ << endl;
+  cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
 
 }
 

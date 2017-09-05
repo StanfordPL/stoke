@@ -114,7 +114,7 @@ std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t> Cvc4Solver::get_model
   map<uint64_t, cpputil::BitVector> output_map;;
   uint8_t default_value = 0;
 
-  if(variables_.count(var)) {
+  if (variables_.count(var)) {
 
     auto val = variables_[var];
     auto expr = smt_->getValue(val);
@@ -122,7 +122,7 @@ std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t> Cvc4Solver::get_model
     DEBUG_CVC4(cout << "[cvc4][model] Expr: " << expr << endl;)
     DEBUG_CVC4(cout << "[cvc4][model] expr.getKind() = " << expr.getKind() << endl;)
 
-    while(expr.getKind() == kind::STORE) {
+    while (expr.getKind() == kind::STORE) {
       auto index_integer = expr[1].getConst<CVC4::BitVector>().toInteger();
       uint64_t index = (uint64_t)(index_integer.extractBitRange(32, 32).toUnsignedInt()) << 32 |
                        (uint64_t)(index_integer.extractBitRange(32, 0).toUnsignedInt());
@@ -135,12 +135,12 @@ std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t> Cvc4Solver::get_model
       DEBUG_CVC4(cout << "[cvc4][model] adding " << index << " -> " << value << endl;)
     }
 
-    if(expr.getKind() == kind::STORE_ALL) {
+    if (expr.getKind() == kind::STORE_ALL) {
       default_value = expr.getConst<ArrayStoreAll>()
-                          .getExpr()
-                          .getConst<CVC4::BitVector>()
-                          .toInteger()
-                          .toUnsignedInt();
+                      .getExpr()
+                      .getConst<CVC4::BitVector>()
+                      .toInteger()
+                      .toUnsignedInt();
       DEBUG_CVC4(cout << "[cvc4][model] default value " << default_value << endl;)
     }
   } else {
