@@ -73,7 +73,6 @@ public:
     m.size = size;
     m.write = false;
     accesses_.push_back(m);
-    std::cout << "Temporary for read: " << m.value << std::endl;
 
     return std::pair<SymBitVector, SymBool>(m.value, SymBool::_true());
   }
