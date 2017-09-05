@@ -355,6 +355,15 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   cout << it << endl;
 })
 
+  if (arm_model) {
+    /** When we read out the constraint for the proof, we want to get the ending
+      state of the heap, not the initial state. */
+    auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+    auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+    target_arm->finalize_heap();
+    rewrite_arm->finalize_heap();
+  }
+
   // Build inequality constraint
   // TODO pass line numbers as appropriate
   auto prove_constraint = !prove(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
@@ -370,7 +379,6 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     constraints.push_back(it);
   for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
     constraints.push_back(it);
-
 
   // Add any extra memory constraints that are needed
   if (flat_model) {
