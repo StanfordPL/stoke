@@ -19,7 +19,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { X }
+#define DEBUG_ARM(X) { }
 
 void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints) {
 
@@ -265,8 +265,10 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   constraints_.push_back(final_heap_ == heap_);
   constraints_.push_back(am->final_heap_ == am->heap_);
 
-  cout << "[arm] Adding constraints " << final_heap_ << " = " << heap_ << endl;
-  cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
+  DEBUG_ARM(
+    cout << "[arm] Adding constraints " << final_heap_ << " = " << heap_ << endl;
+    cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
+  )
 
 }
 
