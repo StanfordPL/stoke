@@ -23,6 +23,8 @@ using namespace stoke;
 using namespace std;
 using namespace CVC4;
 
+#define DEBUG_CVC4(X) { }
+
 
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
@@ -79,7 +81,7 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bit
 
   auto val = variables_[var];
   auto expr = smt_->getValue(val);
-  auto ret = expr.getConst<BitVector>();
+  auto ret = expr.getConst<CVC4::BitVector>();
 
   for (size_t i = 0; i < bits; ++i) {
     bv[i] = ret.isBitSet(i);
@@ -103,6 +105,50 @@ bool Cvc4Solver::get_model_bool(const std::string& var) {
   return expr.getConst<bool>();
 }
 
+
+std::pair<std::map<uint64_t, cpputil::BitVector>, uint8_t> Cvc4Solver::get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+
+  // Much thanks to the CVC4 folks!
+  // https://github.com/CVC4/CVC4/issues/1067
+
+  map<uint64_t, cpputil::BitVector> output_map;;
+  uint8_t default_value = 0;
+
+  if (variables_.count(var)) {
+
+    auto val = variables_[var];
+    auto expr = smt_->getValue(val);
+
+    DEBUG_CVC4(cout << "[cvc4][model] Expr: " << expr << endl;)
+    DEBUG_CVC4(cout << "[cvc4][model] expr.getKind() = " << expr.getKind() << endl;)
+
+    while (expr.getKind() == kind::STORE) {
+      auto index_integer = expr[1].getConst<CVC4::BitVector>().toInteger();
+      uint64_t index = (uint64_t)(index_integer.extractBitRange(32, 32).toUnsignedInt()) << 32 |
+                       (uint64_t)(index_integer.extractBitRange(32, 0).toUnsignedInt());
+      uint64_t value = expr[2].getConst<CVC4::BitVector>().toInteger().toUnsignedInt();
+      expr = expr[0];
+
+      cpputil::BitVector bv(8);
+      bv.get_fixed_byte(0) = value & 0xff;
+      output_map[index] = bv;
+      DEBUG_CVC4(cout << "[cvc4][model] adding " << index << " -> " << value << endl;)
+    }
+
+    if (expr.getKind() == kind::STORE_ALL) {
+      default_value = expr.getConst<ArrayStoreAll>()
+                      .getExpr()
+                      .getConst<CVC4::BitVector>()
+                      .toInteger()
+                      .toUnsignedInt();
+      DEBUG_CVC4(cout << "[cvc4][model] default value " << default_value << endl;)
+    }
+  } else {
+    cout << "[cvc4][model] WARNING! BUG! Could not find variable " << var << endl;
+  }
+
+  return pair<map<uint64_t, cpputil::BitVector>, uint8_t>(output_map, default_value);
+}
 
 ///////  The following is for converting bit-vectors.  Very tedious.  //////////////////////////////
 
@@ -377,11 +423,13 @@ Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const bv) {
 
 Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const bv) {
   if (!variables_.count(bv->name_)) {
+    DEBUG_CVC4(cout << "[cvc4] generating array variable " << bv->name_ << endl;)
     auto type = em_.mkArrayType(em_.mkBitVectorType(bv->key_size_), em_.mkBitVectorType(bv->value_size_));
     auto var = em_.mkVar(bv->name_, type);
     variables_[bv->name_] = var;
     return var;
   } else {
+    DEBUG_CVC4(cout << "[cvc4] using array variable " << bv->name_ << endl;)
     return variables_[bv->name_];
   }
 }

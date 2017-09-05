@@ -33,14 +33,27 @@ public:
   ArmMemory(SMTSolver& solver) : solver_(solver) {
     heap_ = SymArray::tmp_var(64, 8);
     start_variable_ = heap_;
+    final_heap_ = SymArray::tmp_var(64, 8);
+    finalize_ = false;
   }
 
-  SymArray get_variable() {
-    return heap_;
+  SymArray get_end_variable() {
+    return final_heap_;
   }
 
   SymArray get_start_variable() {
     return start_variable_;
+  }
+
+  SymArray get_variable() {
+    if (finalize_)
+      return get_end_variable();
+    else
+      return get_start_variable();
+  }
+
+  void finalize_heap() {
+    finalize_ = true;
   }
 
   /** Updates the memory with a write.
@@ -58,7 +71,7 @@ public:
     m.write = true;
     accesses_.push_back(m);
 
-    return SymBool::_true();
+    return SymBool::_false();
   }
 
   /** Reads from the memory.  Returns value and segv condition. */
@@ -73,9 +86,8 @@ public:
     m.size = size;
     m.write = false;
     accesses_.push_back(m);
-    std::cout << "Temporary for read: " << m.value << std::endl;
 
-    return std::pair<SymBitVector, SymBool>(m.value, SymBool::_true());
+    return std::pair<SymBitVector, SymBool>(m.value, SymBool::_false());
   }
 
   /** Do the hard work of ARM and generate constraints needed to extract equality constraints */
@@ -85,7 +97,7 @@ public:
     constraints needed for this contraint to make sense (retrievable through get_constraints().
     This can be computationally expensive. */
   SymBool equality_constraint(ArmMemory& other) {
-    return heap_ == other.heap_;
+    return get_variable() == other.get_variable();
   }
 
   std::vector<SymBool> get_constraints() {
@@ -140,6 +152,8 @@ private:
   /** Variables that represents the heap state */
   SymArray heap_;
   SymArray start_variable_;
+  SymArray final_heap_;
+  bool finalize_;
 
   /** map of (symbolic address, size) pairs accessed. */
   std::map<const SymBitVectorAbstract*, uint64_t> access_list_;
