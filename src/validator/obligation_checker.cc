@@ -451,7 +451,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       ok &= build_testcase_flat_memory(ceg_r_, rewrite_arm->get_start_variable(), other_map);
       ok &= build_testcase_flat_memory(ceg_tf_, target_arm->get_variable(), other_map);
       ok &= build_testcase_flat_memory(ceg_rf_, rewrite_arm->get_variable(), other_map);
-    } 
+    }
 
     if (!ok) {
       // We don't have memory accurate in our counterexample.  Just leave.
