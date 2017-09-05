@@ -420,6 +420,15 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     dual.set_invariant(start_state, get_initial_invariant());
     dual.set_invariant(end_state, get_final_invariant());
 
+    /** Add NoSignals invariant everywhere */
+    auto ns_invariant = new NoSignalsInvariant();
+    auto reachable = dual.get_reachable_states();
+    for(auto rs : reachable) {
+      auto orig_inv = dual.get_invariant(rs);
+      orig_inv->add_invariant(ns_invariant);
+      dual.set_invariant(rs, orig_inv);
+    }
+
     /** Hand-hold add (%rdi,%rax,1) != 0 and (%rax)' != 0 to invariants */
     DualAutomata::State hack_state(5,30);
     auto hack_inv = dual.get_invariant(hack_state);
