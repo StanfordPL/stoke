@@ -233,22 +233,26 @@ bool invariant_holds(Invariant* invariant, const vector<CpuState>& target_states
   return true;
 }
 
-bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states);
+bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose = false);
 
-bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<CpuState>& ts, const vector<CpuState>& rs) {
+bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<CpuState>& ts, const vector<CpuState>& rs, bool verbose = false) {
   vector<Invariant*> tmp;
-  bool b = add_or_delete_inv(tmp, inv, ts, rs);
+  bool b = add_or_delete_inv(tmp, inv, ts, rs, verbose);
   for (auto it : tmp)
     conj->add_invariant(it);
   return b;
 }
 
 /** Returns true if the invariant is added. */
-bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
+bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose) {
   if (invariant_holds(inv, target_states, rewrite_states)) {
+    if(verbose)
+      cout << "  Yes, " << *inv << " holds" << endl;
     invs.push_back(inv);
     return true;
   } else {
+    if(verbose)
+      cout << "  No, " << *inv << " does not hold" << endl;
     delete inv;
     return false;
   }
@@ -444,7 +448,8 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
   // check if memory is always non-zero?
   for (auto var : mem_vars) {
     auto inv = new NonzeroInvariant(var);
-    add_or_delete_inv(conj, inv, target_states, rewrite_states);
+    cout << "CHecking if " << *inv << " holds..." << endl;
+    add_or_delete_inv(conj, inv, target_states, rewrite_states, true);
   }
 
   DDEC_DEBUG(

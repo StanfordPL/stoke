@@ -19,7 +19,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { }
+#define DEBUG_ARM(X) { X }
 
 void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints) {
 

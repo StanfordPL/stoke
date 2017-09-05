@@ -138,69 +138,19 @@ public:
 
 
 private:
-
-  ///////////// These methods handle memory ///////////////////
-
-
-  /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
-
-  /** Recursive helper function for enumerate_aliasing.  target_con_access and
-   * rewrite_con_access list the lines of code where target_unroll and
-   * rewrite_unroll have memory accesses.  symbolic_access_list tells you how
-   * each memory access corresponds to a cell of the memory; this list is
-   * incomplete.  Each call to enumerate_aliasing_helper used
-   * find_arrangements() to come up with all the ways the next symbolic memory
-   * access can be added to this list.  Once the list is full, we can generate
-   * a CellMemory object. */
-  std::vector<std::vector<CellMemory::SymbolicAccess>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
-      const Cfg& target_unroll, const Cfg& rewrite_unroll,
-      const CfgPath& P, const CfgPath& Q,
-      const std::vector<CellMemory::SymbolicAccess>& todo,
-      const std::vector<CellMemory::SymbolicAccess>& done,
-      size_t sym_accesses_done,
-      const Invariant& assume);
-
-
-  /** Used for CellArrangement (see below) */
-  struct OverlapDescriptor {
-    bool is_empty;
-    size_t size;
-    size_t cell;
+  struct LineInfo {
+    size_t line_number;
+    x64asm::Label label;
+    uint64_t rip_offset;
   };
 
-  /** CellArrangements are used to describe how a collection of cells could overlap an existing cell.
-    For example, say you have cell X of size 8, and there are two other non-overlapping cells Y (size 4) and Z (size 4).
-    There are a few ways X could overlap Y and Z:
-     (i) It doesn't overlap at all
-     (ii) X overlaps the beginning of Y, but not Z
-     (iii) X overlaps Z, then Y
-     (iv) ... many more
-    Each of these cases is represented as a CellArrangement:
-     (i)  one "OverlapDescriptor" with is_empty=1, size=8.
-     (ii) first "OverlapDescriptor" with is_empty=0, size=4, cell=Y; second with is_empty=1, size=4
-     (iii) first with is_empty=0, size=4, cell=Y; second with is_empty=0, size=4, cell=Z
-     (iv) ... etc. */
-  typedef std::vector<OverlapDescriptor> CellArrangement;
 
-  /** Given a prefix of a CellArrangement (start), a list of available cells,
-   * and a maximum size, find a list of all possible CellArrangements. */
-  std::vector<CellArrangement> find_arrangements(
-    std::vector<OverlapDescriptor*>& start,
-    std::vector<OverlapDescriptor>& available_cells, size_t max_size);
+  typedef std::map<size_t,LineInfo> LineMap;
 
-  /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, CellMemory* target_memory,
-                                  const CellMemory* rewrite_memory,
-                                  const Cfg& target, const Cfg& rewrite,
-                                  bool begin) const;
+
 
   bool build_testcase_flat_memory(CpuState&, SymArray variable,
                                   const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
-
-  /** Go through lists of pairs of pointers and free all the memory. */
-  void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories);
 
   /** Create a vector of line numbers with memory dereferences */
   std::vector<size_t> enumerate_accesses(const Cfg& cfg);
@@ -212,17 +162,6 @@ private:
   std::vector<std::vector<int>> compute_offset_vectors(size_t*, size_t, size_t);
 
   /////////////// These methods handle paths and circuit building ////////////////
-
-  /** This structure and the correspondong map stores RIP offsets and original
-   * line numbers for each line of a rewritten program */
-  struct LineInfo {
-    size_t line_number;
-    x64asm::Label label;
-    uint64_t rip_offset;
-  };
-
-
-  typedef std::map<size_t,LineInfo> LineMap;
 
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map);
@@ -249,7 +188,7 @@ private:
   /** Rewrite a CFG so that it always executes a particular path, replacing
     jumps with NOPs.  Fill a map that contains information relating the new
     line numbers with the original ones. */
-  Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p, LineMap& to_populate);
+  void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate);
 
 
   /////////////// Bookkeeping //////////////////
@@ -295,6 +234,7 @@ private:
     Z3Solver::print_performance();
   }
 #endif
+
 
 };
 
