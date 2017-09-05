@@ -246,12 +246,12 @@ bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<
 /** Returns true if the invariant is added. */
 bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose) {
   if (invariant_holds(inv, target_states, rewrite_states)) {
-    if(verbose)
+    if (verbose)
       cout << "  Yes, " << *inv << " holds" << endl;
     invs.push_back(inv);
     return true;
   } else {
-    if(verbose)
+    if (verbose)
       cout << "  No, " << *inv << " does not hold" << endl;
     delete inv;
     return false;

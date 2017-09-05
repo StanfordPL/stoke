@@ -451,7 +451,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         bad++;
       }
     }
-    cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl; 
+    cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl;
 
     dual.print_all();
     cout << "Got some invariants!  Are they useful?" << endl;
