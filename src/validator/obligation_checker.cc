@@ -1171,42 +1171,20 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
-    if (memories.first)
-      constraints.push_back(memories.first->aliasing_formula(*memories.second));
-    else if (flat_model) {
-      auto target_flat = dynamic_cast<FlatMemory*>(state_t.memory);
-      auto rewrite_flat = dynamic_cast<FlatMemory*>(state_r.memory);
-      if (target_flat && rewrite_flat) {
-        auto target_con = target_flat->get_constraints();
-        auto rewrite_con = rewrite_flat->get_constraints();
-        constraints.insert(constraints.begin(),
-                           target_con.begin(),
-                           target_con.end());
-        constraints.insert(constraints.begin(),
-                           rewrite_con.begin(),
-                           rewrite_con.end());
-      }
-    } else if (arm_model) {
-      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
-      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
-      vector<SymBool> assume = { assumption };
-      target_arm->generate_constraints(rewrite_arm, assume);
-
-      auto target_con = target_arm->get_constraints();
-      auto rewrite_con = rewrite_arm->get_constraints();
-      constraints.insert(constraints.begin(),
-                         target_con.begin(),
-                         target_con.end());
-      constraints.insert(constraints.begin(),
-                         rewrite_con.begin(),
-                         rewrite_con.end());
-    }
-
     CONSTRAINT_DEBUG(
       cout << endl << "CONSTRAINTS" << endl << endl;;
     for (auto it : constraints) {
     cout << it << endl;
   })
+
+    if (arm_model) {
+      /** When we read out the constraint for the proof, we want to get the ending
+        state of the heap, not the initial state. */
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+      target_arm->finalize_heap();
+      rewrite_arm->finalize_heap();
+    }
 
     // Build inequality constraint
     // TODO pass line numbers as appropriate
@@ -1223,6 +1201,38 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       constraints.push_back(it);
     for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
       constraints.push_back(it);
+
+    // Get constraints from memory model
+    if (memories.first)
+      constraints.push_back(memories.first->aliasing_formula(*memories.second));
+    else if (flat_model) {
+      auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+      auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+      auto target_con = target_flat->get_constraints();
+      auto rewrite_con = rewrite_flat->get_constraints();
+      constraints.insert(constraints.begin(),
+                         target_con.begin(),
+                         target_con.end());
+      constraints.insert(constraints.begin(),
+                         rewrite_con.begin(),
+                         rewrite_con.end());
+    } else if (arm_model) {
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+      vector<SymBool> assume = { assumption };
+      target_arm->generate_constraints(rewrite_arm, assume);
+
+      auto target_con = target_arm->get_constraints();
+      auto rewrite_con = rewrite_arm->get_constraints();
+      constraints.insert(constraints.begin(),
+                         target_con.begin(),
+                         target_con.end());
+      constraints.insert(constraints.begin(),
+                         rewrite_con.begin(),
+                         rewrite_con.end());
+    }
+
+
 
     // Step 4: Invoke the solver
 #ifdef DEBUG_CHECKER_PERFORMANCE

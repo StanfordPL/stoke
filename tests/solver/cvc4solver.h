@@ -257,4 +257,66 @@ TEST(Cvc4SolverTest, RolWorks2) {
   EXPECT_FALSE(cvc4.has_error()) << "CVC4 encountered" << cvc4.get_error();
 }
 
+TEST(Cvc4SolverTest, StoreLoadEqual) {
+
+  auto constraints = std::vector<SymBool>();
+
+  auto heap = SymArray::tmp_var(64, 8);
+  auto address = SymBitVector::tmp_var(64);
+  auto value = SymBitVector::tmp_var(8);
+
+  auto updated_heap = heap.update(address, value);
+  auto new_value = updated_heap[address];
+
+  constraints.push_back(value != new_value);
+
+  Cvc4Solver cvc4;
+  EXPECT_FALSE(cvc4.is_sat(constraints));
+  EXPECT_FALSE(cvc4.has_error()) << "CVC4 encountered: " << cvc4.get_error();
+}
+
+TEST(Cvc4SolverTest, StoreStoreLoadUnequal) {
+
+  auto constraints = std::vector<SymBool>();
+
+  auto heap = SymArray::tmp_var(64, 8);
+  auto address1 = SymBitVector::tmp_var(64);
+  auto address2 = SymBitVector::tmp_var(64);
+  auto value1 = SymBitVector::tmp_var(8);
+  auto value2 = SymBitVector::tmp_var(8);
+
+  auto heap1 = heap.update(address1, value1);
+  auto heap2 = heap1.update(address2, value2);
+  auto new_value = heap2[address1];
+
+  constraints.push_back(value1 != new_value);
+
+  Cvc4Solver cvc4;
+  EXPECT_TRUE(cvc4.is_sat(constraints));
+  EXPECT_FALSE(cvc4.has_error()) << "CVC4 encountered: " << cvc4.get_error();
+}
+
+TEST(Cvc4SolverTest, DifferentStoreStoreLoadEqual) {
+
+  auto constraints = std::vector<SymBool>();
+
+  auto heap = SymArray::tmp_var(64, 8);
+  auto address1 = SymBitVector::tmp_var(64);
+  auto address2 = SymBitVector::tmp_var(64);
+  auto value1 = SymBitVector::tmp_var(8);
+  auto value2 = SymBitVector::tmp_var(8);
+
+  auto heap1 = heap.update(address1, value1);
+  auto heap2 = heap1.update(address2, value2);
+  auto new_value = heap2[address1];
+
+  constraints.push_back(address1 < address2);
+  constraints.push_back(value1 != new_value);
+
+  Cvc4Solver cvc4;
+  EXPECT_FALSE(cvc4.is_sat(constraints));
+  EXPECT_FALSE(cvc4.has_error()) << "CVC4 encountered: " << cvc4.get_error();
+}
+
+
 } //namespace stoke
