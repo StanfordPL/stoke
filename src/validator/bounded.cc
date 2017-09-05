@@ -43,6 +43,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   ConjunctionInvariant assume;
   assume.add_invariant(&assume_state);
   assume.add_invariant(&memory_equal);
+  assume.add_invariant(&no_sig);
 
   ConjunctionInvariant prove;
   prove.add_invariant(&prove_state);
