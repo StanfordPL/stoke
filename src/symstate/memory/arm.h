@@ -46,7 +46,7 @@ public:
   }
 
   SymArray get_variable() {
-    if(finalize_)
+    if (finalize_)
       return get_end_variable();
     else
       return get_start_variable();

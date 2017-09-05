@@ -25,8 +25,8 @@
 #include "src/validator/invariants/true.h"
 
 
-#define OBLIG_DEBUG(X) { X }
-#define CONSTRAINT_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
@@ -1177,7 +1177,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     cout << it << endl;
   })
 
-    if(arm_model) {
+    if (arm_model) {
       /** When we read out the constraint for the proof, we want to get the ending
         state of the heap, not the initial state. */
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
