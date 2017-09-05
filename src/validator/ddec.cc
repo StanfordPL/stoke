@@ -29,6 +29,7 @@
 #include "src/validator/invariants/implication.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -419,27 +420,38 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     dual.set_invariant(start_state, get_initial_invariant());
     dual.set_invariant(end_state, get_final_invariant());
 
-    /** Hand-hold: add rax = rax' - rdi' */
+    /** Hand-hold add (%rdi,%rax,1) != 0 and (%rax)' != 0 to invariants */
     DualAutomata::State hack_state(5,30);
     auto hack_inv = dual.get_invariant(hack_state);
-    Variable hack_minus_rax(rax, true);
-    hack_minus_rax.coefficient = -1;
-    auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
-    hack_inv->add_invariant(hack_plus);
+
+    M8 target_mem(rdi, rax, Scale::TIMES_1);
+    M8 rewrite_mem(rax);
+    Variable target_mem_var(target_mem, false);
+    Variable rewrite_mem_var(rewrite_mem, false);
+    auto target_inv = new NonzeroInvariant(target_mem_var);
+    auto rewrite_inv = new NonzeroInvariant(rewrite_mem_var);
+    hack_inv->add_invariant(target_inv);
+    hack_inv->add_invariant(rewrite_inv);
+
     dual.set_invariant(hack_state, hack_inv);
+
+    //Variable hack_minus_rax(rax, true);
+    //hack_minus_rax.coefficient = -1;
+    //auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
+    //hack_inv->add_invariant(hack_plus);
 
     int good = 0;
     int bad = 0;
     auto target_data = dual.get_target_data(hack_state);
     auto rewrite_data = dual.get_rewrite_data(hack_state);
     for (size_t i = 0; i < target_data.size(); ++i) {
-      if (hack_plus->check(target_data[i], rewrite_data[i])) {
+      if (target_inv->check(target_data[i], rewrite_data[i])) {
         good++;
       } else {
         bad++;
       }
     }
-    cout << "Hack Invariant held for " << good << " states and failed for " << bad << endl;
+    cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl; 
 
     dual.print_all();
     cout << "Got some invariants!  Are they useful?" << endl;
