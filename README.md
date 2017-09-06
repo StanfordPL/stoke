@@ -14,6 +14,12 @@ the design of STOKE, see:
 - [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf)
 - [**Stochastic Program Optimization** -- CACM 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/cacm16.pdf)
 - [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
+- [**Sound Loop Superoptimization for Google Native Client** -- ASPLOS 2017](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos17.pdf)
+
+Important
+=====
+
+STOKE isn't production ready.  It's a research prototype that demonstrates the viability of superoptimization techniques in various domains.  It's not a general-purpose tool.  The papers above describe specific areas where successes have been shown beyond the state of the art: in optimizing straight line code, code where correctness can be relaxed (e.g. floating point), synthesizing sematic specifications for an instruction set, and in optimizing code containing loops with special compilation requirements (e.g. Google Native Client).  We're not quite at the point where we can take a generic loop and expect to improve gcc/llvm -O3 code.  In part, this is because these compilers have decades of work behind them to make them really great; moreover, some (but not all!) outputs from optimizing compilers don't leave much room for improvement.  If you're willing to get your hands dirty, we very much appreciate contributions!
 
 Table of Contents
 =====
@@ -145,6 +151,7 @@ int main(int argc, char** argv) {
   }
 
   return ret;
+}
 ```
 
 STOKE is a compiler and programming language agnostic optimization tool. It can
@@ -370,7 +377,7 @@ where `synthesize.conf` contains:
 
 --target bins/_Z6popcntm.s # Path to the function to optimize
 
---def_in "{ %rax %rdi }" # The registers that are defined on entry to the target
+--def_in "{ %rdi }" # The registers that are defined on entry to the target
 --live_out "{ %rax }" # The registers that are live on exit from the target
 
 --testcases popcnt.tc # Path to testcase file

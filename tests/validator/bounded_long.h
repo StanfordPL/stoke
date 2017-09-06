@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
+TEST_P(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp + x64asm::r10 + x64asm::rbx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
@@ -59,16 +59,10 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  /* //takes way too long
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  */
 
 }
 
-TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
+TEST_P(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp + x64asm::r10 + x64asm::rbx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
@@ -110,19 +104,11 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
   ssr << "popq %rbx" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
 /*  // TODO: this can be a test for the obligation checker
-TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
+TEST_P(BoundedValidatorBaseTest, WcpcpyA) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;

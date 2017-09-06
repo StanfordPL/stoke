@@ -357,7 +357,7 @@ TEST_F(DdecValidatorBaseTest, MemoryOverlapBad) {
 
 }
 
-TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
+TEST_F(DdecValidatorBaseTest, DISABLED_LoopMemoryEquiv) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rcx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -393,7 +393,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
     sandbox->insert_input(tc);
   }
 
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
   validator->set_sandbox(sandbox);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();

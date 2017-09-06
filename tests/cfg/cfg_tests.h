@@ -15,5 +15,6 @@
 
 #include "cfg.h"
 #include "cfgtransforms.h"
+#include "dominators.h"
 #include "paths.h"
 #include "sccs.h"

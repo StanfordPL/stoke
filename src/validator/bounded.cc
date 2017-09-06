@@ -18,6 +18,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/memory_equality.h"
+#include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
@@ -35,12 +36,14 @@ using namespace x64asm;
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
   StateEqualityInvariant assume_state(target.def_ins());
   StateEqualityInvariant prove_state(target.live_outs());
+  NoSignalsInvariant no_sig;
 
   MemoryEqualityInvariant memory_equal;
 
   ConjunctionInvariant assume;
   assume.add_invariant(&assume_state);
   assume.add_invariant(&memory_equal);
+  assume.add_invariant(&no_sig);
 
   ConjunctionInvariant prove;
   prove.add_invariant(&prove_state);
@@ -49,9 +52,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   //BOUNDED_DEBUG(cout << "[bv] heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
   if (heap_out_ || stack_out_) {
-    equiv = check(target, rewrite, P, Q, assume, prove);
+    equiv = check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove);
   } else {
-    equiv = check(target, rewrite, P, Q, assume, prove_state);
+    equiv = check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state);
   }
 
   if (checker_has_ceg()) {

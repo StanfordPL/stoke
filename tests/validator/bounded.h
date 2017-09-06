@@ -15,6 +15,7 @@
 #include <regex>
 
 #include "src/sandbox/sandbox.h"
+#include "src/solver/solver.h"
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
@@ -25,12 +26,18 @@
 
 namespace stoke {
 
-class BoundedValidatorBaseTest : public ::testing::Test {
+class BoundedValidatorBaseTest : public ::testing::TestWithParam<std::tr1::tuple<ObligationChecker::AliasStrategy, Solver>> {
 
 public:
 
   BoundedValidatorBaseTest() {
-    solver = new Z3Solver();
+    auto param = ::testing::TestWithParam<std::tr1::tuple<ObligationChecker::AliasStrategy, Solver>>::GetParam();
+    auto solver_type = std::tr1::get<1>(GetParam());
+    if (solver_type == Solver::Z3)
+      solver = new Z3Solver();
+    else if (solver_type == Solver::CVC4)
+      solver = new Cvc4Solver();
+
     sandbox = new Sandbox();
     sandbox->set_max_jumps(4096);
     sandbox->set_abi_check(false);
@@ -40,7 +47,7 @@ public:
     validator = new BoundedValidator(*solver);
     validator->set_bound(2);
     validator->set_sandbox(sandbox);
-    validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+    validator->set_alias_strategy(std::tr1::get<0>(param));
     validator->set_heap_out(true);
     validator->set_stack_out(true);
   }
@@ -127,9 +134,10 @@ protected:
   BoundedValidator* validator;
   Sandbox* sandbox;
   Sandbox* sg_sandbox;
+
 };
 
-TEST_F(BoundedValidatorBaseTest, NoLoopsPasses) {
+TEST_P(BoundedValidatorBaseTest, NoLoopsPasses) {
 
   auto live_outs = all();
 
@@ -151,7 +159,7 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsPasses) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, NoLoopsFails) {
+TEST_P(BoundedValidatorBaseTest, NoLoopsFails) {
 
   auto live_outs = all();
 
@@ -178,7 +186,7 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsFails) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
+TEST_P(BoundedValidatorBaseTest, UnsupportedInstruction) {
 
   auto live_outs = all();
 
@@ -203,7 +211,7 @@ TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetEqual) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetEqual) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -221,15 +229,11 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetEqual) {
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetUnequal) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetUnequal) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -246,15 +250,11 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetUnequal) {
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetLoopEqual) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetLoopEqual) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -278,15 +278,11 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetLoopEqual) {
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetLoopUnqual) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetLoopUnqual) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -309,14 +305,12 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetLoopUnqual) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -324,51 +318,43 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
   sst << "retq" << std::endl;
-  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+  auto target = make_cfg(sst, all(), live_outs, 0xffffffffcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   // (remember to add 7 b/c of instruction length)
-  ssr << "movq $0xcafef014, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef014, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xd00dface);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, RipWritingEquiv) {
+TEST_P(BoundedValidatorBaseTest, RipWritingEquiv) {
 
   auto live_outs = x64asm::RegSet::empty();
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
   sst << "leaq (%rip), %rax" << std::endl;
-  sst << "movq $0xc0ded00d, 0x4(%rax)" << std::endl;
+  sst << "movq $0xffffffffc0ded00d, 0x4(%rax)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xc0ded00d, (%rip)" << std::endl;
+  ssr << "movq $0xffffffffc0ded00d, (%rip)" << std::endl;
   sst << "xorl %eax, %eax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xcafef00d);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
+TEST_P(BoundedValidatorBaseTest, RipOffsetWrongValue) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -380,19 +366,15 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  ssr << "movq $0xffffffffcafef00d, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, PopcntEqual) {
+TEST_P(BoundedValidatorBaseTest, PopcntEqual) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -421,7 +403,7 @@ TEST_F(BoundedValidatorBaseTest, PopcntEqual) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
+TEST_P(BoundedValidatorBaseTest, PopcntWrong) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -457,16 +439,9 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
 }
 
-TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
+TEST_P(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -497,13 +472,9 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, EasyMemory) {
+TEST_P(BoundedValidatorBaseTest, EasyMemory) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -525,51 +496,37 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
+TEST_P(BoundedValidatorBaseTest, EasyMemoryFail) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
-  sst << "incq %rax" << std::endl;
+  //sst << "incq %rax" << std::endl;
   sst << "addl $0x5, (%rax)" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, live_outs, live_outs);
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "incq %rax" << std::endl;
+  //ssr << "incq %rax" << std::endl;
   ssr << "addl $0x4, (%rax)" << std::endl;
-  ssr << "addl $0x2, (%rax)" << std::endl;
+  //ssr << "addl $0x2, (%rax)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
 
-TEST_F(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
+TEST_P(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -593,14 +550,9 @@ TEST_F(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
+TEST_P(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -612,7 +564,7 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  sst << "movq (%rax), %rax" << std::endl;
+  ssr << "movq (%rax), %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
@@ -624,19 +576,9 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
 
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
+TEST_P(BoundedValidatorBaseTest, WriteDifferentPointers) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
 
@@ -660,17 +602,9 @@ TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
+TEST_P(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -690,13 +624,9 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
+TEST_P(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -716,13 +646,9 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
 
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
-  EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
+TEST_P(BoundedValidatorBaseTest, MemoryOverlapBad) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -746,17 +672,9 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite)) << std::endl;
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
+TEST_P(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -779,20 +697,17 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
+  if (std::tr1::get<0>(GetParam()) == ObligationChecker::AliasStrategy::FLAT) {
+    cout << "Skipping this test! Too slow!" << endl;
+    return;
+  }
 
-  // Takes way too long
-  /*
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  validator->set_bound(1);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-  */
 
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
+TEST_P(BoundedValidatorBaseTest, LoopMemoryWrong) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
 
@@ -820,17 +735,9 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
+TEST_P(BoundedValidatorBaseTest, LoopMemoryWrong2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -861,17 +768,9 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
 }
 
-TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
+TEST_P(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -928,13 +827,9 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
+TEST_P(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -995,17 +890,9 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
   for (auto ceg : validator->get_counter_examples())
     check_ceg(ceg, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto ceg : validator->get_counter_examples())
-    check_ceg(ceg, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
+TEST_P(BoundedValidatorBaseTest, LoopMemoryWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1040,17 +927,9 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
+TEST_P(BoundedValidatorBaseTest, MemcpyCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1087,16 +966,11 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
 
 
-TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
+TEST_P(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1140,24 +1014,15 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
+  EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples()) {
     check_ceg(it, target, rewrite);
   }
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
 
-TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrectWithoutAliasing) {
+/** NOTE: ignores aliasing parameter! */
+TEST_P(BoundedValidatorBaseTest, MemcpyVectorizedCorrectWithoutAliasing) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1205,7 +1070,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrectWithoutAliasing) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
+TEST_P(BoundedValidatorBaseTest, MemcpyMissingBranch) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1244,18 +1109,9 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
+TEST_P(BoundedValidatorBaseTest, MemoryCounterexample) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1279,55 +1135,48 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for (size_t i = 0; i < 2; ++i) {
-    if (i == 0)
-      validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
-    else
-      validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
 
-    EXPECT_FALSE(validator->verify(target, rewrite));
-    EXPECT_FALSE(validator->has_error()) << validator->error();
+  ASSERT_LE(1ul, validator->counter_examples_available());
 
-    ASSERT_LE(1ul, validator->counter_examples_available());
+  auto ceg = validator->get_counter_examples()[0];
 
-    auto ceg = validator->get_counter_examples()[0];
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
 
-    for (auto it : validator->get_counter_examples())
-      check_ceg(it, target, rewrite);
+  /** rdi is pointing to 0x40000000 */
+  uint64_t addr = ceg[x64asm::rdi]+3;
+  if (ceg.heap.in_range(addr) && ceg.heap.is_valid(addr))
+    EXPECT_EQ(0x40, ceg.heap[addr] & 0x40);
+  else if (ceg.stack.in_range(addr) && ceg.stack.is_valid(addr))
+    EXPECT_EQ(0x40, ceg.stack[addr] & 0x40);
+  else
+    FAIL() << "Address " << addr << " not mapped in testcase" << std::endl;
 
-    /** rdi is pointing to 0x40000000 */
-    uint64_t addr = ceg[x64asm::rdi]+3;
-    if (ceg.heap.in_range(addr))
-      EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
-    else if (ceg.stack.in_range(addr))
-      EXPECT_EQ(0x40, ceg.stack[ceg[x64asm::rdi]+3] & 0x40);
-    else
-      FAIL() << "Address " << addr << " not mapped in testcase" << std::endl;
+  /** check the counterexample runs */
+  Sandbox sb;
+  sb.set_max_jumps(4);
+  sb.set_abi_check(false);
+  sb.insert_function(target);
+  sb.insert_input(ceg);
+  sb.set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.run();
 
-    /** check the counterexample runs */
-    Sandbox sb;
-    sb.set_max_jumps(4);
-    sb.set_abi_check(false);
-    sb.insert_function(target);
-    sb.insert_input(ceg);
-    sb.set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
-    sb.run();
+  auto target_output = *sb.get_output(0);
 
-    auto target_output = *sb.get_output(0);
+  sb.insert_function(rewrite);
+  sb.set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.run();
 
-    sb.insert_function(rewrite);
-    sb.set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
-    sb.run();
+  auto rewrite_output = *sb.get_output(0);
 
-    auto rewrite_output = *sb.get_output(0);
-
-    EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
-    EXPECT_EQ(ErrorCode::NORMAL, rewrite_output.code);
-    EXPECT_NE(target_output[x64asm::rax], rewrite_output[x64asm::rax]);
-  }
+  EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
+  EXPECT_EQ(ErrorCode::NORMAL, rewrite_output.code);
+  EXPECT_NE(target_output[x64asm::rax], rewrite_output[x64asm::rax]);
 }
 
-TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
+TEST_P(BoundedValidatorBaseTest, StrlenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
@@ -1377,15 +1226,9 @@ TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
+TEST_P(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
@@ -1413,27 +1256,14 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
   ASSERT_LE(1ul, validator->counter_examples_available());
 
   for (auto ceg : validator->get_counter_examples()) {
     check_ceg(ceg, target, rewrite);
   }
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-  ASSERT_LE(1ul, validator->counter_examples_available());
-
-  for (auto ceg : validator->get_counter_examples()) {
-    check_ceg(ceg, target, rewrite);
-  }
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
+TEST_P(BoundedValidatorBaseTest, WcslenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1562,14 +1392,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
 }
 
-TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
+TEST_P(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1623,19 +1448,9 @@ TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
     check_ceg(it, target, rewrite);
   }
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_EQ(0ul, validator->counter_examples_available());
-
-  for (auto ceg : validator->get_counter_examples()) {
-    check_ceg(ceg, target, rewrite);
-  }
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
+TEST_P(BoundedValidatorBaseTest, WcslenWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1694,17 +1509,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
+TEST_P(BoundedValidatorBaseTest, WcslenWrong2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1765,18 +1572,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
+TEST_P(BoundedValidatorBaseTest, WcslenCorrect3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1841,18 +1639,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
   EXPECT_EQ(0ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_EQ(0ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
+TEST_P(BoundedValidatorBaseTest, WcslenWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1918,17 +1707,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong4) {
+TEST_P(BoundedValidatorBaseTest, WcslenWrong4) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1993,18 +1774,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong4) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
+TEST_P(BoundedValidatorBaseTest, WcslenWrong5) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -2069,18 +1841,9 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
+TEST_P(BoundedValidatorBaseTest, WcscpyWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::rsi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -2137,155 +1900,15 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
   sst << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_LE(1ul, validator->counter_examples_available());
-  for (auto it : validator->get_counter_examples())
-    check_ceg(it, target, rewrite);
-
-
 }
 
-
-/*  // TODO: this can be a test for the obligation checker
-TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
-
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
-  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-
-  std::stringstream sst;
-  sst << ".foo:" << std::endl;
-  sst << "movl %edi, %edi" << std::endl;
-  sst << "movl %esi, %esi" << std::endl;
-  sst << "nop" << std::endl;
-  sst << "nop" << std::endl;
-  sst << ".L_top:" << std::endl;
-  sst << "movl %esi, %esi" << std::endl;
-  sst << "movl (%r15,%rsi,1), %edx" << std::endl;
-  sst << "movq %rdi, %rax" << std::endl;
-  sst << "addl $0x4, %esi" << std::endl;
-  sst << "movl %edi, %edi" << std::endl;
-  sst << "movl %edx, (%r15, %rdi, 1)" << std::endl;
-  sst << "addl $0x4, %edi" << std::endl;
-  sst << "testl %edx, %edx" << std::endl;
-  sst << "jne .L_top" << std::endl;
-  sst << "retq" << std::endl;
-  auto target = make_cfg(sst, def_ins, live_outs);
-
-  std::stringstream ssr;
-  ssr << ".foo:" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << ".L_top:" << std::endl;
-  ssr << "addl $0x4, %esi" << std::endl;
-  ssr << "movl -0x4(%r15,%rsi,1), %edx" << std::endl;
-  ssr << "movl %edi, %eax" << std::endl;
-  ssr << "addl $0x4, %edi" << std::endl;
-  ssr << "movl %edx, -0x4(%r15,%rdi,1)" << std::endl;
-  ssr << "testl %edx, %edx" << std::endl;
-  ssr << "jne .L_top" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << "nop" << std::endl;
-  ssr << "retq" << std::endl;
-  auto rewrite = make_cfg(ssr, def_ins, live_outs);
-
-  // rax = rax'
-  std::map<std::pair<x64asm::R, bool>, long> t1;
-  std::map<std::pair<x64asm::R, bool>, long> r1;
-  t1[std::pair<x64asm::R, bool>(x64asm::rax, false)] = 1;
-  r1[std::pair<x64asm::R, bool>(x64asm::rax, false)] = -1;
-  EqualityInvariant inv_rax(t1, r1, 0);
-
-  // edi = edi'
-  std::map<std::pair<x64asm::R, bool>, long> t2;
-  std::map<std::pair<x64asm::R, bool>, long> r2;
-  t2[std::pair<x64asm::R, bool>(x64asm::edi, false)] = 1;
-  r2[std::pair<x64asm::R, bool>(x64asm::edi, false)] = -1;
-  EqualityInvariant inv_rdi(t2, r2, 0);
-
-  // top 32 bits of rdi are 0.
-  TopZeroInvariant target_edi_0(x64asm::rdi, false);
-
-  // esi = esi'
-  std::map<std::pair<x64asm::R, bool>, long> t3;
-  std::map<std::pair<x64asm::R, bool>, long> r3;
-  t3[std::pair<x64asm::R, bool>(x64asm::esi, false)] = 1;
-  r3[std::pair<x64asm::R, bool>(x64asm::esi, false)] = -1;
-  EqualityInvariant inv_rsi(t3, r3, 0);
-
-  // r15 = r15'
-  std::map<std::pair<x64asm::R, bool>, long> t4;
-  std::map<std::pair<x64asm::R, bool>, long> r4;
-  t4[std::pair<x64asm::R, bool>(x64asm::r15, false)] = 1;
-  r4[std::pair<x64asm::R, bool>(x64asm::r15, false)] = -1;
-  EqualityInvariant inv_r15(t4, r4, 0);
-
-  // no signals
-  NoSignalsInvariant no_signals;
-
-  // conjunction
-  ConjunctionInvariant inv_all;
-  inv_all.add_invariant(&inv_rax);
-  inv_all.add_invariant(&inv_rdi);
-  inv_all.add_invariant(&inv_rsi);
-  inv_all.add_invariant(&inv_r15);
-  inv_all.add_invariant(&target_edi_0);
-  inv_all.add_invariant(&no_signals);
-
-  StateEqualityInvariant start_same(def_ins);
-  StateEqualityInvariant exit_same(live_outs);
-
-  ConjunctionInvariant inv_entry;
-  inv_entry.add_invariant(&no_signals);
-  inv_entry.add_invariant(&start_same);
-
-  ConjunctionInvariant inv_exit;
-  inv_exit.add_invariant(&no_signals);
-  inv_exit.add_invariant(&exit_same);
-
-  auto path = CfgPaths::enumerate_paths(target, 1)[0];
-
-  std::vector<Cfg::id_type> top_segment;
-  top_segment.push_back(path[0]);
-  top_segment.push_back(path[1]);
-
-  std::vector<Cfg::id_type> middle_segment;
-  middle_segment.push_back(path[1]);
-
-  std::vector<Cfg::id_type> end_segment;
-  end_segment.push_back(path[2]);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, inv_entry, inv_all));
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all));
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, inv_exit));
-
-  for (auto it : validator->get_counter_examples()) {
-    std::cout << it << std::endl;
-  }
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, inv_entry, inv_all));
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all));
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, inv_exit));
-
-  for (auto it : validator->get_counter_examples()) {
-    std::cout << it << std::endl;
-  }
-}
-*/
-
-TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
+TEST_P(BoundedValidatorBaseTest, NoSpuriousCeg) {
 
   auto def_ins = x64asm::RegSet::empty();
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -2308,12 +1931,15 @@ TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
-  EXPECT_FALSE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-  EXPECT_EQ(0ul, validator->counter_examples_available());
-
 }
+
+INSTANTIATE_TEST_CASE_P(AllSolversAliasing, BoundedValidatorBaseTest,
+                        ::testing::Combine(
+                          ::testing::Values(ObligationChecker::AliasStrategy::FLAT, ObligationChecker::AliasStrategy::ARM),
+                          ::testing::Values(Solver::Z3, Solver::CVC4)
+                        )
+                       );
+
 
 
 } //namespace stoke
