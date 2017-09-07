@@ -31,6 +31,12 @@ cpputil::ValueArg<double>& beta_arg =
   .description("Annealing constant")
   .default_val(1.0);
 
+cpputil::ValueArg<double>& gamma_arg =
+  cpputil::ValueArg<double>::create("gamma")
+  .usage("<double>")
+  .description("Alternative to annealing constant.  It is the percentage with which we should accept a change that's a 10% increase (over the baseline). Formally, we have beta=-log(gamma_arg.value()/100.0)/(starting_cost*0.1).")
+  .default_val(1.0);
+
 cpputil::ValueArg<size_t>& max_instrs_arg =
   cpputil::ValueArg<size_t>::create("initial_instruction_number")
   .usage("<int>")

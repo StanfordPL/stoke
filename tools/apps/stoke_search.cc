@@ -523,6 +523,15 @@ int main(int argc, char** argv) {
       lowest_correct = 0;
     }
 
+    // calculate beta if necessary
+    if (gamma_arg.has_been_provided()) {
+      if (beta_arg.has_been_provided()) {
+        Console::error() << "Cannot provide both beta and gamma." << endl;
+      }
+      double beta = -log(gamma_arg.value()/100.0)/(starting_cost*0.1);
+      search.set_beta(beta);
+    }
+
     const auto start_search = steady_clock::now();
     search.run(target, fxn, init_arg, state, aux_fxns);
     search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
