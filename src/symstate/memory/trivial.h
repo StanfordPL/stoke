@@ -85,6 +85,16 @@ public:
     return all_list_;
   }
 
+  /** Get list of accesses accessed (via read or write).  This is needed for
+   * marking relevant cells valid in the counterexample. */
+  std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
+    std::map<const SymBitVectorAbstract*, uint64_t> m;
+    for(auto it : all_list_) {
+      m[it.address.ptr] = it.size;
+    }
+    return m;
+  }
+
   std::string get_type() const {
     return "trivial";
   }

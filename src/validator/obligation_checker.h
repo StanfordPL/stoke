@@ -114,6 +114,12 @@ public:
              const CfgPath& p, const CfgPath& q,
              const Invariant& assume, const Invariant& prove);
 
+  /** Verify a set of paths from a location are exhausive */
+  bool verify_exhaustive(const Cfg& target, const Cfg& rewrite,
+                         Cfg::id_type target_block, Cfg::id_type rewrite_block,
+                         std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                         const Invariant& assume);
+
   bool checker_has_ceg() {
     return have_ceg_;
   }
@@ -165,6 +171,9 @@ private:
 
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map);
+
+  /** Get constraint expressing that a particular path is taken from some state. */
+  SymBool get_path_constraint(const Cfg& cfg, const SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P);
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {

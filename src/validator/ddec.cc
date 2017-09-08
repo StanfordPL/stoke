@@ -423,26 +423,30 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     /** Add NoSignals invariant everywhere */
     auto ns_invariant = new NoSignalsInvariant();
     auto reachable = dual.get_reachable_states();
-    for(auto rs : reachable) {
+    for (auto rs : reachable) {
       auto orig_inv = dual.get_invariant(rs);
       orig_inv->add_invariant(ns_invariant);
       dual.set_invariant(rs, orig_inv);
     }
 
     /** Hand-hold add (%rdi,%rax,1) != 0 and (%rax)' != 0 to invariants */
-    DualAutomata::State hack_state(5,30);
-    auto hack_inv = dual.get_invariant(hack_state);
-
-    M8 target_mem(rdi, rax, Scale::TIMES_1);
-    M8 rewrite_mem(rax);
-    Variable target_mem_var(target_mem, false);
+    /*
     Variable rewrite_mem_var(rewrite_mem, false);
-    auto target_inv = new NonzeroInvariant(target_mem_var);
     auto rewrite_inv = new NonzeroInvariant(rewrite_mem_var);
     hack_inv->add_invariant(target_inv);
     hack_inv->add_invariant(rewrite_inv);
 
     dual.set_invariant(hack_state, hack_inv);
+    */
+    DualAutomata::State hack_state(5,30);
+    auto hack_inv = dual.get_invariant(hack_state);
+    M8 target_mem(rdi, rax, Scale::TIMES_1);
+    M8 rewrite_mem(rax);
+    Variable target_mem_var(target_mem, false);
+    auto target_inv = new NonzeroInvariant(target_mem_var);
+    Variable rewrite_mem_var(rewrite_mem, true);
+    auto rewrite_inv = new NonzeroInvariant(rewrite_mem_var);
+
 
     //Variable hack_minus_rax(rax, true);
     //hack_minus_rax.coefficient = -1;
@@ -461,6 +465,17 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       }
     }
     cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl;
+    good = 0; 
+    bad = 0;
+    for (size_t i = 0; i < target_data.size(); ++i) {
+      if (rewrite_inv->check(target_data[i], rewrite_data[i])) {
+        good++;
+      } else {
+        bad++;
+      }
+    }
+    cout << "Inv " << *rewrite_inv << " held for " << good << " states and failed for " << bad << endl;
+
 
     dual.print_all();
     cout << "Got some invariants!  Are they useful?" << endl;
@@ -507,7 +522,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     sanity_checks(target_, rewrite_);
 
-    make_tcs(target_, rewrite_);
+    //make_tcs(target_, rewrite_);
 
     DDEC_TC_DEBUG(
       cout << "DDEC sandbox at " << sandbox_ << endl;

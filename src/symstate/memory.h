@@ -43,6 +43,10 @@ public:
   /** Reads from the memory.  Returns value and segv condition. */
   virtual std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) = 0;
 
+  /** Get list of accesses accessed (via read or write).  This is needed for
+   * marking relevant cells valid in the counterexample. */
+  virtual std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() = 0;
+
 protected:
 
   SymState* state_;

@@ -162,7 +162,32 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
 }
 
 
+SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
+                                               const SymState& state_orig, 
+                                               Cfg::id_type cfg_start,
+                                               const CfgPath& P) {
 
+  // Initialize state copy
+  SymState state = state_orig;
+  state.constraints.clear();
+
+  // Generate line map
+  LineMap line_map;
+  generate_linemap(cfg, P, line_map);
+
+  // Build the circuits
+  size_t line_no = 0;
+  for (size_t i = 0; i < P.size(); ++i)
+    build_circuit(cfg, P[i], is_jump(cfg, cfg_start, P, i), state, line_no, line_map);
+
+  // Extract the conjunction
+  SymBool conjunction;
+  for(auto it : state.constraints) {
+    conjunction = conjunction & it;
+  }
+
+  return conjunction;
+}
 
 
 void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
@@ -547,3 +572,153 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
   }
 
 }
+
+bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
+                         Cfg::id_type target_block, Cfg::id_type rewrite_block,
+                         std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                         const Invariant& assume) {
+
+  init_mm();
+  have_ceg_ = false;
+
+  // Get a list of all aliasing cases.
+  bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
+  bool arm_model = alias_strategy_ == AliasStrategy::ARM;
+
+  // Step 2: Build circuits
+
+  vector<SymBool> constraints;
+
+  SymState state_t("1_INIT");
+  SymState state_r("2_INIT");
+
+  if (flat_model) {
+    state_t.memory = new FlatMemory();
+    state_r.memory = new FlatMemory();
+  } else if (arm_model) {
+    state_t.memory = new ArmMemory(solver_);
+    state_r.memory = new ArmMemory(solver_);
+  }
+
+  auto original_target_mem = state_t.memory;
+  auto original_rewrite_mem = state_r.memory;
+
+  // Add given assumptions
+  size_t target_invariant_lineno = 0;
+  size_t rewrite_invariant_lineno = 0;
+  auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
+  CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
+  constraints.push_back(assumption);
+
+  auto target_accesses = original_target_mem->get_access_list();
+  auto rewrite_accesses = original_rewrite_mem->get_access_list();
+
+  for(auto& path_pair : path_pairs) {
+    state_t.memory = original_target_mem;
+    state_r.memory = original_rewrite_mem;
+
+    auto P = path_pair.first;
+    auto Q = path_pair.second;
+
+    auto P_constraint = get_path_constraint(target, state_t, target_block, P);
+    auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
+
+    auto new_target_accesses = state_t.memory->get_access_list();
+    auto new_rewrite_accesses = state_r.memory->get_access_list();
+    target_accesses.insert(new_target_accesses.begin(), new_target_accesses.end());
+    rewrite_accesses.insert(new_rewrite_accesses.begin(), new_rewrite_accesses.end());
+
+    SymBool mem_constraint;
+
+    if(arm_model) {
+      vector<SymBool> arm_constraints;
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+      target_arm->generate_constraints(rewrite_arm, arm_constraints);
+      for(auto it : arm_constraints) {
+        mem_constraint = mem_constraint & it;
+      }
+    } else if (flat_model) {
+      auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+      auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+      auto target_con = target_flat->get_constraints();
+      auto rewrite_con = rewrite_flat->get_constraints();
+      for(auto it : target_con)
+        mem_constraint = mem_constraint & it;
+      for(auto it : rewrite_con)
+        mem_constraint = mem_constraint & it;
+    }
+
+    constraints.push_back(!(P_constraint & Q_constraint & mem_constraint));
+
+  }
+
+  // Step 4: Invoke the solver
+  bool is_sat = solver_.is_sat(constraints);
+  if (solver_.has_error()) {
+    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+  }
+
+  if (is_sat) {
+    ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
+    ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
+
+    bool ok = true;
+    if (flat_model) {
+      auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+      auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+
+      vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+      other_maps.push_back(target_flat->get_access_list());
+      other_maps.push_back(rewrite_flat->get_access_list());
+      auto other_map = append_maps(other_maps);
+
+      ok &= build_testcase_flat_memory(ceg_t_, target_flat->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_r_, rewrite_flat->get_start_variable(), other_map);
+    } else if (arm_model) {
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+
+      vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+      other_maps.push_back(target_arm->get_access_list());
+      other_maps.push_back(rewrite_arm->get_access_list());
+      auto other_map = append_maps(other_maps);
+
+      ok &= build_testcase_flat_memory(ceg_t_, target_arm->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_r_, rewrite_arm->get_start_variable(), other_map);
+    }
+
+    if (!ok) {
+      // We don't have memory accurate in our counterexample.  Just leave.
+      have_ceg_ = false;
+      CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
+    }
+
+    CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
+    CEG_DEBUG(cout << "TARGET START STATE" << endl;)
+    CEG_DEBUG(cout << ceg_t_ << endl;)
+    CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
+    CEG_DEBUG(cout << ceg_r_ << endl;)
+
+    // TODO: check the counterexample
+    have_ceg_ = true;
+
+    delete state_t.memory;
+    delete state_r.memory;
+
+    stop_mm();
+    return false;
+
+  } else {
+
+    delete state_t.memory;
+    delete state_r.memory;
+
+    CEG_DEBUG(cout << "  (This case verified)" << endl;)
+
+  }
+
+  stop_mm();
+  return true;
+}
+

@@ -67,8 +67,64 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
     for (size_t offset : {
            0,8,-8
          }) {
+
       // Make everything an M64
       M64 mem_fixed(mem.get_seg(),
+                    mem.get_base(),
+                    mem.get_index(),
+                    mem.get_scale(),
+                    mem.get_disp() + offset);
+
+      Variable v(mem_fixed, false);
+      Variable w(mem_fixed, true);
+      results.push_back(v);
+      results.push_back(w);
+    }
+  }
+
+  for (auto mem : memory_operands) {
+    for (size_t offset : {
+           0,4,-4
+         }) {
+
+      M32 mem_fixed(mem.get_seg(),
+                    mem.get_base(),
+                    mem.get_index(),
+                    mem.get_scale(),
+                    mem.get_disp() + offset);
+
+      Variable v(mem_fixed, false);
+      Variable w(mem_fixed, true);
+      results.push_back(v);
+      results.push_back(w);
+    }
+  }
+
+  for (auto mem : memory_operands) {
+    for (size_t offset : {
+           0,2,-2
+         }) {
+
+      M16 mem_fixed(mem.get_seg(),
+                    mem.get_base(),
+                    mem.get_index(),
+                    mem.get_scale(),
+                    mem.get_disp() + offset);
+
+      Variable v(mem_fixed, false);
+      Variable w(mem_fixed, true);
+      results.push_back(v);
+      results.push_back(w);
+    }
+  }
+
+
+  for (auto mem : memory_operands) {
+    for (size_t offset : {
+           0,1,-1
+         }) {
+
+      M8 mem_fixed(mem.get_seg(),
                     mem.get_base(),
                     mem.get_index(),
                     mem.get_scale(),
@@ -448,7 +504,7 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
   // check if memory is always non-zero?
   for (auto var : mem_vars) {
     auto inv = new NonzeroInvariant(var);
-    cout << "CHecking if " << *inv << " holds..." << endl;
+    cout << "Checking if " << *inv << " holds..." << endl;
     add_or_delete_inv(conj, inv, target_states, rewrite_states, true);
   }
 
