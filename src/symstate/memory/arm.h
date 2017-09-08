@@ -49,7 +49,7 @@ public:
     if (finalize_)
       return get_end_variable();
     else
-      return get_start_variable();
+      return heap_;
   }
 
   void finalize_heap() {
