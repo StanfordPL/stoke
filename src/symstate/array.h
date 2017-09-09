@@ -88,7 +88,7 @@ public:
 private:
 
   /** Memory Manager */
-  static SymMemoryManager* memory_manager_;
+  static thread_local SymMemoryManager* memory_manager_;
   /** Counter for temporaries. */
   static uint64_t tmp_counter_;
 

@@ -22,7 +22,7 @@
 using namespace std;
 using namespace stoke;
 
-SymMemoryManager* SymArray::memory_manager_ = NULL;
+thread_local SymMemoryManager* SymArray::memory_manager_ = NULL;
 uint64_t SymArray::tmp_counter_ = 0;
 
 /* Various constructors */

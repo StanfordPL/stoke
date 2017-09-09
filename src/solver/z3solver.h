@@ -76,6 +76,11 @@ public:
   }
 #endif
 
+  virtual void interrupt() {
+    stop_now_.store(true);
+    context_.interrupt();
+  }
+
 private:
 
   /** The Z3 context we're working with */

@@ -23,14 +23,17 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+#include "src/solver/z3solver.h"
+#include "src/symstate/memory_manager.h"
 
 
-#define OBLIG_DEBUG(X) { X }
-#define CONSTRAINT_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
+#define DEBUG_ARMS_RACE(X) { }
 
 #ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
@@ -163,9 +166,9 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
 
 
 SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
-                                               const SymState& state_orig, 
-                                               Cfg::id_type cfg_start,
-                                               const CfgPath& P) {
+    const SymState& state_orig,
+    Cfg::id_type cfg_start,
+    const CfgPath& P) {
 
   // Initialize state copy
   SymState state = state_orig;
@@ -182,7 +185,7 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
 
   // Extract the conjunction
   SymBool conjunction;
-  for(auto it : state.constraints) {
+  for (auto it : state.constraints) {
     conjunction = conjunction & it;
   }
 
@@ -303,8 +306,91 @@ ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_t
   }
 }
 
-
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+  stop_now_.store(false);
+
+  if(alias_strategy_ == AliasStrategy::ARMS_RACE) {
+    DEBUG_ARMS_RACE(cout << "===================================" << endl;)
+    
+    DEBUG_ARMS_RACE(auto start_time = high_resolution_clock::now();)
+    atomic<size_t> finished; // 0 -> nobody; 1 -> FLAT; 2 -> ARM
+    finished.store(0);
+
+    if(oc1_ == NULL) {
+      assert(oc2_ == NULL);
+      z3_1_ = new Z3Solver();
+      oc1_ = new ObligationChecker(*z3_1_);
+      oc1_->set_filter(filter_);
+      oc1_->set_alias_strategy(AliasStrategy::FLAT);
+
+      z3_2_ = new Z3Solver();
+      oc2_ = new ObligationChecker(*z3_2_);
+      oc2_->set_filter(filter_);
+      oc2_->set_alias_strategy(AliasStrategy::ARM);
+    }
+
+    bool result = false;
+
+    // for debug purposes
+
+    auto run_oc = [&] (size_t index) {
+      DEBUG_ARMS_RACE(cout << "Thread " << index << " starting at " 
+                           << duration_cast<microseconds>(
+                             high_resolution_clock::now() - start_time).count() << endl;)
+
+      auto& oc = index == 0 ? *oc1_ : *oc2_;
+
+
+      bool success = false;
+      bool my_result = false;
+      try {
+        DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
+        my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove);
+        DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
+        DEBUG_ARMS_RACE(cout << "Index " << index << " took " << 
+                          duration_cast<microseconds>(t1-t0).count() << endl;)
+        success = true;
+      } catch (std::exception e) { 
+        // todo: record exception
+      }
+
+      size_t swap_zero = 0;
+      bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
+      if(success && i_was_first) {
+        DEBUG_ARMS_RACE(cout << "Index " << index << " was first!" << endl;)
+        auto& other_oc = index == 0 ? *oc2_ : *oc1_;
+        other_oc.interrupt();
+
+        // set output data
+        result = my_result;
+        this->have_ceg_ = oc.checker_has_ceg();
+        this->ceg_t_ = oc.checker_get_target_ceg();
+        this->ceg_r_ = oc.checker_get_rewrite_ceg();
+        this->ceg_tf_ = oc.checker_get_target_ceg_end();
+        this->ceg_rf_ = oc.checker_get_rewrite_ceg_end();
+      }
+      DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at " 
+                           << duration_cast<microseconds>(
+                             high_resolution_clock::now() - start_time).count() << endl;)
+
+
+    };
+
+    auto t1 = thread(run_oc, 0);
+    auto t2 = thread(run_oc, 1);
+
+    t1.join();
+    t2.join();
+
+    return result;
+
+  } else {
+    return check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove);
+  }
+}
+
+
+bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -317,7 +403,6 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
   OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)
-  init_mm();
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
@@ -349,6 +434,15 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     state_r.memory = new ArmMemory(solver_);
   }
 
+  auto check_abort = [&]() -> bool {
+    if(stop_now_) {
+      delete state_t.memory;
+      delete state_r.memory;
+      return true;
+    }
+    return false;
+  };
+
   // Add given assumptions
   // TODO pass line numbers as appropriate here
   size_t target_invariant_lineno = 0;
@@ -356,6 +450,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
   constraints.push_back(assumption);
+
+  if (check_abort()) return false;
 
   // Generate line maps
   LineMap target_line_map;
@@ -373,6 +469,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
+
+  if (check_abort()) return false;
 
   CONSTRAINT_DEBUG(
     cout << endl << "CONSTRAINTS" << endl << endl;;
@@ -405,6 +503,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
     constraints.push_back(it);
 
+  if (check_abort()) return false;
+
   // Add any extra memory constraints that are needed
   if (flat_model) {
     auto target_flat = static_cast<FlatMemory*>(state_t.memory);
@@ -420,8 +520,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   } else if (arm_model) {
     auto target_arm = static_cast<ArmMemory*>(state_t.memory);
     auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+
+    target_arm->set_interrupt_var(&stop_now_);
+    if (check_abort()) return false;
     target_arm->generate_constraints(rewrite_arm, constraints);
 
+    if (check_abort()) return false;
     auto target_con = target_arm->get_constraints();
     auto rewrite_con = rewrite_arm->get_constraints();
     constraints.insert(constraints.begin(),
@@ -441,10 +545,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 #endif
 
 
+  if (check_abort()) return false;
   bool is_sat = solver_.is_sat(constraints);
   if (solver_.has_error()) {
     throw VALIDATOR_ERROR("solver: " + solver_.get_error());
   }
+  if (check_abort()) return false;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_solve = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -452,11 +558,13 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 #endif
 
   if (is_sat) {
+    if (check_abort()) return false;
     ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
     ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
     ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL");
     ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL");
 
+    if (check_abort()) return false;
     bool ok = true;
     if (flat_model) {
       auto target_flat = static_cast<FlatMemory*>(state_t.memory);
@@ -502,6 +610,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
     CEG_DEBUG(cout << ceg_rf_ << endl;)
 
+    if (check_abort()) return false;
 
     if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_)) {
       have_ceg_ = true;
@@ -510,12 +619,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
     }
 
-    if (flat_model) {
-      delete state_t.memory;
-      delete state_r.memory;
-    }
-
-    stop_mm();
+    delete state_t.memory;
+    delete state_r.memory;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
     microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -527,10 +632,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     return false;
   } else {
 
-    if (flat_model) {
-      delete state_t.memory;
-      delete state_r.memory;
-    }
+    delete state_t.memory;
+    delete state_r.memory;
 
     CEG_DEBUG(cout << "  (This case verified)" << endl;)
 
@@ -540,13 +643,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 #endif
   }
 
-
-
 #ifdef DEBUG_CHECKER_PERFORMANCE
   print_performance();
 #endif
 
-  stop_mm();
   return true;
 
 }
@@ -564,7 +664,6 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
     for (size_t i = start_index; i < end_index; ++i) {
 
       LineInfo li;
-      li.label = function.get_leading_label();
       li.line_number = i;
       li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
       to_populate[line_no++] = li;
@@ -574,9 +673,9 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 }
 
 bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
-                         Cfg::id_type target_block, Cfg::id_type rewrite_block,
-                         std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                         const Invariant& assume) {
+    Cfg::id_type target_block, Cfg::id_type rewrite_block,
+    std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+    const Invariant& assume) {
 
   init_mm();
   have_ceg_ = false;
@@ -613,7 +712,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   auto target_accesses = original_target_mem->get_access_list();
   auto rewrite_accesses = original_rewrite_mem->get_access_list();
 
-  for(auto& path_pair : path_pairs) {
+  for (auto& path_pair : path_pairs) {
     state_t.memory = original_target_mem;
     state_r.memory = original_rewrite_mem;
 
@@ -630,12 +729,12 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
     SymBool mem_constraint;
 
-    if(arm_model) {
+    if (arm_model) {
       vector<SymBool> arm_constraints;
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
       target_arm->generate_constraints(rewrite_arm, arm_constraints);
-      for(auto it : arm_constraints) {
+      for (auto it : arm_constraints) {
         mem_constraint = mem_constraint & it;
       }
     } else if (flat_model) {
@@ -643,9 +742,9 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
       auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
       auto target_con = target_flat->get_constraints();
       auto rewrite_con = rewrite_flat->get_constraints();
-      for(auto it : target_con)
+      for (auto it : target_con)
         mem_constraint = mem_constraint & it;
-      for(auto it : rewrite_con)
+      for (auto it : rewrite_con)
         mem_constraint = mem_constraint & it;
     }
 

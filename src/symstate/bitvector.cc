@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-SymMemoryManager* SymBitVector::memory_manager_ = NULL;
+thread_local SymMemoryManager* SymBitVector::memory_manager_ = NULL;
 uint64_t SymBitVector::tmp_counter_ = 0;
 
 /* Various constructors */

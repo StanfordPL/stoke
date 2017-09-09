@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-SymMemoryManager* SymBool::memory_manager_ = NULL;
+thread_local SymMemoryManager* SymBool::memory_manager_ = NULL;
 uint64_t SymBool::tmp_counter_ = 0;
 
 /* Bool constructors */
