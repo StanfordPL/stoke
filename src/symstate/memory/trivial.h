@@ -89,7 +89,7 @@ public:
    * marking relevant cells valid in the counterexample. */
   std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
     std::map<const SymBitVectorAbstract*, uint64_t> m;
-    for(auto it : all_list_) {
+    for (auto it : all_list_) {
       m[it.address.ptr] = it.size;
     }
     return m;

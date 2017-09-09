@@ -102,6 +102,8 @@ private:
       return ObligationChecker::AliasStrategy::FLAT;
     } else if (alias == "arm") {
       return ObligationChecker::AliasStrategy::ARM;
+    } else if (alias == "arms_race") {
+      return ObligationChecker::AliasStrategy::ARMS_RACE;
     } else {
       std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
       exit(1);

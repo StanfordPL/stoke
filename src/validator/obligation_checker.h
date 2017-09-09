@@ -18,6 +18,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <thread>
+#include <atomic>
 
 #include "gtest/gtest_prod.h"
 
@@ -25,6 +27,7 @@
 #include "src/cfg/paths.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
+#include "src/solver/z3solver.h"
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
@@ -58,19 +61,25 @@ public:
   enum AliasStrategy {
     BASIC,             // enumerate all cases, attempt to bound it (SOUND)
     FLAT,              // model memory as an array in the SMT solver (SOUND)
-    STRING,            // look for continugous memory accesses and combine them (SOUND)
-    STRING_NO_ALIAS,   // assume strings don't overlap (UNSOUND)
-    ARM
+    STRING,            // look for continugous memory accesses and combine them (SOUND BUT BUGGY)
+    STRING_NO_ALIAS,   // assume strings don't overlap (UNSOUND AND BUGGY)
+    ARM,               // improved implementation of "STRING" (SOUND)
+    ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
   };
 
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
     filter_ = new DefaultFilter(handler_);
+    delete_filter_ = true;
+    stop_now_ = false;
+
+    oc1_ = NULL;
+    oc2_ = NULL;
   }
 
   ~ObligationChecker() {
-    if (filter_)
+    if (delete_filter_)
       delete filter_;
   }
 
@@ -81,8 +90,9 @@ public:
   }
 
   ObligationChecker& set_filter(Filter* filter) {
-    if (filter_)
+    if (delete_filter_)
       delete filter_;
+    delete_filter_ = false;
     filter_ = filter;
     return *this;
   }
@@ -120,6 +130,8 @@ public:
                          std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
                          const Invariant& assume);
 
+
+
   bool checker_has_ceg() {
     return have_ceg_;
   }
@@ -132,21 +144,32 @@ public:
     return ceg_r_;
   }
 
-  /** Note -- this won't be right for memory. */
   CpuState checker_get_target_ceg_end() {
     return ceg_tf_;
   }
-  /** Note -- this won't be right for memory. */
+
   CpuState checker_get_rewrite_ceg_end() {
     return ceg_rf_;
   }
 
-
+  /** Can be called from another thread.  Try to stop what you're doing ASAP and cleanup. */
+  void interrupt() {
+    stop_now_.store(true);
+    solver_.interrupt();
+  }
 
 private:
+
+  /** Check. */
+  bool check_core(const Cfg& target, const Cfg& rewrite,
+             Cfg::id_type target_block, Cfg::id_type rewrite_block,
+             const CfgPath& p, const CfgPath& q,
+             const Invariant& assume, const Invariant& prove);
+
+
+
   struct LineInfo {
     size_t line_number;
-    x64asm::Label label;
     uint64_t rip_offset;
   };
 
@@ -199,11 +222,18 @@ private:
     line numbers with the original ones. */
   void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate);
 
+  /////////////// FOR LIGHTNING MODE ///////////
+
+  ObligationChecker* oc1_;
+  ObligationChecker* oc2_;
+  Z3Solver* z3_1_;
+  Z3Solver* z3_2_;
 
   /////////////// Bookkeeping //////////////////
 
   /** Rules to transform instructions for a custom purpose */
   Filter* filter_;
+  bool delete_filter_;
 
   /** Target counterexample and end state */
   CpuState ceg_t_;
@@ -221,6 +251,9 @@ private:
   /** Add NaCl constraint for memory? */
   bool nacl_;
 
+  /** Used for interrupts. */
+  std::atomic<bool> stop_now_; 
+  std::atomic<ArmMemory*> arm_interrupt_;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   static uint64_t number_queries_;

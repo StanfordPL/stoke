@@ -18,6 +18,9 @@
 
 #include <map>
 #include <vector>
+#include <thread>
+#include <atomic>
+
 
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"
@@ -109,8 +112,14 @@ public:
   std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
     return access_list_;
   }
+  
+  void set_interrupt_var(std::atomic<bool>* stop) {
+    stop_now_ = stop;
+  }
 
 private:
+
+  std::atomic<bool>* stop_now_;
 
   struct Cell {
 

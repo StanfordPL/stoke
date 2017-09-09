@@ -18,6 +18,7 @@
 
 #include <map>
 #include <vector>
+#include <atomic>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
@@ -69,8 +70,13 @@ public:
     return error_;
   }
 
+  virtual void interrupt() {
+    stop_now_.store(true);
+  }
 
 protected:
+
+  std::atomic<bool> stop_now_;
 
   /** Used to set the timeout before invoking solver */
   uint64_t timeout_;

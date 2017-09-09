@@ -465,7 +465,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       }
     }
     cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl;
-    good = 0; 
+    good = 0;
     bad = 0;
     for (size_t i = 0; i < target_data.size(); ++i) {
       if (rewrite_inv->check(target_data[i], rewrite_data[i])) {

@@ -125,10 +125,10 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
          }) {
 
       M8 mem_fixed(mem.get_seg(),
-                    mem.get_base(),
-                    mem.get_index(),
-                    mem.get_scale(),
-                    mem.get_disp() + offset);
+                   mem.get_base(),
+                   mem.get_index(),
+                   mem.get_scale(),
+                   mem.get_disp() + offset);
 
       Variable v(mem_fixed, false);
       Variable w(mem_fixed, true);
