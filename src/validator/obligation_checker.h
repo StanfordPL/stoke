@@ -162,9 +162,9 @@ private:
 
   /** Check. */
   bool check_core(const Cfg& target, const Cfg& rewrite,
-             Cfg::id_type target_block, Cfg::id_type rewrite_block,
-             const CfgPath& p, const CfgPath& q,
-             const Invariant& assume, const Invariant& prove);
+                  Cfg::id_type target_block, Cfg::id_type rewrite_block,
+                  const CfgPath& p, const CfgPath& q,
+                  const Invariant& assume, const Invariant& prove);
 
 
 
@@ -252,7 +252,7 @@ private:
   bool nacl_;
 
   /** Used for interrupts. */
-  std::atomic<bool> stop_now_; 
+  std::atomic<bool> stop_now_;
   std::atomic<ArmMemory*> arm_interrupt_;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE

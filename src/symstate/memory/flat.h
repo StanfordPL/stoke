@@ -36,6 +36,14 @@ public:
     no_constraints_ = no_constraints;
   }
 
+  FlatMemory(FlatMemory& other) {
+    variable_ = other.variable_;
+    start_variable_ = other.start_variable_;
+    heap_ = other.heap_;
+    variable_up_to_date_ = other.variable_up_to_date_;
+    no_constraints_ = other.no_constraints_;
+  }
+
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);

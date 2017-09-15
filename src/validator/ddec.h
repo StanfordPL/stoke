@@ -75,6 +75,7 @@ private:
 
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);
+  bool discharge_exhaustive(DualAutomata& dual);
 
   /** Compute the initial invariant */
   ConjunctionInvariant* get_initial_invariant() const;

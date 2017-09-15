@@ -324,6 +324,30 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
   return dual;
 }
 
+bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
+  for (auto state : dual.get_reachable_states()) {
+    if (state == dual.exit_state())
+      continue;
+
+    Invariant* invariant = dual.get_invariant(state);
+    auto edges = dual.next_edges(state);
+    vector<pair<CfgPath, CfgPath>> path_pairs;
+    for (auto edge : edges) {
+      path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
+    }
+    bool ok = verify_exhaustive(target_, rewrite_,
+                                state.ts, state.rs,
+                                path_pairs, *invariant);
+    if (ok) {
+      cout << "VERIFIED EXHAUSTIVE FOR " << state << endl;
+    } else {
+      cout << "NOT EXHAUSTIVE FOR " << state << endl;
+      return false;
+    }
+  }
+
+  return true;
+}
 
 void DdecValidator::discharge_invariants(DualAutomata& dual) {
 
@@ -481,13 +505,17 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     cout << "Got some invariants!  Are they useful?" << endl;
     discharge_invariants(dual);
     dual.print_all();
+    cout << "Verifying exhaustive" << endl;
+    bool valid = discharge_exhaustive(dual);
+    if (!valid)
+      return false;
 
     /** Check if proof succeeds. */
     auto actual_final = dual.get_invariant(end_state);
     auto expected_final = get_final_invariant();
 
-    bool valid = check(target_, rewrite_, end_state.ts, end_state.rs,
-                       {}, {}, *actual_final, *expected_final);
+    valid = check(target_, rewrite_, end_state.ts, end_state.rs,
+                  {}, {}, *actual_final, *expected_final);
 
     return valid;
   };

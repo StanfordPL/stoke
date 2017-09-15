@@ -62,9 +62,11 @@ public:
 
   virtual x64asm::RegSet live_out_regs(State s) {
     if (s == start_state()) {
-      auto loc = Cfg::loc_type(s, 0);
-      return cfg_.live_ins(loc);
+      return cfg_.live_ins();
+    } else if (s == exit_state()) {
+      return cfg_.live_outs();
     } else {
+      assert(cfg_.num_instrs(s) > 0);
       auto loc = Cfg::loc_type(s, cfg_.num_instrs(s)-1);
       return cfg_.live_outs(loc);
     }
