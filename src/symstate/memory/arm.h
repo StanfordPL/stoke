@@ -38,6 +38,15 @@ public:
     start_variable_ = heap_;
     final_heap_ = SymArray::tmp_var(64, 8);
     finalize_ = false;
+    set_interrupt_var(NULL);
+  }
+
+  ArmMemory(ArmMemory& other) : solver_(other.solver_) {
+    heap_ = other.heap_;
+    start_variable_ = other.start_variable_;
+    final_heap_ = other.final_heap_;
+    finalize_ = other.finalize_;
+    set_interrupt_var(other.stop_now_);
   }
 
   SymArray get_end_variable() {
@@ -112,7 +121,7 @@ public:
   std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
     return access_list_;
   }
-  
+
   void set_interrupt_var(std::atomic<bool>* stop) {
     stop_now_ = stop;
   }

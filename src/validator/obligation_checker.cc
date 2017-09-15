@@ -184,7 +184,7 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
     build_circuit(cfg, P[i], is_jump(cfg, cfg_start, P, i), state, line_no, line_map);
 
   // Extract the conjunction
-  SymBool conjunction;
+  SymBool conjunction = SymBool::_true();
   for (auto it : state.constraints) {
     conjunction = conjunction & it;
   }
@@ -309,14 +309,14 @@ ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_t
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
   stop_now_.store(false);
 
-  if(alias_strategy_ == AliasStrategy::ARMS_RACE) {
+  if (alias_strategy_ == AliasStrategy::ARMS_RACE) {
     DEBUG_ARMS_RACE(cout << "===================================" << endl;)
-    
+
     DEBUG_ARMS_RACE(auto start_time = high_resolution_clock::now();)
     atomic<size_t> finished; // 0 -> nobody; 1 -> FLAT; 2 -> ARM
     finished.store(0);
 
-    if(oc1_ == NULL) {
+    if (oc1_ == NULL) {
       assert(oc2_ == NULL);
       z3_1_ = new Z3Solver();
       oc1_ = new ObligationChecker(*z3_1_);
@@ -334,9 +334,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     // for debug purposes
 
     auto run_oc = [&] (size_t index) {
-      DEBUG_ARMS_RACE(cout << "Thread " << index << " starting at " 
-                           << duration_cast<microseconds>(
-                             high_resolution_clock::now() - start_time).count() << endl;)
+      DEBUG_ARMS_RACE(cout << "Thread " << index << " starting at "
+                      << duration_cast<microseconds>(
+                        high_resolution_clock::now() - start_time).count() << endl;)
 
       auto& oc = index == 0 ? *oc1_ : *oc2_;
 
@@ -347,16 +347,16 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
         my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove);
         DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
-        DEBUG_ARMS_RACE(cout << "Index " << index << " took " << 
-                          duration_cast<microseconds>(t1-t0).count() << endl;)
+        DEBUG_ARMS_RACE(cout << "Index " << index << " took " <<
+                        duration_cast<microseconds>(t1-t0).count() << endl;)
         success = true;
-      } catch (std::exception e) { 
+      } catch (std::exception e) {
         // todo: record exception
       }
 
       size_t swap_zero = 0;
       bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
-      if(success && i_was_first) {
+      if (success && i_was_first) {
         DEBUG_ARMS_RACE(cout << "Index " << index << " was first!" << endl;)
         auto& other_oc = index == 0 ? *oc2_ : *oc1_;
         other_oc.interrupt();
@@ -369,9 +369,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
         this->ceg_tf_ = oc.checker_get_target_ceg_end();
         this->ceg_rf_ = oc.checker_get_rewrite_ceg_end();
       }
-      DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at " 
-                           << duration_cast<microseconds>(
-                             high_resolution_clock::now() - start_time).count() << endl;)
+      DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
+                      << duration_cast<microseconds>(
+                        high_resolution_clock::now() - start_time).count() << endl;)
 
 
     };
@@ -391,6 +391,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 
 
 bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+
+  stop_now_.store(false);
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -435,7 +437,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   }
 
   auto check_abort = [&]() -> bool {
-    if(stop_now_) {
+    if (stop_now_) {
       delete state_t.memory;
       delete state_r.memory;
       return true;
@@ -677,12 +679,18 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
     const Invariant& assume) {
 
-  init_mm();
+  cout << "================== verify exhaustive =======================" << endl;
+  cout << "Assuming " << assume << endl;
+  for (auto pair : path_pairs) {
+    cout << pair.first << " / " << pair.second << endl;
+    cout << "-------" << endl;
+  }
+
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
-  bool arm_model = alias_strategy_ == AliasStrategy::ARM;
+  bool arm_model = alias_strategy_ == AliasStrategy::ARM || alias_strategy_ == AliasStrategy::ARMS_RACE;
 
   // Step 2: Build circuits
 
@@ -699,22 +707,30 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     state_r.memory = new ArmMemory(solver_);
   }
 
-  auto original_target_mem = state_t.memory;
-  auto original_rewrite_mem = state_r.memory;
+  SymMemory* original_target_mem = state_t.memory;
+  SymMemory* original_rewrite_mem = state_r.memory;
 
   // Add given assumptions
   size_t target_invariant_lineno = 0;
   size_t rewrite_invariant_lineno = 0;
   auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
-  CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
+  cout << "Assuming " << assumption << endl;
   constraints.push_back(assumption);
 
   auto target_accesses = original_target_mem->get_access_list();
   auto rewrite_accesses = original_rewrite_mem->get_access_list();
 
+  /** collect accesses */
+  vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+
   for (auto& path_pair : path_pairs) {
-    state_t.memory = original_target_mem;
-    state_r.memory = original_rewrite_mem;
+    if (flat_model) {
+      state_t.memory = new FlatMemory(*static_cast<FlatMemory*>(original_target_mem));
+      state_r.memory = new FlatMemory(*static_cast<FlatMemory*>(original_rewrite_mem));
+    } else if (arm_model) {
+      state_t.memory = new ArmMemory(*static_cast<ArmMemory*>(original_target_mem));
+      state_r.memory = new ArmMemory(*static_cast<ArmMemory*>(original_rewrite_mem));
+    }
 
     auto P = path_pair.first;
     auto Q = path_pair.second;
@@ -727,13 +743,21 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     target_accesses.insert(new_target_accesses.begin(), new_target_accesses.end());
     rewrite_accesses.insert(new_rewrite_accesses.begin(), new_rewrite_accesses.end());
 
-    SymBool mem_constraint;
+    SymBool mem_constraint = SymBool::_true();
 
     if (arm_model) {
-      vector<SymBool> arm_constraints;
+      vector<SymBool> arm_constraints = { assumption };
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
       target_arm->generate_constraints(rewrite_arm, arm_constraints);
+
+      auto target_con = target_arm->get_constraints();
+      auto rewrite_con = rewrite_arm->get_constraints();
+      for (auto it : target_con)
+        mem_constraint = mem_constraint & it;
+      for (auto it : rewrite_con)
+        mem_constraint = mem_constraint & it;
+
       for (auto it : arm_constraints) {
         mem_constraint = mem_constraint & it;
       }
@@ -748,7 +772,18 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
         mem_constraint = mem_constraint & it;
     }
 
-    constraints.push_back(!(P_constraint & Q_constraint & mem_constraint));
+    cout << "[ex-check] P_constraint = " << P_constraint << endl;
+    cout << "[ex-check] Q_constraint = " << Q_constraint << endl;
+    cout << "[ex-check] Asserting !(P & Q)" << endl;
+    cout << "[ex-check] Asserting mem_constraint = " << mem_constraint << endl;
+    constraints.push_back(!(P_constraint & Q_constraint));
+    constraints.push_back(mem_constraint);
+
+    other_maps.push_back(state_t.memory->get_access_list());
+    other_maps.push_back(state_r.memory->get_access_list());
+
+    delete state_t.memory;
+    delete state_r.memory;
 
   }
 
@@ -757,6 +792,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   if (solver_.has_error()) {
     throw VALIDATOR_ERROR("solver: " + solver_.get_error());
   }
+  cout << "IS SAT: " << is_sat << endl;
 
   if (is_sat) {
     ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
@@ -764,23 +800,15 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
     bool ok = true;
     if (flat_model) {
-      auto target_flat = static_cast<FlatMemory*>(state_t.memory);
-      auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
-
-      vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
-      other_maps.push_back(target_flat->get_access_list());
-      other_maps.push_back(rewrite_flat->get_access_list());
+      auto target_flat = static_cast<FlatMemory*>(original_target_mem);
+      auto rewrite_flat = static_cast<FlatMemory*>(original_rewrite_mem);
       auto other_map = append_maps(other_maps);
 
       ok &= build_testcase_flat_memory(ceg_t_, target_flat->get_start_variable(), other_map);
       ok &= build_testcase_flat_memory(ceg_r_, rewrite_flat->get_start_variable(), other_map);
     } else if (arm_model) {
-      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
-      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
-
-      vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
-      other_maps.push_back(target_arm->get_access_list());
-      other_maps.push_back(rewrite_arm->get_access_list());
+      auto target_arm = static_cast<ArmMemory*>(original_target_mem);
+      auto rewrite_arm = static_cast<ArmMemory*>(original_rewrite_mem);
       auto other_map = append_maps(other_maps);
 
       ok &= build_testcase_flat_memory(ceg_t_, target_arm->get_start_variable(), other_map);
@@ -793,6 +821,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
       CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
     }
 
+    cout << "COUNTEREXAMPLE: " << endl << ceg_t_ << endl;
+
     CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
     CEG_DEBUG(cout << "TARGET START STATE" << endl;)
     CEG_DEBUG(cout << ceg_t_ << endl;)
@@ -802,22 +832,20 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     // TODO: check the counterexample
     have_ceg_ = true;
 
-    delete state_t.memory;
-    delete state_r.memory;
+    delete original_target_mem;
+    delete original_rewrite_mem;
 
-    stop_mm();
     return false;
 
   } else {
 
-    delete state_t.memory;
-    delete state_r.memory;
+    delete original_target_mem;
+    delete original_rewrite_mem;
 
     CEG_DEBUG(cout << "  (This case verified)" << endl;)
 
   }
 
-  stop_mm();
   return true;
 }
 

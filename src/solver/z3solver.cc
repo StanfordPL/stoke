@@ -56,7 +56,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   bool free_it = false;
 
   auto check_abort = [&]() -> bool {
-    if(stop_now_) {
+    if (stop_now_) {
       error_ = "External interrupt.";
       return true;
     } else
@@ -64,14 +64,14 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   };
 
   while (current->size() != 0) {
-    if(check_abort()) return false;
+    if (check_abort()) return false;
 
     new_constraints = new vector<SymBool>();
 
     ExprConverter ec(context_, *new_constraints);
 
     for (auto it : *current) {
-      if(check_abort()) return false;
+      if (check_abort()) return false;
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
       number_queries_++;
@@ -118,7 +118,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
     microseconds solver_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
-    if(check_abort()) return false;
+    if (check_abort()) return false;
     auto result = solver_.check();
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
     microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());

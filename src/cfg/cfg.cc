@@ -127,7 +127,6 @@ void Cfg::recompute_blocks() {
   for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
     // make every instruction its own basic block.
     boundaries_[i] = true;
-
     /*
     const auto& instr = get_code()[i];
     if (instr.is_label_defn()) {

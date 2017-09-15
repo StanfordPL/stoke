@@ -38,7 +38,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     all_accesses_.push_back(it);
   }
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // 1. For every pair of memory accesses, perform up to three queries to determine if they belong in the same cell
   DEBUG_ARM(cout << "==== ARM ON " << all_accesses_.size() << " ACCESSES " << endl;)
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
@@ -50,7 +50,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       auto check_same = !(a1.address == a2.address);
 
       initial_constraints.push_back(check_same);
-      if(*stop_now_) return;
+      if (stop_now_ && *stop_now_) return;
       bool is_same = !solver_.is_sat(initial_constraints);
       initial_constraints.pop_back();
       if (is_same) {
@@ -64,7 +64,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       assert(a1.size % 8 == 0);
       auto check_a1first = !(a1.address + SymBitVector::constant(64, a1.size/8) == a2.address);
       initial_constraints.push_back(check_a1first);
-      if(*stop_now_) return;
+      if (stop_now_ && *stop_now_) return;
       bool is_a1first = !solver_.is_sat(initial_constraints);
       initial_constraints.pop_back();
       if (is_a1first) {
@@ -78,7 +78,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       assert(a2.size % 8 == 0);
       auto check_a2first = !(a2.address + SymBitVector::constant(64, a2.size/8) == a1.address);
       initial_constraints.push_back(check_a2first);
-      if(*stop_now_) return;
+      if (stop_now_ && *stop_now_) return;
       bool is_a2first = !solver_.is_sat(initial_constraints);
       initial_constraints.pop_back();
       if (is_a2first) {
@@ -104,7 +104,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
   // 2. Enumerate cells
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // (a) initialize all accesses to be associated to no cell
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
     all_accesses_[i].cell = (size_t)(-1);
@@ -112,7 +112,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     all_accesses_[i].index = i;
   }
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // (b) work out the associations for each cell
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
     if (all_accesses_[i].cell != (size_t)(-1))
@@ -129,7 +129,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     recurse_cell_assignment(i);
   }
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // (c) calculate the size of each cell and the offsets of each access
   for (auto& cell : cells_) {
     cell.size = cell.tmp_max_offset - cell.tmp_min_offset;
@@ -140,7 +140,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     }
   }
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // (d) check for debugging
   DEBUG_ARM(
   for (auto& cell : cells_) {
@@ -163,7 +163,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   //      ... You don't write it unless you need to read from another cell.
   //      ... You don't read it unless another cell performed a write.
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   // to setup, let's "cache" the result of each cell.
   for (auto& cell : cells_) {
     cell.cache = SymBitVector();
@@ -191,7 +191,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     /** write all dirty cells back into the heap */
     bool update_required = false;
     for (auto& cell : cells_) {
-      if(*stop_now_)
+      if (stop_now_ && *stop_now_)
         break;
 
       if (cell.index == skip_index)
@@ -223,7 +223,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
       << " OFFSET: " << access.cell_offset << endl;
       debug_state();
     )
-    if(*stop_now_) return;
+    if (stop_now_ && *stop_now_) return;
 
     auto& cell = cells_[access.cell];
     bool& dirty = access.is_other ? cell.other_dirty : cell.dirty;
@@ -236,7 +236,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
     DEBUG_ARM(cout << "==================== UPDATING OUR CELL IF NEEDED : " << needs_update << endl;)
     /** if a dirty cell got written into the heap, read out this cell */
-    if(*stop_now_) return;
+    if (stop_now_ && *stop_now_) return;
     if (needs_update) {
       DEBUG_ARM(cout << "Heap updated with dirty cells flushed: " << heap << endl;)
       cache = SymBitVector();
@@ -248,7 +248,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     }
 
     /* perform the read/write on the cached copy; set dirty bit if needed. */
-    if(*stop_now_) return;
+    if (stop_now_ && *stop_now_) return;
     if (access.write) {
 
       SymBitVector prefix, suffix;
@@ -271,7 +271,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
     }
   }
 
-  if(*stop_now_) return;
+  if (stop_now_ && *stop_now_) return;
   flush_dirty();
   DEBUG_ARM(
     cout << "==================== FINAL: WRITE DIRTY CELLS BACK INTO HEAP" << endl;
@@ -291,7 +291,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
 
 void ArmMemory::recurse_cell_assignment(size_t access_index) {
 
-  if(*stop_now_)
+  if (stop_now_ && *stop_now_)
     return;
 
   auto& access = all_accesses_[access_index];
@@ -300,7 +300,7 @@ void ArmMemory::recurse_cell_assignment(size_t access_index) {
 
   for (size_t i = 0; i < all_accesses_.size(); ++i) {
 
-    if(*stop_now_)
+    if (stop_now_ && *stop_now_)
       return;
 
     // check if this access belongs to a cell
