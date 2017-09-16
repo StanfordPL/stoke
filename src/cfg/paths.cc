@@ -113,10 +113,10 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 }
 
 /** Find the path this testcase takes through the CFG. */
-bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
+bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc, Label* lbl) {
 
   auto code = cfg.get_code();
-  auto label = code[0].get_operand<x64asm::Label>(0);
+  auto label = lbl == NULL ? code[0].get_operand<x64asm::Label>(0) : *lbl;
   sandbox_->clear_callbacks();
   sandbox_->clear_inputs();
   sandbox_->insert_input(tc);

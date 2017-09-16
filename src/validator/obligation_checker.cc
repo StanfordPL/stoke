@@ -164,6 +164,79 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   return true;
 }
 
+CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg, 
+                                          Cfg::id_type block, 
+                                          const CpuState& state) {
+
+  auto code = cfg.get_code();
+
+  if(cfg.instr_begin(block)->is_label_defn()) {
+    auto instr = *cfg.instr_begin(block);
+    auto label = instr.get_operand<x64asm::Label>(0);
+    auto jump_instr = x64asm::Instruction(x64asm::JMP_LABEL_1, { label });
+    code.insert(code.begin(), jump_instr);
+
+  } else {
+    // add the block to the beginning of the code again, along with a
+    // fallthrough jump for protection
+    size_t num_added = cfg.num_instrs(block);
+    code.insert(code.begin(), cfg.instr_begin(block), cfg.instr_end(block));
+
+    // figure out the block's fallthrough path
+    if(cfg.has_fallthrough_target(block)) {
+
+      // add the fallthrough jump target
+      auto ft_block = cfg.fallthrough_target(block);
+      x64asm::Label fallthrough_target("._______TEMP___CHECK_CEG_PATH_FT_TARGET");
+      auto label_instr = x64asm::Instruction(x64asm::LABEL_DEFN, { fallthrough_target });
+      auto jump_instr = x64asm::Instruction(x64asm::JMP_LABEL_1, { fallthrough_target });
+      code.insert(code.begin() + num_added, jump_instr);
+      code.insert(code.begin() + cfg.get_index({ft_block,0}) + num_added, label_instr);
+    }
+  }
+
+  // make cfg and recompute
+  Cfg cfg2(code, cfg.def_ins(), cfg.live_outs());
+  cout << "Debugging new code: " << endl << cfg2.get_code() << endl;
+
+  // run sandbox
+  CfgPath p;
+  CfgPaths paths;
+  paths.learn_path(p, cfg2, state);
+
+  // now go through path and subtract one from all the entries
+  for(auto& elem : p) {
+    elem--;
+  }
+
+  return p;
+
+
+}
+
+bool ObligationChecker::exhaustive_check_counterexample(
+                                       const Cfg& target, const Cfg& rewrite, 
+                                       Cfg::id_type target_start, Cfg::id_type rewrite_start,
+                                       std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                                       const Invariant& assume,
+                                       const CpuState& ceg, const CpuState& ceg2) {
+
+  auto tp = check_ceg_path(target, target_start, ceg);
+  auto rp = check_ceg_path(rewrite, rewrite_start, ceg2);
+
+  cout << "COUNTEREXAMPLE TAKES PATHS:" << dec << endl;
+  cout << tp << endl;
+  cout << rp << endl;
+
+  // TODO: check assume
+  // TODO: check if path was already found
+
+  return true;
+
+}
+
+
+
 
 SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
     const SymState& state_orig,
@@ -821,7 +894,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
       CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
     }
 
-    cout << "COUNTEREXAMPLE: " << endl << ceg_t_ << endl;
+    cout << "TARGET COUNTEREXAMPLE: " << endl << ceg_t_ << endl;
+    cout << "REWRITE COUNTEREXAMPLE: " << endl << ceg_r_ << endl;
 
     CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
     CEG_DEBUG(cout << "TARGET START STATE" << endl;)
@@ -830,6 +904,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     CEG_DEBUG(cout << ceg_r_ << endl;)
 
     // TODO: check the counterexample
+    bool correct = exhaustive_check_counterexample(target, rewrite, 
+                  target_block, rewrite_block, path_pairs, assume, ceg_t_, ceg_r_);
     have_ceg_ = true;
 
     delete original_target_mem;

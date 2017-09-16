@@ -213,6 +213,15 @@ private:
   bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
                             const CfgPath& Q, const Invariant& assume,
                             const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
+  /** Check if a counterexample actually works for path exhaustion. */
+  CfgPath check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
+
+  bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite, 
+                                       Cfg::id_type target_start, Cfg::id_type rewrite_start,
+                                       std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                                       const Invariant& assume,
+                                       const CpuState& ceg, const CpuState& ceg2);
+
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);

@@ -62,7 +62,7 @@ public:
   /** Find the path this testcase takes through the CFG.
     Returns 'true' if the sandbox terminated normally.  Appends to whatever is
     passed in the 'path' variable. */
-  bool learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc);
+  bool learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc, x64asm::Label* lbl = NULL);
 
   /** Callback used for learning a path. */
   static void learn_path_callback(const StateCallbackData&, void*);
