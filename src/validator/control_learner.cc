@@ -610,12 +610,12 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   /////////////////
 
-  /*
   // along path from entry to main vectorized loop
   assignment[0] = 1;
+  /*
 
   // exit from main loop
-  assignment[4] = 0;
+  assignment[4] = 8;
   assignment[8] = 1;
   assignment[12] = 2;
   assignment[16] = 3;
@@ -638,8 +638,6 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   assignment[54] = 6;
   assignment[56] = 7;
   */
-
-
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   return callback(new_dual);
