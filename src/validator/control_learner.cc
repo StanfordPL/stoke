@@ -612,9 +612,9 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   // along path from entry to main vectorized loop
   assignment[0] = 1;
-  /*
 
   // exit from main loop
+  /*
   assignment[4] = 8;
   assignment[8] = 1;
   assignment[12] = 2;

@@ -72,7 +72,6 @@ public:
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << std::hex;
     bool not_first = false;
 
     for (auto term : terms_) {
@@ -81,7 +80,9 @@ public:
         os << " + ";
 
       if (term.coefficient != 0) {
+        os << std::hex;
         os << term;
+        os << std::dec;
       }
 
       not_first = true;
@@ -93,9 +94,10 @@ public:
       else
         os << "false";
     } else {
+      os << std::hex;
       os << " = 0x" << constant_;
+      os << std::dec;
     }
-    os << std::dec;
 
     return os;
   }
