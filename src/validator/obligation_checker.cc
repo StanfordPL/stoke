@@ -164,13 +164,13 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   return true;
 }
 
-CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg, 
-                                          Cfg::id_type block, 
-                                          const CpuState& state) {
+CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
+    Cfg::id_type block,
+    const CpuState& state) {
 
   auto code = cfg.get_code();
 
-  if(cfg.instr_begin(block)->is_label_defn()) {
+  if (cfg.instr_begin(block)->is_label_defn()) {
     auto instr = *cfg.instr_begin(block);
     auto label = instr.get_operand<x64asm::Label>(0);
     auto jump_instr = x64asm::Instruction(x64asm::JMP_LABEL_1, { label });
@@ -183,7 +183,7 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
     code.insert(code.begin(), cfg.instr_begin(block), cfg.instr_end(block));
 
     // figure out the block's fallthrough path
-    if(cfg.has_fallthrough_target(block)) {
+    if (cfg.has_fallthrough_target(block)) {
 
       // add the fallthrough jump target
       auto ft_block = cfg.fallthrough_target(block);
@@ -204,22 +204,23 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   CfgPaths paths;
   paths.learn_path(p, cfg2, state);
 
+  CfgPath transformed;
+  // TODO: make this work in general case
   // now go through path and subtract one from all the entries
-  for(auto& elem : p) {
-    elem--;
-  }
+  for (size_t i = 3; i < p.size(); ++i)
+    transformed.push_back(p[i]-2);
 
-  return p;
+  return transformed;
 
 
 }
 
 bool ObligationChecker::exhaustive_check_counterexample(
-                                       const Cfg& target, const Cfg& rewrite, 
-                                       Cfg::id_type target_start, Cfg::id_type rewrite_start,
-                                       std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                                       const Invariant& assume,
-                                       const CpuState& ceg, const CpuState& ceg2) {
+  const Cfg& target, const Cfg& rewrite,
+  Cfg::id_type target_start, Cfg::id_type rewrite_start,
+  std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+  const Invariant& assume,
+  const CpuState& ceg, const CpuState& ceg2) {
 
   auto tp = check_ceg_path(target, target_start, ceg);
   auto rp = check_ceg_path(rewrite, rewrite_start, ceg2);
@@ -783,6 +784,14 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   SymMemory* original_target_mem = state_t.memory;
   SymMemory* original_rewrite_mem = state_r.memory;
 
+  if (flat_model) {
+    state_t.memory = new FlatMemory(*static_cast<FlatMemory*>(original_target_mem));
+    state_r.memory = new FlatMemory(*static_cast<FlatMemory*>(original_rewrite_mem));
+  } else if (arm_model) {
+    state_t.memory = new ArmMemory(*static_cast<ArmMemory*>(original_target_mem));
+    state_r.memory = new ArmMemory(*static_cast<ArmMemory*>(original_rewrite_mem));
+  }
+
   // Add given assumptions
   size_t target_invariant_lineno = 0;
   size_t rewrite_invariant_lineno = 0;
@@ -790,11 +799,39 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   cout << "Assuming " << assumption << endl;
   constraints.push_back(assumption);
 
-  auto target_accesses = original_target_mem->get_access_list();
-  auto rewrite_accesses = original_rewrite_mem->get_access_list();
+  SymBool assume_mem_constraint = SymBool::_true();
+  if (arm_model) {
+    vector<SymBool> arm_constraints = { assumption };
+    auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+    auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+    target_arm->generate_constraints(rewrite_arm, arm_constraints);
+
+    auto target_con = target_arm->get_constraints();
+    auto rewrite_con = rewrite_arm->get_constraints();
+    for (auto it : target_con)
+      assume_mem_constraint = assume_mem_constraint & it;
+    for (auto it : rewrite_con)
+      assume_mem_constraint = assume_mem_constraint & it;
+
+  } else if (flat_model) {
+    auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+    auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+    auto target_con = target_flat->get_constraints();
+    auto rewrite_con = rewrite_flat->get_constraints();
+    for (auto it : target_con)
+      assume_mem_constraint = assume_mem_constraint & it;
+    for (auto it : rewrite_con)
+      assume_mem_constraint = assume_mem_constraint & it;
+  }
+
+  constraints.push_back(assume_mem_constraint);
+
 
   /** collect accesses */
   vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+  other_maps.push_back(state_t.memory->get_access_list());
+  other_maps.push_back(state_r.memory->get_access_list());
+
 
   for (auto& path_pair : path_pairs) {
     if (flat_model) {
@@ -811,15 +848,10 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     auto P_constraint = get_path_constraint(target, state_t, target_block, P);
     auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
 
-    auto new_target_accesses = state_t.memory->get_access_list();
-    auto new_rewrite_accesses = state_r.memory->get_access_list();
-    target_accesses.insert(new_target_accesses.begin(), new_target_accesses.end());
-    rewrite_accesses.insert(new_rewrite_accesses.begin(), new_rewrite_accesses.end());
-
     SymBool mem_constraint = SymBool::_true();
 
     if (arm_model) {
-      vector<SymBool> arm_constraints = { assumption };
+      vector<SymBool> arm_constraints = { assumption, assume_mem_constraint };
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
       target_arm->generate_constraints(rewrite_arm, arm_constraints);
@@ -831,9 +863,6 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
       for (auto it : rewrite_con)
         mem_constraint = mem_constraint & it;
 
-      for (auto it : arm_constraints) {
-        mem_constraint = mem_constraint & it;
-      }
     } else if (flat_model) {
       auto target_flat = static_cast<FlatMemory*>(state_t.memory);
       auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
@@ -904,8 +933,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     CEG_DEBUG(cout << ceg_r_ << endl;)
 
     // TODO: check the counterexample
-    bool correct = exhaustive_check_counterexample(target, rewrite, 
-                  target_block, rewrite_block, path_pairs, assume, ceg_t_, ceg_r_);
+    bool correct = exhaustive_check_counterexample(target, rewrite,
+                   target_block, rewrite_block, path_pairs, assume, ceg_t_, ceg_r_);
     have_ceg_ = true;
 
     delete original_target_mem;

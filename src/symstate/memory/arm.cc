@@ -133,11 +133,13 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   // (c) calculate the size of each cell and the offsets of each access
   for (auto& cell : cells_) {
     cell.size = cell.tmp_max_offset - cell.tmp_min_offset;
+    cell.address = cell.address + SymBitVector::constant(64, cell.tmp_min_offset);
 
     for (auto& access : all_accesses_) {
       if (access.cell == cell.index)
         access.cell_offset = access.cell_offset - cell.tmp_min_offset;
     }
+
   }
 
   if (stop_now_ && *stop_now_) return;

@@ -66,6 +66,8 @@ std::ostream& operator<<(std::ostream& os, const stoke::Variable& v) {
     size_t sub_size = v.size;
 
     os << v.operand;
+    if (v.operand.is_typical_memory())
+      os << dec << "(" << v.size*8 <<  ")";
 
     if (v.is_rewrite)
       os << "'";

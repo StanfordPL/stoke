@@ -216,7 +216,7 @@ private:
   /** Check if a counterexample actually works for path exhaustion. */
   CfgPath check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
 
-  bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite, 
+  bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_start, Cfg::id_type rewrite_start,
                                        std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
                                        const Invariant& assume,
