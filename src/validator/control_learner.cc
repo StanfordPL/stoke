@@ -508,7 +508,7 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
 
 IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& edge_indexer,
-                                        vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
+    vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
 
   auto dual_paths = dual.get_paths(dual.start_state(), dual.exit_state());
   IntMatrix final_matrix;
@@ -548,12 +548,12 @@ IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<Edg
       size_t index;
 
       for (auto blk : edge.te) {
-        if(blk == target_.get_exit())
+        if (blk == target_.get_exit())
           continue;
         temp_vect[target_block_to_index(blk)]--;
       }
       for (auto blk : edge.re) {
-        if(blk == rewrite_.get_exit())
+        if (blk == rewrite_.get_exit())
           continue;
         temp_vect[rewrite_block_to_index(blk)]--;
       }
@@ -605,7 +605,7 @@ IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<Edg
       }
     }
 
-    if(!found_inductive_path)
+    if (!found_inductive_path)
       continue;
 
     cout << "CONSTRAINT MATRIX" << endl;
@@ -637,7 +637,7 @@ IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<Edg
   }
 
   auto solnspace = final_matrix.solve_diophantine();
-  auto single_soln = final_matrix.solve_diophantine(final_vector); 
+  auto single_soln = final_matrix.solve_diophantine(final_vector);
   cout << "SOLUTION: " << endl;
   single_soln.print();
   auto ilp = find_best_solution_ilp(solnspace, single_soln, -1);

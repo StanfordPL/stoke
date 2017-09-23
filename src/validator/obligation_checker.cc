@@ -207,11 +207,11 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   auto trace = ba.learn_trace(state, true);
 
   cout << "Debugging trace" << endl;
-  for(auto it : trace) {
+  for (auto it : trace) {
     cout << it.first << endl;
   }
 
-  if(trace.size() < 2) {
+  if (trace.size() < 2) {
     // got to return a failure here
     CfgPath x;
     return x;
@@ -223,7 +223,7 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   trace.erase(trace.begin());
 
   size_t diff = trace[0].first - block;
-  for(auto& it : trace)
+  for (auto& it : trace)
     it.first -= diff;
 
   CfgPath transformed;
