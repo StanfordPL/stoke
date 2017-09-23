@@ -18,11 +18,12 @@
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
-#include "src/validator/obligation_checker.h"
+#include "src/validator/abstractions/block.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+#include "src/validator/obligation_checker.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/memory_manager.h"
 
@@ -200,15 +201,34 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   cout << "Debugging new code: " << endl << cfg2.get_code() << endl;
 
   // run sandbox
-  CfgPath p;
-  CfgPaths paths;
-  paths.learn_path(p, cfg2, state);
+  assert(sandbox_ != NULL);
+  Sandbox sb(*sandbox_);
+  BlockAbstraction ba(cfg2, sb);
+  auto trace = ba.learn_trace(state, true);
+
+  cout << "Debugging trace" << endl;
+  for(auto it : trace) {
+    cout << it.first << endl;
+  }
+
+  if(trace.size() < 2) {
+    // got to return a failure here
+    CfgPath x;
+    return x;
+  }
+
+
+  assert(trace.size() > 2);
+  trace.erase(trace.begin());
+  trace.erase(trace.begin());
+
+  size_t diff = trace[0].first - block;
+  for(auto& it : trace)
+    it.first -= diff;
 
   CfgPath transformed;
-  // TODO: make this work in general case
-  // now go through path and subtract one from all the entries
-  for (size_t i = 3; i < p.size(); ++i)
-    transformed.push_back(p[i]-2);
+  for (size_t i = 0; i < trace.size(); ++i)
+    transformed.push_back(trace[i].first);
 
   return transformed;
 
@@ -763,8 +783,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
-  bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
-  bool arm_model = alias_strategy_ == AliasStrategy::ARM || alias_strategy_ == AliasStrategy::ARMS_RACE;
+  bool flat_model = alias_strategy_ == AliasStrategy::FLAT || alias_strategy_ == AliasStrategy::ARMS_RACE;
+  bool arm_model = alias_strategy_ == AliasStrategy::ARM;// || alias_strategy_ == AliasStrategy::ARMS_RACE;
 
   // Step 2: Build circuits
 
@@ -842,18 +862,32 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
       state_r.memory = new ArmMemory(*static_cast<ArmMemory*>(original_rewrite_mem));
     }
 
+    // get initial assumption (again) (need to rework each time due to arm)
+    vector<SymBool> arm_constraints;
+    /*
+    size_t target_invariant_lineno = 0;
+    size_t rewrite_invariant_lineno = 0;
+    auto assumption_redo = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
+    cout << "Assuming " << assumption_redo << endl;
+    arm_constraints.push_back(assumption_redo);
+    */
+    //constraints.push_back(assumption);
+
     auto P = path_pair.first;
     auto Q = path_pair.second;
 
+    cout << "Getting path constraints..." << endl;
     auto P_constraint = get_path_constraint(target, state_t, target_block, P);
     auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
 
     SymBool mem_constraint = SymBool::_true();
 
     if (arm_model) {
-      vector<SymBool> arm_constraints = { assumption, assume_mem_constraint };
+      //vector<SymBool> arm_constraints = { assumption, assume_mem_constraint };
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+
+      cout << "Generating constraints..." << endl;
       target_arm->generate_constraints(rewrite_arm, arm_constraints);
 
       auto target_con = target_arm->get_constraints();

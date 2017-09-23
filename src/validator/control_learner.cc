@@ -507,6 +507,145 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 }
 
 
+IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& edge_indexer,
+                                        vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
+
+  auto dual_paths = dual.get_paths(dual.start_state(), dual.exit_state());
+  IntMatrix final_matrix;
+  IntVector final_vector;
+
+  cout << "Columns" << endl;
+  for (size_t i = 0; i < edge_indexer.count(); ++i) {
+    edge_indexer.reverse(i).print(cout) << endl;
+  }
+
+  /** Augment the matrix for each path */
+  for (auto path : dual_paths) {
+    IntMatrix temp_matrix(total_block_indexes(), edge_indexer.count());
+    IntVector temp_vect(total_block_indexes());
+
+    /** Initialize the vector with entry blocks and constant term. */
+    temp_vect[0] = -1;
+    temp_vect[target_block_to_index(target_.get_entry())] = -1;
+    temp_vect[rewrite_block_to_index(rewrite_.get_entry())] = -1;
+
+
+    bool found_inductive_path = false;
+
+    /** Process the edges along the path. */
+    for (auto edge : path) {
+      cout << "Edge: ";
+      for (auto it : edge.te)
+        cout << it << " ";
+      cout << " ; ";
+      for (auto it : edge.re)
+        cout << it << " ";
+      cout << endl;
+
+
+      auto start = edge.from;
+      auto end = edge.to;
+      size_t index;
+
+      for (auto blk : edge.te) {
+        if(blk == target_.get_exit())
+          continue;
+        temp_vect[target_block_to_index(blk)]--;
+      }
+      for (auto blk : edge.re) {
+        if(blk == rewrite_.get_exit())
+          continue;
+        temp_vect[rewrite_block_to_index(blk)]--;
+      }
+
+      auto inductive_start_paths = dual.get_inductive_edges(start);
+      auto inductive_end_paths = dual.get_inductive_edges(end);
+
+      for (auto start_ind : inductive_start_paths) {
+        found_inductive_path = true;
+        /*
+        cout << "StartInd: ";
+        for (auto it : start_ind.te)
+          cout << it << " ";
+        cout << " ; ";
+        for (auto it : start_ind.re)
+          cout << it << " ";
+        cout << endl;
+        */
+
+        EdgeVariable ev_target(edge, start_ind, false);
+        EdgeVariable ev_rewrite(edge, start_ind, true);
+        for (auto blk : simplify(start_ind.te)) {
+          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
+        }
+        for (auto blk : simplify(start_ind.re)) {
+          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
+        }
+      }
+      for (auto end_ind : inductive_end_paths) {
+        found_inductive_path = true;
+        /*
+        cout << "EndInd: ";
+        for (auto it : end_ind.te)
+          cout << it << " ";
+        cout << " ; ";
+        for (auto it : end_ind.re)
+          cout << it << " ";
+        cout << endl;
+        */
+
+        EdgeVariable ev_target(edge, end_ind, false);
+        EdgeVariable ev_rewrite(edge, end_ind, true);
+        for (auto blk : simplify(end_ind.te)) {
+          temp_matrix[target_block_to_index(blk)][edge_indexer[ev_target]]++;
+        }
+        for (auto blk : simplify(end_ind.re)) {
+          temp_matrix[rewrite_block_to_index(blk)][edge_indexer[ev_rewrite]]++;
+        }
+      }
+    }
+
+    if(!found_inductive_path)
+      continue;
+
+    cout << "CONSTRAINT MATRIX" << endl;
+    kernel_generators_.print();
+    cout << "Matrix" << endl;
+    temp_matrix.print();
+    cout << "Vector" << endl;
+    temp_vect.print();
+
+    temp_matrix = kernel_generators_*temp_matrix;
+    temp_vect = kernel_generators_*temp_vect;
+
+    cout << "New Matrix" << endl;
+    temp_matrix.print();
+    cout << "New Vector" << endl;
+    temp_vect.print();
+
+    for (size_t i = 0; i < temp_vect.size(); ++i) {
+      if (temp_vect[i]) {
+        print_basis_vector(kernel_generators_[i]);
+      }
+    }
+
+
+    for (auto row : temp_matrix)
+      final_matrix.push_back(row);
+    for (auto entry : temp_vect)
+      final_vector.push_back(entry);
+  }
+
+  auto solnspace = final_matrix.solve_diophantine();
+  auto single_soln = final_matrix.solve_diophantine(final_vector); 
+  cout << "SOLUTION: " << endl;
+  single_soln.print();
+  auto ilp = find_best_solution_ilp(solnspace, single_soln, -1);
+  cout << "ILP SOLUTION: " << endl;
+  ilp.print();
+
+  return ilp;
+}
 
 bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata&)>& callback) {
 
@@ -563,10 +702,6 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     edge_indexer.reverse(i).print(cout) << endl;
   }
 
-  IntVector assignment;
-  for (size_t i = 0; i < edge_indexer.count(); ++i) {
-    assignment.push_back(0);
-  }
 
   /*
   /////////////////
@@ -610,19 +745,24 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   /////////////////
 
+  /*
+  IntVector assignment;
+  for (size_t i = 0; i < edge_indexer.count(); ++i) {
+    assignment.push_back(0);
+  }
+
   // along path from entry to main vectorized loop
   assignment[0] = 1;
 
   // exit from main loop
-  /*
-  assignment[4] = 8;
-  assignment[8] = 1;
-  assignment[12] = 2;
-  assignment[16] = 3;
-  assignment[20] = 4;
-  assignment[24] = 5;
-  assignment[28] = 6;
-  assignment[32] = 7;
+  assignment[4] = 7;
+  assignment[8] = 0;
+  assignment[12] = 1;
+  assignment[16] = 2;
+  assignment[20] = 3;
+  assignment[24] = 4;
+  assignment[28] = 5;
+  assignment[32] = 6;
 
   // path from alignment loop to main loop
   assignment[68] = 1;
@@ -638,6 +778,9 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   assignment[54] = 6;
   assignment[56] = 7;
   */
+
+  auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list);
+  assignment[0]++;
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   return callback(new_dual);

@@ -501,23 +501,32 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     cout << "Inv " << *rewrite_inv << " held for " << good << " states and failed for " << bad << endl;
 
 
-    dual.print_all();
     cout << "Got some invariants!  Are they useful?" << endl;
+
+    // TODO: start loop here
+    // bool valid = false;
+    // while(!valid) { }
+    dual.print_all();
     discharge_invariants(dual);
     dual.print_all();
-    cout << "Verifying exhaustive" << endl;
-    bool valid = discharge_exhaustive(dual);
-    if (!valid)
-      return false;
 
     /** Check if proof succeeds. */
     auto actual_final = dual.get_invariant(end_state);
     auto expected_final = get_final_invariant();
 
-    valid = check(target_, rewrite_, end_state.ts, end_state.rs,
-                  {}, {}, *actual_final, *expected_final);
+    bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
+                          {}, {}, *actual_final, *expected_final);
+    if(!final_ok)
+      return false;
 
-    return valid;
+    cout << "Verifying exhaustive" << endl;
+    bool exhaustive = discharge_exhaustive(dual);
+    if (!exhaustive)
+      return false;
+
+    // TODO: update dual if discharge_exhaustive failed
+
+    return true;
   };
 
   function<bool (vector<CfgPath>&, vector<CfgPath>&)> inductive_paths_callback =
