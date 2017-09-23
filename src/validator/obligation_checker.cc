@@ -18,7 +18,6 @@
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
-#include "src/validator/abstractions/block.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
@@ -165,7 +164,7 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   return true;
 }
 
-CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
+Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
     Cfg::id_type block,
     const CpuState& state) {
 
@@ -206,14 +205,13 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   BlockAbstraction ba(cfg2, sb);
   auto trace = ba.learn_trace(state, true);
 
-  cout << "Debugging trace" << endl;
   for (auto it : trace) {
     cout << it.first << endl;
   }
 
   if (trace.size() < 2) {
     // got to return a failure here
-    CfgPath x;
+    Abstraction::FullTrace x;
     return x;
   }
 
@@ -226,12 +224,7 @@ CfgPath ObligationChecker::check_ceg_path(const Cfg& cfg,
   for (auto& it : trace)
     it.first -= diff;
 
-  CfgPath transformed;
-  for (size_t i = 0; i < trace.size(); ++i)
-    transformed.push_back(trace[i].first);
-
-  return transformed;
-
+  return trace;
 
 }
 
@@ -242,18 +235,39 @@ bool ObligationChecker::exhaustive_check_counterexample(
   const Invariant& assume,
   const CpuState& ceg, const CpuState& ceg2) {
 
-  auto tp = check_ceg_path(target, target_start, ceg);
-  auto rp = check_ceg_path(rewrite, rewrite_start, ceg2);
+  auto target_trace = check_ceg_path(target, target_start, ceg);
+  auto rewrite_trace = check_ceg_path(rewrite, rewrite_start, ceg2);
+
+  // Make sure that we have a path
+  if(target_trace.size() == 0 || rewrite_trace.size() == 0)
+    return false;
+
+  // The counterexample has to pass the invariant.
+  if (!assume.check(ceg, ceg2)) {
+    CEG_DEBUG(cout << "  (Counterexample does not meet assumed invariant.)" << endl;);
+    return false;
+  }
+
+  // Check if path was already found
+  auto tp = Abstraction::project_states(target_trace);
+  auto rp = Abstraction::project_states(rewrite_trace);
 
   cout << "COUNTEREXAMPLE TAKES PATHS:" << dec << endl;
   cout << tp << endl;
   cout << rp << endl;
 
-  // TODO: check assume
-  // TODO: check if path was already found
+  for(auto pair : path_pairs) {
+    if(CfgPaths::is_prefix(pair.first, tp) &&
+       CfgPaths::is_prefix(pair.second, rp)) {
+      return false;
+    }
+  }
+
+  // Save our data
+  exhaustive_ceg_trace_target_ = target_trace;
+  exhaustive_ceg_trace_rewrite_ = rewrite_trace;
 
   return true;
-
 }
 
 
@@ -969,7 +983,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     // TODO: check the counterexample
     bool correct = exhaustive_check_counterexample(target, rewrite,
                    target_block, rewrite_block, path_pairs, assume, ceg_t_, ceg_r_);
-    have_ceg_ = true;
+    have_ceg_ = correct;
 
     delete original_target_mem;
     delete original_rewrite_mem;

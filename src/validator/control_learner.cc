@@ -780,7 +780,6 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   */
 
   auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list);
-  assignment[0]++;
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   return callback(new_dual);

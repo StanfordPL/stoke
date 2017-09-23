@@ -151,6 +151,15 @@ public:
     return result;
   }
 
+  /** Return total number of edges. */
+  size_t count_edges() {
+    size_t count = 0;
+    for(auto it : get_reachable_states()) {
+      count += next_edges(it).size();
+    }
+    return count;
+  }
+
   /** Get edges on each path from start to end. */
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 

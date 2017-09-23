@@ -19,6 +19,7 @@
 #include <vector>
 
 
+#include "src/cfg/paths.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
 
@@ -31,6 +32,14 @@ public:
   typedef uint64_t State;
   typedef std::vector<State> Path;
   typedef std::vector<std::pair<State, CpuState>> FullTrace;
+
+  static CfgPath project_states(FullTrace& trace) {
+    CfgPath p;
+    for(auto s : trace) {
+      p.push_back(s.first);
+    }
+    return p;
+  }
 
   Abstraction(const Cfg& cfg, const Sandbox& sandbox) : cfg_(cfg), sandbox_(sandbox) { }
 
