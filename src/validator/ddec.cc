@@ -516,7 +516,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
                           {}, {}, *actual_final, *expected_final);
-    if(!final_ok)
+    if (!final_ok)
       return false;
 
     cout << "Verifying exhaustive" << endl;
