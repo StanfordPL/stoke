@@ -92,8 +92,7 @@ public:
   virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState& tc, bool include_start) {
     auto code = cfg_.get_code();
     auto label = cfg_.get_function().get_leading_label();
-    sandbox_.clear_callbacks();
-    sandbox_.clear_inputs();
+    sandbox_.reset();
     sandbox_.insert_function(cfg_);
     sandbox_.insert_input(tc);
     sandbox_.set_entrypoint(label);

@@ -128,6 +128,9 @@ private:
                                      Indexer<EdgeVariable>& indexer,
                                      IntVector vars,
                                      std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
+
+  IntVector assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& indexer,
+                             std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);
