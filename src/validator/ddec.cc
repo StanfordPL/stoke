@@ -324,29 +324,64 @@ DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, 
   return dual;
 }
 
+bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State state) {
+  Invariant* invariant = dual.get_invariant(state);
+  auto edges = dual.next_edges(state);
+  vector<pair<CfgPath, CfgPath>> path_pairs;
+  for (auto edge : edges) {
+    path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
+  }
+  bool ok = verify_exhaustive(target_, rewrite_,
+                              state.ts, state.rs,
+                              path_pairs, *invariant);
+  if (ok) {
+    cout << "VERIFIED EXHAUSTIVE FOR " << state << endl;
+    return true;
+  } else {
+    cout << "NOT EXHAUSTIVE FOR " << state << endl;
+    return false;
+  }
+}
+
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
+  bool okay = true;
   for (auto state : dual.get_reachable_states()) {
     if (state == dual.exit_state())
       continue;
+    
+    bool try_again = true;
+    bool first = true;
+    CpuState ceg;
 
-    Invariant* invariant = dual.get_invariant(state);
-    auto edges = dual.next_edges(state);
-    vector<pair<CfgPath, CfgPath>> path_pairs;
-    for (auto edge : edges) {
-      path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
-    }
-    bool ok = verify_exhaustive(target_, rewrite_,
-                                state.ts, state.rs,
-                                path_pairs, *invariant);
-    if (ok) {
-      cout << "VERIFIED EXHAUSTIVE FOR " << state << endl;
-    } else {
-      cout << "NOT EXHAUSTIVE FOR " << state << endl;
-      return false;
+    while(try_again) {
+      try_again = false;
+      bool current_okay = discharge_exhaustive(dual, state);
+      okay &= current_okay;
+
+      // Add a path into the dual that was previously missing
+      if(!current_okay && checker_has_ceg() && (checker_get_target_ceg() != ceg || first)) {
+        try_again = true;
+        ceg = checker_get_target_ceg();
+
+        // TODO: shorten the paths considering cutpoints ugh
+        auto tt = checker_get_target_exhaustive_ceg();
+        auto rt = checker_get_rewrite_exhaustive_ceg();
+
+        tt.erase(tt.begin());
+        rt.erase(rt.begin());
+        tt.erase(tt.end()-1);
+        rt.erase(rt.end()-1);
+
+        auto tp = Abstraction::project_states(tt);
+        auto rp = Abstraction::project_states(rt);
+        DualAutomata::Edge edge(state, tp, rp);
+        dual.add_edge(edge);
+      }
+      first = false;
     }
   }
 
-  return true;
+  return okay;
 }
 
 void DdecValidator::discharge_invariants(DualAutomata& dual) {
@@ -504,28 +539,39 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     cout << "Got some invariants!  Are they useful?" << endl;
 
     // TODO: start loop here
-    // bool valid = false;
-    // while(!valid) { }
+    bool valid = false;
+    while(!valid) { 
+      dual.print_all();
+      discharge_invariants(dual);
+      dual.print_all();
+
+      /** Check if proof succeeds. */
+      auto actual_final = dual.get_invariant(end_state);
+      auto expected_final = get_final_invariant();
+
+      bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
+                            {}, {}, *actual_final, *expected_final);
+      if (!final_ok) {
+        cout << "Could not complete final proof step." << endl;
+        cout << "Maybe DDEC missed an important invariant?" << endl;
+        return false;
+      }
+
+      cout << "Verifying exhaustive" << endl;
+      auto old_edge_count = dual.count_edges();
+      valid = discharge_exhaustive(dual);
+      if(!valid) {
+        if(old_edge_count == dual.count_edges()) {
+          cout << "Couldn't verify exhaustive nor find counterexample (bug?)." << endl;
+          return false;
+        } else {
+          cout << "Couldn't verify exhaustive; going to try again." << endl;
+        }
+      }
+    }
+
+    cout << " ===== PROOF COMPLETE ===== " << endl;
     dual.print_all();
-    discharge_invariants(dual);
-    dual.print_all();
-
-    /** Check if proof succeeds. */
-    auto actual_final = dual.get_invariant(end_state);
-    auto expected_final = get_final_invariant();
-
-    bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-                          {}, {}, *actual_final, *expected_final);
-    if (!final_ok)
-      return false;
-
-    cout << "Verifying exhaustive" << endl;
-    bool exhaustive = discharge_exhaustive(dual);
-    if (!exhaustive)
-      return false;
-
-    // TODO: update dual if discharge_exhaustive failed
-
     return true;
   };
 

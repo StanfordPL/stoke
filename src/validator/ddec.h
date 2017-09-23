@@ -75,7 +75,12 @@ private:
 
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);
+  /** Discharge exhaustive for all states.  Ensures that the dual automata has all the
+   paths it needs to be complete. Also updates the automata with extra edges from counterexamples
+   if it fails (and can do so). */
   bool discharge_exhaustive(DualAutomata& dual);
+  /** Discharge exhaustive for a particular state */
+  bool discharge_exhaustive(DualAutomata& dual, DualAutomata::State);
 
   /** Compute the initial invariant */
   ConjunctionInvariant* get_initial_invariant() const;
