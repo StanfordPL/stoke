@@ -154,7 +154,7 @@ public:
   /** Return total number of edges. */
   size_t count_edges() {
     size_t count = 0;
-    for(auto it : get_reachable_states()) {
+    for (auto it : get_reachable_states()) {
       count += next_edges(it).size();
     }
     return count;

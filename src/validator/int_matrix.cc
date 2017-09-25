@@ -27,6 +27,8 @@
 using namespace std;
 using namespace stoke;
 
+// TODO: use temporary files for SAGE
+
 
 IntVector IntMatrix::operator*(IntVector& vect) const {
   auto& matrix = *this;

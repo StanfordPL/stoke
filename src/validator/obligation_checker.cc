@@ -219,6 +219,7 @@ Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
   assert(trace.size() > 2);
   trace.erase(trace.begin());
   trace.erase(trace.begin());
+  trace.erase(trace.begin());
 
   size_t diff = trace[0].first - block;
   for (auto& it : trace)
@@ -239,7 +240,7 @@ bool ObligationChecker::exhaustive_check_counterexample(
   auto rewrite_trace = check_ceg_path(rewrite, rewrite_start, ceg2);
 
   // Make sure that we have a path
-  if(target_trace.size() == 0 || rewrite_trace.size() == 0)
+  if (target_trace.size() == 0 || rewrite_trace.size() == 0)
     return false;
 
   // The counterexample has to pass the invariant.
@@ -256,9 +257,9 @@ bool ObligationChecker::exhaustive_check_counterexample(
   cout << tp << endl;
   cout << rp << endl;
 
-  for(auto pair : path_pairs) {
-    if(CfgPaths::is_prefix(pair.first, tp) &&
-       CfgPaths::is_prefix(pair.second, rp)) {
+  for (auto pair : path_pairs) {
+    if (CfgPaths::is_prefix(pair.first, tp) &&
+        CfgPaths::is_prefix(pair.second, rp)) {
       return false;
     }
   }

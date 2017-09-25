@@ -348,18 +348,18 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
   for (auto state : dual.get_reachable_states()) {
     if (state == dual.exit_state())
       continue;
-    
+
     bool try_again = true;
     bool first = true;
     CpuState ceg;
 
-    while(try_again) {
+    while (try_again) {
       try_again = false;
       bool current_okay = discharge_exhaustive(dual, state);
       okay &= current_okay;
 
       // Add a path into the dual that was previously missing
-      if(!current_okay && checker_has_ceg() && (checker_get_target_ceg() != ceg || first)) {
+      if (!current_okay && checker_has_ceg() && (checker_get_target_ceg() != ceg || first)) {
         try_again = true;
         ceg = checker_get_target_ceg();
 
@@ -540,7 +540,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     // TODO: start loop here
     bool valid = false;
-    while(!valid) { 
+    while (!valid) {
       dual.print_all();
       discharge_invariants(dual);
       dual.print_all();
@@ -560,8 +560,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "Verifying exhaustive" << endl;
       auto old_edge_count = dual.count_edges();
       valid = discharge_exhaustive(dual);
-      if(!valid) {
-        if(old_edge_count == dual.count_edges()) {
+      if (!valid) {
+        if (old_edge_count == dual.count_edges()) {
           cout << "Couldn't verify exhaustive nor find counterexample (bug?)." << endl;
           return false;
         } else {
