@@ -35,7 +35,7 @@ public:
 
   static CfgPath project_states(FullTrace& trace) {
     CfgPath p;
-    for(auto s : trace) {
+    for (auto s : trace) {
       p.push_back(s.first);
     }
     return p;
