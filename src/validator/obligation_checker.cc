@@ -168,71 +168,30 @@ Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
     Cfg::id_type block,
     const CpuState& state) {
 
-  auto code = cfg.get_code();
-
-  if (cfg.instr_begin(block)->is_label_defn()) {
-    auto instr = *cfg.instr_begin(block);
-    auto label = instr.get_operand<x64asm::Label>(0);
-    auto jump_instr = x64asm::Instruction(x64asm::JMP_LABEL_1, { label });
-    code.insert(code.begin(), jump_instr);
-
-  } else {
-    // add the block to the beginning of the code again, along with a
-    // fallthrough jump for protection
-    size_t num_added = cfg.num_instrs(block);
-    code.insert(code.begin(), cfg.instr_begin(block), cfg.instr_end(block));
-
-    // figure out the block's fallthrough path
-    if (cfg.has_fallthrough_target(block)) {
-
-      // add the fallthrough jump target
-      auto ft_block = cfg.fallthrough_target(block);
-      x64asm::Label fallthrough_target("._______TEMP___CHECK_CEG_PATH_FT_TARGET");
-      auto label_instr = x64asm::Instruction(x64asm::LABEL_DEFN, { fallthrough_target });
-      auto jump_instr = x64asm::Instruction(x64asm::JMP_LABEL_1, { fallthrough_target });
-      code.insert(code.begin() + num_added, jump_instr);
-      code.insert(code.begin() + cfg.get_index({ft_block,0}) + num_added, label_instr);
-    }
+  auto last_instr_index = cfg.get_index({block, cfg.num_instrs(block)-1});
+  auto last_instr = cfg.get_code()[last_instr_index];
+  if(!last_instr.is_any_jump()) {
+    last_instr_index++;
   }
-
-  // make cfg and recompute
-  Cfg cfg2(code, cfg.def_ins(), cfg.live_outs());
-  cout << "Debugging new code: " << endl << cfg2.get_code() << endl;
 
   // run sandbox
   assert(sandbox_ != NULL);
   Sandbox sb(*sandbox_);
-  BlockAbstraction ba(cfg2, sb);
-  auto trace = ba.learn_trace(state, true);
+  BlockAbstraction ba(cfg, sb);
+  auto trace = ba.learn_trace(state, false, true, last_instr_index);
 
+  cout << "DEBUGGING TRACE" << endl;
   for (auto it : trace) {
     cout << it.first << endl;
   }
 
-  if (trace.size() < 2) {
-    // got to return a failure here
-    Abstraction::FullTrace x;
-    return x;
-  }
-
-
-  assert(trace.size() > 2);
-  trace.erase(trace.begin());
-  trace.erase(trace.begin());
-  trace.erase(trace.begin());
-
-  size_t diff = trace[0].first - block;
-  for (auto& it : trace)
-    it.first -= diff;
-
   return trace;
-
 }
 
 bool ObligationChecker::exhaustive_check_counterexample(
   const Cfg& target, const Cfg& rewrite,
   Cfg::id_type target_start, Cfg::id_type rewrite_start,
-  std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+  const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
   const Invariant& assume,
   const CpuState& ceg, const CpuState& ceg2) {
 
@@ -257,12 +216,13 @@ bool ObligationChecker::exhaustive_check_counterexample(
   cout << tp << endl;
   cout << rp << endl;
 
+  /* (doesn't seem to work right)
   for (auto pair : path_pairs) {
     if (CfgPaths::is_prefix(pair.first, tp) &&
         CfgPaths::is_prefix(pair.second, rp)) {
       return false;
     }
-  }
+  }*/
 
   // Save our data
   exhaustive_ceg_trace_target_ = target_trace;
@@ -785,7 +745,7 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 
 bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     Cfg::id_type target_block, Cfg::id_type rewrite_block,
-    std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+    const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
     const Invariant& assume) {
 
   cout << "================== verify exhaustive =======================" << endl;
@@ -879,14 +839,6 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
     // get initial assumption (again) (need to rework each time due to arm)
     vector<SymBool> arm_constraints;
-    /*
-    size_t target_invariant_lineno = 0;
-    size_t rewrite_invariant_lineno = 0;
-    auto assumption_redo = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
-    cout << "Assuming " << assumption_redo << endl;
-    arm_constraints.push_back(assumption_redo);
-    */
-    //constraints.push_back(assumption);
 
     auto P = path_pair.first;
     auto Q = path_pair.second;

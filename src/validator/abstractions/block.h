@@ -89,13 +89,17 @@ public:
   }
 
   /** Extract a sequence of states from a test case. */
-  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState& tc, bool include_start) {
+  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState& tc, bool include_start, bool include_end, size_t start_index = -1) {
     auto code = cfg_.get_code();
     auto label = cfg_.get_function().get_leading_label();
     sandbox_.reset();
     sandbox_.insert_function(cfg_);
     sandbox_.insert_input(tc);
-    sandbox_.set_entrypoint(label);
+    if(start_index == (uint64_t)(-1))
+      sandbox_.set_entrypoint(label);
+    else
+      sandbox_.set_entrypoint(label, start_index);
+
 
     std::vector<std::pair<State, CpuState>> trace;
     std::vector<TraceCallbackInfo*> to_delete;
@@ -124,6 +128,12 @@ public:
     }
 
     sandbox_.run();
+
+    if(include_end)
+      trace.push_back(std::pair<State,CpuState>(exit_state(), *sandbox_.get_output(0)));
+
+    // debug output
+    // std::cout << *sandbox_.get_result(0) << std::endl;
 
     for (auto it : to_delete)
       delete it;

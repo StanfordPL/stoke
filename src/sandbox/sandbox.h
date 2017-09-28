@@ -178,6 +178,14 @@ public:
     assert(contains_function(l));
     main_fxn_ = l;
     entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
+    instr_offset_ = -1;
+    return *this;
+  }
+  /** Designates a function and offset as the entrypoint. */
+  Sandbox& set_entrypoint(const x64asm::Label& l, size_t instr_offset) {
+    set_entrypoint(l);
+    instr_offset_ = instr_offset;
+    recompile();
     return *this;
   }
   /** Run a main function for just one input. */
@@ -300,6 +308,11 @@ private:
   uint64_t harness_rsp_;
   /** STOKE's %rsp */
   uint64_t stoke_rsp_;
+
+  /** Index of instruction where execution starts */
+  uint64_t instr_offset_;
+  /** Offset of instruction address from beginning of buffer where execution start */
+  uint64_t start_address_offset_;
 
   /** Pointer to the current function buffer */
   x64asm::Function* fxn_;

@@ -696,90 +696,16 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     }
   }
 
+  auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list);
+  assignment[2]+=2;
+  assignment[3]+=2;
+
   cout << "Columns" << endl;
   for (size_t i = 0; i < edge_indexer.count(); ++i) {
     cout << i << ": ";
     edge_indexer.reverse(i).print(cout) << endl;
+    cout << " ASSIGN " << assignment[i] << endl;
   }
-
-
-  /*
-  /////////////////
-
-  BlockAbstraction target_abs(target_, sandbox_);
-  BlockAbstraction rewrite_abs(rewrite_, sandbox_);
-
-  for(size_t i = 0; i < sandbox_.size(); ++i) {
-    auto target_ft = target_abs.learn_trace(*sandbox_.get_input(i), false);
-    auto rewrite_ft = rewrite_abs.learn_trace(*sandbox_.get_input(i), false);
-    target_ft.push_back(target_ft[target_ft.size()-1]);
-    rewrite_ft.push_back(rewrite_ft[rewrite_ft.size()-1]);
-    target_ft[target_ft.size()-1].first = target_.get_exit();
-    rewrite_ft[rewrite_ft.size()-1].first = rewrite_.get_exit();
-
-    std::map<size_t, std::set<size_t>> outputs;
-
-    // bookkeeping
-    std::map<size_t, size_t> counts_so_far;
-
-    bool success = dfs_find_path_vars(dual,
-                                      outputs,
-                                      counts_so_far,
-                                      edge_indexer,
-                                      dual.start_state(),
-                                      DualAutomata::Edge(),
-                                      false, false, false, false,
-                                      target_ft, rewrite_ft);
-
-    cout << "TC " << i << " Success: " << success << endl;
-    for(auto it : outputs) {
-      cout << "Variable " << it.first << " has values ";
-      for(auto v : it.second) {
-        cout << v << " ";
-      }
-      cout << endl;
-    }
-
-  }
-  */
-
-  /////////////////
-
-  /*
-  IntVector assignment;
-  for (size_t i = 0; i < edge_indexer.count(); ++i) {
-    assignment.push_back(0);
-  }
-
-  // along path from entry to main vectorized loop
-  assignment[0] = 1;
-
-  // exit from main loop
-  assignment[4] = 7;
-  assignment[8] = 0;
-  assignment[12] = 1;
-  assignment[16] = 2;
-  assignment[20] = 3;
-  assignment[24] = 4;
-  assignment[28] = 5;
-  assignment[32] = 6;
-
-  // path from alignment loop to main loop
-  assignment[68] = 1;
-
-  // exit from beginning?
-
-  // exit from pre-loop
-  assignment[44] = 1;
-  assignment[46] = 2;
-  assignment[48] = 3;
-  assignment[50] = 4;
-  assignment[52] = 5;
-  assignment[54] = 6;
-  assignment[56] = 7;
-  */
-
-  auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list);
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   return callback(new_dual);
