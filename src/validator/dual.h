@@ -91,18 +91,19 @@ public:
     return exit;
   }
 
-  /** Add a feastible path. */
-  void add_edge(Edge path) {
+  /** Add a feastible edge.  Returns true if not already present. */
+  bool add_edge(Edge path) {
 
     for (auto e : next_edges_[path.from]) {
       if (e == path) {
         std::cout << "      > edge already exists -- skipping" << std::endl;
-        return;
+        return false;
       }
     }
 
     next_edges_[path.from].push_back(path);
     prev_edges_[path.to].push_back(path);
+    return true;
   }
 
   /** Remove an edge. */

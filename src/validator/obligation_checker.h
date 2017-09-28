@@ -128,7 +128,7 @@ public:
   /** Verify a set of paths from a location are exhausive */
   bool verify_exhaustive(const Cfg& target, const Cfg& rewrite,
                          Cfg::id_type target_block, Cfg::id_type rewrite_block,
-                         std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                         const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
                          const Invariant& assume);
 
 
@@ -227,7 +227,7 @@ private:
 
   bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_start, Cfg::id_type rewrite_start,
-                                       std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
+                                       const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
                                        const Invariant& assume,
                                        const CpuState& ceg, const CpuState& ceg2);
 

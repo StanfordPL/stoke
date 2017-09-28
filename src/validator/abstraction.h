@@ -67,7 +67,7 @@ public:
   /** Extract a sequence of states from a test case.  If
    include_start is set to true, we also output the initial
    starting state in the trace. */
-  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState&, bool include_start = true) = 0;
+  virtual std::vector<std::pair<State, CpuState>> learn_trace(const CpuState&, bool include_start = true, bool include_end = false, size_t n = -1) = 0;
 
   virtual ~Abstraction() { }
 

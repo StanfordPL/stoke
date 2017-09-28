@@ -358,24 +358,29 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
       bool current_okay = discharge_exhaustive(dual, state);
       okay &= current_okay;
 
+      cout << "DischargeExhaustive ---------" << endl;
+      cout << "   current_okay " << current_okay << endl;
+      cout << "   have ceg     " << checker_has_ceg() << endl;
+
       // Add a path into the dual that was previously missing
       if (!current_okay && checker_has_ceg() && (checker_get_target_ceg() != ceg || first)) {
-        try_again = true;
+        cout << "Attemping to add edge:" << endl;
         ceg = checker_get_target_ceg();
 
         // TODO: shorten the paths considering cutpoints ugh
         auto tt = checker_get_target_exhaustive_ceg();
         auto rt = checker_get_rewrite_exhaustive_ceg();
 
-        tt.erase(tt.begin());
-        rt.erase(rt.begin());
-        tt.erase(tt.end()-1);
-        rt.erase(rt.end()-1);
-
         auto tp = Abstraction::project_states(tt);
         auto rp = Abstraction::project_states(rt);
         DualAutomata::Edge edge(state, tp, rp);
-        dual.add_edge(edge);
+        bool added = dual.add_edge(edge);
+        if(added) {
+          try_again = true;
+          cout << "Successfully added edge" << endl;
+        } else {
+          cout << "Adding edge failed" << endl;
+        }
       }
       first = false;
     }
