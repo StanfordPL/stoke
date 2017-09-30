@@ -148,6 +148,12 @@ public:
     return get_code()[get_index(loc)];
   }
 
+  /** Returns the last instruction in a nonempty block. */
+  const x64asm::Instruction& get_last_of_block(Cfg::id_type blk) const {
+    assert(num_instrs(blk) > 0);
+    return get_instr({blk, num_instrs(blk)-1});
+  }
+
   /** Returns an iterator that points to the beginning of this basic block. */
   instr_iterator instr_begin(id_type id) const {
     assert(id < num_blocks());

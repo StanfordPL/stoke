@@ -726,7 +726,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   const auto exit = get_label();
   // Make a unique label in case we need to start in middle
   const auto middle = get_label();
-  if(label == main_fxn_ && instr_offset_ != (uint64_t)(-1)) {
+  if (label == main_fxn_ && instr_offset_ != (uint64_t)(-1)) {
     cout << "ADDING EXTRA JUMP " << endl;
     assm_.jmp_1(middle);
   }
@@ -751,7 +751,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
       if (global_before_.first != nullptr || !before_.empty()) {
         emit_before(cfg.get_function().get_leading_label(), i);
       }
-      if(label == main_fxn_ && i == instr_offset_) {
+      if (label == main_fxn_ && i == instr_offset_) {
         cout << "Emitting label before " << instr << endl;
         assm_.bind(middle);
       }

@@ -202,10 +202,10 @@ private:
   /////////////// These methods handle paths and circuit building ////////////////
 
   /** Build the circuit for a single basic block */
-  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map);
+  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map, bool ignore_last_line);
 
   /** Get constraint expressing that a particular path is taken from some state. */
-  SymBool get_path_constraint(const Cfg& cfg, const SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P);
+  SymBool get_path_constraint(const Cfg& cfg, SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P);
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {
@@ -239,6 +239,9 @@ private:
     jumps with NOPs.  Fill a map that contains information relating the new
     line numbers with the original ones. */
   void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate);
+
+
+  Invariant* get_jump_inv(const Cfg& cfg, Cfg::id_type, const CfgPath& p, bool is_rewrite);
 
   /////////////// FOR ARMS RACE MODE ///////////
 
