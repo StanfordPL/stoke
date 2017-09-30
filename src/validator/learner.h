@@ -39,9 +39,19 @@ public:
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
-    const std::vector<CpuState>& states2);
+    const std::vector<CpuState>& states2,
+    std::string target_cc = "",
+    std::string rewrite_cc = "");
+
 
 private:
+
+  // learn a single invariant, without regard for flags
+  ConjunctionInvariant* learn_simple(
+    x64asm::RegSet target_regs,
+    x64asm::RegSet rewrite_regs,
+    const std::vector<CpuState>& states,
+    const std::vector<CpuState>& states2);
 
   /** Keep track of the program we're working on. */
   Cfg target_;

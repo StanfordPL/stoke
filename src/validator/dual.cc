@@ -268,8 +268,18 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     if (state == exit_state() || state == start_state())
       continue;
 
+    auto target_instr = target.get_last_of_block(state.ts);
+    auto rewrite_instr = target.get_last_of_block(state.ts);
+
+    string target_opc = Handler::get_opcode(target_instr);
+    string rewrite_opc = Handler::get_opcode(rewrite_instr);
+
+    string target_cc = target_instr.is_jcc() ? target_opc.substr(1, target_opc.size()-1) : "";
+    string rewrite_cc = rewrite_instr.is_jcc() ? rewrite_opc.substr(1, rewrite_opc.size()-1) : "";
+
     auto inv = learner.learn(target_->live_out_regs(state.ts), rewrite_->live_out_regs(state.rs),
-                             target_state_data_[state], rewrite_state_data_[state]);
+                             target_state_data_[state], rewrite_state_data_[state],
+                             target_cc, rewrite_cc);
     invariants_[state] = inv;
     cout << "Invariant at " << state << ": " << *inv << endl;
     // TODO check that the invariants look good enough

@@ -375,7 +375,7 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
         auto rp = Abstraction::project_states(rt);
         DualAutomata::Edge edge(state, tp, rp);
         bool added = dual.add_edge(edge);
-        if(added) {
+        if (added) {
           try_again = true;
           cout << "Successfully added edge" << endl;
         } else {

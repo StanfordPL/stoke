@@ -45,6 +45,13 @@ public:
     }
   }
 
+  FlagInvariant(std::string cc, bool is_rewrite, bool fallthrough) {
+    predicate_ = cc;
+    is_rewrite_ = is_rewrite;
+    fallthrough_ = fallthrough;
+  }
+
+
   SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
     if (predicate_ == "") {
       // fallthrough is aways taken

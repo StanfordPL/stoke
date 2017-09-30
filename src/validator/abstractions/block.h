@@ -95,7 +95,7 @@ public:
     sandbox_.reset();
     sandbox_.insert_function(cfg_);
     sandbox_.insert_input(tc);
-    if(start_index == (uint64_t)(-1))
+    if (start_index == (uint64_t)(-1))
       sandbox_.set_entrypoint(label);
     else
       sandbox_.set_entrypoint(label, start_index);
@@ -129,7 +129,7 @@ public:
 
     sandbox_.run();
 
-    if(include_end)
+    if (include_end)
       trace.push_back(std::pair<State,CpuState>(exit_state(), *sandbox_.get_output(0)));
 
     // debug output

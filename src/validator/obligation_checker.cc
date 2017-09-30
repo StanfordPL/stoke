@@ -19,6 +19,7 @@
 #include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -72,6 +73,33 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 
   return output;
 }
+
+/** Returns an invariant representing the fact that the first state transition in the path is taken. */
+Invariant* ObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
+  auto jump_type = ObligationChecker::is_jump(cfg, start_b, {p[0]}, 0);
+
+  cout << "get_jump_inv: jump type " << jump_type << endl;
+
+  if (jump_type == ObligationChecker::JumpType::NONE) {
+    return new TrueInvariant();
+  }
+
+  auto start_block = start_b;
+  auto start_bs = cfg.num_instrs(start_block);
+  assert(start_bs > 0);
+  auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
+
+  if (!jump_instr.is_jcc()) {
+    cout << "   get_jump_inv: no cond jump" << endl;
+    return new TrueInvariant();
+  }
+
+  bool is_fallthrough = jump_type == ObligationChecker::JumpType::FALL_THROUGH;
+  auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
+  cout << "   get_jump_inv: got " << *jump_inv << endl;
+  return jump_inv;
+}
+
 
 bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
   auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
@@ -170,7 +198,7 @@ Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
 
   auto last_instr_index = cfg.get_index({block, cfg.num_instrs(block)-1});
   auto last_instr = cfg.get_code()[last_instr_index];
-  if(!last_instr.is_any_jump()) {
+  if (!last_instr.is_any_jump()) {
     last_instr_index++;
   }
 
@@ -235,9 +263,11 @@ bool ObligationChecker::exhaustive_check_counterexample(
 
 
 SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
-    const SymState& state_orig,
+    SymState& state_orig,
     Cfg::id_type cfg_start,
     const CfgPath& P) {
+
+  cout << "get_path_constraint start=" << cfg_start << " P=" << P << endl;
 
   // Initialize state copy
   SymState state = state_orig;
@@ -247,13 +277,15 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
   LineMap line_map;
   generate_linemap(cfg, P, line_map);
 
+  size_t x = 0;
+  auto ji = get_jump_inv(cfg, cfg_start, P, true);
+  SymBool conjunction = (*ji)(state_orig, state_orig, x, x);
   // Build the circuits
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(cfg, P[i], is_jump(cfg, cfg_start, P, i), state, line_no, line_map);
+    build_circuit(cfg, P[i], is_jump(cfg, cfg_start, P, i), state, line_no, line_map, i == P.size() - 1);
 
   // Extract the conjunction
-  SymBool conjunction = SymBool::_true();
   for (auto it : state.constraints) {
     conjunction = conjunction & it;
   }
@@ -263,7 +295,7 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
 
 
 void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
-                                      SymState& state, size_t& line_no, const LineMap& line_info) {
+                                      SymState& state, size_t& line_no, const LineMap& line_info, bool ignore_last_line) {
 
   if (cfg.num_instrs(bb) == 0)
     return;
@@ -277,6 +309,9 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
     auto instr = cfg.get_code()[i];
 
     if (instr.is_jcc()) {
+      if(ignore_last_line)
+        continue;
+
       // get the name of the condition
       string name = opcode_write_att(instr.get_opcode());
       string condition = name.substr(1);
@@ -533,10 +568,10 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Build the circuits
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map);
+    build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, false);
   line_no = 0;
   for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, false);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());

@@ -26,6 +26,7 @@
 #include "src/validator/invariants/mod_2n.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/not.h"
 #include "src/validator/invariants/pointer_null.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
@@ -359,8 +360,82 @@ vector<Invariant*> build_flag_invariants(
   return inv;
 }
 
+ConjunctionInvariant* InvariantLearner::learn(
+  x64asm::RegSet target_regs,
+  x64asm::RegSet rewrite_regs,
+  const std::vector<CpuState>& states,
+  const std::vector<CpuState>& states2,
+  string target_cc,
+  string rewrite_cc) {
 
-ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
+  if(target_cc == "" && rewrite_cc == "") {
+    return learn_simple(target_regs, rewrite_regs, states, states2);
+  }
+
+  // idea: sort state pairs into one, two, or four groups, and learn invariant over them
+  vector<Invariant*> condition_invariants;
+  if(target_cc != "" && rewrite_cc != "") {
+    auto inv_t = new FlagInvariant(target_cc, false, false);
+    auto inv_r = new FlagInvariant(rewrite_cc, true, false);
+    auto not_inv_t = new NotInvariant(inv_t);
+    auto not_inv_r = new NotInvariant(inv_r);
+    condition_invariants.push_back(new ConjunctionInvariant({inv_t, inv_r}));
+    condition_invariants.push_back(new ConjunctionInvariant({not_inv_t, inv_r}));
+    condition_invariants.push_back(new ConjunctionInvariant({inv_t, not_inv_r}));
+    condition_invariants.push_back(new ConjunctionInvariant({not_inv_t, not_inv_r}));
+  } else if (target_cc != "") {
+    auto inv = new FlagInvariant(target_cc, false, false);
+    auto inv2 = new NotInvariant(inv);
+    condition_invariants.push_back(inv);
+    condition_invariants.push_back(inv2);
+  } else if (rewrite_cc != "") {
+    auto inv = new FlagInvariant(rewrite_cc, true, false);
+    auto inv2 = new NotInvariant(inv);
+    condition_invariants.push_back(inv);
+    condition_invariants.push_back(inv2);
+  }
+
+  // identify the flag invariants we care about
+  vector<pair<vector<CpuState>, vector<CpuState>>> state_sets(condition_invariants.size());
+
+  // classify states into buckets
+  for(size_t i = 0; i < states.size(); ++i) {
+    auto lhs = states[i];
+    auto rhs = states2[i];
+    for(size_t j = 0; j < condition_invariants.size(); ++j) {
+      auto inv = condition_invariants[j];
+      if(inv->check(lhs, rhs)) {
+        state_sets[j].first.push_back(lhs);
+        state_sets[j].second.push_back(rhs);
+      }
+    }
+  }
+
+  // learn simple invariants and conjoin
+  auto final_inv = new ConjunctionInvariant();
+
+  for(size_t i = 0; i < condition_invariants.size(); ++i) {
+    auto lhs_vector = state_sets[i].first;
+    auto rhs_vector = state_sets[i].second;
+    assert(lhs_vector.size() == rhs_vector.size());
+
+    if(lhs_vector.size() == 0) {
+      final_inv->add_invariant(new ImplicationInvariant(condition_invariants[i], new FalseInvariant()));
+    } else {
+      auto inv = learn_simple(target_regs, rewrite_regs, lhs_vector, rhs_vector);
+      for(size_t j = 0; j < inv->size(); ++j) {
+        auto curr = (*inv)[j];
+        auto impl = new ImplicationInvariant(condition_invariants[i], curr);
+        final_inv->add_invariant(impl);
+      }
+    }
+  }
+
+  return final_inv;
+
+}
+
+ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const vector<CpuState>& target_states,
     const vector<CpuState>& rewrite_states) {
