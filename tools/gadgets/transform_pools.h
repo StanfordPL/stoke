@@ -108,6 +108,21 @@ public:
     for (auto op : opc_blacklist_arg.value())
       remove_opcode(op);
 
+    // remove all rh opcodes if requested
+    if (no_rh_arg.value()) {
+      for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        x64asm::Opcode op = (x64asm::Opcode)i;
+        x64asm::Instruction instr(op);
+        for (size_t j = 0; j < instr.arity(); j++) {
+          if (instr.type(j) == x64asm::Type::RH) {
+            std::cout << op << std::endl;
+            remove_opcode(op);
+            break;
+          }
+        }
+      }
+    }
+
     recompute_pools();
 
     if (opcode_pool_.empty()) {
