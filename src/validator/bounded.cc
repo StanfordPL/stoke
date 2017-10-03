@@ -14,6 +14,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
@@ -114,6 +115,17 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     // Step 2: check each pair of paths
     bool ok = true;
     size_t total = target_paths.size() * rewrite_paths.size();
+
+    if(target_paths.size() == 0) {
+      Console::warn() << "There are no paths through the target with bound " << bound_ << endl;
+    }
+    if(rewrite_paths.size() == 0) {
+      Console::warn() << "There are no paths through the rewrite with bound " << bound_ << endl;
+    }
+    if(total == 0) {
+      Console::warn() << "(No paths will be tested.)" << endl;
+    }
+
     size_t count = 0;
     for (auto target_path : target_paths) {
       for (auto rewrite_path : rewrite_paths) {
