@@ -55,6 +55,10 @@ cpputil::ValueArg<size_t>& call_weight_arg =
   .description("Number of call opcodes in the opcode pool.  If non-zero, takes precedence over --opc_whitelist and --opc_blacklist.")
   .default_val(0);
 
+cpputil::FlagArg& no_rh_arg =
+  cpputil::FlagArg::create("no_rh")
+  .description("Ban all instructions that use rh registers");
+
 cpputil::FlagArg& callee_save_arg =
   cpputil::FlagArg::create("callee_save")
   .alternate("propose_callee_save")
