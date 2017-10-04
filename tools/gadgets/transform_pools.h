@@ -115,7 +115,6 @@ public:
         x64asm::Instruction instr(op);
         for (size_t j = 0; j < instr.arity(); j++) {
           if (instr.type(j) == x64asm::Type::RH) {
-            std::cout << op << std::endl;
             remove_opcode(op);
             break;
           }
