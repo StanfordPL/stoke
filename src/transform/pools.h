@@ -201,6 +201,8 @@ public:
 
 protected:
 
+  void init_reg_pools();
+
   /** Set of flags. */
   x64asm::FlagSet flags_;
   /** Set of registers to preserve. */
