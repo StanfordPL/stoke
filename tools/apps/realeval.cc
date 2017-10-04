@@ -319,7 +319,7 @@ int main(int argc, char** argv) {
         lines[i][5] = 1;
         n += 1;
       } else {
-        cout << "non-zero cost for " << lines[i][2] << "." << endl;
+        cout << "non-zero cost for " << lines[i][2] << " (" << cost << ")." << endl;
         lines[i][6] = 1;
       }
     }
@@ -328,6 +328,7 @@ int main(int argc, char** argv) {
     n = 0;
     sort(lines.begin(), lines.end());
     for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
+      if (lines[i][6]) continue;
       auto cost = eval(lines[i]);
       if (cost == 0) {
         lines[i][4] = 1;
