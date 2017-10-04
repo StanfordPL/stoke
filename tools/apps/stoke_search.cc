@@ -528,7 +528,16 @@ int main(int argc, char** argv) {
       if (beta_arg.has_been_provided()) {
         Console::error() << "Cannot provide both beta and gamma." << endl;
       }
-      double beta = -log(gamma_arg.value()/100.0)/(starting_cost*0.1);
+      auto g = gamma_arg.value();
+      double beta = 0;
+      if (g == 0) {
+        beta = 10000;
+      } else if (g == 100) {
+        beta = 0;
+      } else {
+        beta = -log(g/100.0)/(starting_cost*0.1);
+      }
+      cout << "Calculated beta = " << beta << " from gamma = " << gamma_arg.value() << "." << endl;
       search.set_beta(beta);
     }
 
