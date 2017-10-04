@@ -263,7 +263,6 @@ int main(int argc, char** argv) {
     return a;
   };
 
-
   timing();
 
   if (step_arg.value() == 1) {
@@ -289,20 +288,54 @@ int main(int argc, char** argv) {
         vals.push_back(read(iss, "timestamp_ms"));
         vals.push_back(0); // best sample
         vals.push_back(0); // random sample
+        vals.push_back(0); // non-zero cost
         lines.push_back(vals);
       }
     }
 
+    TargetGadget target({}, false);
+    SeedGadget seed;
+    TestSetGadget test_tcs(seed);
+    SandboxGadget test_sb(test_tcs, {});
+    PerformanceSetGadget perf_tcs(seed);
+    auto max_jumps = 1000000000;
+    test_sb.set_max_jumps(max_jumps);
+    ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
+
+    auto eval = [&](vector<int>& line) {
+      string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
+      TUnit rewrite;
+      ifstream ifs(fpath);
+      ifs >> rewrite;
+      return fxn_correct(Cfg(rewrite), max_cost_arg.value()).second;
+    };
+
     // sample randomly
+    size_t n = 0;
     random_shuffle(lines.begin(), lines.end());
-    for (size_t i = 0; i < nsamples && i < lines.size(); i++) {
-      lines[i][5] = 1;
+    for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
+      auto cost = eval(lines[i]);
+      if (cost == 0) {
+        lines[i][5] = 1;
+        n += 1;
+      } else {
+        cout << "non-zero cost for " << lines[i][2] << "." << endl;
+        lines[i][6] = 1;
+      }
     }
 
     // sample best
+    n = 0;
     sort(lines.begin(), lines.end());
-    for (size_t i = 0; i < nsamples && i < lines.size(); i++) {
-      lines[i][4] = 1;
+    for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
+      auto cost = eval(lines[i]);
+      if (cost == 0) {
+        lines[i][4] = 1;
+        n += 1;
+      } else {
+        cout << "non-zero cost for " << lines[i][2] << "." << endl;
+        lines[i][6] = 1;
+      }
     }
 
     // write everything
@@ -325,7 +358,7 @@ int main(int argc, char** argv) {
       fout << endl;
 
       // delete files we didn't sample
-      if (line[4] == 0 && line[5] == 0) {
+      if (line[4] == 0 && line[5] == 0 && line[6] == 0) {
         string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
         remove(fpath.c_str());
       }
