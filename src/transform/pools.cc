@@ -213,34 +213,20 @@ TransformPools::TransformPools() {
     insert_immediate(imm);
   }
 
-
-  fill_pool(rh_pool_, rhs, preserve_regs_);
-  fill_pool(r8_pool_, r8s, preserve_regs_);
-  fill_pool(r16_pool_, r16s, preserve_regs_);
-  fill_pool(r32_pool_, r32s, preserve_regs_);
-  fill_pool(r64_pool_, r64s, preserve_regs_);
-
-  fill_pool(mm_pool_, mms, preserve_regs_);
-  fill_pool(sreg_pool_, sregs, preserve_regs_);
-  fill_pool(st_pool_, sts, preserve_regs_);
-  fill_pool(xmm_pool_, xmms, preserve_regs_);
-  fill_pool(ymm_pool_, ymms, preserve_regs_);
-
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     opcode_weights_[i] = 0;
     opcode_weights_locked_[i] = false;
   }
+
+  init_reg_pools();
 }
 
 TransformPools& TransformPools::add_target(const Cfg& target) {
 
   // Does it read/write memory?
-  memory_read_ = false;
-  memory_write_ = false;
   for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
     const auto& instr = target.get_code()[i];
     memory_read_ |= instr.maybe_read_memory();
-    memory_write_ |= instr.maybe_write_memory();
     memory_write_ |= instr.maybe_write_memory();
   }
 
@@ -264,7 +250,23 @@ TransformPools& TransformPools::add_target(const Cfg& target) {
   return *this;
 }
 
+void TransformPools::init_reg_pools() {
+  fill_pool(rh_pool_, rhs, preserve_regs_);
+  fill_pool(r8_pool_, r8s, preserve_regs_);
+  fill_pool(r16_pool_, r16s, preserve_regs_);
+  fill_pool(r32_pool_, r32s, preserve_regs_);
+  fill_pool(r64_pool_, r64s, preserve_regs_);
+
+  fill_pool(mm_pool_, mms, preserve_regs_);
+  fill_pool(sreg_pool_, sregs, preserve_regs_);
+  fill_pool(st_pool_, sts, preserve_regs_);
+  fill_pool(xmm_pool_, xmms, preserve_regs_);
+  fill_pool(ymm_pool_, ymms, preserve_regs_);
+}
+
 void TransformPools::recompute_pools() {
+
+  init_reg_pools();
 
   // clean out the weight table
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
