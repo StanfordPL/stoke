@@ -357,6 +357,7 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
 
+  /* Necessary for alignment (e.g. movapd) */
   constraints.push_back(sigbus == other.sigbus);
   constraints.push_back(sigfpe == other.sigfpe);
   constraints.push_back(sigsegv == other.sigsegv);
@@ -467,4 +468,12 @@ void SymState::simplify() {
       rf[i] = var;
     }
   }
+}
+
+
+std::ostream& SymState::write_text(std::ostream& os) const {
+  for (size_t i = 0; i < 16; ++i) {
+    cout << r64s[i] << "    " << gp[i] << endl;
+  }
+  return os;
 }

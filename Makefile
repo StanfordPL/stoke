@@ -153,6 +153,7 @@ SRC_OBJ=\
 	src/symstate/simplify.o \
 	src/symstate/state.o \
 	\
+	src/symstate/memory/arm.o \
 	src/symstate/memory/cell.o \
 	src/symstate/memory/flat.o \
 	\

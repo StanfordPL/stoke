@@ -250,8 +250,8 @@ vector<Invariant*> build_flag_invariants(
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
 
-  cout << "target_regs: " << target_regs << endl;
-  cout << "rewrite_regs: " << rewrite_regs << endl;
+  DDEC_DEBUG(cout << "target_regs: " << target_regs << endl;)
+  DDEC_DEBUG(cout << "rewrite_regs: " << rewrite_regs << endl;)
 
   vector<Invariant*> inv;
 
@@ -387,13 +387,13 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
 
   for (auto ghost : ghosts_) {
     auto pointer_null = new PointerNullInvariant(ghost, 1);
-    cout << "testing ptr " << *pointer_null << endl;
+    DDEC_DEBUG(cout << "testing ptr " << *pointer_null << endl;)
     if (pointer_null->check(target_states, rewrite_states)) {
       conj->add_invariant(pointer_null);
-      cout << "  * accepted" << endl;
+      DDEC_DEBUG(cout << "  * accepted" << endl;)
     } else {
       delete pointer_null;
-      cout << "  * rejected" << endl;
+      DDEC_DEBUG(cout << "  * rejected" << endl;)
     }
   }
 
@@ -418,12 +418,12 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
   }
   auto mem_vars = get_memory_variables(target_, rewrite_);
   for (auto var : mem_vars) {
-    cout << "Checking mem var: " << var << endl;
+    DDEC_DEBUG(cout << "Checking mem var: " << var << endl;)
     if (var.size <= 8) {
-      cout << " * size <= 8 :)" << endl;
+      DDEC_DEBUG(cout << " * size <= 8 :)" << endl;)
       columns.push_back(var);
     } else {
-      cout << " * size " << var.size << endl;
+      DDEC_DEBUG(cout << " * size " << var.size << endl;)
     }
   }
 
@@ -443,7 +443,7 @@ ConjunctionInvariant* InvariantLearner::learn(x64asm::RegSet target_regs,
   for (size_t i = 0; i < columns.size(); ++i) {
     for (size_t j = i+1; j < columns.size(); ++j) {
       // check if column i matches column j
-      cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;
+      DDEC_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
       bool match = true;
       for (size_t k = 0; k < tc_count; ++k) {
         if (columns[i].from_state(target_states[k], rewrite_states[k]) !=

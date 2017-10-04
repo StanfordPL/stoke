@@ -89,17 +89,19 @@ public:
 
 private:
 
-  BoundedValidator::AliasStrategy parse_alias() {
+  ObligationChecker::AliasStrategy parse_alias() {
     std::string alias = alias_strategy_arg.value();
 
     if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
-      return BoundedValidator::AliasStrategy::BASIC;
+      return ObligationChecker::AliasStrategy::BASIC;
     } else if (alias == "string") {
-      return BoundedValidator::AliasStrategy::STRING;
+      return ObligationChecker::AliasStrategy::STRING;
     } else if (alias == "string_antialias") {
-      return BoundedValidator::AliasStrategy::STRING_NO_ALIAS;
+      return ObligationChecker::AliasStrategy::STRING_NO_ALIAS;
     } else if (alias == "flat" || alias == "array") {
-      return BoundedValidator::AliasStrategy::FLAT;
+      return ObligationChecker::AliasStrategy::FLAT;
+    } else if (alias == "arm") {
+      return ObligationChecker::AliasStrategy::ARM;
     } else {
       std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
       exit(1);

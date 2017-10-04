@@ -16,6 +16,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/invariants/conjunction.h"
@@ -69,10 +70,9 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
   return output;
 }
 
-bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
-
-  auto var = memory.get_variable();
-  auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
+bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
+  auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
+  assert(symvar != NULL);
   auto str = symvar->name_;
 
   auto map_and_default = solver_.get_model_array(str, 64, 8);
@@ -88,9 +88,10 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
 
   for (auto p : others) {
     auto abs_var = p.first;
-    uint64_t size = p.second;
+    uint64_t size = p.second/8;
 
-    auto var = static_cast<const SymBitVectorVar*>(abs_var);
+    auto var = dynamic_cast<const SymBitVectorVar*>(abs_var);
+    assert(var != NULL);
     auto var_name = var->get_name();
     auto var_size = var->get_size();
     assert(var_size == 64);
@@ -115,7 +116,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
 
 }
 
-bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const {
+bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const {
 
   if (!target_memory || !rewrite_memory) {
     BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
@@ -413,6 +414,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(con
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
     return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
+  case AliasStrategy::ARM:
   case AliasStrategy::FLAT: {
     auto res = vector<pair<CellMemory*, CellMemory*>>();
     res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
@@ -1091,6 +1093,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   // Get a list of all aliasing cases.
   auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume, prove);
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
+  bool arm_model = alias_strategy_ == AliasStrategy::ARM;
 
   OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
@@ -1130,9 +1133,6 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     SymState state_t("1_INIT");
     SymState state_r("2_INIT");
 
-    FlatMemory initial_target_flat_memory;
-    FlatMemory initial_rewrite_flat_memory;
-
     if (memories.first) {
       state_t.memory = memories.first;
       state_t.memory->set_parent(&state_t);
@@ -1140,9 +1140,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       state_r.memory->set_parent(&state_r);
     } else if (flat_model) {
       state_t.memory = new FlatMemory();
-      initial_target_flat_memory = *static_cast<FlatMemory*>(state_t.memory);
       state_r.memory = new FlatMemory();
-      initial_rewrite_flat_memory = *static_cast<FlatMemory*>(state_r.memory);
+    } else if (arm_model) {
+      state_t.memory = new ArmMemory(solver_);
+      state_r.memory = new ArmMemory(solver_);
     }
 
     // Add given assumptions
@@ -1167,23 +1168,6 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     for (size_t i = 0; i < Q.size(); ++i)
       build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map);
 
-    if (memories.first)
-      constraints.push_back(memories.first->aliasing_formula(*memories.second));
-    else {
-      auto target_flat = dynamic_cast<FlatMemory*>(state_t.memory);
-      auto rewrite_flat = dynamic_cast<FlatMemory*>(state_r.memory);
-      if (target_flat && rewrite_flat) {
-        auto target_con = target_flat->get_constraints();
-        constraints.insert(constraints.begin(),
-                           target_con.begin(),
-                           target_con.end());
-        auto rewrite_con = rewrite_flat->get_constraints();
-        constraints.insert(constraints.begin(),
-                           rewrite_con.begin(),
-                           rewrite_con.end());
-      }
-    }
-
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
@@ -1192,6 +1176,15 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     for (auto it : constraints) {
     cout << it << endl;
   })
+
+    if (arm_model) {
+      /** When we read out the constraint for the proof, we want to get the ending
+        state of the heap, not the initial state. */
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+      target_arm->finalize_heap();
+      rewrite_arm->finalize_heap();
+    }
 
     // Build inequality constraint
     // TODO pass line numbers as appropriate
@@ -1208,6 +1201,38 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       constraints.push_back(it);
     for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
       constraints.push_back(it);
+
+    // Get constraints from memory model
+    if (memories.first)
+      constraints.push_back(memories.first->aliasing_formula(*memories.second));
+    else if (flat_model) {
+      auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+      auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+      auto target_con = target_flat->get_constraints();
+      auto rewrite_con = rewrite_flat->get_constraints();
+      constraints.insert(constraints.begin(),
+                         target_con.begin(),
+                         target_con.end());
+      constraints.insert(constraints.begin(),
+                         rewrite_con.begin(),
+                         rewrite_con.end());
+    } else if (arm_model) {
+      auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+      auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+      vector<SymBool> assume = { assumption };
+      target_arm->generate_constraints(rewrite_arm, assume);
+
+      auto target_con = target_arm->get_constraints();
+      auto rewrite_con = rewrite_arm->get_constraints();
+      constraints.insert(constraints.begin(),
+                         target_con.begin(),
+                         target_con.end());
+      constraints.insert(constraints.begin(),
+                         rewrite_con.begin(),
+                         rewrite_con.end());
+    }
+
+
 
     // Step 4: Invoke the solver
 #ifdef DEBUG_CHECKER_PERFORMANCE
@@ -1234,17 +1259,32 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
 
       bool ok = true;
       if (flat_model) {
+        auto target_flat = static_cast<FlatMemory*>(state_t.memory);
+        auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
+
         vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
-        other_maps.push_back(initial_target_flat_memory.get_access_list());
-        other_maps.push_back(initial_rewrite_flat_memory.get_access_list());
-        other_maps.push_back(static_cast<FlatMemory*>(state_t.memory)->get_access_list());
-        other_maps.push_back(static_cast<FlatMemory*>(state_r.memory)->get_access_list());
+        other_maps.push_back(target_flat->get_access_list());
+        other_maps.push_back(rewrite_flat->get_access_list());
         auto other_map = append_maps(other_maps);
 
-        ok &= build_testcase_flat_memory(ceg_t_, initial_target_flat_memory, other_map);
-        ok &= build_testcase_flat_memory(ceg_r_, initial_rewrite_flat_memory, other_map);
-        ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory), other_map);
-        ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory), other_map);
+        ok &= build_testcase_flat_memory(ceg_t_, target_flat->get_start_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_r_, rewrite_flat->get_start_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_tf_, target_flat->get_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_rf_, rewrite_flat->get_variable(), other_map);
+      } else if (arm_model) {
+        auto target_arm = static_cast<ArmMemory*>(state_t.memory);
+        auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
+
+        vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+        other_maps.push_back(target_arm->get_access_list());
+        other_maps.push_back(rewrite_arm->get_access_list());
+        auto other_map = append_maps(other_maps);
+
+        ok &= build_testcase_flat_memory(ceg_t_, target_arm->get_start_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_r_, rewrite_arm->get_start_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_tf_, target_arm->get_variable(), other_map);
+        ok &= build_testcase_flat_memory(ceg_rf_, rewrite_arm->get_variable(), other_map);
+
       } else {
         auto tcell = dynamic_cast<CellMemory*>(state_t.memory);
         auto rcell = dynamic_cast<CellMemory*>(state_r.memory);
@@ -1350,9 +1390,6 @@ Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
 
   TUnit new_fxn(code, 0, function.get_rip_offset(), 0);
   Cfg new_cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
-
-  //cout << "path cfg for " << print(p) << " is " << endl;
-  //cout << TUnit(code) << endl;
 
   return new_cfg;
 
