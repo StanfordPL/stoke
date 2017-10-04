@@ -122,7 +122,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto p = prob_(gen_);
     unsigned long long max = 0;
     if (beta_ == 0) {
-      max = CostFunction::max_cost;
+      max = CostFunction::max_cost - 1;
     } else if (beta_ >= 1000) {
       max = state.current_cost;
     } else {
