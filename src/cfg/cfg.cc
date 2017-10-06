@@ -125,14 +125,23 @@ void Cfg::recompute_blocks() {
 
   // Labels define the beginning of blocks; jumps and returns define the ends. */
   for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
-    // make every instruction its own basic block.
-    //boundaries_[i] = true;
     const auto& instr = get_code()[i];
+#ifdef STOKE_CFG_ALL_INSTR_BLOCK
+    boundaries_[i] = true;
+    continue;
+#endif
     if (instr.is_label_defn()) {
       boundaries_[i] = true;
     } else if (instr.is_jump() || instr.is_return()) {
       boundaries_[i + 1] = true;
+    } 
+#ifdef STOKE_CFG_COMPARE_NEW_BLOCK 
+    else if (instr.is_compare()) {
+      /* make compares start a new basic block... this simplifies things
+         for the validator. */
+      boundaries_[i] = true; 
     }
+#endif
   }
 
   // Add sentinels for entry and exit blocks along with boundaries

@@ -18,6 +18,7 @@
 #include <iostream>
 #include <ostream>
 #include <fstream>
+#include <cstdio>
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -81,7 +82,11 @@ IntMatrix IntMatrix::solve_diophantine() const {
 
   auto& matrix = *this;
   cout << "Writing out sage code" << endl;
-  ofstream of("in.sage");
+  string tmp_in = tmpnam(NULL) + string(".sage");
+  string tmp_out = tmpnam(NULL) + string(".out");
+  string tmp_err = tmpnam(NULL) + string(".err");
+
+  ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
   of << "ZZ=IntegerRing()" << endl;
@@ -107,12 +112,12 @@ IntMatrix IntMatrix::solve_diophantine() const {
   of << "\tprint \" \".join(map(lambda x:str(x), output))" << endl;
   of << endl;
   of.close();
-  int status = system("sage in.sage > sage.out 2>sage.err");
+  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2> ") + tmp_err).c_str());
 
   /** Read basis vectors from sage */
   IntMatrix basis_vectors;
   size_t output_rows, output_cols;
-  ifstream in("sage.out");
+  ifstream in(tmp_out);
   in >> output_rows >> output_cols;
   if (!in.good()) {
     assert(false);
@@ -142,7 +147,11 @@ IntMatrix IntMatrix::solve_diophantine() const {
 IntVector IntMatrix::solve_diophantine(IntVector b) const {
   auto& matrix = *this;
   cout << "Writing out sage code" << endl;
-  ofstream of("in.sage");
+  string tmp_in = tmpnam(NULL) + string(".sage");
+  string tmp_out = tmpnam(NULL) + string(".out");
+  string tmp_err = tmpnam(NULL) + string(".err");
+
+  ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
   of << "ZZ=IntegerRing()" << endl;
@@ -173,12 +182,12 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   of << endl;
 
   of.close();
-  int status = system("sage in.sage > sage.out 2>sage.err");
+  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2>") + tmp_err).c_str());
 
   /** Read basis vectors from sage */
   IntVector output;
   size_t output_rows;
-  ifstream in("sage.out");
+  ifstream in(tmp_out);
   in >> output_rows;
   if (!in.good()) {
     assert(false);

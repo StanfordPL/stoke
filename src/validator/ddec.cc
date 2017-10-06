@@ -171,6 +171,11 @@ bool DdecValidator::learn_inductive_paths(
   vector<CfgPath>& rewrite_inductive_paths,
   function<bool (vector<CfgPath>&, vector<CfgPath>&)>& callback
 ) {
+  cout << "============================================================" << endl;
+  cout << "Learning inductive paths" << endl;
+
+
+
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
@@ -244,6 +249,9 @@ bool DdecValidator::learn_inductive_paths(
 }
 
 DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, vector<CfgPath>& rewrite_inductive_paths) {
+
+  cout << "============================================================" << endl;
+  cout << "Build dualing dual" << endl;
 
   vector<Cfg::id_type> target_cutpoints;
   vector<Cfg::id_type> rewrite_cutpoints;
@@ -380,6 +388,14 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
           cout << "Successfully added edge" << endl;
         } else {
           cout << "Adding edge failed" << endl;
+        }
+      } else {
+        if(!checker_has_ceg()) {
+          cout << "Could not get counterexample... aborting" << endl;
+        } else if (checker_get_target_ceg() == ceg && !first) {
+          cout << "Got repeated counterexample... something is wrong!" << endl;
+        } else if(current_okay) {
+          cout << "That went well... moving on!" << endl;
         }
       }
       first = false;

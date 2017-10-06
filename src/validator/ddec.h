@@ -32,13 +32,7 @@ class DdecValidator : public ObligationChecker {
 public:
 
   DdecValidator(SMTSolver& solver) : ObligationChecker(solver), target_({}), rewrite_({}) {
-    cutpoints_ = NULL;
     set_no_bv(false);
-  }
-
-  ~DdecValidator() {
-    if (cutpoints_)
-      delete cutpoints_;
   }
 
   /** Turn off the bounded validator.  This is a terribly silly thing to do, except
@@ -88,9 +82,6 @@ private:
 
   /** Bound */
   size_t bound_;
-
-  /** Whatever cutpoints we've generated. */
-  Cutpoints* cutpoints_;
 
   /** Try to sign extend values? */
   bool try_sign_extend_;

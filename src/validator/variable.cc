@@ -30,7 +30,6 @@ uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) c
     if (operand.is_typical_memory()) {
       auto mem = static_cast<const x64asm::Mem&>(operand);
       if (!cs.is_valid(mem)) {
-        cout << "===== from state: invalid memory reference" << endl;
         return 0; // it would really be a segfault
       }
     }
