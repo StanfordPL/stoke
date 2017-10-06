@@ -508,7 +508,7 @@ bool ControlLearner::dfs_find_path_vars(DualAutomata& dual,
 
 
 IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& edge_indexer,
-    vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
+    vector<pair<EdgeVariable, EdgeVariable>>& edge_list, int col) {
 
   auto dual_paths = dual.get_paths(dual.start_state(), dual.exit_state());
   IntMatrix final_matrix;
@@ -640,7 +640,7 @@ IntVector ControlLearner::assignment_from_matrix(DualAutomata& dual, Indexer<Edg
   auto single_soln = final_matrix.solve_diophantine(final_vector);
   cout << "SOLUTION: " << endl;
   single_soln.print();
-  auto ilp = find_best_solution_ilp(solnspace, single_soln, -1);
+  auto ilp = find_best_solution_ilp(solnspace, single_soln, col);
   cout << "ILP SOLUTION: " << endl;
   ilp.print();
 
@@ -696,9 +696,11 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     }
   }
 
-  auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list);
-  assignment[2]+=2;
-  assignment[3]+=2;
+
+  cout << "============================================================" << endl;
+  cout << "Computing edge assignment..." << endl;
+
+  auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list, -1);
 
   cout << "Columns" << endl;
   for (size_t i = 0; i < edge_indexer.count(); ++i) {
@@ -708,8 +710,29 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   }
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
-  return callback(new_dual);
+  bool status = callback(new_dual);
+  if(status == true)
+    return true;
 
+  for(size_t i = 0; i < edge_indexer.count(); ++i) {
+    cout << "============================================================" << endl;
+    cout << "WELP THAT FAILED!!  Let's try a few more edge assignments..." << endl;
+    auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list, -1);
+
+    cout << "Columns" << endl;
+    for (size_t i = 0; i < edge_indexer.count(); ++i) {
+      cout << i << ": ";
+      edge_indexer.reverse(i).print(cout) << endl;
+      cout << " ASSIGN " << assignment[i] << endl;
+    }
+
+    new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
+    status = callback(new_dual);
+    if(status)
+      return true;
+  }
+
+  return false;
 }
 
 DualAutomata ControlLearner::update_dual_with_vars(const DualAutomata& dual, Indexer<EdgeVariable>& edge_indexer, IntVector vars, vector<pair<EdgeVariable, EdgeVariable>>& edge_list) {
@@ -781,7 +804,12 @@ DualAutomata ControlLearner::update_dual_with_vars(const DualAutomata& dual, Ind
 IntVector ControlLearner::find_best_solution_ilp(IntMatrix space, IntVector initial, int col_to_optimize = -1) {
   auto matrix = space;
   cout << "Writing out sage code for ILP" << endl;
-  ofstream of("in.sage");
+  string tmp_in = tmpnam(NULL) + string(".sage");
+  string tmp_out = tmpnam(NULL) + string(".out");
+  string tmp_err = tmpnam(NULL) + string(".err");
+
+
+  ofstream of(tmp_in);
   of << "rows=" << matrix.rows() << endl;
   of << "cols=" << matrix.cols() << endl;
   of << "ZZ=IntegerRing()" << endl;
@@ -815,11 +843,11 @@ IntVector ControlLearner::find_best_solution_ilp(IntMatrix space, IntVector init
   of << "\tprint int(image[entry])" << endl;
   of << endl;
   of.close();
-  int status = system("timeout 15s sage in.sage > sage.out 2>sage.err");
+  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2> ") + tmp_err).c_str());
 
   IntVector output;
   IntVector zero;
-  ifstream in("sage.out");
+  ifstream in(tmp_out);
   for (size_t i = 0; i < matrix.cols(); ++i) {
     int64_t x;
     in >> x;

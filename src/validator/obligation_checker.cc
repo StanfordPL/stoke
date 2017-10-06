@@ -78,7 +78,7 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 Invariant* ObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
   auto jump_type = ObligationChecker::is_jump(cfg, start_b, {p[0]}, 0);
 
-  cout << "get_jump_inv: jump type " << jump_type << endl;
+  //cout << "get_jump_inv: jump type " << jump_type << endl;
 
   if (jump_type == ObligationChecker::JumpType::NONE) {
     return new TrueInvariant();
@@ -90,13 +90,13 @@ Invariant* ObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b,
   auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
 
   if (!jump_instr.is_jcc()) {
-    cout << "   get_jump_inv: no cond jump" << endl;
+    //cout << "   get_jump_inv: no cond jump" << endl;
     return new TrueInvariant();
   }
 
   bool is_fallthrough = jump_type == ObligationChecker::JumpType::FALL_THROUGH;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
-  cout << "   get_jump_inv: got " << *jump_inv << endl;
+  //cout << "   get_jump_inv: got " << *jump_inv << endl;
   return jump_inv;
 }
 
@@ -230,6 +230,17 @@ bool ObligationChecker::exhaustive_check_counterexample(
   if (target_trace.size() == 0 || rewrite_trace.size() == 0)
     return false;
 
+  auto last_target = target_trace.back().second;
+  if(last_target.code != ErrorCode::NORMAL) {
+    cout << "Counterexample hit exception " << (int)last_target.code << " in target" << endl;
+    return false; 
+  }
+  auto last_rewrite = rewrite_trace.back().second;
+  if(last_rewrite.code != ErrorCode::NORMAL) {
+    cout << "Counterexample hit exception " << (int)last_rewrite.code << " in rewrite" << endl;
+    return false; 
+  }
+
   // The counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
     CEG_DEBUG(cout << "  (Counterexample does not meet assumed invariant.)" << endl;);
@@ -309,7 +320,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
     auto instr = cfg.get_code()[i];
 
     if (instr.is_jcc()) {
-      if(ignore_last_line)
+      if (ignore_last_line)
         continue;
 
       // get the name of the condition
@@ -567,11 +578,24 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
   // Build the circuits
   size_t line_no = 0;
+
+  if(P.size() > 0) {
+    auto ji = get_jump_inv(target, target_block, P, true);
+    SymBool conj = (*ji)(state_t, state_t, line_no, line_no);
+    constraints.push_back(conj);
+  }
+  if(Q.size() > 0) {
+    auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
+    SymBool conj = (*ji)(state_r, state_r, line_no, line_no);
+    constraints.push_back(conj);
+  }
+
+  line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, false);
+    build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, i == P.size() - 1);
   line_no = 0;
   for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, false);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, i == Q.size() - 1);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -864,6 +888,13 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
 
   for (auto& path_pair : path_pairs) {
+    auto P = path_pair.first;
+    auto Q = path_pair.second;
+
+    /** To do the proof, both need to make progress. */
+    if (P.size() == 0 || Q.size() == 0)
+      continue;
+
     if (flat_model) {
       state_t.memory = new FlatMemory(*static_cast<FlatMemory*>(original_target_mem));
       state_r.memory = new FlatMemory(*static_cast<FlatMemory*>(original_rewrite_mem));
@@ -875,10 +906,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     // get initial assumption (again) (need to rework each time due to arm)
     vector<SymBool> arm_constraints;
 
-    auto P = path_pair.first;
-    auto Q = path_pair.second;
-
-    cout << "Getting path constraints..." << endl;
+     cout << "Getting path constraints..." << endl;
     auto P_constraint = get_path_constraint(target, state_t, target_block, P);
     auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
 

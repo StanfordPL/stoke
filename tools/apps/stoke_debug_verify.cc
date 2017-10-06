@@ -61,6 +61,13 @@ void print_machine_output(bool verified, string error, string counterexample, bo
 }
 
 int main(int argc, char** argv) {
+  
+  auto version_info = R"VERSIONINFO(
+#include "version_info"
+  )VERSIONINFO";
+  cout << version_info << endl;
+
+
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();

@@ -268,7 +268,9 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
 	\
-	bin/tcgen_strlen_vec
+	bin/tcgen_strlen_vec \
+	bin/tcgen_memset_vec \
+	bin/tcgen_memchr_vec
 
 # used to force a target to rebuild
 .PHONY: .FORCE
@@ -368,6 +370,15 @@ src/ext/z3/build/Makefile:
 	cd src/ext/z3 && python scripts/mk_make.py
 
 ##### VALIDATOR AUTOGEN
+
+version_info: .FORCE
+	echo "====================================================" >> version_info
+	rm -f version_info
+	cat .stoke_config >> version_info
+	echo "====================================================" >> version_info
+	git show --summary >> version_info
+	git status >>	version_info
+	echo "====================================================" >> version_info
 
 src/validator/handlers.h: .FORCE
 	src/validator/generate_handlers_h.sh src/validator handlers-tmp; \

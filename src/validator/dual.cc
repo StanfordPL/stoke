@@ -140,21 +140,22 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
       if (exit == tr_state.state) {
 
         if (tr_state.rewrite_trace.size() > 0) {
-          cout << "problem: at exit state, but there's still unconsumed rewrite trace" << endl;
+          //cout << "problem: at exit state, but there's still unconsumed rewrite trace" << endl;
           return false;
         }
         if (tr_state.target_trace.size() > 0) {
-          cout << "problem: at exit state, but there's still unconsumed target trace" << endl;
+          //cout << "problem: at exit state, but there's still unconsumed target trace" << endl;
           return false;
         }
 
         continue;
       }
 
-      cout << "processing trace state @ " << tr_state.state << endl;
+      //cout << "processing trace state @ " << tr_state.state << endl;
       bool found_matching_edge = false;
 
       for (auto edge : next_edges_[tr_state.state]) {
+        /*
         cout << "  Considering edge: " << edge.from << " -> " << edge.to << endl;
         cout << "     ";
         for (auto blk : edge.te)
@@ -162,18 +163,18 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
         cout << "; ";
         for (auto blk : edge.re)
           cout << blk << "  ";
-        cout << endl;
+        cout << endl; */
 
 
         // check if edge's target path is prefix of tr_state's target path
         if (!is_prefix(edge.te, tr_state.target_trace)) {
-          cout << "  target prefix fail" << endl;
+          //cout << "  target prefix fail" << endl;
           continue;
         }
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
-          cout << "  rewrite prefix fail" << endl;
-          cout << "  edge.re: " << edge.re << endl;
+          //cout << "  rewrite prefix fail" << endl;
+          //cout << "  edge.re: " << edge.re << endl;
           continue;
         }
 
@@ -201,11 +202,11 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
 
         next.push_back(follow);
         reachable_states_.insert(follow.state);
-        std::cout << "  - REACHABLE: " << follow.state << std::endl;
+        //std::cout << "  - REACHABLE: " << follow.state << std::endl;
       }
 
       if (!found_matching_edge) {
-        std::cout << "  - Could not find matching edge" << std::endl;
+        //std::cout << "  - Could not find matching edge" << std::endl;
         //return false;
       }
     }
@@ -238,6 +239,7 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     rewrite_trace.push_back(rewrite_last);
 
 
+    /*
     cout << "target trace: ";
     for (size_t i = 0; i < target_trace.size(); ++i) {
       cout << target_trace[i].first << " ";
@@ -249,6 +251,7 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
       cout << rewrite_trace[i].first << " ";
     }
     cout << endl;
+    */
 
 
     bool ok = learn_state_data(target_trace, rewrite_trace);

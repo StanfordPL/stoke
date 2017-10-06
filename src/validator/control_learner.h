@@ -130,7 +130,7 @@ private:
                                      std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
 
   IntVector assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& indexer,
-                                   std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
+                                   std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list, int col);
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);
