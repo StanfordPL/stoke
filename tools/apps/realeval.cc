@@ -179,9 +179,9 @@ pair<int, string> exec(const char* cmd) {
   return pair<int, string>(status, result);
 }
 
-int64_t real(string& bin) {
+int64_t real(string& bin, const string& fun) {
   auto start = time();
-  const string cmd = "timeout 1s " + bin + " rogers 10000";
+  const string cmd = "timeout 1s " + bin + " " + fun + " 10000";
   auto res = exec(cmd.c_str());
   auto& output = res.second;
   if (res.first != 0) {
@@ -190,7 +190,7 @@ int64_t real(string& bin) {
     cout << res.second << endl;
     return -1;
   }
-  if (output.find("rogers                0") == string::npos) {
+  if (output.find(" 0\n") == string::npos) {
     cout << "has errors" << endl;
     cout << res.second << endl;
     return -2;
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
     ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
 
     function<double()> reall = [&]() {
-      return (double)real(bin);
+      return (double)real(bin, item_fun);
     };
 
     string logfile = path + "/log.txt";
@@ -421,7 +421,7 @@ int main(int argc, char** argv) {
       TUnit code;
       string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
       if (id == -1) {
-        fpath = path_arg.value() + "/bins/nibble_sort_rogers.s";
+        fpath = path_arg.value() + "/bins/nibble_sort_" + item_fun + ".s";
       }
       ifstream ifs(fpath);
       ifs >> code;
