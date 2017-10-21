@@ -190,11 +190,11 @@ int64_t real(string& bin, const string& fun) {
     cout << res.second << endl;
     return -1;
   }
-  if (output.find(" 0\n") == string::npos) {
-    cout << "has errors" << endl;
-    cout << res.second << endl;
-    return -2;
-  }
+  // if (output.find("Found 1 errors") != string::npos) {
+  //   cout << "has errors" << endl;
+  //   cout << res.second << endl;
+  //   return -2;
+  // }
   return time() - start;
 }
 
@@ -307,10 +307,12 @@ int main(int argc, char** argv) {
       TUnit rewrite;
       ifstream ifs(fpath);
       ifs >> rewrite;
+      cout << "testing " << fpath << endl;
       return fxn_correct(Cfg(rewrite), max_cost_arg.value()).second;
     };
 
     // sample randomly
+    cout << "starting random sampling" << endl;
     size_t n = 0;
     random_shuffle(lines.begin(), lines.end());
     for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
@@ -325,6 +327,7 @@ int main(int argc, char** argv) {
     }
 
     // sample best
+    cout << "starting best sampling" << endl;
     n = 0;
     sort(lines.begin(), lines.end());
     for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
@@ -338,6 +341,8 @@ int main(int argc, char** argv) {
         lines[i][6] = 1;
       }
     }
+
+    cout << "done sampling" << endl;
 
     // write everything
     ofstream fout_compress(path + "/log.txt", ios_base::out | ios_base::binary | ios_base::trunc);
