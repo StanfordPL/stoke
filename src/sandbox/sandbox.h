@@ -251,6 +251,10 @@ public:
     return readwrote_topof_stack_ != 0;
   }
 
+  size_t get_jumps_used() {
+    return max_jumps_ - jumps_remaining_;
+  }
+
 private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;

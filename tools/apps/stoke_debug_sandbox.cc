@@ -212,5 +212,7 @@ int main(int argc, char** argv) {
   }
   Console::msg() << endl;
 
+  cout << "number of jumps: " << sb.get_jumps_used() << endl;
+
   return 0;
 }

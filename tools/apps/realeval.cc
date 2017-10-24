@@ -299,8 +299,7 @@ int main(int argc, char** argv) {
       TestSetGadget test_tcs(seed);
       SandboxGadget test_sb(test_tcs, {});
       PerformanceSetGadget perf_tcs(seed);
-      auto max_jumps = 1000000000;
-      test_sb.set_max_jumps(max_jumps);
+      test_sb.set_max_jumps(max_jumps_arg.value());
       ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
 
       string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
@@ -393,7 +392,7 @@ int main(int argc, char** argv) {
     SandboxGadget training_sb(train_tcs, {});
     PerformanceSetGadget perf_tcs(seed);
     SandboxGadget perf_sb(perf_tcs, {});
-    auto max_jumps = 1000000000;
+    auto max_jumps = max_jumps_arg.value();
     training_sb.set_max_jumps(max_jumps);
     perf_sb.set_max_jumps(max_jumps);
     ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
@@ -492,8 +491,7 @@ int main(int argc, char** argv) {
     TestSetGadget test_tcs(seed);
     SandboxGadget test_sb(test_tcs, {});
     PerformanceSetGadget perf_tcs(seed);
-    auto max_jumps = 1000000000;
-    test_sb.set_max_jumps(max_jumps);
+    test_sb.set_max_jumps(max_jumps_arg.value());
     ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
 
     string fpath = "test.s";

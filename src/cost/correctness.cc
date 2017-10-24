@@ -140,6 +140,10 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
   // If this testcase has signalled, we can't guarantee register state --
   // and technically we can do whatever we want with signalling code -- so
   // just return zero cost
+  if (t.code >= ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS) {
+    // don't return 0 for custom exit codes
+    return sig_penalty_;
+  }
   if (t.code != ErrorCode::NORMAL) {
     return 0;
   }
