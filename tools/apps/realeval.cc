@@ -369,7 +369,7 @@ int main(int argc, char** argv) {
         remove(fpath.c_str());
       }
     }
-  } else {
+  } else if (step_arg.value() == 2) {
 
 
 
@@ -473,6 +473,35 @@ int main(int argc, char** argv) {
 
       eval(cost, iteration, id, timestamp, best, random);
     }
+  }
+
+
+
+
+
+
+
+
+
+
+  else if (step_arg.value() == 3) {
+    const size_t nsamples = 2000;
+
+    TargetGadget target({}, false);
+    SeedGadget seed;
+    TestSetGadget test_tcs(seed);
+    SandboxGadget test_sb(test_tcs, {});
+    PerformanceSetGadget perf_tcs(seed);
+    auto max_jumps = 1000000000;
+    test_sb.set_max_jumps(max_jumps);
+    ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
+
+    string fpath = "test.s";
+    TUnit rewrite;
+    ifstream ifs(fpath);
+    ifs >> rewrite;
+    cout << "testing " << fpath << endl;
+    cout << fxn_correct(Cfg(rewrite), max_cost_arg.value()).second << endl;
   }
 
   return 0;
