@@ -302,7 +302,7 @@ int main(int argc, char** argv) {
       auto max_jumps = 1000000000;
       test_sb.set_max_jumps(max_jumps);
       ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
-      
+
       string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
       TUnit rewrite;
       ifstream ifs(fpath);
