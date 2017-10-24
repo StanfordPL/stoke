@@ -293,16 +293,16 @@ int main(int argc, char** argv) {
       }
     }
 
-    TargetGadget target({}, false);
-    SeedGadget seed;
-    TestSetGadget test_tcs(seed);
-    SandboxGadget test_sb(test_tcs, {});
-    PerformanceSetGadget perf_tcs(seed);
-    auto max_jumps = 1000000000;
-    test_sb.set_max_jumps(max_jumps);
-    ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
-
     auto eval = [&](vector<int>& line) {
+      TargetGadget target({}, false);
+      SeedGadget seed;
+      TestSetGadget test_tcs(seed);
+      SandboxGadget test_sb(test_tcs, {});
+      PerformanceSetGadget perf_tcs(seed);
+      auto max_jumps = 1000000000;
+      test_sb.set_max_jumps(max_jumps);
+      ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
+      
       string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
       TUnit rewrite;
       ifstream ifs(fpath);
