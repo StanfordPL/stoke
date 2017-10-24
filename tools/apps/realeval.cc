@@ -252,6 +252,9 @@ int main(int argc, char** argv) {
 
 
 
+
+
+
   auto read = [](istringstream& iss, const string& what) {
     if (iss.peek() == ' ') iss.ignore();
     iss.ignore(what.length() + 1);
@@ -289,24 +292,35 @@ int main(int argc, char** argv) {
         vals.push_back(0); // best sample
         vals.push_back(0); // random sample
         vals.push_back(0); // non-zero cost
+        vals.push_back(0); // killed
+        lines.push_back(vals);
+      } else if (is_prefix(line, "realtimep::killed")) {
+        vector<int> vals;
+        vals.push_back(0);
+        vals.push_back(0);
+        vals.push_back(0);
+        vals.push_back(0);
+        vals.push_back(0); // best sample
+        vals.push_back(0); // random sample
+        vals.push_back(0); // non-zero cost
+        vals.push_back(1); // killed
         lines.push_back(vals);
       }
     }
 
-    auto eval = [&](vector<int>& line) {
-      TargetGadget target({}, false);
-      SeedGadget seed;
-      TestSetGadget test_tcs(seed);
-      SandboxGadget test_sb(test_tcs, {});
-      PerformanceSetGadget perf_tcs(seed);
-      test_sb.set_max_jumps(max_jumps_arg.value());
-      ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
+    TargetGadget target({}, false);
+    SeedGadget seed;
+    TestSetGadget test_tcs(seed);
+    SandboxGadget test_sb(test_tcs, {});
+    PerformanceSetGadget perf_tcs(seed);
+    test_sb.set_max_jumps(max_jumps_arg.value());
+    ExprCost fxn_correct = *CostFunctionGadget::build_fxn("correctness", "0", target, &test_sb, &test_sb);
 
+    auto eval = [&](vector<int>& line) {
       string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
       TUnit rewrite;
       ifstream ifs(fpath);
       ifs >> rewrite;
-      cout << "testing " << fpath << endl;
       return fxn_correct(Cfg(rewrite), max_cost_arg.value()).second;
     };
 
@@ -315,13 +329,13 @@ int main(int argc, char** argv) {
     size_t n = 0;
     random_shuffle(lines.begin(), lines.end());
     for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
+      if (lines[i][7]) continue;
       auto cost = eval(lines[i]);
       if (cost == 0) {
         lines[i][5] = 1;
         n += 1;
       } else {
-        cout << "non-zero cost for " << lines[i][2] << " (" << cost << ")." << endl;
-        lines[i][6] = 1;
+        lines[i][6] = cost;
       }
     }
 
@@ -330,14 +344,14 @@ int main(int argc, char** argv) {
     n = 0;
     sort(lines.begin(), lines.end());
     for (size_t i = 0; n < nsamples && i < lines.size(); i++) {
+      if (lines[i][7]) continue;
       if (lines[i][6]) continue;
       auto cost = eval(lines[i]);
       if (cost == 0) {
         lines[i][4] = 1;
         n += 1;
       } else {
-        cout << "non-zero cost for " << lines[i][2] << "." << endl;
-        lines[i][6] = 1;
+        lines[i][6] = cost;
       }
     }
 
@@ -360,10 +374,12 @@ int main(int argc, char** argv) {
       fout << " timestamp_ms=" << line[3];
       fout << " best=" << line[4];
       fout << " random=" << line[5];
+      fout << " nzcost=" << line[6];
+      fout << " killed=" << line[7];
       fout << endl;
 
       // delete files we didn't sample
-      if (line[4] == 0 && line[5] == 0 && line[6] == 0) {
+      if (line[4] == 0 && line[5] == 0 && line[6] == 0 && line[7] == 0) {
         string fpath = path + "/intermediates/result-" + to_string(line[2]) + ".s";
         remove(fpath.c_str());
       }
@@ -459,6 +475,8 @@ int main(int argc, char** argv) {
     // get baseline
     eval(0, 0, -1, 0, 0, 0);
 
+    int nzcost_nr = 0;
+    int killed_nr = 0;
     while (getline(infile, line)) {
       istringstream iss(line);
       auto cost = read(iss, "cost");
@@ -467,11 +485,24 @@ int main(int argc, char** argv) {
       auto timestamp = read(iss, "timestamp_ms");
       auto best = read(iss, "best");
       auto random = read(iss, "random");
+      auto nzcost = read(iss, "nzcost");
+      auto killed = read(iss, "killed");
 
-      if (best == 0 && random == 0) continue;
+      if (best == 0 && random == 0 && nzcost == 0) continue;
 
-      eval(cost, iteration, id, timestamp, best, random);
+      if (nzcost == 1) {
+        nzcost_nr += 1;
+      } else if (killed) {
+        killed_nr += 1;
+      } else {
+        eval(cost, iteration, id, timestamp, best, random);
+      }
     }
+
+    // write meta info
+    std::ofstream fmeta(out_arg.value() + ".meta.txt");
+    fmeta << "nzcost_nr=" << nzcost_nr << endl;
+    fmeta << "killed_nr=" << killed_nr << endl;
   }
 
 

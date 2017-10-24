@@ -273,7 +273,8 @@ public:
 
     // check if the code read/wrote the top of the stack
     if (perf_sandbox_->did_readwrite_topofstack()) {
-      return result_type(true, max);
+      std::cout << "realtimep::did_readwrite_topofstack" << std::endl;
+      return result_type(true, (0x1ull << 60) - 3955);
     }
 
     // assemble code
@@ -312,18 +313,17 @@ public:
       if (kill(pid, SIGKILL) != 0) {
         cpputil::Console::error() << "kill failed: " << strerror(errno) << "." << std::endl;
       }
-      std::cout << "killed" << std::endl;
+      std::cout << "realtimep::killed" << std::endl;
 
       // .. collect the child to free up it's resources
       int status;
       waitpid(pid, &status, 0);
 
-
       // .. and start it again.
       start_realtimep();
 
       // we report a high cost for this
-      return result_type(true, max);
+      return result_type(true, (0x1ull << 60) - 3956);
     }
 
     return result_type(true, exec);
