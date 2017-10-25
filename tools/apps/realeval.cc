@@ -181,7 +181,7 @@ pair<int, string> exec(const char* cmd) {
 
 int64_t real(string& bin, const string& fun) {
   auto start = time();
-  const string cmd = "timeout 1s " + bin + " " + fun + " 10000";
+  const string cmd = "timeout 1s " + bin + " " + fun + " 20000";
   auto res = exec(cmd.c_str());
   auto& output = res.second;
   if (res.first != 0) {
@@ -454,9 +454,11 @@ int main(int argc, char** argv) {
         function<double()> latencyl = [&]() {
           return (double)fxn_latency(cfg, max_cost_arg.value()).second;
         };
-        auto t_realtime = mean(sample(realtimel, 5));
-        auto t_real = mean(sample(reall, 5));
-        auto t_lat = latencyl();
+        pair<double, double> t_real = mean(sample(reall, 5));
+        pair<double, double> t_realtime = pair<double,double>(-1,-1);
+        // t_realtime = mean(sample(realtimel, 5));
+        double t_lat = pair<double,double>(-1,-1);
+        // t_lat = latencyl();
         fout << "intermediates/result-" + to_string(id) + ".s";
         fout << "," << item;
         fout << "," << cost;
