@@ -58,6 +58,9 @@ auto& step_arg = ValueArg<int>::create("step")
                  .required()
                  .description("1 for cleanup after search, 2 for evaluation");
 
+auto& fake_arg = ValueArg<int>::create("fake")
+                 .description("1 to create fake machine usage");
+
 auto& path_arg = ValueArg<string>::create("path")
                  .usage("<path/to/dir>")
                  .required()
@@ -400,7 +403,7 @@ int main(int argc, char** argv) {
 
 
 
-
+    auto fake = fake_arg.value();
 
     TargetGadget target({}, false);
     SeedGadget seed;
@@ -434,8 +437,8 @@ int main(int argc, char** argv) {
     }
     string line;
     vector<string> lines;
-    std::ofstream fout(out_arg.value());
-    fout << fixed;
+    std::ofstream fout(out_arg.value(), ios::app);
+    if (!fake) fout << fixed;
 
     auto eval = [&](int cost, int iteration, int id, int timestamp, int best, int random) {
       TUnit code;
@@ -457,20 +460,23 @@ int main(int argc, char** argv) {
         pair<double, double> t_real = mean(sample(reall, 5));
         pair<double, double> t_realtime = pair<double,double>(-1,-1);
         // t_realtime = mean(sample(realtimel, 5));
-        double t_lat = pair<double,double>(-1,-1);
+        double t_lat = -1;
         // t_lat = latencyl();
-        fout << "intermediates/result-" + to_string(id) + ".s";
-        fout << "," << item;
-        fout << "," << cost;
-        fout << "," << iteration;
-        fout << "," << id;
-        fout << "," << timestamp;
-        fout << "," << best;
-        fout << "," << random;
-        fout << "," << t_real.first << "," << t_real.second;
-        fout << "," << t_realtime.first << "," << t_realtime.second;
-        fout << "," << t_lat;
-        fout << endl;
+
+        if (!fake) {
+          fout << "intermediates/result-" + to_string(id) + ".s";
+          fout << "," << item;
+          fout << "," << cost;
+          fout << "," << iteration;
+          fout << "," << id;
+          fout << "," << timestamp;
+          fout << "," << best;
+          fout << "," << random;
+          fout << "," << t_real.first << "," << t_real.second;
+          fout << "," << t_realtime.first << "," << t_realtime.second;
+          fout << "," << t_lat;
+          fout << endl;
+        }
       }
     };
 
