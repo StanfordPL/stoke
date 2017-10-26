@@ -506,13 +506,14 @@ int main(int argc, char** argv) {
         killed_nr += killed;
       }
 
-      if (best == 0 && random == 0 && nzcost == 0) continue;
-
       if (nzcost == 1) {
         nzcost_nr += 1;
-      } else {
-        eval(cost, iteration, id, timestamp, best, random);
       }
+
+      // only evaluate if it is actually a sample
+      if (best == 0 && random == 0) continue;
+
+      eval(cost, iteration, id, timestamp, best, random);
     }
 
     // write meta info

@@ -96,10 +96,19 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
     return false;
   }
 
+  // count noops at the end
+  int num_nops = 0, i = code.size()-1;
+  while (i > 0) {
+    if (code[i].get_opcode() != NOP) break;
+    i--;
+    num_nops++;
+  }
+
   auto fxn = result.second;
 
   // Fail if the new function is larger than the old
-  if (fxn.size() > size) {
+  auto size = tunit.hex_capacity();
+  if (fxn.size() - num_nops > size) {
     Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
     Console::msg() << "." << endl;
     return false;
@@ -141,17 +150,18 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   // Overwrite the old function (fingers crossed!)
   fstream fs(dest, ios::binary | ios::in | ios::out);
   fs.seekg(offset);
-  for (size_t i = 0; i < fxn.size(); ++i) {
+  for (size_t i = 0; i < fxn.size() - num_nops; ++i) {
     fs.put(fxn.get_buffer()[i]);
   }
   // Add no-ops so that we don't write garbage and confuse
   // the disassembler.  See #452.
-  for (size_t i = fxn.size(); i < size; ++i) {
+  for (size_t i = fxn.size() - num_nops; i < size; ++i) {
     fs.put(0x90);
   }
 
   return true;
 }
+
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
