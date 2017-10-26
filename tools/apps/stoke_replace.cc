@@ -108,7 +108,6 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   auto fxn = result.second;
 
   // Fail if the new function is larger than the old
-  auto size = tunit.hex_capacity();
   if (fxn.size() - num_nops > size) {
     Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
     Console::msg() << "." << endl;
