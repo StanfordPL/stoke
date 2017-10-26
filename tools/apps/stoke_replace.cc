@@ -97,6 +97,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   }
 
   // count noops at the end
+  auto code = cfg.get_code();
   int num_nops = 0, i = code.size()-1;
   while (i > 0) {
     if (code[i].get_opcode() != NOP) break;
