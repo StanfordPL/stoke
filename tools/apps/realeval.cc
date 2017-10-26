@@ -284,6 +284,7 @@ int main(int argc, char** argv) {
     }
     string line;
     vector<vector<int>> lines;
+    int killed_nr = 0;
     while (getline(infile, line)) {
       if (is_prefix(line, "cost=")) {
         istringstream iss(line);
@@ -298,17 +299,22 @@ int main(int argc, char** argv) {
         vals.push_back(0); // killed
         lines.push_back(vals);
       } else if (is_prefix(line, "realtimep::killed")) {
-        vector<int> vals;
-        vals.push_back(0);
-        vals.push_back(0);
-        vals.push_back(0);
-        vals.push_back(0);
-        vals.push_back(0); // best sample
-        vals.push_back(0); // random sample
-        vals.push_back(0); // non-zero cost
-        vals.push_back(1); // killed
-        lines.push_back(vals);
+        killed_nr += 1;
       }
+    }
+
+    // add killed count
+    if (killed_nr > 0) {
+      vector<int> vals;
+      vals.push_back(0);
+      vals.push_back(0);
+      vals.push_back(0);
+      vals.push_back(0);
+      vals.push_back(0); // best sample
+      vals.push_back(0); // random sample
+      vals.push_back(0); // non-zero cost
+      vals.push_back(killed_nr); // killed
+      lines.push_back(vals);
     }
 
     TargetGadget target({}, false);
@@ -496,12 +502,14 @@ int main(int argc, char** argv) {
       auto nzcost = read(iss, "nzcost");
       auto killed = read(iss, "killed");
 
+      if (killed) {
+        killed_nr += killed;
+      }
+
       if (best == 0 && random == 0 && nzcost == 0) continue;
 
       if (nzcost == 1) {
         nzcost_nr += 1;
-      } else if (killed) {
-        killed_nr += 1;
       } else {
         eval(cost, iteration, id, timestamp, best, random);
       }
