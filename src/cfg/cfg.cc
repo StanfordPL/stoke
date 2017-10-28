@@ -134,12 +134,15 @@ void Cfg::recompute_blocks() {
       boundaries_[i] = true;
     } else if (instr.is_jump() || instr.is_return()) {
       boundaries_[i + 1] = true;
-    } 
-#ifdef STOKE_CFG_COMPARE_NEW_BLOCK 
-    else if (instr.is_compare()) {
-      /* make compares start a new basic block... this simplifies things
-         for the validator. */
-      boundaries_[i] = true; 
+    }
+#ifdef STOKE_CFG_COMPARE_NEW_BLOCK
+    else {
+      auto mws = instr.maybe_write_set();
+      if (mws.flags_begin() != mws.flags_end()) {
+        /* make compares start a new basic block... this simplifies things
+           for the validator. */
+        boundaries_[i] = true;
+      }
     }
 #endif
   }

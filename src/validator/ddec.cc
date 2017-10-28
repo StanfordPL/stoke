@@ -390,11 +390,11 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
           cout << "Adding edge failed" << endl;
         }
       } else {
-        if(!checker_has_ceg()) {
+        if (!checker_has_ceg()) {
           cout << "Could not get counterexample... aborting" << endl;
         } else if (checker_get_target_ceg() == ceg && !first) {
           cout << "Got repeated counterexample... something is wrong!" << endl;
-        } else if(current_okay) {
+        } else if (current_okay) {
           cout << "That went well... moving on!" << endl;
         }
       }
