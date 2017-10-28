@@ -164,10 +164,11 @@ void timing(const string& what = "start") {
   _last_time = time();
 }
 
-pair<int, string> exec(const char* cmd) {
+pair<int, string> exec(const string& cmd) {
   char buffer[128];
   string result = "";
-  FILE* pipe = popen(cmd, "r");
+  const string realcmd = cmd + " 2>&1";
+  FILE* pipe = popen(realcmd.c_str(), "r");
   if (!pipe) throw runtime_error("popen() failed!");
   try {
     while (!feof(pipe)) {
@@ -185,7 +186,7 @@ pair<int, string> exec(const char* cmd) {
 int64_t real(string& bin, const string& fun) {
   auto start = time();
   const string cmd = "timeout 1s " + bin + " " + fun + " 20000";
-  auto res = exec(cmd.c_str());
+  auto res = exec(cmd);
   auto& output = res.second;
   if (res.first != 0) {
     if (res.first == 124) return -3;
