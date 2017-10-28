@@ -61,7 +61,7 @@ void print_machine_output(bool verified, string error, string counterexample, bo
 }
 
 int main(int argc, char** argv) {
-  
+
   auto version_info = R"VERSIONINFO(
 #include "version_info"
   )VERSIONINFO";

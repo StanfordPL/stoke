@@ -231,14 +231,14 @@ bool ObligationChecker::exhaustive_check_counterexample(
     return false;
 
   auto last_target = target_trace.back().second;
-  if(last_target.code != ErrorCode::NORMAL) {
+  if (last_target.code != ErrorCode::NORMAL) {
     cout << "Counterexample hit exception " << (int)last_target.code << " in target" << endl;
-    return false; 
+    return false;
   }
   auto last_rewrite = rewrite_trace.back().second;
-  if(last_rewrite.code != ErrorCode::NORMAL) {
+  if (last_rewrite.code != ErrorCode::NORMAL) {
     cout << "Counterexample hit exception " << (int)last_rewrite.code << " in rewrite" << endl;
-    return false; 
+    return false;
   }
 
   // The counterexample has to pass the invariant.
@@ -579,12 +579,12 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Build the circuits
   size_t line_no = 0;
 
-  if(P.size() > 0) {
+  if (P.size() > 0) {
     auto ji = get_jump_inv(target, target_block, P, true);
     SymBool conj = (*ji)(state_t, state_t, line_no, line_no);
     constraints.push_back(conj);
   }
-  if(Q.size() > 0) {
+  if (Q.size() > 0) {
     auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
     SymBool conj = (*ji)(state_r, state_r, line_no, line_no);
     constraints.push_back(conj);
@@ -906,7 +906,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     // get initial assumption (again) (need to rework each time due to arm)
     vector<SymBool> arm_constraints;
 
-     cout << "Getting path constraints..." << endl;
+    cout << "Getting path constraints..." << endl;
     auto P_constraint = get_path_constraint(target, state_t, target_block, P);
     auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
 

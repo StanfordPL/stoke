@@ -711,10 +711,10 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
   auto new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
   bool status = callback(new_dual);
-  if(status == true)
+  if (status == true)
     return true;
 
-  for(size_t i = 0; i < edge_indexer.count(); ++i) {
+  for (size_t i = 0; i < edge_indexer.count(); ++i) {
     cout << "============================================================" << endl;
     cout << "WELP THAT FAILED!!  Let's try a few more edge assignments..." << endl;
     auto assignment = assignment_from_matrix(dual, edge_indexer, edge_list, -1);
@@ -728,7 +728,7 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
 
     new_dual = update_dual_with_vars(dual, edge_indexer, assignment, edge_list);
     status = callback(new_dual);
-    if(status)
+    if (status)
       return true;
   }
 
