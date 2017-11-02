@@ -34,10 +34,33 @@ class ControlLearner {
 
 public:
 
+  struct TracePoint {
+    Cfg::id_type block_id;
+    CpuState cs;
+
+    bool operator==(const TracePoint& other) const {
+      return block_id == other.block_id;
+    }
+
+    bool operator<(const TracePoint& other) const {
+      return block_id < other.block_id;
+    }
+  };
+
+  typedef std::vector<TracePoint> Trace;
+
   /** Initiates computation of the cutpoints for target/rewrite. */
   ControlLearner(const Cfg& target, const Cfg& rewrite, Sandbox& sandbox) :
     target_(target), rewrite_(rewrite), sandbox_(sandbox) {
     compute();
+  }
+
+  std::vector<Trace> get_target_traces() {
+    return target_traces_;
+  }
+
+  std::vector<Trace> get_rewrite_traces() { 
+    return rewrite_traces_;
   }
 
   bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
@@ -85,16 +108,11 @@ private:
 
 
 
-  struct TracePoint {
-    Cfg::id_type block_id;
-    CpuState cs;
-  };
-
   /** This is the main function that computes all the matricies and fills local variables. */
   void compute();
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */
-  void mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace);
+  void mine_data(const Cfg& cfg, size_t testcase, Trace& trace);
 
   /** Helper: Check if a basic block ends with a jump or not. */
   static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
@@ -154,8 +172,8 @@ private:
   Cfg rewrite_;
   Sandbox sandbox_;
 
-  std::vector<std::vector<TracePoint>> target_traces_;
-  std::vector<std::vector<TracePoint>> rewrite_traces_;
+  std::vector<Trace> target_traces_;
+  std::vector<Trace> rewrite_traces_;
 
   IntMatrix kernel_generators_;
 
@@ -163,7 +181,7 @@ private:
 
   struct CallbackParam {
     Cfg::id_type block_id;
-    std::vector<TracePoint>* trace;
+    Trace* trace;
   };
 
   /** The callback used for gathering data from each of the cutpoints */

@@ -451,88 +451,100 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // NonZero invariants
-  for (size_t k = 0; k < 2; ++k) {
-    auto& states = k ? rewrite_states : target_states;
-    auto& regs = k ? rewrite_regs : target_regs;
+  if(!disable_nonlinear_) {
+    for (size_t k = 0; k < 2; ++k) {
+      auto& states = k ? rewrite_states : target_states;
+      auto& regs = k ? rewrite_regs : target_regs;
 
-    for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
-      bool all_nonzero = true;
+      for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
+        bool all_nonzero = true;
 
-      for (auto state : states) {
-        if (state.gp[*it].get_fixed_quad(0) == 0) {
-          all_nonzero = false;
+        for (auto state : states) {
+          if (state.gp[*it].get_fixed_quad(0) == 0) {
+            all_nonzero = false;
+          }
         }
-      }
 
-      if (all_nonzero) {
-        Variable v(r64s[*it], k);
-        auto nz = new NonzeroInvariant(v);
-        if (nz->check(target_states, rewrite_states)) {
-          conj->add_invariant(nz);
-        } else {
-          LEARNER_DEBUG(cout << "GOT BAD INVARIANT " << *nz << endl;)
-          delete nz;
+        if (all_nonzero) {
+          Variable v(r64s[*it], k);
+          auto nz = new NonzeroInvariant(v);
+          if (nz->check(target_states, rewrite_states)) {
+            conj->add_invariant(nz);
+          } else {
+            LEARNER_DEBUG(cout << "GOT BAD INVARIANT " << *nz << endl;)
+            delete nz;
+          }
         }
       }
     }
   }
 
   // mod2^n invariants
-  auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
-  for (auto modulo : potential_mod2n) {
-    if (modulo->check(target_states, rewrite_states)) {
-      conj->add_invariant(modulo);
-    } else {
-      delete modulo;
+  if(!disable_nonlinear_) {
+    auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
+    for (auto modulo : potential_mod2n) {
+      if (modulo->check(target_states, rewrite_states)) {
+        conj->add_invariant(modulo);
+      } else {
+        delete modulo;
+      }
     }
   }
 
   // sign invariants
-  auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
-  for (auto sign : potential_sign) {
-    if (sign->check(target_states, rewrite_states)) {
-      conj->add_invariant(sign);
-    } else {
-      delete sign;
+  if(!disable_nonlinear_) {
+    auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
+    for (auto sign : potential_sign) {
+      if (sign->check(target_states, rewrite_states)) {
+        conj->add_invariant(sign);
+      } else {
+        delete sign;
+      }
     }
   }
 
   // Inequality invariants
-  auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
-  for (auto ineq : potential_inequalities) {
-    if (ineq->check(target_states, rewrite_states)) {
-      conj->add_invariant(ineq);
-    } else {
-      delete ineq;
+  if(!disable_nonlinear_) {
+    auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
+    for (auto ineq : potential_inequalities) {
+      if (ineq->check(target_states, rewrite_states)) {
+        conj->add_invariant(ineq);
+      } else {
+        delete ineq;
+      }
     }
   }
 
   // flag invariants
-  auto potential_flags = build_flag_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
-  for (auto it : potential_flags)
-    conj->add_invariant(it);
+  if(!disable_nonlinear_) {
+    auto potential_flags = build_flag_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+    for (auto it : potential_flags)
+      conj->add_invariant(it);
 
-  auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target_, rewrite_);
-  for (auto mem_null : potential_memory_nulls) {
-    //cout << "Testing " << *mem_null << endl;
-    if (mem_null->check(target_states, rewrite_states)) {
-      //cout << " * pass" << endl;
-      conj->add_invariant(mem_null);
-    } else {
-      //cout << " * fail" << endl;
-      delete mem_null;
+    auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target_, rewrite_);
+    for (auto mem_null : potential_memory_nulls) {
+      //cout << "Testing " << *mem_null << endl;
+      if (mem_null->check(target_states, rewrite_states)) {
+        //cout << " * pass" << endl;
+        conj->add_invariant(mem_null);
+      } else {
+        //cout << " * fail" << endl;
+        delete mem_null;
+      }
     }
   }
 
-  for (auto ghost : ghosts_) {
-    auto pointer_null = new PointerNullInvariant(ghost, 1);
-    LEARNER_DEBUG(cout << "testing ptr " << *pointer_null << endl;)
-    if (pointer_null->check(target_states, rewrite_states)) {
-      conj->add_invariant(pointer_null);
-      LEARNER_DEBUG(cout << "  * accepted" << endl;)
-    } else {
-      delete pointer_null;
-      LEARNER_DEBUG(cout << "  * rejected" << endl;)
+  if(!disable_nonlinear_) {
+    for (auto ghost : ghosts_) {
+      auto pointer_null = new PointerNullInvariant(ghost, 1);
+      LEARNER_DEBUG(cout << "testing ptr " << *pointer_null << endl;)
+      if (pointer_null->check(target_states, rewrite_states)) {
+        conj->add_invariant(pointer_null);
+        LEARNER_DEBUG(cout << "  * accepted" << endl;)
+      } else {
+        delete pointer_null;
+        LEARNER_DEBUG(cout << "  * rejected" << endl;)
+      }
     }
   }
 
@@ -556,7 +568,10 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     }
   }
 
-  auto mem_vars = get_memory_variables(target_, rewrite_);
+  vector<Variable> mem_vars;
+  if(enable_memory_)
+    mem_vars = get_memory_variables(target_, rewrite_);
+
   // add variable to columns
   /*
   for (auto var : mem_vars) {
