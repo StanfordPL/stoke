@@ -481,6 +481,24 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
   }
 }
 
+ControlLearner::Trace bound_trace(ControlLearner::Trace& tr, size_t bound) {
+
+  ControlLearner::Trace trace;
+  map<Cfg::id_type, size_t> block_counts;
+
+  for(auto state : tr) {
+    auto block = state.block_id;
+    block_counts[block]++;
+
+    if(block_counts[block] > bound)
+      break;
+
+    trace.push_back(state);
+  }
+
+  return trace;
+}
+
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
@@ -605,6 +623,176 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     return control_learner_->update_dual(dual, dual_callback);
 
   };
+
+  /*
+  function<bool (vector<CfgPath>&, vector<CfgPath>&)>  oct27_experiment = 
+    [this](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
+
+    InvariantLearner learner(target_, rewrite_);
+    learner.set_disable_nonlinear(true);
+    learner.set_enable_memory(false);
+
+    // find the cutpoints
+    set<pair<Cfg::id_type, Cfg::id_type>> cutpoints;
+    for(size_t i = 0; i < target_paths.size(); ++i) {
+      auto ts = target_paths[i][0];
+      auto rs = rewrite_paths[i][0];
+      pair<Cfg::id_type, Cfg::id_type> state_pair(ts, rs);
+      cutpoints.insert(state_pair);
+    }
+
+    auto target_traces = control_learner_->get_target_traces();
+    auto rewrite_traces = control_learner_->get_rewrite_traces();
+
+    for(size_t bound = 1; bound <= 3; ++bound) {
+      // compute bounded traces
+      vector<ControlLearner::Trace> bounded_target_traces;
+      vector<ControlLearner::Trace> bounded_rewrite_traces;
+      for(auto tr : target_traces)
+        bounded_target_traces.push_back(bound_trace(tr, bound));
+      for(auto tr : rewrite_traces)
+        bounded_rewrite_traces.push_back(bound_trace(tr, bound));
+
+      // find all the paths from start to each cutpoint via data up to bound
+      for(auto& cutpoint : cutpoints) {
+
+        cout << "=======================================" << endl;
+        cout << "=======================================" << endl;
+
+        auto ts = cutpoint.first;
+        auto rs = cutpoint.second;
+
+        // across all executions, consider each path to this cutpoint
+        map<ControlLearner::Trace, map<ControlLearner::Trace, std::pair<vector<CpuState>, vector<CpuState>>>> full_map;
+        map<ControlLearner::Trace, map<ControlLearner::Trace, Invariant*>> full_invs;
+
+        for(size_t k = 0; k < bounded_target_traces.size(); ++k) {
+          auto tt = bounded_target_traces[k];
+          auto rt = bounded_rewrite_traces[k];
+
+          map<ControlLearner::Trace, CpuState> target_to_cutpoint;
+          map<ControlLearner::Trace, CpuState> rewrite_to_cutpoint;
+
+          for(size_t i = 0; i < tt.size(); ++i) {
+            if(tt[i].block_id == ts) {
+              ControlLearner::Trace new_trace;
+              for(size_t j = 0; j <= i; ++j) {
+                new_trace.push_back(tt[j]);
+              }
+              target_to_cutpoint[new_trace] = tt[i].cs;
+            }
+          }
+
+          for(size_t i = 0; i < rt.size(); ++i) {
+            if(rt[i].block_id == rs) {
+              ControlLearner::Trace new_trace;
+              for(size_t j = 0; j <= i; ++j) {
+                new_trace.push_back(rt[j]);
+              }
+              rewrite_to_cutpoint[new_trace] = rt[i].cs;
+            }
+          }
+
+          for(auto t_pair : target_to_cutpoint) {
+            for(auto r_pair : rewrite_to_cutpoint) {
+              full_map[t_pair.first][r_pair.first].first.push_back(t_pair.second);
+              full_map[t_pair.first][r_pair.first].second.push_back(r_pair.second);
+            }
+          }
+        }
+
+        // on each path, get the data and learn an invariant using the Learner
+        for(auto full_item : full_map) {
+          auto target_path = full_item.first;
+          for(auto next_item : full_item.second) {
+            auto rewrite_path = next_item.first;
+            auto target_states = next_item.second.first;
+            auto rewrite_states = next_item.second.second;
+
+            cout << "TARGET PATH: "; 
+            for(auto blk : target_path)
+              cout << blk.block_id << " ";
+            cout << "REWRITE PATH: "; 
+            for(auto blk : rewrite_path)
+              cout << blk.block_id << " ";
+            cout << endl;
+
+            cout << "NUMBER STATES: " << target_states.size() << endl;
+
+            auto target_loc = Cfg::loc_type(ts, target_.num_instrs(ts)-1);
+            auto rewrite_loc = Cfg::loc_type(rs, rewrite_.num_instrs(rs)-1);
+
+            auto inv = learner.learn(target_.live_outs(target_loc), rewrite_.live_outs(rewrite_loc),
+                                     target_states, rewrite_states);
+            for(size_t i = 0; i < inv->size(); ++i) {
+              cout << *(*inv)[i] << endl;
+            }
+            full_invs[target_path][rewrite_path] = inv;
+          }
+        }
+
+        Z3Solver z3;
+        for(auto invA_item : full_invs) {
+          for(auto invA_item2 : invA_item.second) {
+            auto target_path_A = invA_item.first;
+            auto rewrite_path_A = invA_item2.first;
+            auto inv_A = invA_item2.second;
+
+            for(auto invB_item : full_invs) {
+              for(auto invB_item2 : invB_item.second) {
+                auto target_path_B = invB_item.first;
+                auto rewrite_path_B = invB_item2.first;
+                auto inv_B = invB_item2.second;
+
+                SymState state_t("A");
+                SymState state_r("B");
+                size_t x,y;
+                auto bool_A = (*inv_A)(state_t, state_r, x, y);
+                auto bool_B = (*inv_B)(state_t, state_r, x, y);
+                auto impl = bool_A.implies(bool_B);
+                vector<SymBool> constraints;
+                constraints.push_back(!impl);
+
+                cout << "TARGET PATH A: "; 
+                for(auto blk : target_path_A)
+                  cout << blk.block_id << " ";
+                cout << "REWRITE PATH A: "; 
+                for(auto blk : rewrite_path_A)
+                  cout << blk.block_id << " ";
+                cout << endl;
+                cout << "TARGET PATH B: "; 
+                for(auto blk : target_path_B)
+                  cout << blk.block_id << " ";
+                cout << "REWRITE PATH B: "; 
+                for(auto blk : rewrite_path_B)
+                  cout << blk.block_id << " ";
+                cout << endl;
+
+                cout << "bool_A: " << bool_A << endl;
+                cout << "bool_B: " << bool_B << endl;
+
+                bool hold_ceg = z3.is_sat(constraints);
+                cout << "A => B Holds: " << !hold_ceg << endl;
+
+              }
+            }
+          }
+        }
+
+        // make a grid of the invariant conjuncts learned
+          // which ones, when combined, imply false?
+          // which ones imply false already?
+          // which ones imply another conjunct?
+
+          // try combining the data points for each grid cell and learning a new invariant based on that
+          // does this new invariant imply the prior invariants? (it should...)
+      }
+
+    }
+
+    return false;
+  };
+  */
 
 
 

@@ -32,6 +32,18 @@ public:
 
   InvariantLearner& add_ghost(Variable v) {
     ghosts_.push_back(v);
+    set_disable_nonlinear(false);
+    set_enable_memory(true);
+    return *this;
+  }
+
+  InvariantLearner& set_disable_nonlinear(bool b) {
+    disable_nonlinear_ = b;
+    return *this;
+  }
+
+  InvariantLearner& set_enable_memory(bool b) {
+    enable_memory_ = b;
     return *this;
   }
 
@@ -63,6 +75,10 @@ private:
 
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;
+
+  /** Some options */
+  bool disable_nonlinear_;
+  bool enable_memory_;
 
 };
 
