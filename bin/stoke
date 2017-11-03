@@ -35,6 +35,7 @@ then
 	echo "  debug diff          diff the resulting state of two functions"
 	echo "  debug effect        show the effect of a function on the state"
 	echo "  debug formula       show the SMT formula for a straight-line piece of code"
+  echo "  debug invariant     find an invariant across a pair of sets of test cases"
 	echo "  debug sandbox       step through a function execution"
 	echo "  debug search        perform a program transformation"
 	echo "  debug simplify      take an x86 program and simplify it (by removing redundant instructions)"
@@ -68,6 +69,9 @@ then
 	elif [ "$SCMD" == "effect" ]
 	then
 		exec $HERE/stoke_debug_effect "$@"
+	elif [ "$SCMD" == "invariant" ]
+	then
+		exec $HERE/stoke_debug_invariant "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
 		exec $HERE/stoke_debug_sandbox "$@"
