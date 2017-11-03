@@ -486,11 +486,11 @@ ControlLearner::Trace bound_trace(ControlLearner::Trace& tr, size_t bound) {
   ControlLearner::Trace trace;
   map<Cfg::id_type, size_t> block_counts;
 
-  for(auto state : tr) {
+  for (auto state : tr) {
     auto block = state.block_id;
     block_counts[block]++;
 
-    if(block_counts[block] > bound)
+    if (block_counts[block] > bound)
       break;
 
     trace.push_back(state);
@@ -625,7 +625,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   };
 
   /*
-  function<bool (vector<CfgPath>&, vector<CfgPath>&)>  oct27_experiment = 
+  function<bool (vector<CfgPath>&, vector<CfgPath>&)>  oct27_experiment =
     [this](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
 
     InvariantLearner learner(target_, rewrite_);
@@ -709,10 +709,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             auto target_states = next_item.second.first;
             auto rewrite_states = next_item.second.second;
 
-            cout << "TARGET PATH: "; 
+            cout << "TARGET PATH: ";
             for(auto blk : target_path)
               cout << blk.block_id << " ";
-            cout << "REWRITE PATH: "; 
+            cout << "REWRITE PATH: ";
             for(auto blk : rewrite_path)
               cout << blk.block_id << " ";
             cout << endl;
@@ -753,17 +753,17 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                 vector<SymBool> constraints;
                 constraints.push_back(!impl);
 
-                cout << "TARGET PATH A: "; 
+                cout << "TARGET PATH A: ";
                 for(auto blk : target_path_A)
                   cout << blk.block_id << " ";
-                cout << "REWRITE PATH A: "; 
+                cout << "REWRITE PATH A: ";
                 for(auto blk : rewrite_path_A)
                   cout << blk.block_id << " ";
                 cout << endl;
-                cout << "TARGET PATH B: "; 
+                cout << "TARGET PATH B: ";
                 for(auto blk : target_path_B)
                   cout << blk.block_id << " ";
-                cout << "REWRITE PATH B: "; 
+                cout << "REWRITE PATH B: ";
                 for(auto blk : rewrite_path_B)
                   cout << blk.block_id << " ";
                 cout << endl;
