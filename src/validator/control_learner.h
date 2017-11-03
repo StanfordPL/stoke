@@ -59,7 +59,7 @@ public:
     return target_traces_;
   }
 
-  std::vector<Trace> get_rewrite_traces() { 
+  std::vector<Trace> get_rewrite_traces() {
     return rewrite_traces_;
   }
 

@@ -451,7 +451,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // NonZero invariants
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     for (size_t k = 0; k < 2; ++k) {
       auto& states = k ? rewrite_states : target_states;
       auto& regs = k ? rewrite_regs : target_regs;
@@ -480,7 +480,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // mod2^n invariants
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
     for (auto modulo : potential_mod2n) {
       if (modulo->check(target_states, rewrite_states)) {
@@ -492,7 +492,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // sign invariants
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
     for (auto sign : potential_sign) {
       if (sign->check(target_states, rewrite_states)) {
@@ -504,7 +504,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // Inequality invariants
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
     for (auto ineq : potential_inequalities) {
       if (ineq->check(target_states, rewrite_states)) {
@@ -516,7 +516,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // flag invariants
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     auto potential_flags = build_flag_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
     for (auto it : potential_flags)
       conj->add_invariant(it);
@@ -534,7 +534,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     }
   }
 
-  if(!disable_nonlinear_) {
+  if (!disable_nonlinear_) {
     for (auto ghost : ghosts_) {
       auto pointer_null = new PointerNullInvariant(ghost, 1);
       LEARNER_DEBUG(cout << "testing ptr " << *pointer_null << endl;)
@@ -569,7 +569,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   vector<Variable> mem_vars;
-  if(enable_memory_)
+  if (enable_memory_)
     mem_vars = get_memory_variables(target_, rewrite_);
 
   // add variable to columns
