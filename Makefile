@@ -250,6 +250,7 @@ BIN=\
 	bin/stoke_debug_cost \
 	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
+	bin/stoke_debug_invariant \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
 	bin/stoke_debug_simplify \
