@@ -420,6 +420,7 @@ bool TransformPools::get_lea_mem(const RegSet& rs, Operand& o) {
 }
 
 bool TransformPools::get_rip_mem(Operand& o) {
+  return false;
   if (rip_pool_.empty()) {
     return false;
   }
@@ -436,6 +437,7 @@ bool TransformPools::get_rip_mem(Operand& o) {
 }
 
 bool TransformPools::get_reg_mem(const RegSet& rs, Operand& o) {
+  return false;
   // Pull an operand out of the mem pool
   if (m_pool_.empty()) {
     return false;
@@ -464,6 +466,7 @@ bool TransformPools::get_reg_mem(const RegSet& rs, Operand& o) {
 }
 
 bool TransformPools::get_m(const RegSet& rs, Opcode c, Operand& o) {
+  return false;
   if (is_lea_opcode(c)) {
     return get_lea_mem(rs, o);
   } else if (gen_() % 2) {
