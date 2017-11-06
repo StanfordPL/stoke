@@ -98,8 +98,7 @@ So, for these reasons, benchmarking works as follows:
 
 IMPORTANT: because we want to support retq in the target code, we must set the
 return address in the target stack.  This won't work if the target reads or writes
-that location (i.e. "(%rsp)")!  We could check this assumption in the sandbox,
-but right now we just silently make the assumption.
+that location (i.e. "(%rsp)")!  We check this assumption in the sandbox.
 
 
 safety net
