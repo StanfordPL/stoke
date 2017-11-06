@@ -118,7 +118,9 @@ bool replace(string& dest, TUnit& tunit) {
   // count noops at the end
   int num_nops = 0, i = code.size()-1;
   while (i > 0) {
-    if (code[i].get_opcode() != NOP) break;
+    stringstream ss;
+    ss << code[i];
+    if (code[i].get_opcode() != NOP && ss.str() != "xchgw %ax, %ax") break;
     i--;
     num_nops++;
   }

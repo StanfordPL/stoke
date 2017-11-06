@@ -100,10 +100,13 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   auto code = cfg.get_code();
   int num_nops = 0, i = code.size()-1;
   while (i > 0) {
-    if (code[i].get_opcode() != NOP) break;
+    stringstream ss;
+    ss << code[i];
+    if (code[i].get_opcode() != NOP && ss.str() != "xchgw %ax, %ax") break;
     i--;
     num_nops++;
   }
+  cout << num_nops << endl;
 
   auto fxn = result.second;
 

@@ -18,6 +18,8 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <string>
+#include <sstream>
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/ext/cpputil/include/io/console.h"
@@ -60,7 +62,9 @@ public:
         // count noops at the end
         int num_nops = 0, i = code.size()-1;
         while (i > 0) {
-          if (code[i].get_opcode() != x64asm::NOP) break;
+          std::stringstream ss;
+          ss << code[i];
+          if (code[i].get_opcode() != x64asm::NOP && ss.str() != "xchgw %ax, %ax") break;
           i--;
           num_nops++;
         }
