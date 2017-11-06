@@ -45,7 +45,7 @@ public:
 
   size_t get_index(Cfg& cfg) {
     if (start_ != -1) {
-      return (gen_() % (end_ - start_)) + start_;
+      return (gen_() % (end_ - start_ - 1)) + start_ + 1;
     }
     return (gen_() % (cfg.get_code().size() - 1)) + 1;
   }

@@ -54,9 +54,23 @@ public:
         std::cerr << "transform_window_start and transform_window_end both need to be -1, or neither." << std::endl;
         exit(1);
       }
-      set_window(transform_window_start, transform_window_end);
+      int end = transform_window_end;
+      if (transform_window_end == 99999) {
+        auto code = target_arg.value().get_code();
+        // count noops at the end
+        int num_nops = 0, i = code.size()-1;
+        while (i > 0) {
+          if (code[i].get_opcode() != x64asm::NOP) break;
+          i--;
+          num_nops++;
+        }
+        end = code.size() - num_nops;
+        end = end + end/10;
+        std::cout << end << std::endl;
+      }
+      set_window(transform_window_start, end);
       for (auto t : transforms_) {
-        t->set_window(transform_window_start, transform_window_end);
+        t->set_window(transform_window_start, end);
       }
     }
 
