@@ -259,6 +259,7 @@ BIN=\
 	bin/stoke_debug_tunit \
 	bin/stoke_debug_format \
 	bin/realeval \
+	bin/realtestaug \
 	bin/stoke_debug_verify \
 	\
 	bin/stoke_benchmark_cfg \
