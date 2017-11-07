@@ -106,7 +106,6 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
     i--;
     num_nops++;
   }
-  cout << num_nops << endl;
 
   auto fxn = result.second;
 
