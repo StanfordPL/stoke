@@ -46,6 +46,9 @@ public:
   /** Check if vector is in nullspace */
   bool in_nullspace(IntVector& vect) const;
 
+  /** Compute a generating set for the nullspace over Z/2^64Z */
+  //IntMatrix nullspace64() const;
+
   /** Return generating set to solutions of Ax = 0 */
   IntMatrix solve_diophantine() const;
   /** Returns a solution to Ax = b */

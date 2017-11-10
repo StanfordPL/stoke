@@ -714,6 +714,7 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
   if (status == true)
     return true;
 
+  /*
   for (size_t i = 0; i < edge_indexer.count(); ++i) {
     cout << "============================================================" << endl;
     cout << "WELP THAT FAILED!!  Let's try a few more edge assignments..." << endl;
@@ -731,6 +732,7 @@ bool ControlLearner::update_dual(DualAutomata& dual, function<bool (DualAutomata
     if (status)
       return true;
   }
+  */
 
   return false;
 }
