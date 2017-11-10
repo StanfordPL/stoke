@@ -31,6 +31,8 @@
 #include "tools/io/reg_set.h"
 #include "tools/io/tunit.h"
 
+#include "tools/args/learner.inc"
+
 
 using namespace cpputil;
 using namespace std;
@@ -69,7 +71,6 @@ cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& rewrite_testcases
   .usage("<path/to/file>")
   .description("Testcases for Rewrite");
 
-
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -79,6 +80,7 @@ int main(int argc, char** argv) {
   Cfg empty_cfg(empty, RegSet::universe(), RegSet::universe());
 
   InvariantLearner learner(empty_cfg, empty_cfg);
+  learner.set_disable_nonlinear(only_linear_arg.value());
   auto invs = learner.learn(target_regs_arg.value(), rewrite_regs_arg.value(),
                             target_testcases_arg.value(), rewrite_testcases_arg.value());
 
