@@ -534,6 +534,114 @@ int main(int argc, char** argv) {
 
 
 
+
+  else if (step_arg.value() == 4) {
+
+    auto fake = fake_arg.value();
+
+    TargetGadget target({}, false);
+    SeedGadget seed;
+    TrainingSetGadget train_tcs(seed);
+    SandboxGadget training_sb(train_tcs, {});
+    PerformanceSetGadget perf_tcs(seed);
+    SandboxGadget perf_sb(perf_tcs, {});
+    auto max_jumps = max_jumps_arg.value();
+    training_sb.set_max_jumps(max_jumps);
+    perf_sb.set_max_jumps(max_jumps);
+    ExprCost fxn_realtime = *CostFunctionGadget::build_fxn("realtime", "0", target, &training_sb, &perf_sb);
+    ExprCost fxn_latency = *CostFunctionGadget::build_fxn("latency", "0", target, &training_sb, &perf_sb);
+
+    string logfile = path + "/log.txt";
+    ifstream infile_compressed(logfile);
+
+    boost::iostreams::filtering_streambuf<boost::iostreams::input> in;
+    in.push(boost::iostreams::gzip_decompressor());
+    in.push(infile_compressed);
+
+    std::istream infile(&in);
+
+    if (!infile.good()) {
+      cout << "Logfile not found.  Exiting.." << endl;
+      cout << logfile << endl;
+      return 1;
+    }
+    string line;
+    vector<string> lines;
+    std::ofstream fout(out_arg.value(), ios::app);
+    if (!fake) fout << fixed;
+
+    auto eval = [&](int cost, int iteration, int id, int timestamp, int best, int random) {
+      TUnit code;
+      string fpath = path + "/intermediates/result-" + to_string(id) + ".s";
+      if (id == -1) {
+        fpath = path_arg.value() + "/bins/nibble_sort_" + item_fun + ".s";
+      }
+      ifstream ifs(fpath);
+      ifs >> code;
+      Cfg cfg(code, RegSet::empty(), RegSet::empty());
+      function<double()> realtimel = [&]() {
+        return (double)fxn_realtime(cfg, max_cost_arg.value()).second;
+      };
+      function<double()> latencyl = [&]() {
+        return (double)fxn_latency(cfg, max_cost_arg.value()).second;
+      };
+
+      if (!fake) {
+        fout << "intermediates/result-" + to_string(id) + ".s";
+        fout << "," << item;
+        fout << "," << cost;
+        fout << "," << iteration;
+        fout << "," << id;
+        //fout << "," << realtimel();
+        fout << "," << latencyl();
+        fout << endl;
+      }
+    };
+
+    // get baseline
+
+    int nzcost_nr = 0;
+    int killed_nr = 0;
+    while (getline(infile, line)) {
+      istringstream iss(line);
+      auto cost = read(iss, "cost");
+      auto iteration = read(iss, "iteration");
+      auto id = read(iss, "id");
+      auto timestamp = read(iss, "timestamp_ms");
+      auto best = read(iss, "best");
+      auto random = read(iss, "random");
+      auto nzcost = read(iss, "nzcost");
+      auto killed = read(iss, "killed");
+
+      if (killed) {
+        killed_nr += killed;
+      }
+
+      if (nzcost == 1) {
+        nzcost_nr += 1;
+      }
+
+      // only evaluate if it is actually a sample
+      if (best == 0 && random == 0) continue;
+
+      eval(cost, iteration, id, timestamp, best, random);
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   else if (step_arg.value() == 3) {
     const size_t nsamples = 2000;
 
