@@ -49,7 +49,7 @@ TransformInfo AddXorIdTransform::operator()(Cfg& cfg) {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
+  // assert(LatencyCost()(cfg).first);
 
   ti.success = true;
   return ti;
@@ -63,7 +63,7 @@ void AddXorIdTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
+  // assert(LatencyCost()(cfg).first);
 }
 
 
