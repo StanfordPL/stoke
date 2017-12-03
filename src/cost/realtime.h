@@ -278,11 +278,10 @@ public:
     }
 
     // assemble code
-    x64asm::Function buffer;
+    x64asm::Code code = cfg.get_code();
+    x64asm::Function buffer(code.size() * 16 + 8000);
     x64asm::Assembler assm;
     assm.start(buffer);
-
-    x64asm::Code code = cfg.get_code();
 
     // assemble function
     for (size_t i = 0; i < code.size(); i++) {
