@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/validator/learner.h"
+#include "src/state/cpu_state.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/disjunction.h"
 #include "src/validator/invariants/equality.h"
@@ -31,10 +31,12 @@
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+
+#include "src/validator/int_matrix.h"
+#include "src/validator/learner.h"
 #include "src/validator/null.h"
 
-// this is configurable via build system
-#define LEARNER_DEBUG(X) {   }
+#define LEARNER_DEBUG(X) { }
 
 using namespace std;
 using namespace stoke;
@@ -354,6 +356,42 @@ vector<Invariant*> build_flag_invariants(
   return inv;
 }
 
+std::pair<std::vector<CpuState>, std::vector<CpuState>> InvariantLearner::choose_tcs(
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states) {
+  assert(target_states.size() == rewrite_states.size());
+
+  //cout << "sample_tcs_ = " << sample_tcs_ << endl;
+  if(sample_tcs_ == 0 || sample_tcs_ >= target_states.size()) {
+    //cout << "Preserving all tcs" << endl;
+    return pair<vector<CpuState>,vector<CpuState>>(target_states, rewrite_states);
+  }
+
+  std::vector<CpuState> target_chosen;
+  std::vector<CpuState> rewrite_chosen;
+  auto target_remaining = target_states;
+  auto rewrite_remaining = rewrite_states;
+
+  for(size_t i = 0; i < sample_tcs_; ++i) {
+    size_t pick_from = target_remaining.size();
+    uniform_int_distribution<size_t> dis(0, pick_from-1);
+
+    size_t choice = dis(gen_);
+    target_chosen.push_back(target_remaining[choice]);
+    rewrite_chosen.push_back(rewrite_remaining[choice]);
+
+    target_remaining.erase(target_remaining.begin() + choice);
+    rewrite_remaining.erase(rewrite_remaining.begin() + choice);
+
+    assert(target_remaining.size() == rewrite_remaining.size());
+    assert(target_chosen.size() == rewrite_chosen.size());
+  }
+
+  //cout << "Selected " << target_chosen.size() << " testcases" << endl;
+
+  return pair<vector<CpuState>, vector<CpuState>>(target_chosen, rewrite_chosen);
+}
+
 ConjunctionInvariant* InvariantLearner::learn(
   x64asm::RegSet target_regs,
   x64asm::RegSet rewrite_regs,
@@ -362,9 +400,9 @@ ConjunctionInvariant* InvariantLearner::learn(
   string target_cc,
   string rewrite_cc) {
 
-  if (target_cc == "" && rewrite_cc == "") {
-    return learn_simple(target_regs, rewrite_regs, states, states2);
-  }
+  auto pair = choose_tcs(states, states2);
+  auto target_states = pair.first;
+  auto rewrite_states = pair.second;
 
   // idea: sort state pairs into one, two, or four groups, and learn invariant over them
   vector<Invariant*> condition_invariants;
@@ -387,15 +425,17 @@ ConjunctionInvariant* InvariantLearner::learn(
     auto inv2 = new FlagInvariant(rewrite_cc, true, true);
     condition_invariants.push_back(inv);
     condition_invariants.push_back(inv2);
+  } else {
+    return learn_simple(target_regs, rewrite_regs, target_states, rewrite_states);
   }
 
   // identify the flag invariants we care about
-  vector<pair<vector<CpuState>, vector<CpuState>>> state_sets(condition_invariants.size());
+  std::vector<std::pair<std::vector<CpuState>, std::vector<CpuState>>> state_sets(condition_invariants.size());
 
   // classify states into buckets
-  for (size_t i = 0; i < states.size(); ++i) {
-    auto lhs = states[i];
-    auto rhs = states2[i];
+  for (size_t i = 0; i < target_states.size(); ++i) {
+    auto lhs = target_states[i];
+    auto rhs = rewrite_states[i];
     for (size_t j = 0; j < condition_invariants.size(); ++j) {
       auto inv = condition_invariants[j];
       if (inv->check(lhs, rhs)) {
@@ -632,6 +672,8 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     }
   }
 
+  //if(tc_count > 10)
+  //  tc_count = 10;
   // Build the nullspace matrix
   LEARNER_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
   uint64_t* matrix = new uint64_t[tc_count*num_columns];
@@ -642,6 +684,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     }
     matrix[i*num_columns + num_columns - 1] = 1;
   }
+  IntMatrix matrix2(tc_count, num_columns, matrix);
 
   LEARNER_DEBUG(
   for (size_t i = 0; i < tc_count; ++i) {
@@ -652,12 +695,21 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
   );
 
-  // Compute the nullspace
-  uint64_t** nullspace_out;
-  size_t dim;
+  /*cout << "VERIFYING COPY" << endl;
+  matrix2.print();*/
 
-  dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  delete matrix;
+  /*cout << "NULLSPACE" << endl; */
+  auto ns = matrix2.nullspace64();
+  /*ns.print(); 
+  cout << endl; */
+
+  // Compute the nullspace
+  //uint64_t** nullspace_out;
+  //size_t dim;
+
+  //dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
+  //delete matrix;
+  size_t dim = ns.size();
 
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
@@ -666,13 +718,13 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
 
-      if (nullspace_out[i][j]) {
-        column.coefficient = nullspace_out[i][j];
+      if (ns[i][j]) {
+        column.coefficient = ns[i][j];
         terms.push_back(column);
       }
     }
 
-    auto ei = new EqualityInvariant(terms, -nullspace_out[i][num_columns-1]);
+    auto ei = new EqualityInvariant(terms, -ns[i][num_columns-1]);
     if (ei->check(target_states, rewrite_states)) {
       conj->add_invariant(ei);
       LEARNER_DEBUG(cout << *ei << endl;)
@@ -680,10 +732,6 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
       LEARNER_DEBUG(cout << "GOT BAD INVARIANT ? " << *ei << endl;)
     }
   }
-
-  for (size_t i = 0; i < dim; ++i)
-    delete nullspace_out[i];
-  delete nullspace_out;
 
   LEARNER_DEBUG(cout << "Nullspace dimension:" << dec << dim << endl;)
   LEARNER_DEBUG(cout << "Column count: " << dec << num_columns << endl;)

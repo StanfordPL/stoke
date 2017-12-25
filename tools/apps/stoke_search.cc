@@ -31,6 +31,7 @@
 #include "src/search/statistics_callback.h"
 #include "src/search/failed_verification_action.h"
 #include "src/search/postprocessing.h"
+#include "src/validator/learner.h"
 
 #include "tools/args/search.inc"
 #include "tools/args/target.inc"
@@ -410,7 +411,9 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_set, aux_fxns);
 
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
-  VerifierGadget verifier(test_sb, holdout_fxn);
+  InvariantLearner learner(target, target);
+  learner.set_seed(seed);
+  VerifierGadget verifier(test_sb, holdout_fxn, learner);
 
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)

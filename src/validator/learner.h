@@ -28,7 +28,9 @@ class InvariantLearner {
 
 public:
 
-  InvariantLearner(const Cfg& target, const Cfg& rewrite) : target_(target), rewrite_(rewrite) {}
+  InvariantLearner(const Cfg& target, const Cfg& rewrite) : target_(target), rewrite_(rewrite) {
+    set_sample_tcs(100);
+  }
 
   InvariantLearner& add_ghost(Variable v) {
     ghosts_.push_back(v);
@@ -47,6 +49,19 @@ public:
     return *this;
   }
 
+  /** Set the seed for picking test cases.  (See next option) */
+  InvariantLearner& set_seed(std::default_random_engine::result_type seed) {
+    gen_.seed(seed);
+    return *this;
+  }
+
+  /** The maximum number of TCs we want to learn over.  If provided with
+    more than this number, we'll pick from among them randomly. */
+  InvariantLearner& set_sample_tcs(size_t n) {
+    sample_tcs_ = n;
+    return *this;
+  }
+
   ConjunctionInvariant* learn(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
@@ -57,6 +72,10 @@ public:
 
 
 private:
+
+  /** Select sample_tcs_ (if nonzero) from the TCs provided. */
+  std::pair<std::vector<CpuState>, std::vector<CpuState>> choose_tcs(
+      const std::vector<CpuState>&, const std::vector<CpuState>&);
 
   // learn a single invariant, without regard for flags
   ConjunctionInvariant* learn_simple(
@@ -79,6 +98,12 @@ private:
   /** Some options */
   bool disable_nonlinear_;
   bool enable_memory_;
+
+  /** The maximum number of TCs we want to learn over.  If provided with
+    more than this number, we'll pick from among them randomly. */
+  size_t sample_tcs_;
+  /** Random generator. */
+  std::default_random_engine gen_;
 
 };
 

@@ -32,6 +32,7 @@
 #include "tools/io/tunit.h"
 
 #include "tools/args/learner.inc"
+#include "tools/gadgets/seed.h"
 
 
 using namespace cpputil;
@@ -79,8 +80,10 @@ int main(int argc, char** argv) {
   TUnit empty;
   Cfg empty_cfg(empty, RegSet::universe(), RegSet::universe());
 
+  SeedGadget seed;
   InvariantLearner learner(empty_cfg, empty_cfg);
   learner.set_disable_nonlinear(only_linear_arg.value());
+  learner.set_seed(seed);
   auto invs = learner.learn(target_regs_arg.value(), rewrite_regs_arg.value(),
                             target_testcases_arg.value(), rewrite_testcases_arg.value());
 

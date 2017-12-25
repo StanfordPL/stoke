@@ -282,6 +282,8 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     string target_cc = target_instr.is_jcc() ? target_opc.substr(1, target_opc.size()-1) : "";
     string rewrite_cc = rewrite_instr.is_jcc() ? rewrite_opc.substr(1, rewrite_opc.size()-1) : "";
 
+    /* For debugging states encountered. */
+    /*
     stringstream ts;
     ts << "state" << state << "-target.txt";
     string target_filename = ts.str();
@@ -299,6 +301,7 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     CpuStates rewrite_out(rewrite_state_data_[state]);
     rewrite_out.write_text(rewrite_file);
     rewrite_file.close();
+    */
 
     auto inv = learner.learn(target_->live_out_regs(state.ts), rewrite_->live_out_regs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state],

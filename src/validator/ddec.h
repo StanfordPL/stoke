@@ -31,7 +31,7 @@ class DdecValidator : public ObligationChecker {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : ObligationChecker(solver), target_({}), rewrite_({}) {
+  DdecValidator(SMTSolver& solver, InvariantLearner& inv) : ObligationChecker(solver), target_({}), rewrite_({}), invariant_learner_(inv) {
     set_no_bv(false);
   }
 
@@ -46,23 +46,30 @@ public:
     bound_ = bound;
     return *this;
   }
+  /** Set invariant learner. */
+  DdecValidator& set_invariant_learner(InvariantLearner& iv) {
+    invariant_learner_ = iv;
+    return *this;
+  }
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
 private:
 
+  Cfg target_;
+  Cfg rewrite_;
+
   Abstraction* target_automata_;
   Abstraction* rewrite_automata_;
   ControlLearner* control_learner_;
+  InvariantLearner& invariant_learner_;
 
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
   /** Learn inductive paths */
-  bool learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
-                             std::vector<CfgPath>& rewrite_inductive_paths,
-                             std::function<bool (std::vector<CfgPath>&, std::vector<CfgPath>&)>& callback
-                            );
+  void learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
+                             std::vector<CfgPath>& rewrite_inductive_paths);
 
 
   DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
@@ -88,8 +95,6 @@ private:
   /** Skip the bounded validator? */
   bool no_bv_;
 
-  Cfg target_;
-  Cfg rewrite_;
 };
 
 } // namespace stoke

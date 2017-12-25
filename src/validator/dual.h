@@ -142,6 +142,15 @@ public:
     return prev_edges_[s];
   }
 
+  /** Get the list of edges between two states */
+  std::vector<Edge> edges_between(State s, State t) {
+    std::vector<Edge> edges;
+    for(auto e : next_edges_[s])
+      if(e.to == t)
+        edges.push_back(e);
+    return edges;
+  }
+
   /** Get the list of edges from this state to this state. */
   std::vector<Edge> get_inductive_edges(State s) {
     std::vector<Edge> result;
