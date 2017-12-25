@@ -18,6 +18,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
+#include "src/symstate/memory/arm.h"
 #include "src/validator/invariant.h"
 
 namespace stoke {

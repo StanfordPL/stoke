@@ -166,10 +166,9 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
 
   return all_blocks;
 }
-bool DdecValidator::learn_inductive_paths(
+void DdecValidator::learn_inductive_paths(
   vector<CfgPath>& target_inductive_paths,
-  vector<CfgPath>& rewrite_inductive_paths,
-  function<bool (vector<CfgPath>&, vector<CfgPath>&)>& callback
+  vector<CfgPath>& rewrite_inductive_paths
 ) {
   cout << "============================================================" << endl;
   cout << "Learning inductive paths" << endl;
@@ -191,7 +190,7 @@ bool DdecValidator::learn_inductive_paths(
       // non-reducible control flow
       cout << "Target blocks: " << target_blocks << endl;
       cout << "Non-Reducible control flow" << endl;
-      return false;
+      return ;
     }
     auto target_block = target_block_options[0];
 
@@ -202,13 +201,13 @@ bool DdecValidator::learn_inductive_paths(
         // non-reducible control flow
         cout << "Rewrite blocks: " << rewrite_blocks << endl;
         cout << "Non-Reducible control flow" << endl;
-        return false;
+        return ;
       }
       auto rewrite_block = rewrite_block_options[0];
 
       bool found_pair = false;
       // find all paths from target to target and rewrite to rewrite
-      for (size_t k = 0; k < 4; ++k) {
+      for (size_t k = 0; k < 10; ++k) {
         size_t bound = (1 << k);
         auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
         auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
@@ -245,92 +244,8 @@ bool DdecValidator::learn_inductive_paths(
     }
   }
   // for now...
-  return callback(target_inductive_paths, rewrite_inductive_paths);
 }
 
-DualAutomata DdecValidator::build_dual(vector<CfgPath>& target_inductive_paths, vector<CfgPath>& rewrite_inductive_paths) {
-
-  cout << "============================================================" << endl;
-  cout << "Build dualing dual" << endl;
-
-  vector<Cfg::id_type> target_cutpoints;
-  vector<Cfg::id_type> rewrite_cutpoints;
-  target_cutpoints.push_back(target_.get_entry());
-  rewrite_cutpoints.push_back(rewrite_.get_entry());
-  target_cutpoints.push_back(target_.get_exit());
-  rewrite_cutpoints.push_back(rewrite_.get_exit());
-  DualAutomata dual(target_automata_, rewrite_automata_);
-  for (size_t i = 0; i < target_inductive_paths.size(); ++i) {
-    auto tp = target_inductive_paths[i];
-    auto rp = rewrite_inductive_paths[i];
-    auto ts = tp[0];
-    auto rs = rp[0];
-    tp.push_back(ts);
-    rp.push_back(rs);
-    tp.erase(tp.begin());
-    rp.erase(rp.begin());
-    dual.add_edge(DualAutomata::Edge(DualAutomata::State(ts, rs), tp, rp));
-
-    // go through previous cutpoints; if none of the previous ones match, add this one.
-    bool match = false;
-    for (size_t j = 0; j < target_cutpoints.size(); ++j) {
-      if (target_cutpoints[j] == ts && rewrite_cutpoints[j] == rs) {
-        match = true;
-        break;
-      }
-    }
-    if (!match) {
-      target_cutpoints.push_back(ts);
-      rewrite_cutpoints.push_back(rs);
-    }
-  }
-
-  auto num_cuts = target_cutpoints.size();
-  for (size_t i = 0; i < num_cuts; ++i) {
-    cout << "CUTPOINT " << target_cutpoints[i] << ", " << rewrite_cutpoints[i] << endl;
-  }
-
-  // For every pair of cutpoints, consider all non-looping program paths that
-  // don't pass through the other cutpoints.
-  for (size_t i = 0; i < num_cuts; ++i) {
-    for (size_t j = 0; j < num_cuts; ++j) {
-      if (i == j)
-        continue;
-
-      std::vector<size_t> no_pass_target = { target_cutpoints[i] };
-      std::vector<size_t> no_pass_rewrite = { rewrite_cutpoints[i] };
-      auto target_paths = CfgPaths::enumerate_paths(
-                            target_, 1,
-                            target_cutpoints[i],
-                            target_cutpoints[j],
-                            &no_pass_target);
-
-      auto rewrite_paths = CfgPaths::enumerate_paths(
-                             rewrite_, 1,
-                             rewrite_cutpoints[i],
-                             rewrite_cutpoints[j],
-                             &no_pass_rewrite);
-
-      if (target_cutpoints[i] == target_cutpoints[j]) {
-        target_paths.push_back({target_cutpoints[i]});
-      }
-      if (rewrite_cutpoints[i] == rewrite_cutpoints[j]) {
-        rewrite_paths.push_back({rewrite_cutpoints[i]});
-      }
-
-      auto state = DualAutomata::State(target_cutpoints[i], rewrite_cutpoints[i]);
-      for (auto tp : target_paths) {
-        tp.erase(tp.begin());
-        for (auto rp : rewrite_paths) {
-          rp.erase(rp.begin());
-          dual.add_edge(DualAutomata::Edge(state, tp, rp));
-        }
-      }
-    }
-  }
-
-  return dual;
-}
 
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State state) {
   Invariant* invariant = dual.get_invariant(state);
@@ -527,57 +442,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       dual.set_invariant(rs, orig_inv);
     }
 
-    /** Hand-hold add (%rdi,%rax,1) != 0 and (%rax)' != 0 to invariants */
-    /*
-    Variable rewrite_mem_var(rewrite_mem, false);
-    auto rewrite_inv = new NonzeroInvariant(rewrite_mem_var);
-    hack_inv->add_invariant(target_inv);
-    hack_inv->add_invariant(rewrite_inv);
-
-    dual.set_invariant(hack_state, hack_inv);
-    */
-    DualAutomata::State hack_state(5,30);
-    auto hack_inv = dual.get_invariant(hack_state);
-    M8 target_mem(rdi, rax, Scale::TIMES_1);
-    M8 rewrite_mem(rax);
-    Variable target_mem_var(target_mem, false);
-    auto target_inv = new NonzeroInvariant(target_mem_var);
-    Variable rewrite_mem_var(rewrite_mem, true);
-    auto rewrite_inv = new NonzeroInvariant(rewrite_mem_var);
-
-
-    //Variable hack_minus_rax(rax, true);
-    //hack_minus_rax.coefficient = -1;
-    //auto hack_plus = new EqualityInvariant({{rax, false}, {rdi, true}, hack_minus_rax}, 0);
-    //hack_inv->add_invariant(hack_plus);
-
-    int good = 0;
-    int bad = 0;
-    auto target_data = dual.get_target_data(hack_state);
-    auto rewrite_data = dual.get_rewrite_data(hack_state);
-    for (size_t i = 0; i < target_data.size(); ++i) {
-      if (target_inv->check(target_data[i], rewrite_data[i])) {
-        good++;
-      } else {
-        bad++;
-      }
-    }
-    cout << "Inv " << *target_inv << " held for " << good << " states and failed for " << bad << endl;
-    good = 0;
-    bad = 0;
-    for (size_t i = 0; i < target_data.size(); ++i) {
-      if (rewrite_inv->check(target_data[i], rewrite_data[i])) {
-        good++;
-      } else {
-        bad++;
-      }
-    }
-    cout << "Inv " << *rewrite_inv << " held for " << good << " states and failed for " << bad << endl;
-
-
-    cout << "Got some invariants!  Are they useful?" << endl;
-
-    // TODO: start loop here
     bool valid = false;
     while (!valid) {
       dual.print_all();
@@ -614,187 +478,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     return true;
   };
 
-  function<bool (vector<CfgPath>&, vector<CfgPath>&)> inductive_paths_callback =
-  [this, &dual_callback](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
-
-    auto dual = build_dual(target_paths, rewrite_paths);
-    dual.remove_prefixes();
-    dual.print_all();
-    return control_learner_->update_dual(dual, dual_callback);
-
-  };
-
-  /*
-  function<bool (vector<CfgPath>&, vector<CfgPath>&)>  oct27_experiment =
-    [this](vector<CfgPath>& target_paths, vector<CfgPath>& rewrite_paths) -> bool {
-
-    InvariantLearner learner(target_, rewrite_);
-    learner.set_disable_nonlinear(true);
-    learner.set_enable_memory(false);
-
-    // find the cutpoints
-    set<pair<Cfg::id_type, Cfg::id_type>> cutpoints;
-    for(size_t i = 0; i < target_paths.size(); ++i) {
-      auto ts = target_paths[i][0];
-      auto rs = rewrite_paths[i][0];
-      pair<Cfg::id_type, Cfg::id_type> state_pair(ts, rs);
-      cutpoints.insert(state_pair);
-    }
-
-    auto target_traces = control_learner_->get_target_traces();
-    auto rewrite_traces = control_learner_->get_rewrite_traces();
-
-    for(size_t bound = 1; bound <= 3; ++bound) {
-      // compute bounded traces
-      vector<ControlLearner::Trace> bounded_target_traces;
-      vector<ControlLearner::Trace> bounded_rewrite_traces;
-      for(auto tr : target_traces)
-        bounded_target_traces.push_back(bound_trace(tr, bound));
-      for(auto tr : rewrite_traces)
-        bounded_rewrite_traces.push_back(bound_trace(tr, bound));
-
-      // find all the paths from start to each cutpoint via data up to bound
-      for(auto& cutpoint : cutpoints) {
-
-        cout << "=======================================" << endl;
-        cout << "=======================================" << endl;
-
-        auto ts = cutpoint.first;
-        auto rs = cutpoint.second;
-
-        // across all executions, consider each path to this cutpoint
-        map<ControlLearner::Trace, map<ControlLearner::Trace, std::pair<vector<CpuState>, vector<CpuState>>>> full_map;
-        map<ControlLearner::Trace, map<ControlLearner::Trace, Invariant*>> full_invs;
-
-        for(size_t k = 0; k < bounded_target_traces.size(); ++k) {
-          auto tt = bounded_target_traces[k];
-          auto rt = bounded_rewrite_traces[k];
-
-          map<ControlLearner::Trace, CpuState> target_to_cutpoint;
-          map<ControlLearner::Trace, CpuState> rewrite_to_cutpoint;
-
-          for(size_t i = 0; i < tt.size(); ++i) {
-            if(tt[i].block_id == ts) {
-              ControlLearner::Trace new_trace;
-              for(size_t j = 0; j <= i; ++j) {
-                new_trace.push_back(tt[j]);
-              }
-              target_to_cutpoint[new_trace] = tt[i].cs;
-            }
-          }
-
-          for(size_t i = 0; i < rt.size(); ++i) {
-            if(rt[i].block_id == rs) {
-              ControlLearner::Trace new_trace;
-              for(size_t j = 0; j <= i; ++j) {
-                new_trace.push_back(rt[j]);
-              }
-              rewrite_to_cutpoint[new_trace] = rt[i].cs;
-            }
-          }
-
-          for(auto t_pair : target_to_cutpoint) {
-            for(auto r_pair : rewrite_to_cutpoint) {
-              full_map[t_pair.first][r_pair.first].first.push_back(t_pair.second);
-              full_map[t_pair.first][r_pair.first].second.push_back(r_pair.second);
-            }
-          }
-        }
-
-        // on each path, get the data and learn an invariant using the Learner
-        for(auto full_item : full_map) {
-          auto target_path = full_item.first;
-          for(auto next_item : full_item.second) {
-            auto rewrite_path = next_item.first;
-            auto target_states = next_item.second.first;
-            auto rewrite_states = next_item.second.second;
-
-            cout << "TARGET PATH: ";
-            for(auto blk : target_path)
-              cout << blk.block_id << " ";
-            cout << "REWRITE PATH: ";
-            for(auto blk : rewrite_path)
-              cout << blk.block_id << " ";
-            cout << endl;
-
-            cout << "NUMBER STATES: " << target_states.size() << endl;
-
-            auto target_loc = Cfg::loc_type(ts, target_.num_instrs(ts)-1);
-            auto rewrite_loc = Cfg::loc_type(rs, rewrite_.num_instrs(rs)-1);
-
-            auto inv = learner.learn(target_.live_outs(target_loc), rewrite_.live_outs(rewrite_loc),
-                                     target_states, rewrite_states);
-            for(size_t i = 0; i < inv->size(); ++i) {
-              cout << *(*inv)[i] << endl;
-            }
-            full_invs[target_path][rewrite_path] = inv;
-          }
-        }
-
-        Z3Solver z3;
-        for(auto invA_item : full_invs) {
-          for(auto invA_item2 : invA_item.second) {
-            auto target_path_A = invA_item.first;
-            auto rewrite_path_A = invA_item2.first;
-            auto inv_A = invA_item2.second;
-
-            for(auto invB_item : full_invs) {
-              for(auto invB_item2 : invB_item.second) {
-                auto target_path_B = invB_item.first;
-                auto rewrite_path_B = invB_item2.first;
-                auto inv_B = invB_item2.second;
-
-                SymState state_t("A");
-                SymState state_r("B");
-                size_t x,y;
-                auto bool_A = (*inv_A)(state_t, state_r, x, y);
-                auto bool_B = (*inv_B)(state_t, state_r, x, y);
-                auto impl = bool_A.implies(bool_B);
-                vector<SymBool> constraints;
-                constraints.push_back(!impl);
-
-                cout << "TARGET PATH A: ";
-                for(auto blk : target_path_A)
-                  cout << blk.block_id << " ";
-                cout << "REWRITE PATH A: ";
-                for(auto blk : rewrite_path_A)
-                  cout << blk.block_id << " ";
-                cout << endl;
-                cout << "TARGET PATH B: ";
-                for(auto blk : target_path_B)
-                  cout << blk.block_id << " ";
-                cout << "REWRITE PATH B: ";
-                for(auto blk : rewrite_path_B)
-                  cout << blk.block_id << " ";
-                cout << endl;
-
-                cout << "bool_A: " << bool_A << endl;
-                cout << "bool_B: " << bool_B << endl;
-
-                bool hold_ceg = z3.is_sat(constraints);
-                cout << "A => B Holds: " << !hold_ceg << endl;
-
-              }
-            }
-          }
-        }
-
-        // make a grid of the invariant conjuncts learned
-          // which ones, when combined, imply false?
-          // which ones imply false already?
-          // which ones imply another conjunct?
-
-          // try combining the data points for each grid cell and learning a new invariant based on that
-          // does this new invariant imply the prior invariants? (it should...)
-      }
-
-    }
-
-    return false;
-  };
-  */
-
-
 
   init_mm();
 
@@ -826,8 +509,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     vector<CfgPath> target_inductive_paths;
     vector<CfgPath> rewrite_inductive_paths;
-    bool ok = learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths, inductive_paths_callback);
-    return ok;
+    learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
+    return false;
 
   } catch (validator_error e) {
 

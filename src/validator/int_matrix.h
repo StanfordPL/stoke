@@ -34,6 +34,16 @@ public:
   IntMatrix(int rows, int cols) :
     std::vector<std::vector<int64_t>>(rows, std::vector<int64_t>(cols, 0)) { }
 
+  /** 2d matrix with initialization */
+  IntMatrix(int rows, int cols, uint64_t* arr) :
+    std::vector<std::vector<int64_t>>(rows, std::vector<int64_t>(cols, 0)) { 
+    for(int i = 0; i < rows; i++)
+      for(int j = 0; j < cols; j++)
+        (*this)[i][j] = arr[i*cols + j];  
+  }
+
+
+
   /** Copy a 2d vector into us */
   IntMatrix(std::vector<std::vector<int64_t>> m) : std::vector<std::vector<int64_t>>(m) {
 
@@ -47,7 +57,7 @@ public:
   bool in_nullspace(IntVector& vect) const;
 
   /** Compute a generating set for the nullspace over Z/2^64Z */
-  //IntMatrix nullspace64() const;
+  IntMatrix nullspace64() const;
 
   /** Return generating set to solutions of Ax = 0 */
   IntMatrix solve_diophantine() const;

@@ -19,6 +19,9 @@
 #include <ostream>
 #include <fstream>
 #include <cstdio>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
@@ -86,6 +89,7 @@ IntMatrix IntMatrix::solve_diophantine() const {
   string tmp_out = tmpnam(NULL) + string(".out");
   string tmp_err = tmpnam(NULL) + string(".err");
 
+  umask(0077);
   ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
@@ -144,6 +148,78 @@ IntMatrix IntMatrix::solve_diophantine() const {
   return basis_vectors;
 }
 
+IntMatrix IntMatrix::nullspace64() const {
+  auto& matrix = *this;
+  cout << "Writing out sage code for nullspace over Z/2^64Z" << endl;
+  string base = tmpnam(NULL);
+  string tmp_in = base + string(".sage");
+  string tmp_out = base + string(".out");
+  string tmp_err = base + string(".err");
+
+  umask(0077);
+  ofstream of(tmp_in);
+  of << "rows=" << matrix.size() << endl;
+  of << "cols=" << matrix[0].size() << endl;
+  of << "src=ZZ^rows/(ZZ^rows * 2**64)" << endl;
+  of << "dst=ZZ^cols/(ZZ^cols * 2**64)" << endl;
+  of << "A = matrix([";
+  for (size_t i = 0; i < matrix.size(); ++i) {
+    of << "[ ";
+    for (size_t j = 0; j < matrix[i].size(); ++j) {
+      of << matrix[i][j];
+      if (j < matrix[i].size() - 1)
+        of << ", ";
+    }
+    of << "]";
+    if (i < matrix.size() - 1)
+      of << ", ";
+  }
+  of << "])" << endl;
+  of << "A = A.transpose()" << endl;
+  of << "vectors = [src(x) for x in A]" << endl;
+  of << "phi = dst.hom(vectors, src)" << endl;
+  of << "ker = phi.kernel()" << endl;
+  of << "output = [dst(b) for b in phi.kernel().gens()]" << endl;
+  of << "print len(output)" << endl;
+  of << "for entry in output:" << endl;
+  of << "\tfor item in entry:" << endl;
+  of << "\t\tprint item" << endl;
+  of << endl;
+
+  of.close();
+  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2>") + tmp_err).c_str());
+
+  /** Read basis vectors from sage */
+  size_t output_rows;
+  size_t output_cols = matrix[0].size();
+  ifstream in(tmp_out);
+  in >> output_rows;
+  if (!in.good()) {
+    cout << "Couldn't read output rows :(" << endl;
+    assert(false);
+  }
+  //cout << "Looking for " << output_rows << " rows" << endl;
+  IntMatrix output(output_rows, output_cols);
+  for (size_t i = 0; i < output_rows; ++i) {
+    for(size_t j = 0; j < output_cols; ++j) {
+      uint64_t x;
+      in >> x;
+
+      /** Check to make sure that we don't have any parser errors */
+      if (!in.good()) {
+        //cout << "Couldn't read entry :(" << endl;
+        assert(false);
+        return output;
+      }
+
+      output[i][j] = x;
+      //cout << "Reading " << x << endl;
+    }
+  }
+
+  return output;
+}
+
 IntVector IntMatrix::solve_diophantine(IntVector b) const {
   auto& matrix = *this;
   cout << "Writing out sage code" << endl;
@@ -151,6 +227,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   string tmp_out = tmpnam(NULL) + string(".out");
   string tmp_err = tmpnam(NULL) + string(".err");
 
+  umask(0077);
   ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;

@@ -80,7 +80,9 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  VerifierGadget verifier(sb, fxn);
+  InvariantLearner learner(target, rewrite);
+  learner.set_seed(seed);
+  VerifierGadget verifier(sb, fxn, learner);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

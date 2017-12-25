@@ -18,6 +18,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
+#include "src/validator/learner.h"
 
 #include "tools/args/benchmark.inc"
 #include "tools/gadgets/cost_function.h"
@@ -49,7 +50,9 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  VerifierGadget verifier(sb, fxn);
+  InvariantLearner learner(target, target);
+  learner.set_seed(seed);
+  VerifierGadget verifier(sb, fxn, learner);
 
   Console::msg() << "Verifier::verify()..." << endl;
 

@@ -39,7 +39,7 @@ namespace stoke {
 class VerifierGadget : public Verifier {
 public:
 
-  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier(), verifier_(NULL), solver_(NULL) {
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : Verifier(), verifier_(NULL), solver_(NULL) {
 
     solver_ = new SolverGadget();
 
@@ -49,7 +49,7 @@ public:
       if (it == "hold_out" && (test_set_arg.value().size() == 0 || testcases_arg.value().size() == 0)) {
         cpputil::Console::error() << "No test-cases given for hold_out verification." << std::endl;
       }
-      verifiers.push_back(make_by_name(it, sandbox, fxn));
+      verifiers.push_back(make_by_name(it, sandbox, fxn, inv));
     }
 
     verifier_ = new SequenceVerifier(verifiers);
@@ -110,7 +110,7 @@ private:
     }
   }
 
-  Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
+  Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
@@ -119,7 +119,7 @@ private:
       bv->set_nacl(verify_nacl_arg);
       return bv;
     } else if (s == "ddec") {
-      auto ddec = new DdecValidator(*solver_);
+      auto ddec = new DdecValidator(*solver_, inv);
       ddec->set_no_bv(no_ddec_bv_arg.value());
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
