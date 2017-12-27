@@ -15,7 +15,6 @@
 #ifndef STOKE_SRC_VALIDATOR_LEARNING_H
 #define STOKE_SRC_VALIDATOR_LEARNING_H
 
-#include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/inequality.h"
@@ -62,6 +61,7 @@ public:
     return *this;
   }
 
+  /** Learn a precise invariant over a set of data */
   ConjunctionInvariant* learn(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
@@ -70,12 +70,18 @@ public:
     std::string target_cc = "",
     std::string rewrite_cc = "");
 
+  /** Learn equalities over some columns of data */
+  ConjunctionInvariant* learn_equalities(
+     std::vector<Variable>,
+     const std::vector<CpuState>&,
+     const std::vector<CpuState>&);
+
 
 private:
 
   /** Select sample_tcs_ (if nonzero) from the TCs provided. */
   std::pair<std::vector<CpuState>, std::vector<CpuState>> choose_tcs(
-      const std::vector<CpuState>&, const std::vector<CpuState>&);
+        const std::vector<CpuState>&, const std::vector<CpuState>&);
 
   // learn a single invariant, without regard for flags
   ConjunctionInvariant* learn_simple(

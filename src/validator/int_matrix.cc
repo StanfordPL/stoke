@@ -201,7 +201,7 @@ IntMatrix IntMatrix::nullspace64() const {
   //cout << "Looking for " << output_rows << " rows" << endl;
   IntMatrix output(output_rows, output_cols);
   for (size_t i = 0; i < output_rows; ++i) {
-    for(size_t j = 0; j < output_cols; ++j) {
+    for (size_t j = 0; j < output_cols; ++j) {
       uint64_t x;
       in >> x;
 

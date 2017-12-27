@@ -453,7 +453,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto expected_final = get_final_invariant();
 
       bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-                            {}, {}, *actual_final, *expected_final);
+      {}, {}, *actual_final, *expected_final);
       if (!final_ok) {
         cout << "Could not complete final proof step." << endl;
         cout << "Maybe DDEC missed an important invariant?" << endl;

@@ -357,12 +357,12 @@ vector<Invariant*> build_flag_invariants(
 }
 
 std::pair<std::vector<CpuState>, std::vector<CpuState>> InvariantLearner::choose_tcs(
-    const std::vector<CpuState>& target_states,
-    const std::vector<CpuState>& rewrite_states) {
+      const std::vector<CpuState>& target_states,
+const std::vector<CpuState>& rewrite_states) {
   assert(target_states.size() == rewrite_states.size());
 
   //cout << "sample_tcs_ = " << sample_tcs_ << endl;
-  if(sample_tcs_ == 0 || sample_tcs_ >= target_states.size()) {
+  if (sample_tcs_ == 0 || sample_tcs_ >= target_states.size()) {
     //cout << "Preserving all tcs" << endl;
     return pair<vector<CpuState>,vector<CpuState>>(target_states, rewrite_states);
   }
@@ -372,7 +372,7 @@ std::pair<std::vector<CpuState>, std::vector<CpuState>> InvariantLearner::choose
   auto target_remaining = target_states;
   auto rewrite_remaining = rewrite_states;
 
-  for(size_t i = 0; i < sample_tcs_; ++i) {
+  for (size_t i = 0; i < sample_tcs_; ++i) {
     size_t pick_from = target_remaining.size();
     uniform_int_distribution<size_t> dis(0, pick_from-1);
 
@@ -468,6 +468,108 @@ ConjunctionInvariant* InvariantLearner::learn(
   return final_inv;
 
 }
+
+ConjunctionInvariant* InvariantLearner::learn_equalities(
+    vector<Variable> columns,
+    const vector<CpuState>& target_states,
+    const vector<CpuState>& rewrite_states) {
+
+  size_t num_columns = columns.size() + 1;
+  size_t tc_count = target_states.size();
+
+
+  ConjunctionInvariant* conj = new ConjunctionInvariant();
+
+  /** First do some checks to make things faster. */
+  /** (A) check for two identical columns. */
+  for (size_t i = 0; i < columns.size(); ++i) {
+    for (size_t j = i+1; j < columns.size(); ++j) {
+      // check if column i matches column j
+      LEARNER_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
+      bool match = true;
+      for (size_t k = 0; k < tc_count; ++k) {
+        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
+            columns[j].from_state(target_states[k], rewrite_states[k])) {
+          match = false;
+          break;
+        }
+      }
+      // add equality asserting column[i] matches column[j].
+      if (match) {
+        vector<Variable> terms;
+        columns[i].coefficient = 1;
+        columns[j].coefficient = -1;
+        terms.push_back(columns[i]);
+        terms.push_back(columns[j]);
+
+        auto ei = new EqualityInvariant(terms, 0);
+        conj->add_invariant(ei);
+        LEARNER_DEBUG(cout << "generating " << *ei << endl;)
+      }
+    }
+  }
+  
+
+  //if(tc_count > 10)
+  //  tc_count = 10;
+  // Build the nullspace matrix
+  LEARNER_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
+  uint64_t* matrix = new uint64_t[tc_count*num_columns];
+
+  for (size_t i = 0; i < tc_count; ++i) {
+    for (size_t j = 0; j < columns.size(); ++j) {
+      matrix[i*num_columns + j] = columns[j].from_state(target_states[i], rewrite_states[i]);
+    }
+    matrix[i*num_columns + num_columns - 1] = 1;
+  }
+  IntMatrix matrix2(tc_count, num_columns, matrix);
+
+  LEARNER_DEBUG(
+  for (size_t i = 0; i < tc_count; ++i) {
+  for (size_t j = 0; j < num_columns; ++j) {
+      cout << hex << matrix[i*num_columns + j] << dec << " ";
+    }
+    cout << endl;
+  }
+  );
+
+  /*cout << "VERIFYING COPY" << endl;
+  matrix2.print();*/
+
+  /*cout << "NULLSPACE" << endl; */
+  auto ns = matrix2.nullspace64();
+  size_t dim = ns.size();
+
+  // Extract the data from the nullspace
+  for (size_t i = 0; i < dim; ++i) {
+    vector<Variable> terms;
+
+    for (size_t j = 0; j < num_columns - 1; ++j) {
+      auto column = columns[j];
+
+      if (ns[i][j]) {
+        column.coefficient = ns[i][j];
+        terms.push_back(column);
+      }
+    }
+
+    auto ei = new EqualityInvariant(terms, -ns[i][num_columns-1]);
+    if (ei->check(target_states, rewrite_states)) {
+      conj->add_invariant(ei);
+      LEARNER_DEBUG(cout << *ei << endl;)
+    } else {
+      LEARNER_DEBUG(cout << "GOT BAD INVARIANT ? " << *ei << endl;)
+    }
+  }
+
+ 
+  LEARNER_DEBUG(cout << "Nullspace dimension:" << dec << dim << endl;)
+  LEARNER_DEBUG(cout << "Column count: " << dec << num_columns << endl;)
+
+  return conj;
+
+}
+
 
 ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
@@ -609,21 +711,22 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   vector<Variable> mem_vars;
-  if (enable_memory_)
+  if (enable_memory_) {
     mem_vars = get_memory_variables(target_, rewrite_);
 
-  // add variable to columns
-  /*
-  for (auto var : mem_vars) {
-    LEARNER_DEBUG(cout << "Checking mem var: " << var << endl;)
-    if (var.size <= 8) {
-      LEARNER_DEBUG(cout << " * size <= 8 :)" << endl;)
-      columns.push_back(var);
-    } else {
-      LEARNER_DEBUG(cout << " * size " << var.size << endl;)
+    // add variable to columns
+    /*
+    for (auto var : mem_vars) {
+      LEARNER_DEBUG(cout << "Checking mem var: " << var << endl;)
+      if (var.size <= 8) {
+        LEARNER_DEBUG(cout << " * size <= 8 :)" << endl;)
+        columns.push_back(var);
+      } else {
+        LEARNER_DEBUG(cout << " * size " << var.size << endl;)
+      }
     }
+    */
   }
-  */
 
   // check if memory is always non-zero?
   for (auto var : mem_vars) {
@@ -638,103 +741,8 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   cout << it << endl;
 }
 );
-
-  size_t num_columns = columns.size() + 1;
-  size_t tc_count = target_states.size();
-
-  // Find some of the simple equalities by brute force
-  LEARNER_DEBUG(cout << "looking for simple equalities" << endl;)
-
-  for (size_t i = 0; i < columns.size(); ++i) {
-    for (size_t j = i+1; j < columns.size(); ++j) {
-      // check if column i matches column j
-      LEARNER_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
-      bool match = true;
-      for (size_t k = 0; k < tc_count; ++k) {
-        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
-            columns[j].from_state(target_states[k], rewrite_states[k])) {
-          match = false;
-          break;
-        }
-      }
-      // add equality asserting column[i] matches column[j].
-      if (match) {
-        vector<Variable> terms;
-        columns[i].coefficient = 1;
-        columns[j].coefficient = -1;
-        terms.push_back(columns[i]);
-        terms.push_back(columns[j]);
-
-        auto ei = new EqualityInvariant(terms, 0);
-        conj->add_invariant(ei);
-        LEARNER_DEBUG(cout << "generating " << *ei << endl;)
-      }
-    }
-  }
-
-  //if(tc_count > 10)
-  //  tc_count = 10;
-  // Build the nullspace matrix
-  LEARNER_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
-  uint64_t* matrix = new uint64_t[tc_count*num_columns];
-
-  for (size_t i = 0; i < tc_count; ++i) {
-    for (size_t j = 0; j < columns.size(); ++j) {
-      matrix[i*num_columns + j] = columns[j].from_state(target_states[i], rewrite_states[i]);
-    }
-    matrix[i*num_columns + num_columns - 1] = 1;
-  }
-  IntMatrix matrix2(tc_count, num_columns, matrix);
-
-  LEARNER_DEBUG(
-  for (size_t i = 0; i < tc_count; ++i) {
-  for (size_t j = 0; j < num_columns; ++j) {
-      cout << hex << matrix[i*num_columns + j] << dec << " ";
-    }
-    cout << endl;
-  }
-  );
-
-  /*cout << "VERIFYING COPY" << endl;
-  matrix2.print();*/
-
-  /*cout << "NULLSPACE" << endl; */
-  auto ns = matrix2.nullspace64();
-  /*ns.print(); 
-  cout << endl; */
-
-  // Compute the nullspace
-  //uint64_t** nullspace_out;
-  //size_t dim;
-
-  //dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  //delete matrix;
-  size_t dim = ns.size();
-
-  // Extract the data from the nullspace
-  for (size_t i = 0; i < dim; ++i) {
-    vector<Variable> terms;
-
-    for (size_t j = 0; j < num_columns - 1; ++j) {
-      auto column = columns[j];
-
-      if (ns[i][j]) {
-        column.coefficient = ns[i][j];
-        terms.push_back(column);
-      }
-    }
-
-    auto ei = new EqualityInvariant(terms, -ns[i][num_columns-1]);
-    if (ei->check(target_states, rewrite_states)) {
-      conj->add_invariant(ei);
-      LEARNER_DEBUG(cout << *ei << endl;)
-    } else {
-      LEARNER_DEBUG(cout << "GOT BAD INVARIANT ? " << *ei << endl;)
-    }
-  }
-
-  LEARNER_DEBUG(cout << "Nullspace dimension:" << dec << dim << endl;)
-  LEARNER_DEBUG(cout << "Column count: " << dec << num_columns << endl;)
-
+  auto equality_conj = learn_equalities(columns, target_states, rewrite_states);
+  conj->add_invariants(equality_conj);
+    
   return conj;
 }

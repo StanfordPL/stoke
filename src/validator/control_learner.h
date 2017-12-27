@@ -132,27 +132,9 @@ private:
   static bool does_repeat(const CfgPath& pattern, const CfgPath& total);
 
 
-  bool dfs_find_path_vars(DualAutomata& dual,
-                          std::map<size_t, std::set<size_t>>& output,
-                          std::map<size_t, size_t> counts_so_far,
-                          Indexer<EdgeVariable>& edge_indexer,
-                          DualAutomata::State state,
-                          DualAutomata::Edge last_edge,
-                          bool, bool, bool, bool,
-                          Abstraction::FullTrace target_left,
-                          Abstraction::FullTrace rewrite_left);
-
-  DualAutomata update_dual_with_vars(const DualAutomata& dual,
-                                     Indexer<EdgeVariable>& indexer,
-                                     IntVector vars,
-                                     std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list);
-
-  IntVector assignment_from_matrix(DualAutomata& dual, Indexer<EdgeVariable>& indexer,
-                                   std::vector<std::pair<EdgeVariable, EdgeVariable>>& edge_list, int col);
   ////////////////////////////// Matrix Functions //////////////////////////////
 
   IntMatrix remove_constant_cols(IntMatrix matrix);
-  IntVector find_best_solution_ilp(IntMatrix space, IntVector initial, int col);
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
