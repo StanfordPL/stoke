@@ -36,10 +36,10 @@ public:
 
   /** 2d matrix with initialization */
   IntMatrix(int rows, int cols, uint64_t* arr) :
-    std::vector<std::vector<int64_t>>(rows, std::vector<int64_t>(cols, 0)) { 
-    for(int i = 0; i < rows; i++)
-      for(int j = 0; j < cols; j++)
-        (*this)[i][j] = arr[i*cols + j];  
+    std::vector<std::vector<int64_t>>(rows, std::vector<int64_t>(cols, 0)) {
+    for (int i = 0; i < rows; i++)
+      for (int j = 0; j < cols; j++)
+        (*this)[i][j] = arr[i*cols + j];
   }
 
 

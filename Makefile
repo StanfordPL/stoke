@@ -175,7 +175,6 @@ SRC_OBJ=\
 	\
 	src/validator/bounded.o \
 	src/validator/control_learner.o \
-	src/validator/cutpoints.o \
 	src/validator/ddec.o \
 	src/validator/dual.o \
 	src/validator/handler.o \

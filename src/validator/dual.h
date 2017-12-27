@@ -145,8 +145,8 @@ public:
   /** Get the list of edges between two states */
   std::vector<Edge> edges_between(State s, State t) {
     std::vector<Edge> edges;
-    for(auto e : next_edges_[s])
-      if(e.to == t)
+    for (auto e : next_edges_[s])
+      if (e.to == t)
         edges.push_back(e);
     return edges;
   }
