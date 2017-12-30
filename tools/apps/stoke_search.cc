@@ -411,7 +411,7 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_set, aux_fxns);
 
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
-  InvariantLearner learner(target, target);
+  InvariantLearner learner;
   learner.set_seed(seed);
   VerifierGadget verifier(test_sb, holdout_fxn, learner);
 

@@ -27,22 +27,24 @@ class InvariantLearner {
 
 public:
 
-  InvariantLearner(const Cfg& target, const Cfg& rewrite) : target_(target), rewrite_(rewrite) {
+  InvariantLearner() {
     set_sample_tcs(100);
   }
 
   InvariantLearner& add_ghost(Variable v) {
     ghosts_.push_back(v);
-    set_disable_nonlinear(false);
+    set_enable_nonlinear(true);
     set_enable_memory(true);
     return *this;
   }
 
-  InvariantLearner& set_disable_nonlinear(bool b) {
-    disable_nonlinear_ = b;
+  /** Enable non-linear invariant learning. */
+  InvariantLearner& set_enable_nonlinear(bool b) {
+    enable_nonlinear_ = b;
     return *this;
   }
 
+  /** Enable invariants over memory. */
   InvariantLearner& set_enable_memory(bool b) {
     enable_memory_ = b;
     return *this;
@@ -61,7 +63,13 @@ public:
     return *this;
   }
 
+  /** Get a reasonable set of variables for a program point. */
+  std::vector<Variable> pick_variables(const Cfg& target, const Cfg& rewrite,
+                                       Cfg::id_type target_block,
+                                       Cfg::id_type rewrite_block);
+
   /** Learn a precise invariant over a set of data */
+  // TODO: add set of memory locations to look at
   ConjunctionInvariant* learn(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
@@ -70,11 +78,11 @@ public:
     std::string target_cc = "",
     std::string rewrite_cc = "");
 
-  /** Learn equalities over some columns of data */
+  /** Learn linear equalities over some columns of data */
   ConjunctionInvariant* learn_equalities(
-     std::vector<Variable>,
-     const std::vector<CpuState>&,
-     const std::vector<CpuState>&);
+    std::vector<Variable>,
+    const std::vector<CpuState>&,
+    const std::vector<CpuState>&);
 
 
 private:
@@ -83,16 +91,12 @@ private:
   std::pair<std::vector<CpuState>, std::vector<CpuState>> choose_tcs(
         const std::vector<CpuState>&, const std::vector<CpuState>&);
 
-  // learn a single invariant, without regard for flags
+  /** learn a single invariant, without regard for flags. */
   ConjunctionInvariant* learn_simple(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
     const std::vector<CpuState>& states2);
-
-  /** Keep track of the program we're working on. */
-  Cfg target_;
-  Cfg rewrite_;
 
   /** Overapproximate set of possible inequality invariants. */
   std::vector<InequalityInvariant*> build_inequality_invariants
@@ -102,7 +106,7 @@ private:
   std::vector<Variable> ghosts_;
 
   /** Some options */
-  bool disable_nonlinear_;
+  bool enable_nonlinear_;
   bool enable_memory_;
 
   /** The maximum number of TCs we want to learn over.  If provided with
