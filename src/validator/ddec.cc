@@ -17,8 +17,10 @@
 #include "src/cfg/sccs.h"
 #include "src/validator/abstractions/block.h"
 #include "src/validator/bounded.h"
+#include "src/validator/data_collector.h"
 #include "src/validator/dual.h"
 #include "src/validator/ddec.h"
+#include "src/validator/flow_invariant_learner.h"
 #include "src/validator/indexer.h"
 #include "src/validator/null.h"
 #include "src/validator/invariants/conjunction.h"
@@ -396,87 +398,68 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
   }
 }
 
-ControlLearner::Trace bound_trace(ControlLearner::Trace& tr, size_t bound) {
 
-  ControlLearner::Trace trace;
-  map<Cfg::id_type, size_t> block_counts;
+bool DdecValidator::verify_dual(DualAutomata& dual) {
+  dual.remove_prefixes();
+  dual.print_all();
+  InvariantLearner learner;
+  Sandbox sb(*sandbox_);
+  bool learning_successful = dual.learn_invariants(sb, learner);
+  if (!learning_successful) {
+    cout << "Learning invariants failed!" << endl;
+    return false;
+  }
+  auto start_state = dual.start_state();
+  auto end_state = dual.exit_state();
+  dual.set_invariant(start_state, get_initial_invariant());
+  dual.set_invariant(end_state, get_final_invariant());
 
-  for (auto state : tr) {
-    auto block = state.block_id;
-    block_counts[block]++;
-
-    if (block_counts[block] > bound)
-      break;
-
-    trace.push_back(state);
+  /** Add NoSignals invariant everywhere */
+  auto ns_invariant = new NoSignalsInvariant();
+  auto reachable = dual.get_reachable_states();
+  for (auto rs : reachable) {
+    auto orig_inv = dual.get_invariant(rs);
+    orig_inv->add_invariant(ns_invariant);
+    dual.set_invariant(rs, orig_inv);
   }
 
-  return trace;
-}
-
-
-bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
-
-
-  function<bool (DualAutomata&)> dual_callback = [this](DualAutomata& dual) -> bool {
-    dual.remove_prefixes();
+  bool valid = false;
+  while (!valid) {
     dual.print_all();
-    InvariantLearner learner(target_, rewrite_);
-    Sandbox sb(*sandbox_);
-    bool learning_successful = dual.learn_invariants(sb, learner);
-    if (!learning_successful) {
-      cout << "Learning invariants failed!" << endl;
+    discharge_invariants(dual);
+    dual.print_all();
+
+    /** Check if proof succeeds. */
+    auto actual_final = dual.get_invariant(end_state);
+    auto expected_final = get_final_invariant();
+
+    bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
+                          {}, {}, *actual_final, *expected_final);
+    if (!final_ok) {
+      cout << "Could not complete final proof step." << endl;
+      cout << "Maybe DDEC missed an important invariant?" << endl;
       return false;
     }
-    auto start_state = dual.start_state();
-    auto end_state = dual.exit_state();
-    dual.set_invariant(start_state, get_initial_invariant());
-    dual.set_invariant(end_state, get_final_invariant());
 
-    /** Add NoSignals invariant everywhere */
-    auto ns_invariant = new NoSignalsInvariant();
-    auto reachable = dual.get_reachable_states();
-    for (auto rs : reachable) {
-      auto orig_inv = dual.get_invariant(rs);
-      orig_inv->add_invariant(ns_invariant);
-      dual.set_invariant(rs, orig_inv);
-    }
-
-    bool valid = false;
-    while (!valid) {
-      dual.print_all();
-      discharge_invariants(dual);
-      dual.print_all();
-
-      /** Check if proof succeeds. */
-      auto actual_final = dual.get_invariant(end_state);
-      auto expected_final = get_final_invariant();
-
-      bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-      {}, {}, *actual_final, *expected_final);
-      if (!final_ok) {
-        cout << "Could not complete final proof step." << endl;
-        cout << "Maybe DDEC missed an important invariant?" << endl;
+    cout << "Verifying exhaustive" << endl;
+    auto old_edge_count = dual.count_edges();
+    valid = discharge_exhaustive(dual);
+    if (!valid) {
+      if (old_edge_count == dual.count_edges()) {
+        cout << "Couldn't verify exhaustive nor find counterexample (bug?)." << endl;
         return false;
-      }
-
-      cout << "Verifying exhaustive" << endl;
-      auto old_edge_count = dual.count_edges();
-      valid = discharge_exhaustive(dual);
-      if (!valid) {
-        if (old_edge_count == dual.count_edges()) {
-          cout << "Couldn't verify exhaustive nor find counterexample (bug?)." << endl;
-          return false;
-        } else {
-          cout << "Couldn't verify exhaustive; going to try again." << endl;
-        }
+      } else {
+        cout << "Couldn't verify exhaustive; going to try again." << endl;
       }
     }
+  }
 
-    cout << " ===== PROOF COMPLETE ===== " << endl;
-    dual.print_all();
-    return true;
-  };
+  cout << " ===== PROOF COMPLETE ===== " << endl;
+  dual.print_all();
+  return true;
+};
+
+bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
 
   init_mm();
@@ -486,12 +469,20 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   target_ = target;
   rewrite_ = rewrite;
 
-  target_automata_ = new BlockAbstraction(target, *sandbox_);
-  rewrite_automata_ = new BlockAbstraction(rewrite, *sandbox_);
-  control_learner_ = new ControlLearner(target, rewrite, *sandbox_);
-
   DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
   DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
+
+  DataCollector dc(*sandbox_);
+  FlowInvariantLearner fil(dc, invariant_learner_);
+  fil.initialize(target_, rewrite_);
+
+  for (Cfg::id_type i = target_.get_entry(); i != target_.get_exit(); i++) {
+    for (Cfg::id_type j = rewrite_.get_entry(); j != rewrite.get_exit(); j++) {
+      cout << "===== INVARIANT AFTER BLOCKS " << i << " / " << j << " =====" << endl;
+      auto inv = fil.get_invariant(i,j);
+      inv->write_pretty(cout);
+    }
+  }
 
   try {
 
@@ -509,7 +500,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     vector<CfgPath> target_inductive_paths;
     vector<CfgPath> rewrite_inductive_paths;
-    learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
+    //learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
     return false;
 
   } catch (validator_error e) {

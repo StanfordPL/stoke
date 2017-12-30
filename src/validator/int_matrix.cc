@@ -15,6 +15,7 @@
 #include "src/validator/int_matrix.h"
 
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <ostream>
 #include <fstream>
@@ -29,6 +30,7 @@
 
 
 using namespace std;
+using namespace std::chrono;
 using namespace stoke;
 
 // TODO: use temporary files for SAGE
@@ -187,7 +189,16 @@ IntMatrix IntMatrix::nullspace64() const {
   of << endl;
 
   of.close();
+
+
+
+  auto start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+
   int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2>") + tmp_err).c_str());
+
+  auto end_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+
+  cout << "Nullspace computation took " << dec << (end_time - start_time).count() << " ms" << endl;
 
   /** Read basis vectors from sage */
   size_t output_rows;

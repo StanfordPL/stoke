@@ -81,8 +81,8 @@ int main(int argc, char** argv) {
   Cfg empty_cfg(empty, RegSet::universe(), RegSet::universe());
 
   SeedGadget seed;
-  InvariantLearner learner(empty_cfg, empty_cfg);
-  learner.set_disable_nonlinear(only_linear_arg.value());
+  InvariantLearner learner;
+  learner.set_enable_nonlinear(!only_linear_arg.value());
   learner.set_seed(seed);
   auto invs = learner.learn(target_regs_arg.value(), rewrite_regs_arg.value(),
                             target_testcases_arg.value(), rewrite_testcases_arg.value());

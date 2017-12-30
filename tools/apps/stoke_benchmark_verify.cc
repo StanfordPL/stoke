@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  InvariantLearner learner(target, target);
+  InvariantLearner learner;
   learner.set_seed(seed);
   VerifierGadget verifier(sb, fxn, learner);
 

@@ -61,8 +61,8 @@ private:
 
   Abstraction* target_automata_;
   Abstraction* rewrite_automata_;
-  ControlLearner* control_learner_;
   InvariantLearner& invariant_learner_;
+  ControlLearner* control_learner_;
 
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
@@ -72,6 +72,9 @@ private:
 
 
   DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
+
+
+  bool verify_dual(DualAutomata& dual);
 
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);

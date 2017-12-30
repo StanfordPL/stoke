@@ -69,6 +69,30 @@ public:
     return true;
   }
 
+  std::ostream& write_pretty(std::ostream& os) const {
+
+    if (invariants_.size() == 0) {
+      os << "true";
+      return os;
+    }
+
+    if (invariants_.size() == 1) {
+      invariants_[0]->write(os);
+      return os;
+    }
+
+    for (size_t i = 0; i < invariants_.size(); ++i) {
+      os << "    ";
+      invariants_[i]->write(os);
+      if (i != invariants_.size() - 1) {
+        os << " ^ " << std::endl;
+      }
+    }
+    os << std::endl;
+    return os;
+  }
+
+
   std::ostream& write(std::ostream& os) const {
 
     if (invariants_.size() == 0) {
