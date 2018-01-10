@@ -243,7 +243,10 @@ TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_NON_ARG_OBJ)
 OBJS=$(wildcard tools/apps/*.cc) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ)
 
 BIN=\
-	bin/stoke_debug_verify
+	bin/stoke_debug_verify \
+	bin/stoke_debug_cfg \
+	bin/stoke_extract
+
 #bin/stoke_extract \
 	bin/stoke_replace \
 	bin/stoke_search \

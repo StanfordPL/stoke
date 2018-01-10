@@ -481,6 +481,11 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "===== INVARIANT AFTER BLOCKS " << i << " / " << j << " =====" << endl;
       auto inv = fil.get_invariant(i,j);
       inv->write_pretty(cout);
+      cout << "  == performing transform " << i << "  " << j << " == " << endl;
+      std::vector<CfgPath> target_paths;
+      std::vector<CfgPath> rewrite_paths;
+      auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
+      inv_trans->write_pretty(cout);
     }
   }
 

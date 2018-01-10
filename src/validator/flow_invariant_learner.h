@@ -32,11 +32,22 @@ public:
   /** Get an invariant corresponding to a pair of basic blocks. */
   ConjunctionInvariant* get_invariant(Cfg::id_type target_block, Cfg::id_type rewrite_block);
 
+  /** Transform an invariant so that it holds on a set of inductive paths. */
+  ConjunctionInvariant* transform_invariant(ConjunctionInvariant* conj, 
+                                            std::vector<CfgPath>& target_paths,
+                                            std::vector<CfgPath>& rewrite_paths);
+
+  /** Check if a potential inductive path seems to work. */
+  bool check_inductive_path(CfgPath target_path, CfgPath rewrite_path);
+
+
 private:
   typedef std::vector<std::pair<CpuState, CpuState>> TCPairs;
+  typedef std::map<std::pair<Cfg::id_type, Cfg::id_type>, TCPairs> TCPairMap;
 
-  /** Collect all the CpuStates for given program points and test case. */
-  TCPairs get_pairs_for_tc(Cfg::id_type target_block, Cfg::id_type rewrite_block, size_t tc_id);
+  /** Collect all the CpuStates for each test case, update TCPairMap data structure,
+    and record the last pair of states for each test case. */
+  void collect_data(size_t tc_id);
 
   /** Go through a trace and add shadow variables to each state. */
   void add_shadow_variables(const Cfg& cfg, DataCollector::Trace& t);
@@ -47,6 +58,12 @@ private:
   /** Select from a vector elements at random. */
   template<typename T>
   std::vector<T> pick_at_random(std::vector<T> items, size_t count);
+
+  /** Cached data points across all executions. */
+  TCPairMap test_case_pairs_;
+
+  /** Final states and show variables across all executions. */
+  TCPairs test_outputs_;
 
   /** Random generator. */
   std::default_random_engine gen_;

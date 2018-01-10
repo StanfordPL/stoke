@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help {
-  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4]"
+  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4] [--renew-kerberos]"
   echo ""
 }
 
@@ -49,6 +49,10 @@ while :; do
       ;;
     --debug-ceg)
       MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_DEBUG_CEG"
+      shift
+      ;;
+    --renew-kerberos)
+      MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_ENABLE_KERBEROS_RENEW"
       shift
       ;;
     -d|--debug-default-target)

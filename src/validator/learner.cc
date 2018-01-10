@@ -603,6 +603,8 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   for (auto col : new_columns)
     cout << "  " << col << endl;
 
+  cout << "Starting with " << tc_count << " rows." << endl;
+
   /** Check if there are any rows to skip. */
   set<size_t> ignore_rows;
   for (size_t i = 0; i < tc_count; ++i) {
@@ -633,15 +635,19 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
 
 
   size_t num_rows = tc_count - ignore_rows.size();
+  cout << "Down to " << num_rows << " rows (ignoring " << ignore_rows.size() << ")" << endl;
+
+  if (num_rows > sample_tcs_) {
+    LEARNER_DEBUG(cout << dec << "limitting matrix to " << sample_tcs_ << " rows from " << num_rows << endl;)
+    num_rows = sample_tcs_;
+  }
+
 
   //if(tc_count > 10)
   //  tc_count = 10;
   // Build the nullspace matrix
   LEARNER_DEBUG(cout << dec << "allocating the matrix of size " << num_rows << " x " << num_columns << hex << endl;)
   uint64_t* matrix = new uint64_t[num_rows*num_columns];
-
-  if (num_rows > sample_tcs_)
-    num_rows = sample_tcs_;
 
   for (size_t i = 0, tc_index = 0; i < num_rows; ++i, ++tc_index) {
     while (ignore_rows.count(tc_index)) {
