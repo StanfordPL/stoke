@@ -69,7 +69,10 @@ public:
   }
 
   size_t cols() const {
-    return (*this)[0].size();
+    if(rows() > 0)
+      return (*this)[0].size();
+    else
+      return 0;
   }
 
   bool check_rectangle() const {

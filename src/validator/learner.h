@@ -18,6 +18,8 @@
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/inequality.h"
+
+#include "src/validator/int_matrix.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
@@ -28,7 +30,7 @@ class InvariantLearner {
 public:
 
   InvariantLearner() {
-    set_sample_tcs(100);
+    set_sample_tcs(25);
   }
 
   InvariantLearner& add_ghost(Variable v) {
@@ -91,7 +93,33 @@ private:
   std::pair<std::vector<CpuState>, std::vector<CpuState>> choose_tcs(
         const std::vector<CpuState>&, const std::vector<CpuState>&);
 
-  /** learn a single invariant, without regard for flags. */
+  /** Extract variables from states and put them into a matrix. */
+  IntMatrix states_to_matrix(
+    const std::vector<Variable>& variables,
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states);
+
+  /** Take a matrix (from nullspace computation), and extract invariants from
+   * it. */
+  ConjunctionInvariant* matrix_to_invariant(
+      const std::vector<Variable>& variables,
+      const IntMatrix& matrix);
+
+  /** Learn that a variable is constant over many states, AND,
+    remove the variable from the referenced set of columns. */
+  ConjunctionInvariant* learn_constants(
+    std::vector<Variable>& columns,
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states);
+
+  /** Learn that two variables are equal over many states, AND,
+    remove the variable from the referenced set of columns. */
+  ConjunctionInvariant* learn_easy_equalities(
+    std::vector<Variable>& columns,
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states);
+
+  /** Learn a single invariant, without regard for flags. */
   ConjunctionInvariant* learn_simple(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,

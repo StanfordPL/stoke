@@ -33,13 +33,9 @@ public:
   ConjunctionInvariant* get_invariant(Cfg::id_type target_block, Cfg::id_type rewrite_block);
 
   /** Transform an invariant so that it holds on a set of inductive paths. */
-  ConjunctionInvariant* transform_invariant(ConjunctionInvariant* conj, 
-                                            std::vector<CfgPath>& target_paths,
-                                            std::vector<CfgPath>& rewrite_paths);
-
-  /** Check if a potential inductive path seems to work. */
-  bool check_inductive_path(CfgPath target_path, CfgPath rewrite_path);
-
+  ConjunctionInvariant* transform_invariant(ConjunctionInvariant* conj,
+      std::vector<CfgPath>& target_paths,
+      std::vector<CfgPath>& rewrite_paths);
 
 private:
   typedef std::vector<std::pair<CpuState, CpuState>> TCPairs;
@@ -61,9 +57,6 @@ private:
 
   /** Cached data points across all executions. */
   TCPairMap test_case_pairs_;
-
-  /** Final states and show variables across all executions. */
-  TCPairs test_outputs_;
 
   /** Random generator. */
   std::default_random_engine gen_;
