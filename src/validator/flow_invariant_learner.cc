@@ -1,4 +1,6 @@
 
+#include "src/validator/invariants/equality.h"
+
 #include "src/validator/flow_invariant_learner.h"
 
 using namespace std;
@@ -59,7 +61,7 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_bl
   auto pairs = test_case_pairs_[pair<Cfg::id_type, Cfg::id_type>(target_block, rewrite_block)];
   vector<CpuState> target_states;
   vector<CpuState> rewrite_states;
-  for(auto it : pairs) {
+  for (auto it : pairs) {
     target_states.push_back(it.first);
     rewrite_states.push_back(it.second);
   }
@@ -73,7 +75,7 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_bl
   columns.insert(columns.begin(), rewrite_shadows.begin(), rewrite_shadows.end());
 
   cout << "* learning equalities" << endl;
-  if(target_states.size() == 0) {
+  if (target_states.size() == 0) {
     auto ci = new ConjunctionInvariant();
     return ci;
   }
@@ -83,7 +85,112 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_bl
 
 ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvariant* conj,
     std::vector<CfgPath>& target_paths, std::vector<CfgPath>& rewrite_paths) {
-  return conj;
+
+  /** The conjunction contains invariants, which we write in the form
+
+    f1(N) = g1(R)
+    f2(N) = g2(R)
+    ...
+    fk(N) = gk(R)
+
+    here, N is a vector of the shadow variables n1,...
+    R is a vector of the registers
+    Each fi and gi is a linear function, with fi(0) = 0.
+
+    Now, if v_1,v_2,... are vectors encoding the counts of basic blocks
+    then we are looking for a function f = a_1f_1 + a_2f_2 + ... + a_kf_k
+    such that f(N + v_i) = f(N) for all i.  Since f is linear, that just
+    means that f(v_i) = 0 for all i.  Or, that
+    
+    sum_{i} f(v_i) = sum_{i,j} a_jf_j(v_i) = 0
+
+    That's just a linear system of equations to solve.  We get the answers out,
+    and it tells us every possible 'f' that we might want to build.  Then we throw
+    out some of the basis vectors if they don't have a corresponding g term that's
+    meaningful to us.  Lastly, we work out the corresponding g() functions, and those
+    are our invariants!! */
+
+  if(target_paths.size() == 0)
+    return conj;
+
+  assert(target_paths.size() == rewrite_paths.size());
+  size_t invariant_count = conj->size();
+  size_t path_count = target_paths.size();
+
+  IntMatrix matrix(path_count, invariant_count);
+  for(size_t i = 0; i < path_count; ++i) {
+    for(size_t j = 0; j < invariant_count; ++j) {
+
+      // compute f_j(v_i) and add it to the matrix.
+      uint64_t value = 0;
+      auto target_path = target_paths[i];
+      auto rewrite_path = rewrite_paths[i];
+
+      auto invariant = static_cast<EqualityInvariant*>((*conj)[j]);
+      auto variables = invariant->get_variables();
+
+      for(size_t m = 0; m < variables.size(); ++m) {
+        // if variables[m] appears in a path, then multiply the number of times
+        // it appears with the coefficient of that variable
+
+        auto variable = variables[m];
+        if(!variable.is_ghost)
+          continue;
+
+        auto& path = variable.is_rewrite ? rewrite_path : target_path;
+
+        string ghost = variable.name;
+        ghost = ghost.substr(1);
+        Cfg::id_type block = stoul(ghost);
+        uint64_t count = 0;
+        for(auto blk : path) {
+          if (blk == block)
+            count++;
+        }
+        cout << "     looked for " << variable << " on path " << path << " and found " << count << " with multiplier " << variable.coefficient << endl;
+        value += count*(uint64_t)(variable.coefficient);
+      }
+
+      matrix[i][j] = value;
+    }
+  }
+  
+  cout << "DEBUGING TRANSFORM MATRIX" << endl;
+  matrix.print();
+
+  auto solutions = matrix.solve_diophantine();
+
+  cout << "DEBUGING TRANSFORM MATRIX NULLSPACE" << endl;
+  solutions.print();
+
+  auto transformed = new ConjunctionInvariant();
+  for(auto& solution : solutions) {
+    vector<Variable> terms;
+    for(size_t i = 0; i < solution.size(); ++i) {
+      auto invariant = static_cast<EqualityInvariant*>((*conj)[i]);
+      auto variables = invariant->get_variables();
+      auto multiplier = solution[i];
+      if(multiplier == 0)
+        continue;
+      cout << "   adding " << multiplier << " copies of " << *invariant << endl;
+
+      for(size_t j = 0; j < variables.size(); ++j) {
+        auto term = variables[j];
+        if(!term.is_ghost) {
+          cout << "         " << term << endl;
+          term.coefficient *= multiplier;
+          terms.push_back(term);
+        }
+      }
+    }
+
+    if(terms.size()) {
+      auto ei = new EqualityInvariant(terms, 0);
+      transformed->add_invariant(ei);
+    }
+  }
+
+  return transformed;
 }
 
 
@@ -115,10 +222,11 @@ void FlowInvariantLearner::collect_data(size_t tc_index) {
   }
 
   /** Get the ending states. */
+  /*
   auto last_target_state = target_trace.back().cs;
   auto last_rewrite_state = rewrite_trace.back().cs;
   auto last_pair = pair<CpuState, CpuState>(last_target_state, last_rewrite_state);
-  test_outputs_.push_back(last_pair);
+  test_outputs_.push_back(last_pair); */
 
 }
 
@@ -158,7 +266,3 @@ vector<Variable> FlowInvariantLearner::get_shadow_vars(const Cfg& cfg, bool is_r
   return vars;
 }
 
-
-bool FlowInvariantLearner::check_inductive_path(CfgPath target_path, CfgPath rewrite_path) {
-  return false;
-}
