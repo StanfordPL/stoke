@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/kerberos/kerberos.h"
 #include "src/validator/int_matrix.h"
 
 #include <cassert>
@@ -91,6 +92,7 @@ IntMatrix IntMatrix::solve_diophantine() const {
   string tmp_out = tmpnam(NULL) + string(".out");
   string tmp_err = tmpnam(NULL) + string(".err");
 
+  renew_kerberos_permissions();
   umask(0077);
   ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
@@ -123,6 +125,7 @@ IntMatrix IntMatrix::solve_diophantine() const {
   /** Read basis vectors from sage */
   IntMatrix basis_vectors;
   size_t output_rows, output_cols;
+  renew_kerberos_permissions();
   ifstream in(tmp_out);
   in >> output_rows >> output_cols;
   if (!in.good()) {
@@ -158,6 +161,7 @@ IntMatrix IntMatrix::nullspace64() const {
   string tmp_out = base + string(".out");
   string tmp_err = base + string(".err");
 
+  renew_kerberos_permissions();
   umask(0077);
   ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
@@ -203,6 +207,7 @@ IntMatrix IntMatrix::nullspace64() const {
   /** Read basis vectors from sage */
   size_t output_rows;
   size_t output_cols = matrix[0].size();
+  renew_kerberos_permissions();
   ifstream in(tmp_out);
   in >> output_rows;
   if (!in.good()) {
@@ -238,6 +243,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   string tmp_out = tmpnam(NULL) + string(".out");
   string tmp_err = tmpnam(NULL) + string(".err");
 
+  renew_kerberos_permissions();
   umask(0077);
   ofstream of(tmp_in);
   of << "rows=" << matrix.size() << endl;
@@ -275,6 +281,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   /** Read basis vectors from sage */
   IntVector output;
   size_t output_rows;
+  renew_kerberos_permissions();
   ifstream in(tmp_out);
   in >> output_rows;
   if (!in.good()) {

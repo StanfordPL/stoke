@@ -7,6 +7,15 @@ using namespace stoke;
 void FlowInvariantLearner::initialize(Cfg& target, Cfg& rewrite) {
   target_ = &target;
   rewrite_ = &rewrite;
+
+  auto target_traces = data_collector_.get_traces(*target_);
+
+  /** Get all pairs of testcases */
+  cout << "* getting pairs of testcases" << endl;
+  for (size_t i = 0, ie = target_traces.size(); i < ie; ++i) {
+    cout << "  * processing testcase " << i << " / " << ie << endl;
+    collect_data(i);
+  }
 }
 
 void remove_duplicates(vector<CpuState>& states) {
@@ -46,19 +55,13 @@ std::vector<T> FlowInvariantLearner::pick_at_random(vector<T> items, size_t coun
 ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_block,
     Cfg::id_type rewrite_block) {
 
-  auto target_traces = data_collector_.get_traces(*target_);
-
-  /** Get all pairs of testcases */
-  cout << "* getting pairs of testcases" << endl;
+  /** Fetch and unzip the pairs */
+  auto pairs = test_case_pairs_[pair<Cfg::id_type, Cfg::id_type>(target_block, rewrite_block)];
   vector<CpuState> target_states;
   vector<CpuState> rewrite_states;
-  for (size_t i = 0, ie = target_traces.size(); i < ie; ++i) {
-    auto pairs = get_pairs_for_tc(target_block, rewrite_block, i);
-    cout << "   - Adding " << pairs.size() << " pairs to collection" << endl;
-    for (auto it : pairs) {
-      target_states.push_back(it.first);
-      rewrite_states.push_back(it.second);
-    }
+  for(auto it : pairs) {
+    target_states.push_back(it.first);
+    rewrite_states.push_back(it.second);
   }
 
   cout << "* picking variables" << endl;
@@ -70,20 +73,33 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_bl
   columns.insert(columns.begin(), rewrite_shadows.begin(), rewrite_shadows.end());
 
   cout << "* learning equalities" << endl;
+  if(target_states.size() == 0) {
+    auto ci = new ConjunctionInvariant();
+    return ci;
+  }
+
   return invariant_learner_.learn_equalities(columns, target_states, rewrite_states);
+}
+
+ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvariant* conj,
+    std::vector<CfgPath>& target_paths, std::vector<CfgPath>& rewrite_paths) {
+  return conj;
 }
 
 
 
-FlowInvariantLearner::TCPairs FlowInvariantLearner::get_pairs_for_tc(
-  Cfg::id_type target_block, Cfg::id_type rewrite_block, size_t tc_index) {
+void FlowInvariantLearner::collect_data(size_t tc_index) {
 
   /** These are cached by data collector; no real performance hit here. */
   auto target_traces = data_collector_.get_traces(*target_);
   auto rewrite_traces = data_collector_.get_traces(*rewrite_);
 
+  /** Pick out the traces we're interested in. */
   auto target_trace = target_traces[tc_index];
   auto rewrite_trace = rewrite_traces[tc_index];
+
+  assert(target_trace.size() > 0);
+  assert(rewrite_trace.size() > 0);
 
   /** Add all the shadow variables we'll need later. */
   add_shadow_variables(*target_, target_trace);
@@ -91,27 +107,18 @@ FlowInvariantLearner::TCPairs FlowInvariantLearner::get_pairs_for_tc(
 
   /** Get all program points in target/rewrite for given block and
     take the cross-product. */
-  vector<pair<CpuState,CpuState>> pairs;
-
   for (auto t_state : target_trace) {
-    if (t_state.block_id != target_block)
-      continue;
-
     for (auto r_state: rewrite_trace) {
-      if (r_state.block_id != rewrite_block)
-        continue;
-
-      pairs.push_back(pair<CpuState,CpuState>(t_state.cs, r_state.cs));
+      auto index = pair<Cfg::id_type, Cfg::id_type>(t_state.block_id, r_state.block_id);
+      test_case_pairs_[index].push_back(pair<CpuState,CpuState>(t_state.cs, r_state.cs));
     }
   }
 
-  //TODO: optimization.
-  // only run this function once and collect all the data for all pairs of program points.
-  // add to a data structure with (target point, rewrite point) -> list of pairs
-  // call this function from 'initialize'
-  // then, instead of calling this, check the data structure
-
-  return pairs;
+  /** Get the ending states. */
+  auto last_target_state = target_trace.back().cs;
+  auto last_rewrite_state = rewrite_trace.back().cs;
+  auto last_pair = pair<CpuState, CpuState>(last_target_state, last_rewrite_state);
+  test_outputs_.push_back(last_pair);
 
 }
 
@@ -123,7 +130,7 @@ void FlowInvariantLearner::add_shadow_variables(const Cfg& cfg, DataCollector::T
     block_counts[i] = 0;
 
   /** Go through states and update ghost data. */
-  for (auto state : trace) {
+  for (auto& state : trace) {
     auto block = state.block_id;
     auto& cs = state.cs;
 
@@ -152,3 +159,6 @@ vector<Variable> FlowInvariantLearner::get_shadow_vars(const Cfg& cfg, bool is_r
 }
 
 
+bool FlowInvariantLearner::check_inductive_path(CfgPath target_path, CfgPath rewrite_path) {
+  return false;
+}

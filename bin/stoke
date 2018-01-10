@@ -1,0 +1,150 @@
+#!/bin/bash
+
+# http://stackoverflow.com/questions/4774054/
+#   reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+
+pushd `dirname $0` > /dev/null
+HERE=`pwd`
+popd > /dev/null
+
+if [ $# -eq 0 ] 
+then
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
+
+SCMD=$1
+shift
+
+# This is to make sure we link the the right copy of z3.
+export LD_LIBRARY_PATH="$HERE/../src/ext/z3/build:$HERE/../src/ext/cvc4-1.4-build/lib"
+
+if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
+then
+	echo "Usage: stoke <subcommand> [options]"
+	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
+	echo ""
+	echo "  extract             extract the contents of a binary file"
+	echo "  replace             replace the contents of a binary file"
+	echo "  synthesize          run STOKE search in synthesis mode"
+	echo "  optimize            run STOKE search in optimization mode"
+	echo "  testcase            generate a STOKE testcase file"
+	echo ""
+	echo "  debug cfg           generate the control flow graph for a function"
+	echo "  debug cost          evaluate a function using a STOKE cost function"
+	echo "  debug diff          diff the resulting state of two functions"
+	echo "  debug effect        show the effect of a function on the state"
+	echo "  debug formula       show the SMT formula for a straight-line piece of code"
+  echo "  debug invariant     find an invariant across a pair of sets of test cases"
+	echo "  debug sandbox       step through a function execution"
+	echo "  debug search        perform a program transformation"
+	echo "  debug simplify      take an x86 program and simplify it (by removing redundant instructions)"
+	echo "  debug state         check bit-wise operations"
+	echo "  debug tunit         show the instruction sizes and RIP-offsets for a code"
+	echo "  debug verify        check the equivalence of two functions"
+	echo ""
+	echo "  benchmark cfg       benchmark Cfg::recompute() kernel"
+	echo "  benchmark cost      benchmark Cost::operator() kernel"
+	echo "  benchmark sandbox   benchmark Sandbox::run() kernel"
+	echo "  benchmark search    benchmark Transforms::modify() kernel"
+	echo "  benchmark state     benchmark Memory::copy_defined() kernel"
+	echo "  benchmark verify    benchmark Verifier::verify() kernel"
+	exit 0
+elif [ "$SCMD" == "debug" ]
+then
+	SCMD=$1
+	shift
+	if [ "$SCMD" == "cfg" ]
+	then
+		exec $HERE/stoke_debug_cfg "$@"
+	elif [ "$SCMD" == "formula" ]
+	then
+		exec $HERE/stoke_debug_formula "$@"
+	elif [ "$SCMD" == "cost" ]
+	then
+		exec $HERE/stoke_debug_cost "$@"
+	elif [ "$SCMD" == "diff" ]
+	then
+		exec $HERE/stoke_debug_diff "$@"
+	elif [ "$SCMD" == "effect" ]
+	then
+		exec $HERE/stoke_debug_effect "$@"
+	elif [ "$SCMD" == "invariant" ]
+	then
+		exec $HERE/stoke_debug_invariant "$@"
+	elif [ "$SCMD" == "sandbox" ]
+	then
+		exec $HERE/stoke_debug_sandbox "$@"
+	elif [ "$SCMD" == "simplify" ]
+	then
+		exec $HERE/stoke_debug_simplify "$@"
+	elif [ "$SCMD" == "state" ]
+	then
+		exec $HERE/stoke_debug_state "$@"
+	elif [ "$SCMD" == "search" ]
+	then
+		exec $HERE/stoke_debug_search "$@"
+	elif [ "$SCMD" == "tunit" ]
+	then
+		exec $HERE/stoke_debug_tunit "$@"
+	elif [ "$SCMD" == "verify" ]
+	then
+		exec $HERE/stoke_debug_verify "$@"
+	else
+		echo "Unknown command: '"$SCMD"'"
+		echo "Type 'stoke --help' for usage."
+		exit 1
+	fi
+elif [ "$SCMD" == "benchmark" ]
+then
+  SCMD=$1
+  shift
+  if [ "$SCMD" == "cfg" ]
+  then
+ 	  exec $HERE/stoke_benchmark_cfg "$@"
+	elif [ "$SCMD" == "cost" ]
+	then
+		exec $HERE/stoke_benchmark_cost "$@"
+	elif [ "$SCMD" == "sandbox" ]
+	then
+		exec $HERE/stoke_benchmark_sandbox "$@"
+	elif [ "$SCMD" == "search" ]
+	then
+		exec $HERE/stoke_benchmark_search "$@"
+	elif [ "$SCMD" == "state" ]
+	then
+		exec $HERE/stoke_benchmark_state "$@"
+	elif [ "$SCMD" == "verify" ]
+	then
+		exec $HERE/stoke_benchmark_verify "$@"
+  else
+ 	  echo "Unknown command: '"$SCMD"'"
+    echo "Type 'stoke --help' for usage."
+    exit 1
+  fi
+elif [ "$SCMD" == "extract" ]
+then
+	exec $HERE/stoke_extract "$@"
+elif [ "$SCMD" == "replace" ]
+then
+	exec $HERE/stoke_replace "$@"
+elif [ "$SCMD" == "search" ]
+then
+	exec $HERE/stoke_search "$@"
+elif [ "$SCMD" == "synthesize" ]
+then
+	exec $HERE/stoke_search --init zero "$@"
+elif [ "$SCMD" == "optimize" ]
+then
+	exec $HERE/stoke_search --init target "$@"
+elif [ "$SCMD" == "testcase" ]
+then
+	exec $HERE/stoke_testcase "$@"
+elif [ "$SCMD" == "test" ]
+then
+	exec $HERE/stoke_test "$@"
+else
+	echo "Unknown command: '"$SCMD"'"
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
