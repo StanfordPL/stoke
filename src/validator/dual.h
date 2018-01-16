@@ -6,7 +6,7 @@
 #include <vector>
 #include <ostream>
 
-#include "src/validator/abstraction.h"
+#include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/learner.h"
@@ -18,8 +18,8 @@ class DualAutomata {
 public:
 
   struct State {
-    Abstraction::State ts;
-    Abstraction::State rs;
+    Cfg::id_type ts;
+    Cfg::id_type rs;
 
     bool operator<(const State& other) const;
     bool operator==(const State& other) const;
@@ -34,7 +34,7 @@ public:
 
     State() { }
 
-    State(Abstraction::State a_ts, Abstraction::State a_rs) {
+    State(Cfg::id_type a_ts, Cfg::id_type a_rs) {
       ts = a_ts;
       rs = a_rs;
     }
@@ -45,7 +45,7 @@ public:
     Edge() {
       empty_ = true;
     }
-    Edge(State, const std::vector<Abstraction::State>&, const std::vector<Abstraction::State>&);
+    Edge(State, const CfgPath&, const CfgPath&);
 
     bool operator==(const Edge& other) const;
     bool operator<(const Edge& other) const;
@@ -66,28 +66,28 @@ public:
 
     State from;
     State to;
-    std::vector<Abstraction::State> te;
-    std::vector<Abstraction::State> re;
+    CfgPath te;
+    CfgPath re;
     bool empty_;
   };
 
-  DualAutomata(Abstraction* target, Abstraction* rewrite) : target_(target), rewrite_(rewrite) {
-
+  DualAutomata(Cfg* target, Cfg* rewrite, DataCollector& dc) :
+    target_(target), rewrite_(rewrite), data_collector_(dc) {
   }
 
   /** Form a start state from the two automata */
   State start_state() {
     State start;
-    start.ts = target_->start_state();
-    start.rs = rewrite_->start_state();
+    start.ts = target_->get_entry();
+    start.rs = rewrite_->get_entry();
     return start;
   }
 
   /** Get the exit states */
   State exit_state() {
     State exit;
-    exit.ts = target_->exit_state();
-    exit.rs = rewrite_->exit_state();
+    exit.ts = target_->get_exit();
+    exit.rs = rewrite_->get_exit();
     return exit;
   }
 
@@ -222,26 +222,26 @@ private:
     State state;
     CpuState target_current;
     CpuState rewrite_current;
-    Abstraction::FullTrace target_trace;
-    Abstraction::FullTrace rewrite_trace;
+    DataCollector::Trace target_trace;
+    DataCollector::Trace rewrite_trace;
   };
 
   /** Runs a test case/trace through all possible paths in automata to
     populate state information.  Returns false on error. */
-  bool learn_state_data(const Abstraction::FullTrace& target,
-                        const Abstraction::FullTrace& rewrite);
+  bool learn_state_data(const DataCollector::Trace& target,
+                        const DataCollector::Trace& rewrite);
 
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
-  bool is_prefix(const std::vector<Abstraction::State>& tr1, const Abstraction::FullTrace& tr2);
+  bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
-  bool is_edge_prefix(const std::vector<Abstraction::State>& tr1, const std::vector<Abstraction::State>& tr2);
+  bool is_edge_prefix(const CfgPath& tr1, const CfgPath& tr2);
 
 
   /** Remove an edge prefix from a trace. */
-  void remove_prefix(const std::vector<Abstraction::State>& tr1, Abstraction::FullTrace& tr2);
+  void remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2);
 
-  Abstraction* target_;
-  Abstraction* rewrite_;
+  Cfg* target_;
+  Cfg* rewrite_;
 
   std::set<State> reachable_states_;
   std::map<State, std::vector<Edge>> next_edges_;
@@ -250,6 +250,8 @@ private:
   std::map<State, ConjunctionInvariant*> invariants_;
   std::map<State, std::vector<CpuState>> target_state_data_;
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
+
+  DataCollector data_collector_;
 
 };
 

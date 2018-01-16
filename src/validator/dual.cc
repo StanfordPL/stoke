@@ -42,7 +42,7 @@ bool DualAutomata::Edge::operator==(const DualAutomata::Edge& other) const {
   return (from == other.from && to == other.to && te == other.te && re == other.re);
 }
 
-DualAutomata::Edge::Edge(DualAutomata::State tail, const vector<Abstraction::State>& tp, const vector<Abstraction::State>& rp) {
+DualAutomata::Edge::Edge(DualAutomata::State tail, const CfgPath& tp, const CfgPath& rp) {
   from = tail;
   te = tp;
   re = rp;
@@ -61,7 +61,7 @@ DualAutomata::Edge::Edge(DualAutomata::State tail, const vector<Abstraction::Sta
   }
 }
 
-bool DualAutomata::is_prefix(const vector<Abstraction::State>& tr1, const Abstraction::FullTrace& tr2) {
+bool DualAutomata::is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2) {
   if (tr1.size() > tr2.size()) {
     //cout << "     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;
     return false;
@@ -69,7 +69,7 @@ bool DualAutomata::is_prefix(const vector<Abstraction::State>& tr1, const Abstra
 
   for (size_t i = 0; i < tr1.size(); ++i) {
     //cout << "      tr1[" << i << "]=" << tr1[i] << "; tr2[" << i << "]=" << tr2[i].first << endl;
-    if (tr1[i] != tr2[i].first) {
+    if (tr1[i] != tr2[i].block_id) {
       return false;
     }
   }
@@ -77,7 +77,7 @@ bool DualAutomata::is_prefix(const vector<Abstraction::State>& tr1, const Abstra
   return true;
 }
 
-bool DualAutomata::is_edge_prefix(const vector<Abstraction::State>& tr1, const vector<Abstraction::State>& tr2) {
+bool DualAutomata::is_edge_prefix(const CfgPath& tr1, const CfgPath& tr2) {
   if (tr1.size() > tr2.size()) {
     //cout << "     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;
     return false;
@@ -93,7 +93,7 @@ bool DualAutomata::is_edge_prefix(const vector<Abstraction::State>& tr1, const v
   return true;
 }
 
-void DualAutomata::remove_prefix(const vector<Abstraction::State>& tr1, Abstraction::FullTrace& tr2) {
+void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) {
   assert(is_prefix(tr1, tr2));
 
   for (size_t i = 0; i < tr1.size(); ++i) {
@@ -103,13 +103,13 @@ void DualAutomata::remove_prefix(const vector<Abstraction::State>& tr1, Abstract
 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
-bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
-                                    const Abstraction::FullTrace& rewrite_trace) {
+bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
+                                    const DataCollector::Trace& rewrite_trace) {
   /** Setup initial state */
   TraceState initial;
   initial.state = start_state();
-  initial.target_current = target_trace[0].second;
-  initial.rewrite_current = rewrite_trace[0].second;
+  initial.target_current = target_trace[0].cs;
+  initial.rewrite_current = rewrite_trace[0].cs;
 
   /** Configure initial traces */
   auto tt_copy = target_trace;
@@ -190,9 +190,9 @@ bool DualAutomata::learn_state_data(const Abstraction::FullTrace& target_trace,
 
         // (2) update the CpuStates
         if (edge.te.size())
-          follow.target_current = follow.target_trace[edge.te.size()-1].second;
+          follow.target_current = follow.target_trace[edge.te.size()-1].cs;
         if (edge.re.size())
-          follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].second;
+          follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
 
         // (3) remove the prefixes from both traces
         remove_prefix(edge.te, follow.target_trace);
@@ -227,30 +227,33 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   target_state_data_.clear();
   rewrite_state_data_.clear();
 
+  auto target_traces = data_collector_.get_traces(*target_);
+  auto rewrite_traces = data_collector_.get_traces(*rewrite_);
+
   // Step 1: get data at each state.
   for (size_t i = 0; i < sb.size(); ++i) {
-    auto target_trace = target_->learn_trace(*sb.get_input(i), true);
-    auto rewrite_trace = rewrite_->learn_trace(*sb.get_input(i), true);
+    auto target_trace = target_traces[i];
+    auto rewrite_trace = rewrite_traces[i];
 
     auto target_last = target_trace.back();
-    target_last.first = target_->exit_state();
+    target_last.block_id = target_->get_exit();
     target_trace.push_back(target_last);
 
     auto rewrite_last = rewrite_trace.back();
-    rewrite_last.first = rewrite_->exit_state();
+    rewrite_last.block_id = rewrite_->get_exit();
     rewrite_trace.push_back(rewrite_last);
 
 
     /*
     cout << "target trace: ";
     for (size_t i = 0; i < target_trace.size(); ++i) {
-      cout << target_trace[i].first << " ";
+      cout << target_trace[i].cs << " ";
     }
     cout << endl;
 
     cout << "rewrite trace: ";
     for (size_t i = 0; i < rewrite_trace.size(); ++i) {
-      cout << rewrite_trace[i].first << " ";
+      cout << rewrite_trace[i].cs << " ";
     }
     cout << endl;
     */
@@ -264,17 +267,15 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   }
 
   // Step 2: learn the invariants
-  auto target = target_->get_cfg();
-  auto rewrite = rewrite_->get_cfg();
-  target.recompute();
-  rewrite.recompute();
+  target_->recompute();
+  rewrite_->recompute();
 
   for (auto state : reachable_states_) {
     if (state == exit_state() || state == start_state())
       continue;
 
-    auto target_instr = target.get_last_of_block(state.ts);
-    auto rewrite_instr = target.get_last_of_block(state.ts);
+    auto target_instr = target_->get_last_of_block(state.ts);
+    auto rewrite_instr = target_->get_last_of_block(state.ts);
 
     string target_opc = Handler::get_opcode(target_instr);
     string rewrite_opc = Handler::get_opcode(rewrite_instr);
@@ -303,7 +304,9 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     rewrite_file.close();
     */
 
-    auto inv = learner.learn(target_->live_out_regs(state.ts), rewrite_->live_out_regs(state.rs),
+    auto target_pos = Cfg::loc_type(state.ts, target_->num_instrs(state.ts)-1);
+    auto rewrite_pos = Cfg::loc_type(state.rs, target_->num_instrs(state.rs)-1);
+    auto inv = learner.learn(target_->live_outs(target_pos), rewrite_->live_outs(rewrite_pos),
                              target_state_data_[state], rewrite_state_data_[state],
                              target_cc, rewrite_cc);
     invariants_[state] = inv;

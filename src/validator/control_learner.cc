@@ -15,7 +15,6 @@
 #include "src/cfg/sccs.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
-#include "src/validator/abstractions/block.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/indexer.h"
 #include <fstream>
