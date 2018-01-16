@@ -192,7 +192,7 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   return true;
 }
 
-Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
+DataCollector::Trace ObligationChecker::check_ceg_path(const Cfg& cfg,
     Cfg::id_type block,
     const CpuState& state) {
 
@@ -205,12 +205,17 @@ Abstraction::FullTrace ObligationChecker::check_ceg_path(const Cfg& cfg,
   // run sandbox
   assert(sandbox_ != NULL);
   Sandbox sb(*sandbox_);
-  BlockAbstraction ba(cfg, sb);
-  auto trace = ba.learn_trace(state, false, true, last_instr_index);
+  sb.clear_inputs();
+  sb.insert_input(state);
+
+  // data collector
+  Cfg cfg_copy = cfg;
+  DataCollector dc(sb);
+  auto trace = dc.get_traces(cfg_copy)[0];
 
   cout << "DEBUGGING TRACE" << endl;
   for (auto it : trace) {
-    cout << it.first << endl;
+    cout << it.block_id << endl;
   }
 
   return trace;
@@ -230,12 +235,12 @@ bool ObligationChecker::exhaustive_check_counterexample(
   if (target_trace.size() == 0 || rewrite_trace.size() == 0)
     return false;
 
-  auto last_target = target_trace.back().second;
+  auto last_target = target_trace.back().cs;
   if (last_target.code != ErrorCode::NORMAL) {
     cout << "Counterexample hit exception " << (int)last_target.code << " in target" << endl;
     return false;
   }
-  auto last_rewrite = rewrite_trace.back().second;
+  auto last_rewrite = rewrite_trace.back().cs;
   if (last_rewrite.code != ErrorCode::NORMAL) {
     cout << "Counterexample hit exception " << (int)last_rewrite.code << " in rewrite" << endl;
     return false;
@@ -248,8 +253,8 @@ bool ObligationChecker::exhaustive_check_counterexample(
   }
 
   // Check if path was already found
-  auto tp = Abstraction::project_states(target_trace);
-  auto rp = Abstraction::project_states(rewrite_trace);
+  auto tp = DataCollector::project_states(target_trace);
+  auto rp = DataCollector::project_states(rewrite_trace);
 
   cout << "COUNTEREXAMPLE TAKES PATHS:" << dec << endl;
   cout << tp << endl;

@@ -19,10 +19,10 @@ public:
         - data from test cases
         - inductive paths for each node
         - linear equalities for equivalence classes  */
-  DualBuilder(DataCollector& collector, const DualAutomata& templ) : 
+  DualBuilder(DataCollector& collector, const DualAutomata& templ) :
     data_collector_(collector), template_(templ)
   {
-    
+
   }
 
   /** Set the bound. */
@@ -37,7 +37,7 @@ public:
   /** Build the next possible automata. */
   DualAutomata next();
 
-private: 
+private:
 
   /** Data Structures */
   struct EquivalenceClass {

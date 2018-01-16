@@ -60,10 +60,9 @@ private:
   Cfg target_;
   Cfg rewrite_;
 
-  Abstraction* target_automata_;
-  Abstraction* rewrite_automata_;
   InvariantLearner& invariant_learner_;
   ControlLearner* control_learner_;
+  DataCollector* data_collector_;
 
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
@@ -77,8 +76,9 @@ private:
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
   /** Learn inductive invariants */
-  void learn_inductive_invariants(const std::vector<CfgPath>& target_inductive_paths,
-                                  const std::vector<CfgPath>& rewrite_inductive_paths);
+  DualAutomata learn_inductive_invariants(
+      const std::vector<CfgPath>& target_inductive_paths,
+      const std::vector<CfgPath>& rewrite_inductive_paths);
 
   /** Verify that a dual automata is correct */
   bool verify_dual(DualAutomata& dual);
