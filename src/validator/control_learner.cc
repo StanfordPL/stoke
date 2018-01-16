@@ -332,27 +332,3 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
 }
 
 
-bool is_prefix(const vector<Abstraction::State>& tr1, const Abstraction::FullTrace& tr2) {
-  if (tr1.size() > tr2.size()) {
-    //cout << "     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;
-    return false;
-  }
-
-  for (size_t i = 0; i < tr1.size(); ++i) {
-    //cout << "      tr1[" << i << "]=" << tr1[i] << "; tr2[" << i << "]=" << tr2[i].first << endl;
-    if (tr1[i] != tr2[i].first) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-void remove_prefix(const vector<Abstraction::State>& tr1, Abstraction::FullTrace& tr2) {
-  assert(is_prefix(tr1, tr2));
-
-  for (size_t i = 0; i < tr1.size(); ++i) {
-    tr2.erase(tr2.begin());
-  }
-}
-
