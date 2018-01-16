@@ -515,12 +515,12 @@ ConjunctionInvariant* InvariantLearner::learn(
 }
 
 
-/** Learn constants over a set of columns, 
+/** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
 ConjunctionInvariant* InvariantLearner::learn_constants(
-    vector<Variable>& columns,
-    const vector<CpuState>& target_states,
-    const vector<CpuState>& rewrite_states) {
+  vector<Variable>& columns,
+  const vector<CpuState>& target_states,
+  const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
@@ -554,12 +554,12 @@ ConjunctionInvariant* InvariantLearner::learn_constants(
   return conj;
 }
 
-/** Learn constants over a set of columns, 
+/** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
 ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
-    vector<Variable>& columns,
-    const vector<CpuState>& target_states,
-    const vector<CpuState>& rewrite_states) {
+  vector<Variable>& columns,
+  const vector<CpuState>& target_states,
+  const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
@@ -601,9 +601,9 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
 }
 
 IntMatrix InvariantLearner::states_to_matrix(
-    const vector<Variable>& variables,
-    const vector<CpuState>& target_states,
-    const vector<CpuState>& rewrite_states) {
+  const vector<Variable>& variables,
+  const vector<CpuState>& target_states,
+  const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
 
@@ -624,9 +624,9 @@ IntMatrix InvariantLearner::states_to_matrix(
 }
 
 ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
-      const vector<Variable>& variables,
-      const IntMatrix& matrix
-    ) {
+  const vector<Variable>& variables,
+  const IntMatrix& matrix
+) {
 
   size_t dim = matrix.rows();
   size_t num_columns = matrix.cols();
@@ -681,7 +681,7 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   cout << endl;
 
   cout << "REMAINING COLS" << endl;
-  for(size_t i = 0; i < columns.size(); ++i) {
+  for (size_t i = 0; i < columns.size(); ++i) {
     cout << columns[i] << endl;
   }
 
@@ -692,7 +692,7 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
 
   bool done = false;
   ConjunctionInvariant* equalities;
-  while(!done) {
+  while (!done) {
     auto matrix = states_to_matrix(columns, target_learn, rewrite_learn);
     cout << "VERIFYING MATRIX" << endl;
     matrix.print();
@@ -709,17 +709,17 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
 
     size_t new_states = 0;
     bool all_work = true;
-    for(size_t i = 0; i < target_states.size(); ++i) {
+    for (size_t i = 0; i < target_states.size(); ++i) {
 
       // don't add more than a fixed number of new states if the invariants don't work.
-      if(new_states > sample_tcs_)
+      if (new_states > sample_tcs_)
         break;
 
       auto target_state = target_states[i];
       auto rewrite_state = rewrite_states[i];
 
-      for(size_t j = 0; j < equalities->size(); ++j) {
-        if(!(*equalities)[j]->check(target_state, rewrite_state)) {
+      for (size_t j = 0; j < equalities->size(); ++j) {
+        if (!(*equalities)[j]->check(target_state, rewrite_state)) {
           cout << "GOT A BAD INVARIANT" << endl;
           cout << *(*equalities)[j] << endl;
           target_learn.push_back(target_state);
@@ -731,7 +731,7 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
       }
     }
 
-    if(all_work)
+    if (all_work)
       done = true;
   }
   conj->add_invariants(equalities);

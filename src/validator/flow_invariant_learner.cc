@@ -101,7 +101,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
     then we are looking for a function f = a_1f_1 + a_2f_2 + ... + a_kf_k
     such that f(N + v_i) = f(N) for all i.  Since f is linear, that just
     means that f(v_i) = 0 for all i.  Or, that
-    
+
     sum_{i} f(v_i) = sum_{i,j} a_jf_j(v_i) = 0
 
     That's just a linear system of equations to solve.  We get the answers out,
@@ -110,7 +110,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
     meaningful to us.  Lastly, we work out the corresponding g() functions, and those
     are our invariants!! */
 
-  if(target_paths.size() == 0)
+  if (target_paths.size() == 0)
     return conj;
 
   assert(target_paths.size() == rewrite_paths.size());
@@ -118,8 +118,8 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
   size_t path_count = target_paths.size();
 
   IntMatrix matrix(path_count, invariant_count);
-  for(size_t i = 0; i < path_count; ++i) {
-    for(size_t j = 0; j < invariant_count; ++j) {
+  for (size_t i = 0; i < path_count; ++i) {
+    for (size_t j = 0; j < invariant_count; ++j) {
 
       // compute f_j(v_i) and add it to the matrix.
       uint64_t value = 0;
@@ -129,12 +129,12 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
       auto invariant = static_cast<EqualityInvariant*>((*conj)[j]);
       auto variables = invariant->get_variables();
 
-      for(size_t m = 0; m < variables.size(); ++m) {
+      for (size_t m = 0; m < variables.size(); ++m) {
         // if variables[m] appears in a path, then multiply the number of times
         // it appears with the coefficient of that variable
 
         auto variable = variables[m];
-        if(!variable.is_ghost)
+        if (!variable.is_ghost)
           continue;
 
         auto& path = variable.is_rewrite ? rewrite_path : target_path;
@@ -143,7 +143,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
         ghost = ghost.substr(1);
         Cfg::id_type block = stoul(ghost);
         uint64_t count = 0;
-        for(auto blk : path) {
+        for (auto blk : path) {
           if (blk == block)
             count++;
         }
@@ -154,7 +154,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
       matrix[i][j] = value;
     }
   }
-  
+
   cout << "DEBUGING TRANSFORM MATRIX" << endl;
   matrix.print();
 
@@ -164,19 +164,19 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
   solutions.print();
 
   auto transformed = new ConjunctionInvariant();
-  for(auto& solution : solutions) {
+  for (auto& solution : solutions) {
     vector<Variable> terms;
-    for(size_t i = 0; i < solution.size(); ++i) {
+    for (size_t i = 0; i < solution.size(); ++i) {
       auto invariant = static_cast<EqualityInvariant*>((*conj)[i]);
       auto variables = invariant->get_variables();
       auto multiplier = solution[i];
-      if(multiplier == 0)
+      if (multiplier == 0)
         continue;
       cout << "   adding " << multiplier << " copies of " << *invariant << endl;
 
-      for(size_t j = 0; j < variables.size(); ++j) {
+      for (size_t j = 0; j < variables.size(); ++j) {
         auto term = variables[j];
-        if(!term.is_ghost) {
+        if (!term.is_ghost) {
           cout << "         " << term << endl;
           term.coefficient *= multiplier;
           terms.push_back(term);
@@ -184,7 +184,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
       }
     }
 
-    if(terms.size()) {
+    if (terms.size()) {
       auto ei = new EqualityInvariant(terms, 0);
       transformed->add_invariant(ei);
     }
