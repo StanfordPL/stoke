@@ -69,7 +69,7 @@ public:
   }
 
   size_t cols() const {
-    if(rows() > 0)
+    if (rows() > 0)
       return (*this)[0].size();
     else
       return 0;

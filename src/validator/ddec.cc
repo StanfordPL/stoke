@@ -169,6 +169,53 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
   return all_blocks;
 }
 
+void DdecValidator::learn_inductive_paths_at_block(
+  vector<CfgPath>& target_inductive_paths,
+  vector<CfgPath>& rewrite_inductive_paths,
+  Cfg::id_type target_block,
+  Cfg::id_type rewrite_block
+    ) {
+
+  bool found_pair = false;
+
+  for (size_t k = 0; k < 4; ++k) {
+    size_t bound = (1 << k);
+    auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
+    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
+
+    for (auto& it : target_paths)
+      it.pop_back();
+    for (auto& it : rewrite_paths)
+      it.pop_back();
+
+
+    /*
+    cout << "Target paths for " << target_block << endl;
+    for (auto it : target_paths) {
+      cout << it << endl;
+    }
+    cout << "Rewrite paths for " << rewrite_block << endl;
+    for (auto it : rewrite_paths) {
+      cout << it << endl;
+    }
+    */
+
+    for (auto tp : target_paths) {
+      for (auto rp : rewrite_paths) {
+        if (control_learner_->inductive_pair_feasible(tp, rp)) {
+          cout << "Found inductive pair " << tp << " and " << rp << endl;
+          target_inductive_paths.push_back(tp);
+          rewrite_inductive_paths.push_back(rp);
+          found_pair = true;
+        }
+      }
+    }
+
+    if (found_pair)
+      return;
+  }
+}
+
 void DdecValidator::learn_inductive_paths(
   vector<CfgPath>& target_inductive_paths,
   vector<CfgPath>& rewrite_inductive_paths
@@ -180,73 +227,26 @@ void DdecValidator::learn_inductive_paths(
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
-  // Figure out the inductive program paths
+  // Figure out possible inductive program paths
   size_t target_num_scc = target_sccs.count();
   size_t rewrite_num_scc = rewrite_sccs.count();
   for (size_t i = 0; i < target_num_scc; ++i) {
     auto target_blocks = target_sccs.get_blocks(i);
-    //TODO: replace find_min with a dominator
-    auto target_block_options = dominator_intersect(target_, target_blocks);
-    if (target_block_options.size() == 0) {
-      // non-reducible control flow
-      cout << "Target blocks: " << target_blocks << endl;
-      cout << "Non-Reducible control flow" << endl;
-      return ;
-    }
-    auto target_block = target_block_options[0];
 
     for (size_t j = 0; j < rewrite_num_scc; ++j) {
       auto rewrite_blocks = rewrite_sccs.get_blocks(j);
-      auto rewrite_block_options = dominator_intersect(rewrite_, rewrite_blocks);
-      if (rewrite_block_options.size() == 0) {
-        // non-reducible control flow
-        cout << "Rewrite blocks: " << rewrite_blocks << endl;
-        cout << "Non-Reducible control flow" << endl;
-        return ;
-      }
-      auto rewrite_block = rewrite_block_options[0];
 
-      bool found_pair = false;
-      // find all paths from target to target and rewrite to rewrite
-      for (size_t k = 0; k < 4; ++k) {
-        size_t bound = (1 << k);
-        auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
-        auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
-
-        for (auto& it : target_paths)
-          it.pop_back();
-        for (auto& it : rewrite_paths)
-          it.pop_back();
-
-
-        /*
-        cout << "Target paths for " << target_block << endl;
-        for (auto it : target_paths) {
-          cout << it << endl;
+      for(auto& target_block : target_blocks) {
+        for(auto& rewrite_block : rewrite_blocks) {
+          learn_inductive_paths_at_block(
+              target_inductive_paths,
+              rewrite_inductive_paths,
+              target_block,
+              rewrite_block);
         }
-        cout << "Rewrite paths for " << rewrite_block << endl;
-        for (auto it : rewrite_paths) {
-          cout << it << endl;
-        }
-        */
-
-        for (auto tp : target_paths) {
-          for (auto rp : rewrite_paths) {
-            if (control_learner_->inductive_pair_feasible(tp, rp)) {
-              cout << "Found inductive pair " << tp << " and " << rp << endl;
-              target_inductive_paths.push_back(tp);
-              rewrite_inductive_paths.push_back(rp);
-              found_pair = true;
-            }
-          }
-        }
-
-        if (found_pair)
-          break;
       }
     }
   }
-  // for now...
 }
 
 
@@ -460,8 +460,36 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   return true;
 };
 
-bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+void DdecValidator::learn_inductive_invariants(
+    const std::vector<CfgPath>& target_inductive_paths,
+    const std::vector<CfgPath>& rewrite_inductive_paths) {
 
+  DataCollector dc(*sandbox_);
+  FlowInvariantLearner fil(dc, invariant_learner_);
+  fil.initialize(target_, rewrite_);
+
+  for (Cfg::id_type i = target_.get_entry(); i != target_.get_exit(); i++) {
+    for (Cfg::id_type j = rewrite_.get_entry(); j != rewrite_.get_exit(); j++) {
+      cout << "===== INVARIANT AFTER BLOCKS " << i << " / " << j << " =====" << endl;
+      auto inv = fil.get_invariant(i,j);
+      inv->write_pretty(cout);
+      cout << "  == performing transform " << i << "  " << j << " == " << endl;
+      std::vector<CfgPath> target_paths;
+      std::vector<CfgPath> rewrite_paths;
+      for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
+        if (target_inductive_paths[k][0] == i && rewrite_inductive_paths[k][0] == j) {
+          target_paths.push_back(target_inductive_paths[k]);
+          rewrite_paths.push_back(rewrite_inductive_paths[k]);
+          cout << "    with paths " << target_inductive_paths[k] << " / " << rewrite_inductive_paths[k] << endl;
+        }
+      }
+      auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
+      inv_trans->write_pretty(cout);
+    }
+  }
+}
+
+bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
 
@@ -480,39 +508,11 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
 
   /** Learn initial inductive invariants. */
-  DataCollector dc(*sandbox_);
-  FlowInvariantLearner fil(dc, invariant_learner_);
-  fil.initialize(target_, rewrite_);
-
-  for (Cfg::id_type i = target_.get_entry(); i != target_.get_exit(); i++) {
-    if(i != 2)
-      continue;
-    for (Cfg::id_type j = rewrite_.get_entry(); j != rewrite.get_exit(); j++) {
-      if(j != 3 && j != 6 && j != 7 && j != 9)
-        continue;
-      cout << "===== INVARIANT AFTER BLOCKS " << i << " / " << j << " =====" << endl;
-      auto inv = fil.get_invariant(i,j);
-      inv->write_pretty(cout);
-      cout << "  == performing transform " << i << "  " << j << " == " << endl;
-      std::vector<CfgPath> target_paths;
-      std::vector<CfgPath> rewrite_paths;
-      for(size_t k = 0; k < target_inductive_paths.size(); ++k) {
-        if(target_inductive_paths[k][0] == i && rewrite_inductive_paths[k][0] == j) {
-          target_paths.push_back(target_inductive_paths[k]);
-          rewrite_paths.push_back(rewrite_inductive_paths[k]);
-          cout << "    with paths " << target_inductive_paths[k] << " / " << rewrite_inductive_paths[k] << endl;
-        }
-      }
-      auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
-      inv_trans->write_pretty(cout);
-    }
-  }
+  learn_inductive_invariants(target_inductive_paths, rewrite_inductive_paths);
 
   try {
 
     sanity_checks(target_, rewrite_);
-
-    //make_tcs(target_, rewrite_);
 
     DDEC_TC_DEBUG(
       cout << "DDEC sandbox at " << sandbox_ << endl;

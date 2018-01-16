@@ -18,6 +18,7 @@
 #include "src/validator/abstraction.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/dual.h"
+#include "src/validator/dual_builder.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/learner.h"
@@ -69,11 +70,17 @@ private:
   /** Learn inductive paths */
   void learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
                              std::vector<CfgPath>& rewrite_inductive_paths);
+  /** Learn inductive paths for block (helper) */
+  void learn_inductive_paths_at_block(
+    std::vector<CfgPath>& target_inductive_paths,
+    std::vector<CfgPath>& rewrite_inductive_paths,
+    Cfg::id_type target_block,
+    Cfg::id_type rewrite_block);
+  /** Learn inductive invariants */
+  void learn_inductive_invariants(const std::vector<CfgPath>& target_inductive_paths,
+                                  const std::vector<CfgPath>& rewrite_inductive_paths);
 
-
-  DualAutomata build_dual(std::vector<CfgPath>&, std::vector<CfgPath>&);
-
-
+  /** Verify that a dual automata is correct */
   bool verify_dual(DualAutomata& dual);
 
   /** Try and prove all the invariants we can, starting from the initial one. */

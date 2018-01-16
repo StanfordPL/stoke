@@ -102,8 +102,8 @@ private:
   /** Take a matrix (from nullspace computation), and extract invariants from
    * it. */
   ConjunctionInvariant* matrix_to_invariant(
-      const std::vector<Variable>& variables,
-      const IntMatrix& matrix);
+    const std::vector<Variable>& variables,
+    const IntMatrix& matrix);
 
   /** Learn that a variable is constant over many states, AND,
     remove the variable from the referenced set of columns. */
