@@ -297,8 +297,8 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
         auto tt = checker_get_target_exhaustive_ceg();
         auto rt = checker_get_rewrite_exhaustive_ceg();
 
-        auto tp = Abstraction::project_states(tt);
-        auto rp = Abstraction::project_states(rt);
+        auto tp = DataCollector::project_states(tt);
+        auto rp = DataCollector::project_states(rt);
         DualAutomata::Edge edge(state, tp, rp);
         bool added = dual.add_edge(edge);
         if (added) {
@@ -460,12 +460,11 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   return true;
 };
 
-void DdecValidator::learn_inductive_invariants(
+DualAutomata DdecValidator::learn_inductive_invariants(
     const std::vector<CfgPath>& target_inductive_paths,
     const std::vector<CfgPath>& rewrite_inductive_paths) {
 
-  DataCollector dc(*sandbox_);
-  FlowInvariantLearner fil(dc, invariant_learner_);
+  FlowInvariantLearner fil(*data_collector_, invariant_learner_);
   fil.initialize(target_, rewrite_);
 
   for (Cfg::id_type i = target_.get_entry(); i != target_.get_exit(); i++) {
@@ -487,6 +486,10 @@ void DdecValidator::learn_inductive_invariants(
       inv_trans->write_pretty(cout);
     }
   }
+
+  DualAutomata dual(&target_, &rewrite_, *data_collector_);
+
+  return dual;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -502,6 +505,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
 
   /** Find inductive paths. */
+  data_collector_ = new DataCollector(*sandbox_);
   control_learner_ = new ControlLearner(target_, rewrite_, *sandbox_);
   vector<CfgPath> target_inductive_paths;
   vector<CfgPath> rewrite_inductive_paths;
