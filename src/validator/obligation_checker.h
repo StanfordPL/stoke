@@ -31,7 +31,7 @@
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
-#include "src/validator/abstractions/block.h"
+#include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 #include "src/validator/filters/default.h"
@@ -153,11 +153,11 @@ public:
     return ceg_rf_;
   }
 
-  Abstraction::FullTrace checker_get_target_exhaustive_ceg() {
+  DataCollector::Trace checker_get_target_exhaustive_ceg() {
     return exhaustive_ceg_trace_target_;
   }
 
-  Abstraction::FullTrace checker_get_rewrite_exhaustive_ceg() {
+  DataCollector::Trace checker_get_rewrite_exhaustive_ceg() {
     return exhaustive_ceg_trace_rewrite_;
   }
 
@@ -223,7 +223,7 @@ private:
                             const CfgPath& Q, const Invariant& assume,
                             const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
   /** Check if a counterexample actually works for path exhaustion. */
-  Abstraction::FullTrace check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
+  DataCollector::Trace check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
 
   bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_start, Cfg::id_type rewrite_start,
@@ -263,8 +263,8 @@ private:
   CpuState ceg_r_;
   CpuState ceg_rf_;
   /** Counterexample of traces */
-  Abstraction::FullTrace exhaustive_ceg_trace_target_;
-  Abstraction::FullTrace exhaustive_ceg_trace_rewrite_;
+  DataCollector::Trace exhaustive_ceg_trace_target_;
+  DataCollector::Trace exhaustive_ceg_trace_rewrite_;
 
   /** Do we have a counterexample? */
   bool have_ceg_;

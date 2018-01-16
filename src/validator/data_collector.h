@@ -16,8 +16,8 @@
 #define STOKE_SRC_VALIDATOR_DATA_COLLECTOR_H
 
 #include "src/cfg/cfg.h"
+#include "src/cfg/paths.h"
 #include "src/sandbox/sandbox.h"
-#include "src/validator/dual.h"
 #include "src/validator/indexer.h"
 #include "src/validator/int_matrix.h"
 #include "src/validator/int_vector.h"
@@ -42,6 +42,10 @@ public:
       return block_id == other.block_id;
     }
 
+    bool operator!=(const TracePoint& other) const {
+      return !((*this) == other);
+    }
+
     bool operator<(const TracePoint& other) const {
       return block_id < other.block_id;
     }
@@ -54,6 +58,14 @@ public:
   }
 
   std::vector<Trace> get_traces(Cfg& target);
+
+  static CfgPath project_states(Trace& trace) {
+    CfgPath p;
+    for (auto s : trace) {
+      p.push_back(s.block_id);
+    }
+    return p;
+  }
 
 private:
 
