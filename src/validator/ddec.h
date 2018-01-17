@@ -18,6 +18,8 @@
 #include "src/validator/control_learner.h"
 #include "src/validator/dual.h"
 #include "src/validator/dual_builder.h"
+#include "src/validator/data_collector.h"
+#include "src/validator/flow_invariant_learner.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/learner.h"
@@ -30,12 +32,16 @@ class DdecValidator : public ObligationChecker {
 
 public:
 
-  DdecValidator(SMTSolver& solver, InvariantLearner& inv) : ObligationChecker(solver), target_({}), rewrite_({}), invariant_learner_(inv) {
+  DdecValidator(SMTSolver& solver, Sandbox& sandbox, InvariantLearner& inv) :
+    ObligationChecker(solver, sandbox),
+    target_({}), rewrite_({}),
+    data_collector_(sandbox),
+    invariant_learner_(inv),
+    flow_invariant_learner_(data_collector_, invariant_learner_)
+  {
     set_no_bv(false);
   }
-
-  /** Turn off the bounded validator.  This is a terribly silly thing to do, except
-    to demonstrate that most benchmarks don't work without it. --no_ddec_bv */
+  /** Turn off the bounded validator. */
   DdecValidator& set_no_bv(bool b) {
     no_bv_ = b;
     return *this;
@@ -59,25 +65,31 @@ private:
   Cfg target_;
   Cfg rewrite_;
 
-  InvariantLearner& invariant_learner_;
+  DataCollector data_collector_;
+  InvariantLearner invariant_learner_;
+  FlowInvariantLearner flow_invariant_learner_;
   ControlLearner* control_learner_;
-  DataCollector* data_collector_;
+
+  /** Generate a warning for the user about a possible failure reason. */
+  void warn(std::string s);
 
   /** Generate some extra testcases, for funsies. */
   void make_tcs(const Cfg& target, const Cfg& rewrite);
-  /** Learn inductive paths */
-  void learn_inductive_paths(std::vector<CfgPath>& target_inductive_paths,
-                             std::vector<CfgPath>& rewrite_inductive_paths);
-  /** Learn inductive paths for block (helper) */
-  void learn_inductive_paths_at_block(
+
+  /** Learn inductive paths and invariants and make a dual autoamta template (without edges). */
+  DualAutomata learn_inductive_paths();
+  /** Learn inductive paths for block (helper).  Returns number of paths found. */
+  size_t learn_inductive_paths_at_block(
     std::vector<CfgPath>& target_inductive_paths,
     std::vector<CfgPath>& rewrite_inductive_paths,
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
   /** Learn inductive invariants */
-  DualAutomata learn_inductive_invariants(
+  ConjunctionInvariant* learn_inductive_invariant_at_block(
     const std::vector<CfgPath>& target_inductive_paths,
-    const std::vector<CfgPath>& rewrite_inductive_paths);
+    const std::vector<CfgPath>& rewrite_inductive_paths,
+    Cfg::id_type target_block,
+    Cfg::id_type rewrite_block);
 
   /** Verify that a dual automata is correct */
   bool verify_dual(DualAutomata& dual);

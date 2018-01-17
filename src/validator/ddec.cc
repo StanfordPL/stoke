@@ -51,6 +51,22 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+void DdecValidator::warn(string s) {
+  for(size_t i = 0; i < 8; ++i)
+    cout << "  **************** WARNING **************** " << endl;
+  cout << s << endl;
+  for(size_t i = 0; i < 2; ++i)
+    cout << "  ***************************************** " << endl;
+
+  for(size_t i = 0; i < 8; ++i)
+    cerr << "  **************** WARNING **************** " << endl;
+  cerr << s << endl;
+  for(size_t i = 0; i < 2; ++i)
+    cerr << "  ***************************************** " << endl;
+
+
+}
+
 Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
   auto start_bs = cfg.num_instrs(block);
   return cfg.get_code()[cfg.get_index(Cfg::loc_type(block, start_bs - 1))];
@@ -118,14 +134,14 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
     DDEC_DEBUG(cout << "Trying path " << p << " ; on target" << endl;)
     bool equiv = check(target, nop_cfg, target.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
     if (!equiv && checker_has_ceg()) {
-      sandbox_->insert_input(checker_get_target_ceg());
+      sandbox_.insert_input(checker_get_target_ceg());
     }
   }
   for (auto p : rewrite_paths) {
     DDEC_DEBUG(cout << "Trying path " << p << " ; on rewrite" << endl;)
     bool equiv = check(rewrite, nop_cfg, rewrite.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
     if (!equiv && checker_has_ceg()) {
-      sandbox_->insert_input(checker_get_target_ceg());
+      sandbox_.insert_input(checker_get_target_ceg());
     }
   }
 
@@ -168,14 +184,15 @@ vector<Cfg::id_type> dominator_intersect(Cfg& cfg, std::vector<Cfg::id_type>& bl
   return all_blocks;
 }
 
-void DdecValidator::learn_inductive_paths_at_block(
+/** Returns the number of inductive paths we've learned here. */
+size_t DdecValidator::learn_inductive_paths_at_block(
   vector<CfgPath>& target_inductive_paths,
   vector<CfgPath>& rewrite_inductive_paths,
   Cfg::id_type target_block,
   Cfg::id_type rewrite_block
 ) {
 
-  bool found_pair = false;
+  size_t found_pair = 0;
 
   for (size_t k = 0; k < 4; ++k) {
     size_t bound = (1 << k);
@@ -205,47 +222,99 @@ void DdecValidator::learn_inductive_paths_at_block(
           cout << "Found inductive pair " << tp << " and " << rp << endl;
           target_inductive_paths.push_back(tp);
           rewrite_inductive_paths.push_back(rp);
-          found_pair = true;
+          found_pair++;
         }
       }
     }
 
     if (found_pair)
-      return;
+      return found_pair;
   }
+
+  return 0;
 }
 
-void DdecValidator::learn_inductive_paths(
-  vector<CfgPath>& target_inductive_paths,
-  vector<CfgPath>& rewrite_inductive_paths
-) {
+DualAutomata DdecValidator::learn_inductive_paths() {
   cout << "============================================================" << endl;
-  cout << "Learning inductive paths" << endl;
+  cout << "Learning inductive paths and invariants" << endl;
+
+  DualAutomata d(&target_, &rewrite_, data_collector_);
 
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
-  // Figure out possible inductive program paths
+  // Figure out possible inductive program paths and corresponding invariants
   size_t target_num_scc = target_sccs.count();
   size_t rewrite_num_scc = rewrite_sccs.count();
   for (size_t i = 0; i < target_num_scc; ++i) {
     auto target_blocks = target_sccs.get_blocks(i);
+    bool found_something_for_target_scc = false;
 
     for (size_t j = 0; j < rewrite_num_scc; ++j) {
       auto rewrite_blocks = rewrite_sccs.get_blocks(j);
 
+      bool next_scc = false;
+
       for (auto& target_block : target_blocks) {
         for (auto& rewrite_block : rewrite_blocks) {
-          learn_inductive_paths_at_block(
+          vector<CfgPath> target_inductive_paths;
+          vector<CfgPath> rewrite_inductive_paths;
+          size_t num_paths = learn_inductive_paths_at_block(
             target_inductive_paths,
             rewrite_inductive_paths,
             target_block,
             rewrite_block);
+
+          if(!num_paths)
+            continue;
+
+          auto invariant = learn_inductive_invariant_at_block(
+            target_inductive_paths,
+            rewrite_inductive_paths,
+            target_block,
+            rewrite_block
+          );
+
+          auto quality = invariant_quality(invariant, target_block, rewrite_block);
+          cout << " quality = " << quality << endl;
+
+          if(quality == 1) {
+            // we found a good pair of blocks for this SCC!
+            next_scc = true;
+            found_something_for_target_scc = true;
+
+            // TODO: add node to dual automata
+            cout << "--------- FOUND A GOOD NODE -----------" << endl;
+            cout << "PATHS" << endl;
+            for(size_t k = 0; k < target_inductive_paths.size(); ++k) {
+              cout << "  " << target_inductive_paths[k] << " / ";
+              cout << rewrite_inductive_paths[k] << endl;
+            }
+            cout << "INVARIANTS" << endl;
+            invariant->write_pretty(cout);
+
+            break;
+          } 
         }
+        if(next_scc)
+          break;
       }
     }
+
+    if(!found_something_for_target_scc) {
+      stringstream ss;
+      ss << "For strongly connected component in target CFG with nodes: ";
+      for(auto it : target_blocks)
+        ss << ", " << it;
+      ss << " we cannot find any loop with a corresponding loop in the rewrite.  " << endl;
+      ss << "If this code executes in lock-step with a loop in the rewrite, then we ";
+      ss << "have a problem!  If it's dead code then worry not." << endl;
+      warn(ss.str());
+    }
   }
+
+  return d;
 }
 
 
@@ -403,7 +472,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
   InvariantLearner learner;
-  Sandbox sb(*sandbox_);
+  Sandbox sb(sandbox_);
   bool learning_successful = dual.learn_invariants(sb, learner);
   if (!learning_successful) {
     cout << "Learning invariants failed!" << endl;
@@ -463,41 +532,43 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   live-out variables are constrained?  We want to constrain as
   many live-out variables as possible, ideally. */
 double DdecValidator::invariant_quality(
-    ConjunctionInvariant* conj,
-    Cfg::id_type target_block,
-    Cfg::id_type rewrite_block) {
+  ConjunctionInvariant* conj,
+  Cfg::id_type target_block,
+  Cfg::id_type rewrite_block) {
 
   auto target_outs = target_.live_outs(target_block);
   auto rewrite_outs = rewrite_.live_outs(rewrite_block);
 
   size_t constrained = 0;
   size_t total = 0;
-  for(size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
+  for (size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
 
     auto& output_regs = is_rewrite ? rewrite_outs : target_outs;
 
-    if(is_rewrite)
+    if (is_rewrite)
       cout << "REWRITE REGS: " << output_regs << endl;
     else
       cout << "TARGET REGS: " << output_regs << endl;
 
-    for(auto it = output_regs.gp_begin(); it != output_regs.gp_end(); ++it) {
+    for (auto it = output_regs.gp_begin(); it != output_regs.gp_end(); ++it) {
       total++;
       auto reg = *it;
       bool found = false;
-      for(size_t i = 0; i < conj->size(); ++i) {
+      for (size_t i = 0; i < conj->size(); ++i) {
         auto inv = static_cast<EqualityInvariant*>((*conj)[i]);
         auto vars = inv->get_variables();
-        for(auto var : vars) {
-          if(var.is_rewrite == is_rewrite && var.operand == *it) {
-            cout << "   Found " << reg << " in " << *inv << endl;
+        for (auto var : vars) {
+          if (var.is_rewrite == is_rewrite && 
+              var.operand == reg && 
+              var.is_ghost == false) {
+            cout << "   Found " << reg << " in " << *inv << " via " << var << endl;
             found = true;
             constrained++;
             break;
           }
         }
 
-        if(found)
+        if (found)
           break;
       }
     }
@@ -508,38 +579,30 @@ double DdecValidator::invariant_quality(
 }
 
 
-DualAutomata DdecValidator::learn_inductive_invariants(
+ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
   const std::vector<CfgPath>& target_inductive_paths,
-  const std::vector<CfgPath>& rewrite_inductive_paths) {
+  const std::vector<CfgPath>& rewrite_inductive_paths,
+  Cfg::id_type target_block,
+  Cfg::id_type rewrite_block
+) {
 
-  FlowInvariantLearner fil(*data_collector_, invariant_learner_);
-  fil.initialize(target_, rewrite_);
-
-  for (Cfg::id_type i = target_.get_entry(); i != target_.get_exit(); i++) {
-    for (Cfg::id_type j = rewrite_.get_entry(); j != rewrite_.get_exit(); j++) {
-      cout << "===== INVARIANT AFTER BLOCKS " << i << " / " << j << " =====" << endl;
-      auto inv = fil.get_invariant(i,j);
-      inv->write_pretty(cout);
-      cout << "  == performing transform " << i << "  " << j << " == " << endl;
-      std::vector<CfgPath> target_paths;
-      std::vector<CfgPath> rewrite_paths;
-      for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
-        if (target_inductive_paths[k][0] == i && rewrite_inductive_paths[k][0] == j) {
-          target_paths.push_back(target_inductive_paths[k]);
-          rewrite_paths.push_back(rewrite_inductive_paths[k]);
-          cout << "    with paths " << target_inductive_paths[k] << " / " << rewrite_inductive_paths[k] << endl;
-        }
-      }
-      auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
-      inv_trans->write_pretty(cout);
-      auto quality = invariant_quality(inv_trans, i, j);
-      cout << " quality = " << quality << endl;
+  auto& fil = flow_invariant_learner_;
+  cout << "===== INVARIANT AFTER BLOCKS " << target_block << " / " << rewrite_block << " =====" << endl;
+  auto inv = fil.get_invariant(target_block,rewrite_block);
+  inv->write_pretty(cout);
+  cout << "  == performing transform " << target_block << "  " << rewrite_block << " == " << endl;
+  std::vector<CfgPath> target_paths;
+  std::vector<CfgPath> rewrite_paths;
+  for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
+    if (target_inductive_paths[k][0] == target_block && rewrite_inductive_paths[k][0] == rewrite_block) {
+      target_paths.push_back(target_inductive_paths[k]);
+      rewrite_paths.push_back(rewrite_inductive_paths[k]);
+      cout << "    with paths " << target_inductive_paths[k] << " / " << rewrite_inductive_paths[k] << endl;
     }
   }
-
-  DualAutomata dual(&target_, &rewrite_, *data_collector_);
-
-  return dual;
+  auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
+  inv_trans->write_pretty(cout);
+  return inv_trans;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -554,16 +617,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
   DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
 
-  /** STEP 1: Find inductive paths. */
-  data_collector_ = new DataCollector(*sandbox_);
-  control_learner_ = new ControlLearner(target_, rewrite_, *sandbox_);
-  vector<CfgPath> target_inductive_paths;
-  vector<CfgPath> rewrite_inductive_paths;
-  learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
-
-  /** STEP 2: Learn initial inductive invariants. */
-  learn_inductive_invariants(target_inductive_paths, rewrite_inductive_paths);
-
+  /** STEP 1: Find inductive paths and initial invariants in a template */
+  flow_invariant_learner_.initialize(target, rewrite);
+  control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
+  DualAutomata template_automata = learn_inductive_paths();
 
   delete control_learner_;
   reset_mm();

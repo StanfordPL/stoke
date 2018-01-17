@@ -25,24 +25,8 @@ class Verifier {
 public:
 
   Verifier() {
-    sandbox_ = 0;
     error_ = "";
     has_error_ = false;
-  }
-
-  virtual ~Verifier() {
-    if (sandbox_)
-      delete sandbox_;
-  }
-
-  /** Add a sandbox for this verifier to use. */
-  virtual Verifier& set_sandbox(Sandbox* sb) {
-    if (sb == NULL)
-      sandbox_ = NULL;
-    else
-      sandbox_ = new Sandbox(*sb);
-
-    return *this;
   }
 
   /** Set if the heap is live out */
@@ -82,9 +66,6 @@ public:
   }
 
 protected:
-
-  /** Sandbox for verification to use. */
-  Sandbox* sandbox_;
 
   /** Do we need to validate heap correctness? */
   bool heap_out_;

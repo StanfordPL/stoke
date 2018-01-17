@@ -68,7 +68,7 @@ public:
     ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
   };
 
-  ObligationChecker(SMTSolver& solver) : Validator(solver) {
+  ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : Validator(solver, sandbox) {
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
     filter_ = new DefaultFilter(handler_);

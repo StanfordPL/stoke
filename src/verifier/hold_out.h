@@ -23,7 +23,7 @@ namespace stoke {
 class HoldOutVerifier : public Verifier {
 public:
 
-  HoldOutVerifier(CorrectnessCost& ccf) : Verifier(), fxn_(ccf) { }
+  HoldOutVerifier(Sandbox& sb, CorrectnessCost& ccf) : sandbox_(sb), fxn_(ccf) { }
 
   /** Returns true iff these two functions are identical. Sets counter_example_ for failed
     proofs. */
@@ -39,8 +39,10 @@ public:
     return counter_examples_;
   }
 
-private:
+protected:
+  Sandbox& sandbox_;
 
+private:
   /** Correctness cost function */
   CorrectnessCost& fxn_;
 
