@@ -33,20 +33,20 @@ class Validator : public Verifier {
 
 public:
 
-  Validator(SMTSolver& solver, Sandbox& sandbox) : 
+  Validator(SMTSolver& solver, Sandbox& sandbox) :
     sandbox_(sandbox),
     solver_(solver),
-    handler_(*(new ComboHandler())), 
+    handler_(*(new ComboHandler())),
     free_handler_(true) {
     has_error_ = false;
     setup_support_table();
   }
 
-  Validator(SMTSolver& solver, Sandbox& sandbox, Handler& h) : 
+  Validator(SMTSolver& solver, Sandbox& sandbox, Handler& h) :
     sandbox_(sandbox),
-    solver_(solver), 
-    handler_(h), 
-    free_handler_(false) 
+    solver_(solver),
+    handler_(h),
+    free_handler_(false)
   {
     has_error_ = false;
     setup_support_table();

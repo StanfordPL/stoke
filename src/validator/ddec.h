@@ -35,9 +35,9 @@ public:
   DdecValidator(SMTSolver& solver, Sandbox& sandbox, InvariantLearner& inv) :
     ObligationChecker(solver, sandbox),
     target_({}), rewrite_({}),
-    data_collector_(sandbox),
-    invariant_learner_(inv),
-    flow_invariant_learner_(data_collector_, invariant_learner_)
+          data_collector_(sandbox),
+          invariant_learner_(inv),
+          flow_invariant_learner_(data_collector_, invariant_learner_)
   {
     set_no_bv(false);
   }

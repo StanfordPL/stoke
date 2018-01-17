@@ -52,16 +52,16 @@ using namespace stoke;
 using namespace x64asm;
 
 void DdecValidator::warn(string s) {
-  for(size_t i = 0; i < 8; ++i)
+  for (size_t i = 0; i < 8; ++i)
     cout << "  **************** WARNING **************** " << endl;
   cout << s << endl;
-  for(size_t i = 0; i < 2; ++i)
+  for (size_t i = 0; i < 2; ++i)
     cout << "  ***************************************** " << endl;
 
-  for(size_t i = 0; i < 8; ++i)
+  for (size_t i = 0; i < 8; ++i)
     cerr << "  **************** WARNING **************** " << endl;
   cerr << s << endl;
-  for(size_t i = 0; i < 2; ++i)
+  for (size_t i = 0; i < 2; ++i)
     cerr << "  ***************************************** " << endl;
 
 
@@ -238,7 +238,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   cout << "============================================================" << endl;
   cout << "Learning inductive paths and invariants" << endl;
 
-  DualAutomata d(&target_, &rewrite_, data_collector_);
+  DualAutomata pod(&target_, &rewrite_, data_collector_);
 
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
@@ -261,33 +261,49 @@ DualAutomata DdecValidator::learn_inductive_paths() {
           vector<CfgPath> target_inductive_paths;
           vector<CfgPath> rewrite_inductive_paths;
           size_t num_paths = learn_inductive_paths_at_block(
-            target_inductive_paths,
-            rewrite_inductive_paths,
-            target_block,
-            rewrite_block);
+                               target_inductive_paths,
+                               rewrite_inductive_paths,
+                               target_block,
+                               rewrite_block);
 
-          if(!num_paths)
+          if (!num_paths)
             continue;
 
           auto invariant = learn_inductive_invariant_at_block(
-            target_inductive_paths,
-            rewrite_inductive_paths,
-            target_block,
-            rewrite_block
-          );
+                             target_inductive_paths,
+                             rewrite_inductive_paths,
+                             target_block,
+                             rewrite_block
+                           );
 
           auto quality = invariant_quality(invariant, target_block, rewrite_block);
           cout << " quality = " << quality << endl;
 
-          if(quality == 1) {
+          if (quality == 1) {
             // we found a good pair of blocks for this SCC!
             next_scc = true;
             found_something_for_target_scc = true;
 
-            // TODO: add node to dual automata
+            // add node to dual automata
+            DualAutomata::State node(target_block, rewrite_block);
+            for(size_t k = 0; k < target_inductive_paths.size(); ++k) {
+              /** move the first block in the path to the end. */
+              auto tp = target_inductive_paths[k];
+              auto rp = rewrite_inductive_paths[k];
+              tp.push_back(tp[0]);
+              tp.erase(tp.begin());
+              rp.push_back(rp[0]);
+              rp.erase(rp.begin());
+
+              DualAutomata::Edge e(node, tp, rp);
+              pod.add_edge(e);
+            }
+            pod.set_invariant(node, invariant);
+
+            // print stuff for the user
             cout << "--------- FOUND A GOOD NODE -----------" << endl;
             cout << "PATHS" << endl;
-            for(size_t k = 0; k < target_inductive_paths.size(); ++k) {
+            for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
               cout << "  " << target_inductive_paths[k] << " / ";
               cout << rewrite_inductive_paths[k] << endl;
             }
@@ -295,17 +311,17 @@ DualAutomata DdecValidator::learn_inductive_paths() {
             invariant->write_pretty(cout);
 
             break;
-          } 
+          }
         }
-        if(next_scc)
+        if (next_scc)
           break;
       }
     }
 
-    if(!found_something_for_target_scc) {
+    if (!found_something_for_target_scc) {
       stringstream ss;
       ss << "For strongly connected component in target CFG with nodes: ";
-      for(auto it : target_blocks)
+      for (auto it : target_blocks)
         ss << ", " << it;
       ss << " we cannot find any loop with a corresponding loop in the rewrite.  " << endl;
       ss << "If this code executes in lock-step with a loop in the rewrite, then we ";
@@ -314,7 +330,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
     }
   }
 
-  return d;
+  return pod;
 }
 
 
@@ -558,8 +574,8 @@ double DdecValidator::invariant_quality(
         auto inv = static_cast<EqualityInvariant*>((*conj)[i]);
         auto vars = inv->get_variables();
         for (auto var : vars) {
-          if (var.is_rewrite == is_rewrite && 
-              var.operand == reg && 
+          if (var.is_rewrite == is_rewrite &&
+              var.operand == reg &&
               var.is_ghost == false) {
             cout << "   Found " << reg << " in " << *inv << " via " << var << endl;
             found = true;
@@ -620,7 +636,17 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   /** STEP 1: Find inductive paths and initial invariants in a template */
   flow_invariant_learner_.initialize(target, rewrite);
   control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
-  DualAutomata template_automata = learn_inductive_paths();
+  DualAutomata template_pod = learn_inductive_paths();
+
+  /** Populate the POD with the initial invariants. */
+  DualAutomata::State start_state = template_pod.start_state();
+  template_pod.set_invariant(start_state, get_initial_invariant());
+
+  /** Debug POD */
+  cout << endl;
+  template_pod.print_all();
+  cout << endl;
+
 
   delete control_learner_;
   reset_mm();

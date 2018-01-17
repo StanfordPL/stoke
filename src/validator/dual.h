@@ -197,7 +197,7 @@ public:
     return rewrite_state_data_[s];
   }
 
-  /** Forcibly set invariant (e.g. proof went bad) */
+  /** Forcibly set invariant. */
   void set_invariant(State& state, ConjunctionInvariant* inv) {
     invariants_[state] = inv;
   }
