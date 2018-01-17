@@ -25,20 +25,13 @@ namespace stoke {
 class SequenceVerifier : public Verifier {
 public:
 
-  SequenceVerifier(Verifier* v1, Verifier* v2) : Verifier() {
+  SequenceVerifier(Verifier* v1, Verifier* v2) {
     verifiers_.push_back(v1);
     verifiers_.push_back(v2);
   }
 
-  SequenceVerifier(std::vector<Verifier*> verifiers) : Verifier() {
+  SequenceVerifier(std::vector<Verifier*> verifiers) {
     verifiers_ = verifiers;
-  }
-
-  /** Add a sandbox for this verifier to use. */
-  SequenceVerifier& set_sandbox(Sandbox* sb) {
-    for (auto it : verifiers_)
-      it->set_sandbox(sb);
-    return *this;
   }
 
   /** Set if the heap is live out */

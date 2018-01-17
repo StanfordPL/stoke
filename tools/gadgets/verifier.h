@@ -39,7 +39,7 @@ namespace stoke {
 class VerifierGadget : public Verifier {
 public:
 
-  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : Verifier(), verifier_(NULL), solver_(NULL) {
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : verifier_(NULL), solver_(NULL) {
 
     solver_ = new SolverGadget();
 
@@ -53,18 +53,10 @@ public:
     }
 
     verifier_ = new SequenceVerifier(verifiers);
-
-    verifier_->set_sandbox(&sandbox);
-
     verifier_->set_heap_out(heap_out_arg.value());
     verifier_->set_stack_out(stack_out_arg.value());
 
 
-  }
-
-  Verifier& set_sandbox(Sandbox* sb) {
-    verifier_->set_sandbox(sb);
-    return *this;
   }
 
   inline bool verify(const Cfg& target, const Cfg& rewrite) {
@@ -112,21 +104,21 @@ private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
-      auto bv = new BoundedValidator(*solver_);
+      auto bv = new BoundedValidator(*solver_, sandbox);
       bv->set_bound(bound_arg.value());
       bv->set_alias_strategy(parse_alias());
       bv->set_no_bailout(no_bailout_arg.value());
       bv->set_nacl(verify_nacl_arg);
       return bv;
     } else if (s == "ddec") {
-      auto ddec = new DdecValidator(*solver_, inv);
+      auto ddec = new DdecValidator(*solver_, sandbox, inv);
       ddec->set_no_bv(no_ddec_bv_arg.value());
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);
       return ddec;
     } else if (s == "hold_out") {
-      return new HoldOutVerifier(fxn);
+      return new HoldOutVerifier(sandbox, fxn);
     } else if (s == "none") {
       return new NoneVerifier();
     } else {

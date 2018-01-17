@@ -33,13 +33,21 @@ class Validator : public Verifier {
 
 public:
 
-  Validator(SMTSolver& solver) : solver_(solver),
-    handler_(*(new ComboHandler())), free_handler_(true) {
+  Validator(SMTSolver& solver, Sandbox& sandbox) : 
+    sandbox_(sandbox),
+    solver_(solver),
+    handler_(*(new ComboHandler())), 
+    free_handler_(true) {
     has_error_ = false;
     setup_support_table();
   }
 
-  Validator(SMTSolver& solver, Handler& h) : solver_(solver), handler_(h), free_handler_(false) {
+  Validator(SMTSolver& solver, Sandbox& sandbox, Handler& h) : 
+    sandbox_(sandbox),
+    solver_(solver), 
+    handler_(h), 
+    free_handler_(false) 
+  {
     has_error_ = false;
     setup_support_table();
   }
@@ -74,6 +82,8 @@ public:
   static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
 
 protected:
+
+  Sandbox& sandbox_;
 
   /** Check that def-ins, live-outs match, and that non-control flow
    * instructions are supported.  Throws exception on error.*/

@@ -37,12 +37,13 @@ class BoundedValidator : public ObligationChecker {
 
 public:
 
-  BoundedValidator(SMTSolver& solver) : ObligationChecker(solver), target_final_state_(), rewrite_final_state_() {
+  BoundedValidator(SMTSolver& solver, Sandbox& sandbox) : 
+    ObligationChecker(solver, sandbox), target_final_state_(), rewrite_final_state_() 
+  {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
     set_no_bailout(false);
-    set_sandbox(NULL);
   }
 
   ~BoundedValidator() {}

@@ -150,7 +150,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
 
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
-  Sandbox sb(*sandbox_);
+  Sandbox sb(sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
   sb.insert_input(state);
@@ -164,12 +164,6 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 }
 
 bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2) {
-
-  // We can't do anything without a sandbox
-  if (!sandbox_) {
-    CEG_DEBUG(cout << "  (No sandbox available; not checking counterexample.)" << endl;);
-    return true;
-  }
 
   // First, the counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
@@ -203,8 +197,7 @@ DataCollector::Trace ObligationChecker::check_ceg_path(const Cfg& cfg,
   }
 
   // run sandbox
-  assert(sandbox_ != NULL);
-  Sandbox sb(*sandbox_);
+  Sandbox sb(sandbox_);
   sb.clear_inputs();
   sb.insert_input(state);
 
@@ -439,12 +432,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     if (oc1_ == NULL) {
       assert(oc2_ == NULL);
       z3_1_ = new Z3Solver();
-      oc1_ = new ObligationChecker(*z3_1_);
+      oc1_ = new ObligationChecker(*z3_1_, sandbox_);
       oc1_->set_filter(filter_);
       oc1_->set_alias_strategy(AliasStrategy::FLAT);
 
       z3_2_ = new Z3Solver();
-      oc2_ = new ObligationChecker(*z3_2_);
+      oc2_ = new ObligationChecker(*z3_2_, sandbox_);
       oc2_->set_filter(filter_);
       oc2_->set_alias_strategy(AliasStrategy::ARM);
     }

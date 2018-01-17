@@ -22,7 +22,7 @@ namespace stoke {
 
 class ValidatorGadget : public Validator {
 public:
-  ValidatorGadget(SMTSolver& smt) : Validator(smt) {
+  ValidatorGadget(SMTSolver& smt, Sandbox& sb) : Validator(smt, sb) {
   }
 };
 
