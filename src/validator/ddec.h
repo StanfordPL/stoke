@@ -95,6 +95,14 @@ private:
   ConjunctionInvariant* get_initial_invariant() const;
   ConjunctionInvariant* get_final_invariant() const;
 
+  /** Is the invariant at a pair of basic blocks useful? */
+  double invariant_quality(
+    ConjunctionInvariant* conj,
+    Cfg::id_type target_block,
+    Cfg::id_type rewrite_block);
+
+
+
   /** Bound */
   size_t bound_;
 
