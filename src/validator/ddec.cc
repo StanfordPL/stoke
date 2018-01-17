@@ -459,6 +459,55 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   return true;
 };
 
+/** For a given pair of basic blocks, what proportion of
+  live-out variables are constrained?  We want to constrain as
+  many live-out variables as possible, ideally. */
+double DdecValidator::invariant_quality(
+    ConjunctionInvariant* conj,
+    Cfg::id_type target_block,
+    Cfg::id_type rewrite_block) {
+
+  auto target_outs = target_.live_outs(target_block);
+  auto rewrite_outs = rewrite_.live_outs(rewrite_block);
+
+  size_t constrained = 0;
+  size_t total = 0;
+  for(size_t is_rewrite = 0; is_rewrite <= 1; is_rewrite++) {
+
+    auto& output_regs = is_rewrite ? rewrite_outs : target_outs;
+
+    if(is_rewrite)
+      cout << "REWRITE REGS: " << output_regs << endl;
+    else
+      cout << "TARGET REGS: " << output_regs << endl;
+
+    for(auto it = output_regs.gp_begin(); it != output_regs.gp_end(); ++it) {
+      total++;
+      auto reg = *it;
+      bool found = false;
+      for(size_t i = 0; i < conj->size(); ++i) {
+        auto inv = static_cast<EqualityInvariant*>((*conj)[i]);
+        auto vars = inv->get_variables();
+        for(auto var : vars) {
+          if(var.is_rewrite == is_rewrite && var.operand == *it) {
+            cout << "   Found " << reg << " in " << *inv << endl;
+            found = true;
+            constrained++;
+            break;
+          }
+        }
+
+        if(found)
+          break;
+      }
+    }
+  }
+  cout << "CONSTRAINED: " << constrained << " TOTAL: " << total << endl;
+
+  return (double)constrained/(double)total;
+}
+
+
 DualAutomata DdecValidator::learn_inductive_invariants(
   const std::vector<CfgPath>& target_inductive_paths,
   const std::vector<CfgPath>& rewrite_inductive_paths) {
@@ -483,6 +532,8 @@ DualAutomata DdecValidator::learn_inductive_invariants(
       }
       auto inv_trans = fil.transform_invariant(inv, target_paths, rewrite_paths);
       inv_trans->write_pretty(cout);
+      auto quality = invariant_quality(inv_trans, i, j);
+      cout << " quality = " << quality << endl;
     }
   }
 
@@ -503,16 +554,23 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
   DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
 
-  /** Find inductive paths. */
+  /** STEP 1: Find inductive paths. */
   data_collector_ = new DataCollector(*sandbox_);
   control_learner_ = new ControlLearner(target_, rewrite_, *sandbox_);
   vector<CfgPath> target_inductive_paths;
   vector<CfgPath> rewrite_inductive_paths;
   learn_inductive_paths(target_inductive_paths, rewrite_inductive_paths);
 
-  /** Learn initial inductive invariants. */
+  /** STEP 2: Learn initial inductive invariants. */
   learn_inductive_invariants(target_inductive_paths, rewrite_inductive_paths);
 
+
+  delete control_learner_;
+  reset_mm();
+  return false;
+
+
+  /*
   try {
 
     sanity_checks(target_, rewrite_);
@@ -537,10 +595,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     reset_mm();
     return false;
   }
+  */
 
-  delete control_learner_;
-  reset_mm();
-  return false;
 
 }
 
