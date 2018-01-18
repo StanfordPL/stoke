@@ -227,8 +227,8 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   target_state_data_.clear();
   rewrite_state_data_.clear();
 
-  auto target_traces = data_collector_.get_traces(*target_);
-  auto rewrite_traces = data_collector_.get_traces(*rewrite_);
+  auto target_traces = data_collector_.get_traces(target_);
+  auto rewrite_traces = data_collector_.get_traces(rewrite_);
 
   // Step 1: get data at each state.
   for (size_t i = 0; i < sb.size(); ++i) {
@@ -236,11 +236,11 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     auto rewrite_trace = rewrite_traces[i];
 
     auto target_last = target_trace.back();
-    target_last.block_id = target_->get_exit();
+    target_last.block_id = target_.get_exit();
     target_trace.push_back(target_last);
 
     auto rewrite_last = rewrite_trace.back();
-    rewrite_last.block_id = rewrite_->get_exit();
+    rewrite_last.block_id = rewrite_.get_exit();
     rewrite_trace.push_back(rewrite_last);
 
 
@@ -267,15 +267,15 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   }
 
   // Step 2: learn the invariants
-  target_->recompute();
-  rewrite_->recompute();
+  target_.recompute();
+  rewrite_.recompute();
 
   for (auto state : reachable_states_) {
     if (state == exit_state() || state == start_state())
       continue;
 
-    auto target_instr = target_->get_last_of_block(state.ts);
-    auto rewrite_instr = target_->get_last_of_block(state.ts);
+    auto target_instr = target_.get_last_of_block(state.ts);
+    auto rewrite_instr = target_.get_last_of_block(state.ts);
 
     string target_opc = Handler::get_opcode(target_instr);
     string rewrite_opc = Handler::get_opcode(rewrite_instr);
@@ -304,9 +304,9 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
     rewrite_file.close();
     */
 
-    auto target_pos = Cfg::loc_type(state.ts, target_->num_instrs(state.ts)-1);
-    auto rewrite_pos = Cfg::loc_type(state.rs, target_->num_instrs(state.rs)-1);
-    auto inv = learner.learn(target_->live_outs(target_pos), rewrite_->live_outs(rewrite_pos),
+    auto target_pos = Cfg::loc_type(state.ts, target_.num_instrs(state.ts)-1);
+    auto rewrite_pos = Cfg::loc_type(state.rs, target_.num_instrs(state.rs)-1);
+    auto inv = learner.learn(target_.live_outs(target_pos), rewrite_.live_outs(rewrite_pos),
                              target_state_data_[state], rewrite_state_data_[state],
                              target_cc, rewrite_cc);
     invariants_[state] = inv;
@@ -317,6 +317,31 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
 
   return true;
 
+}
+
+
+void DualAutomata::compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrite_scc) {
+  // get all the relevant blocks from target/rewrite
+  vector<DualAutomata::State> nodes;
+  for (auto pair : invariants_) {
+    nodes.push_back(pair.first);
+  }
+
+  // sort the nodes by SCC (which should already be topolically sorted)
+  auto compare = [&](DualAutomata::State a, DualAutomata::State b) -> bool {
+    auto a_target_scc = target_scc.get_scc(a.ts);
+    auto a_rewrite_scc = rewrite_scc.get_scc(a.rs);
+    auto b_target_scc = target_scc.get_scc(b.ts);
+    auto b_rewrite_scc = rewrite_scc.get_scc(b.rs);
+
+    if (a_target_scc > b_target_scc)
+      return true;
+    return a_rewrite_scc > b_rewrite_scc;
+  };
+
+  sort(nodes.begin(), nodes.end(), compare);
+  nodes.insert(nodes.begin(), start_state());
+  topological_sort_ = nodes;
 }
 
 void DualAutomata::print_all() {
@@ -336,6 +361,13 @@ void DualAutomata::print_all() {
       }
       cout << endl;
     }
+  }
+
+  if (topological_sort_.size() > 0) {
+    cout << "TOPOLOGIAL SORT " << endl;
+    for (auto it : topological_sort_)
+      cout << it << "   ";
+    cout << endl;
   }
 }
 

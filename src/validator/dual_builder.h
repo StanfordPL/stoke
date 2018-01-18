@@ -20,9 +20,12 @@ public:
         - inductive paths for each node
         - linear equalities for equivalence classes  */
   DualBuilder(DataCollector& collector, const DualAutomata& templ) :
-    data_collector_(collector), template_(templ)
+    data_collector_(collector),
+    template_(templ),
+    target_(template_.get_target()),
+    rewrite_(template_.get_rewrite())
   {
-
+    init_frontier();
   }
 
   /** Set the bound. */
@@ -42,38 +45,35 @@ private:
   /** Data Structures */
   struct EquivalenceClass {
     /** for each node, for each invariant, what's its constant? */
-    std::vector<std::vector<uint64_t>> invariant_values;
-
+    std::map<DualAutomata::State, std::vector<uint64_t>> invariant_values;
     /** what are the edges in this class? */
     std::vector<DualAutomata::Edge> edges;
   };
 
   struct Frontier {
+    DualAutomata::State head;
     std::vector<DualAutomata::State> nodes;
     std::vector<EquivalenceClass> all_classes;
     size_t current_class_index;
   };
 
-  /** Does the current frontier have another equivalence class to try? */
-  bool frontier_has_next_class() const {
-    return false;
-  }
+  /** Get class of invariant from current frontier and paths. */
 
-  /** Go to the next equivalence class in the current frontier. */
-  void next_class() {
-    assert(frontier_has_next_class());
 
-  }
 
+  /** Build the first frontier during class initialization. */
+  void init_frontier();
   /** Find the next frontier and all the possible equivalence classes. */
-  void next_fontier() {
-
-  }
-
+  void next_fontier();
   /** Remove the last frontier -- nothing left to try. */
-  void remove_frontier() {
+  void remove_frontier();
 
-  }
+  /** Does the current frontier have another equivalence class to try? */
+  bool frontier_has_next_class() const;
+  /** Go to the next equivalence class in the current frontier. */
+  void next_class();
+  /** Are we at the end of a frontier? */
+  bool frontiers_complete();
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;
@@ -84,6 +84,8 @@ private:
   /** Dependencies */
   DataCollector& data_collector_;
   const DualAutomata& template_;
+  Cfg& target_;
+  Cfg& rewrite_;
 
 };
 
