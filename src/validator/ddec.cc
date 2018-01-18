@@ -238,7 +238,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   cout << "============================================================" << endl;
   cout << "Learning inductive paths and invariants" << endl;
 
-  DualAutomata pod(&target_, &rewrite_, data_collector_);
+  DualAutomata pod(target_, rewrite_, data_collector_);
 
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
@@ -286,7 +286,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
 
             // add node to dual automata
             DualAutomata::State node(target_block, rewrite_block);
-            for(size_t k = 0; k < target_inductive_paths.size(); ++k) {
+            for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
               /** move the first block in the path to the end. */
               auto tp = target_inductive_paths[k];
               auto rp = rewrite_inductive_paths[k];
@@ -329,6 +329,9 @@ DualAutomata DdecValidator::learn_inductive_paths() {
       warn(ss.str());
     }
   }
+
+  /** Get a topolical sort for the new POD */
+  pod.compute_topological_sort(target_sccs, rewrite_sccs);
 
   return pod;
 }
@@ -625,27 +628,34 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
 
-  auto target = inline_functions(init_target);
-  auto rewrite = inline_functions(init_rewrite);
-  target_ = target;
-  rewrite_ = rewrite;
-
-  DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
-  DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
+  target_ = init_target;
+  rewrite_ = init_rewrite;
 
   /** STEP 1: Find inductive paths and initial invariants in a template */
-  flow_invariant_learner_.initialize(target, rewrite);
+  flow_invariant_learner_.initialize(target_, rewrite_);
   control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
   DualAutomata template_pod = learn_inductive_paths();
 
   /** Populate the POD with the initial invariants. */
-  DualAutomata::State start_state = template_pod.start_state();
-  template_pod.set_invariant(start_state, get_initial_invariant());
+  //DualAutomata::State start_state = template_pod.start_state();
+  //template_pod.set_invariant(start_state, get_initial_invariant());
 
   /** Debug POD */
   cout << endl;
   template_pod.print_all();
   cout << endl;
+
+  /** Get complete PODs */
+  for (size_t bound = 0; bound < 2; ++bound) {
+    cout << " ~~~~~ BOUND " << bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    DualBuilder builder(data_collector_, template_pod);
+    builder.set_bound(bound);
+    while (builder.has_next()) {
+      cout << " ~~~~~~~~~~~~~~~~~~~ next try!! " << endl;
+      auto current = builder.next();
+      current.print_all();
+    }
+  }
 
 
   delete control_learner_;

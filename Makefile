@@ -178,6 +178,7 @@ SRC_OBJ=\
 	src/validator/data_collector.o \
 	src/validator/ddec.o \
 	src/validator/dual.o \
+	src/validator/dual_builder.o \
 	src/validator/flow_invariant_learner.o \
 	src/validator/handler.o \
 	src/validator/int_matrix.o \

@@ -176,11 +176,9 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
 
       for (size_t j = 0; j < variables.size(); ++j) {
         auto term = variables[j];
-        if (!term.is_ghost) {
-          cout << "         " << term << endl;
-          term.coefficient *= multiplier;
-          terms.push_back(term);
-        }
+        cout << "         " << term << endl;
+        term.coefficient *= multiplier;
+        terms.push_back(term);
       }
     }
 

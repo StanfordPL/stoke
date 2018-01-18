@@ -6,6 +6,7 @@
 #include <vector>
 #include <ostream>
 
+#include "src/cfg/sccs.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/false.h"
@@ -71,23 +72,23 @@ public:
     bool empty_;
   };
 
-  DualAutomata(Cfg* target, Cfg* rewrite, DataCollector& dc) :
+  DualAutomata(Cfg& target, Cfg& rewrite, DataCollector& dc) :
     target_(target), rewrite_(rewrite), data_collector_(dc) {
   }
 
   /** Form a start state from the two automata */
-  State start_state() {
+  State start_state() const {
     State start;
-    start.ts = target_->get_entry();
-    start.rs = rewrite_->get_entry();
+    start.ts = target_.get_entry();
+    start.rs = rewrite_.get_entry();
     return start;
   }
 
   /** Get the exit states */
-  State exit_state() {
+  State exit_state() const {
     State exit;
-    exit.ts = target_->get_exit();
-    exit.rs = rewrite_->get_exit();
+    exit.ts = target_.get_exit();
+    exit.rs = rewrite_.get_exit();
     return exit;
   }
 
@@ -177,14 +178,13 @@ public:
   bool learn_invariants(Sandbox&, InvariantLearner&);
 
   /** Get invariant at state. */
-  ConjunctionInvariant* get_invariant(State& state) {
+  ConjunctionInvariant* get_invariant(State& state) const {
     if (invariants_.count(state))
-      return invariants_[state];
+      return invariants_.at(state);
     else {
       auto conj = new ConjunctionInvariant();
       auto false_ = new FalseInvariant();
       conj->add_invariant(false_);
-      invariants_[state] = conj;
       return conj;
     }
   }
@@ -207,11 +207,28 @@ public:
     return reachable_states_;
   }
 
+  /** Perform topological sort on nodes with SCC data. */
+  void compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrite_scc);
+
+  /** Get the topological sort. */
+  const std::vector<DualAutomata::State>& get_topological_sort() const {
+    return topological_sort_;
+  }
+
   /** Print the automata to standard output. */
   void print_all();
 
   /** Remove any edges that are a prefix of another edge from one state. */
   void remove_prefixes();
+
+  /** Get the target and rewrite. */
+  Cfg& get_target() const {
+    return target_;
+  }
+  Cfg& get_rewrite() const {
+    return rewrite_;
+  }
+
 
 private:
 
@@ -240,8 +257,8 @@ private:
   /** Remove an edge prefix from a trace. */
   void remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2);
 
-  Cfg* target_;
-  Cfg* rewrite_;
+  Cfg& target_;
+  Cfg& rewrite_;
 
   std::set<State> reachable_states_;
   std::map<State, std::vector<Edge>> next_edges_;
@@ -252,7 +269,7 @@ private:
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
 
   DataCollector data_collector_;
-
+  std::vector<DualAutomata::State> topological_sort_;
 };
 
 }
