@@ -9,6 +9,7 @@
 #include "src/validator/data_collector.h"
 #include "src/validator/dual.h"
 #include "src/validator/invariant.h"
+#include "src/validator/invariants/equality.h"
 
 namespace stoke {
 
@@ -25,7 +26,6 @@ public:
     target_(template_.get_target()),
     rewrite_(template_.get_rewrite())
   {
-    init_frontier();
   }
 
   /** Set the bound. */
@@ -58,13 +58,12 @@ private:
   };
 
   /** Get class of invariant from current frontier and paths. */
+  uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(DualAutomata::State&, DualAutomata::Edge&);
 
-
-
-  /** Build the first frontier during class initialization. */
-  void init_frontier();
   /** Find the next frontier and all the possible equivalence classes. */
-  void next_fontier();
+  void next_frontier();
   /** Remove the last frontier -- nothing left to try. */
   void remove_frontier();
 
@@ -73,7 +72,7 @@ private:
   /** Go to the next equivalence class in the current frontier. */
   void next_class();
   /** Are we at the end of a frontier? */
-  bool frontiers_complete();
+  bool frontiers_complete() const;
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;

@@ -199,12 +199,6 @@ size_t DdecValidator::learn_inductive_paths_at_block(
     auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
 
-    for (auto& it : target_paths)
-      it.pop_back();
-    for (auto& it : rewrite_paths)
-      it.pop_back();
-
-
     /*
     cout << "Target paths for " << target_block << endl;
     for (auto it : target_paths) {
@@ -613,7 +607,11 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
   std::vector<CfgPath> target_paths;
   std::vector<CfgPath> rewrite_paths;
   for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
-    if (target_inductive_paths[k][0] == target_block && rewrite_inductive_paths[k][0] == rewrite_block) {
+    assert(target_inductive_paths[k].size() > 0);
+    assert(rewrite_inductive_paths[k].size() > 0);
+
+    if (target_inductive_paths[k][0] == target_block && 
+        rewrite_inductive_paths[k][0] == rewrite_block) {
       target_paths.push_back(target_inductive_paths[k]);
       rewrite_paths.push_back(rewrite_inductive_paths[k]);
       cout << "    with paths " << target_inductive_paths[k] << " / " << rewrite_inductive_paths[k] << endl;
@@ -646,7 +644,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << endl;
 
   /** Get complete PODs */
-  for (size_t bound = 0; bound < 2; ++bound) {
+  for (size_t bound = 0; bound < 3; ++bound) {
     cout << " ~~~~~ BOUND " << bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     DualBuilder builder(data_collector_, template_pod);
     builder.set_bound(bound);

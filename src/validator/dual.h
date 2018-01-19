@@ -216,7 +216,7 @@ public:
   }
 
   /** Print the automata to standard output. */
-  void print_all();
+  void print_all() const;
 
   /** Remove any edges that are a prefix of another edge from one state. */
   void remove_prefixes();
