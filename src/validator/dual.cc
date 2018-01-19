@@ -344,7 +344,7 @@ void DualAutomata::compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrit
   topological_sort_ = nodes;
 }
 
-void DualAutomata::print_all() {
+void DualAutomata::print_all() const {
 
   for (auto p : next_edges_) {
     auto state = State(p.first.ts, p.first.rs);

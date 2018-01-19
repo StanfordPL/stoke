@@ -35,9 +35,11 @@ vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t ma
   path_so_far.push_back(start);
 
   std::map<Cfg::id_type, size_t> node_counts;
+  node_counts[start] = 1;
 
-  if (max_len > 0)
+  if (max_len > 0) {
     enumerate_paths_helper(cfg, path_so_far, end, max_len, node_counts, results, nopass);
+  }
 
   return results;
 }
@@ -65,7 +67,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 #endif
 
   // check for end
-  if (last_block == end_block && path_so_far.size() > 1) {
+  if (last_block == end_block) {
 #ifdef DEBUG_PATH_ENUM
     for (size_t i = 0; i < len; ++i) {
       cout << "  ";
