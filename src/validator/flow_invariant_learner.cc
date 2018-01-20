@@ -166,6 +166,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
   auto transformed = new ConjunctionInvariant();
   for (auto& solution : solutions) {
     vector<Variable> terms;
+    size_t non_ghost_count = 0;
     for (size_t i = 0; i < solution.size(); ++i) {
       auto invariant = static_cast<EqualityInvariant*>((*conj)[i]);
       auto variables = invariant->get_variables();
@@ -179,10 +180,12 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
         cout << "         " << term << endl;
         term.coefficient *= multiplier;
         terms.push_back(term);
+        if(term.is_ghost == false)
+          non_ghost_count++;
       }
     }
 
-    if (terms.size()) {
+    if (non_ghost_count) {
       auto ei = new EqualityInvariant(terms, 0);
       transformed->add_invariant(ei);
     }

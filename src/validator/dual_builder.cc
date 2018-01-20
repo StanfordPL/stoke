@@ -12,33 +12,65 @@ bool DualBuilder::has_next() const {
 /** Build the next possible automata. */
 DualAutomata DualBuilder::next() {
 
-  while(!frontiers_complete()) {
+  while (!frontiers_complete()) {
     next_frontier();
   }
 
-  return template_;
+  return generate_current_pod();
+}
+
+DualAutomata DualBuilder::generate_current_pod() {
+  DualAutomata copy = template_;
+  for(auto frontier : frontiers_) {
+    auto cls = frontier.all_classes[frontier.current_class_index];
+    for(auto e : cls.edges) {
+      copy.add_edge(e);
+    }
+  }
+
+  return copy;
 }
 
 uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
-  map<size_t, size_t> target_counts;
-  map<size_t, size_t> rewrite_counts;
-  set<size_t> target_bad_blocks;
-  set<size_t> rewrite_bad_blocks;
+  /** get counts from frontier. */
+  map<size_t, size_t> target_block_counts;
+  map<size_t, size_t> rewrite_block_counts;
+  if(frontiers_.size()) {
+    auto frontier = frontiers_.back();
+    target_block_counts = frontier.get_block_counts(false);
+    rewrite_block_counts = frontier.get_block_counts(true);
+  }
 
-  // loop through past frontiers
-      // add any blocks that appear in loops to bad blocks
-      // (in the future, we can do something more sophisticated here with linear algebra)
+  /** add counts for this edge. */
+  for(auto blk : e.te) {
+    target_block_counts[blk]++;
+  }
+  for(auto blk : e.re) {
+    rewrite_block_counts[blk]++;
+  }
 
-      // add any edges taken so far into counts
+  /** add up all the relevant variables. */
+  uint64_t sum = 0;
 
-  // figure out the linear quantity at the end
+  auto variables = equ->get_variables();
+  for(auto var : variables) {
+    if(var.is_ghost) {
+      auto name = var.name.c_str(); 
+      if(name[0] != 'n')
+        continue;
+      name++;
+      size_t number = strtoul(name, NULL, 10);
+      size_t count = var.is_rewrite ? rewrite_block_counts[number] : target_block_counts[number];
+      sum += count*var.coefficient;
+    }
+  }
 
-  return 0;
+  return sum;
 }
 
 std::vector<uint64_t> DualBuilder::get_invariant_class(ConjunctionInvariant* conj, DualAutomata::Edge& e) {
   std::vector<uint64_t> equiv_class;
-  for(size_t i = 0; i < conj->size(); ++i) {
+  for (size_t i = 0; i < conj->size(); ++i) {
     auto equ = static_cast<EqualityInvariant*>((*conj)[i]);
     auto value = get_invariant_class(equ, e);
     equiv_class.push_back(value);
@@ -60,15 +92,16 @@ void DualBuilder::next_frontier() {
 
   const auto& topo_sort = template_.get_topological_sort();
   size_t frontier_count = topo_sort.size();
-  size_t frontier_index = frontiers_.size();
 
   Frontier f;
+  f.frontier_index = frontiers_.size();;
+  f.parent = this;
 
   /** Get the next node in the topological sort. */
-  f.head = topo_sort[frontier_index];
+  f.head = topo_sort[f.frontier_index];
 
   /** Copy the equivalence class from the previous frontier. */
-  if(frontiers_.size()) {
+  if (frontiers_.size()) {
     auto previous = frontiers_.back();
     f.all_classes.push_back(previous.all_classes[previous.current_class_index]);
     f.all_classes[0].edges.clear();
@@ -79,15 +112,16 @@ void DualBuilder::next_frontier() {
   }
   f.current_class_index = 0;
 
-  map<DualAutomata::State, 
-    map<vector<uint64_t>, vector<DualAutomata::Edge>>> possible_classes;
+  map<DualAutomata::State,
+      map<vector<uint64_t>, vector<DualAutomata::Edge>>> possible_classes;
   // state -> classification -> possible edges
 
   /** Find all paths up to bound from current node to all others. */
-  for (size_t i = frontier_index+1; i < frontier_count; ++i) {
+  for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
     cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << endl;
-    auto target_dest = topo_sort[i].ts;
-    auto rewrite_dest = topo_sort[i].rs;
+    auto current = topo_sort[i];
+    auto target_dest = current.ts;
+    auto rewrite_dest = current.rs;
     auto tps = CfgPaths::enumerate_paths(target_, bound_, f.head.ts, target_dest);
     auto rps = CfgPaths::enumerate_paths(rewrite_, bound_, f.head.rs, rewrite_dest);
 
@@ -103,21 +137,23 @@ void DualBuilder::next_frontier() {
 
         /** If a path goes to a new node without any equvialence class, then we
           have to treat that as a new equivalence class for this frontier. */
-        auto classification = get_invariant_class(f.head, e);
-        if(f.all_classes[0].invariant_values.count(f.head)) {
-          if(f.all_classes[0].invariant_values[f.head] == classification) {
+        auto classification = get_invariant_class(current, e);
+        cout << "  classification of this edge pair: " << classification << endl;
+        if (f.all_classes[0].invariant_values.count(current)) {
+          if (f.all_classes[0].invariant_values[current] == classification) {
             // OK, add this edge in
             cout << "   - this edge looks okay" << endl;
             f.all_classes[0].edges.push_back(e);
           }  else {
             cout << "   - this edge won't work; skipping" << endl;
+            cout << "   - expected classification: " << f.all_classes[0].invariant_values[current] << endl;
             // we skip this edge
             continue;
           }
         } else {
           // add this option to a new map used for classes
           cout << "   - this edge goes to a new state" << endl;
-          possible_classes[f.head][classification].push_back(e);
+          possible_classes[current][classification].push_back(e);
         }
       }
     }
@@ -125,45 +161,52 @@ void DualBuilder::next_frontier() {
 
   /** Add classes into proper data-structure. */
   size_t total_choices = 1;
-  for(auto state_classdata : possible_classes) {
-    total_choices *= state_classdata.second.size();
+  for (auto state_class_edges : possible_classes) {
+    cout << "state " << state_class_edges.first << " has " << state_class_edges.second.size() << "choices" << endl;
+    total_choices *= state_class_edges.second.size();
   }
 
+  auto template_class = f.all_classes[0];
   cout << "TOTAL CHOICES = " << total_choices << endl;
-  for(size_t i = 0; i < total_choices; ++i) {
+  for (size_t i = 0; i < total_choices; ++i) {
     cout << "  choice " << i << endl;
     // create new equivalance class, except when i = 0 (already exists)
-    if(i != 0) {
-      f.all_classes.push_back(f.all_classes[0]);
+    if (i != 0) {
+      f.all_classes.push_back(template_class);
     }
-    
+
     // for this choice, which class for each state are we picking?
     map<DualAutomata::State, size_t> state_choice_map;
     uint64_t current_divisor = 1;
-    for(auto state_classdata : possible_classes) {
-      auto state = state_classdata.first;
-      uint64_t current_choice = (total_choices/current_divisor) % state_classdata.second.size();
-      current_divisor *= state_classdata.second.size();
+    for (auto state_class_edges : possible_classes) {
+      auto state = state_class_edges.first;
+      uint64_t current_choice = (i/current_divisor) % state_class_edges.second.size();
+      current_divisor *= state_class_edges.second.size();
       state_choice_map[state] = current_choice;
       cout << "     " << state << " -> " << current_choice << endl;
     }
 
+    // get all edges and classifications into this class
     auto& curr_class = f.all_classes[i];
-    /*
-    for(auto state_classdata : possible_classes) {
-      auto state = state_classdata.first;
-      auto classdata = state_classdata.second;
+    for(auto state_class_edges : possible_classes) {
+      auto state = state_class_edges.first;
+      auto classdata = state_class_edges.second;
+      size_t index = 0;
       for(auto class_edges : classdata) {
-        auto classification = class_edges.first;
-        auto edges = class_edges.second;
-
-
+        if(index == state_choice_map[state]) {
+          auto classification = class_edges.first;
+          auto edges = class_edges.second;
+          curr_class.invariant_values[state] = classification;
+          curr_class.edges.insert(curr_class.edges.begin(), edges.begin(), edges.end());
+        }
+        index++;
       }
     }
-    */
   }
 
   frontiers_.push_back(f);
+  cout << "Adding frontier..." << endl;
+  f.debug();
 }
 
 /** Remove the last frontier -- nothing left to try. */
@@ -192,5 +235,25 @@ bool DualBuilder::frontiers_complete() const {
   return template_.get_topological_sort().size() < frontiers_.size();
 }
 
+map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
+  /** see if we can recurse to any previous frontier. */
+  for(size_t i = 0; i < frontier_index; ++i) {
+    auto frontier = parent->frontiers_[i];
+    auto equ_class = frontier.all_classes[frontier.current_class_index];
+    for(auto e : equ_class.edges) {
+      if(e.to == head) {
+        auto prior_map = frontier.get_block_counts(is_rewrite);
+        auto& path = is_rewrite ? e.re : e.te;
+        for(auto block : path) {
+          prior_map[block]++;
+        }
+        return prior_map;
+      }
+    }
+  }
 
+  /** couldn't find anything... */
+  map<size_t, size_t> block_counts;
+  return block_counts;
+}
 

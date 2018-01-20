@@ -48,6 +48,20 @@ private:
     std::map<DualAutomata::State, std::vector<uint64_t>> invariant_values;
     /** what are the edges in this class? */
     std::vector<DualAutomata::Edge> edges;
+
+    void debug() {
+      std::cout << "  ## Class" << std::endl;
+      for(auto pair : invariant_values) {
+        std::cout << "    " << pair.first << " --> ";
+        for(auto it : pair.second) {
+          std::cout << it << "  ";
+        }
+        std::cout << std::endl;
+      }
+      for(auto e : edges) {
+        std::cout << "    " << e << std::endl;
+      }
+    }
   };
 
   struct Frontier {
@@ -55,6 +69,20 @@ private:
     std::vector<DualAutomata::State> nodes;
     std::vector<EquivalenceClass> all_classes;
     size_t current_class_index;
+    size_t frontier_index;
+    DualBuilder* parent;
+
+    std::map<size_t, size_t> get_block_counts(bool is_rewrite = false);
+
+    void debug() {
+      std::cout << "###### FRONTIER" << std::endl;
+      std::cout << "head = " << head << std::endl;
+      for(auto it : nodes)
+        std::cout << it;
+      std::cout << std::endl;
+      for(auto cls : all_classes)
+        cls.debug();
+    }
   };
 
   /** Get class of invariant from current frontier and paths. */
@@ -73,6 +101,9 @@ private:
   void next_class();
   /** Are we at the end of a frontier? */
   bool frontiers_complete() const;
+
+  /** Generate a dual automata from the edges currently in the frontiers. */
+  DualAutomata generate_current_pod();
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;

@@ -341,6 +341,7 @@ void DualAutomata::compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrit
 
   sort(nodes.begin(), nodes.end(), compare);
   nodes.insert(nodes.begin(), start_state());
+  nodes.insert(nodes.end(), exit_state());
   topological_sort_ = nodes;
 }
 

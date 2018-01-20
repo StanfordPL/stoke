@@ -113,6 +113,15 @@ private:
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
 
+  /** Add a loop to a node in a POD. */
+  void add_loop_to_node(
+    DualAutomata& pod,
+    const std::vector<CfgPath>& target_inductive_paths,
+    const std::vector<CfgPath>& rewrite_inductive_paths,
+    Cfg::id_type target_block, 
+    Cfg::id_type rewrite_block,
+    ConjunctionInvariant* invariant
+    );
 
 
   /** Bound */
