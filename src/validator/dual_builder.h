@@ -6,6 +6,7 @@
 #include <vector>
 #include <ostream>
 
+#include "src/validator/control_learner.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/dual.h"
 #include "src/validator/invariant.h"
@@ -20,9 +21,10 @@ public:
         - data from test cases
         - inductive paths for each node
         - linear equalities for equivalence classes  */
-  DualBuilder(DataCollector& collector, const DualAutomata& templ) :
+  DualBuilder(DataCollector& collector, const DualAutomata& templ, ControlLearner& control_learner) :
     first_(true),
     data_collector_(collector),
+    control_learner_(control_learner),
     template_(templ),
     target_(template_.get_target()),
     rewrite_(template_.get_rewrite())
@@ -91,6 +93,10 @@ private:
   std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata::State&, DualAutomata::Edge&);
 
+  /** Does this edge from the current frontier to the exit work? */
+  /** for exit, there's essentially two classes: good and bad. */
+  bool exit_works(DualAutomata::Edge& e);
+
   /** Run after constructor; find first POD. */
   void init();
   /** Find the next frontier and all the possible equivalence classes. */
@@ -119,6 +125,7 @@ private:
 
   /** Dependencies */
   DataCollector& data_collector_;
+  ControlLearner& control_learner_;
   const DualAutomata& template_;
   Cfg& target_;
   Cfg& rewrite_;

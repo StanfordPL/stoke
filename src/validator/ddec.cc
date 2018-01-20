@@ -514,8 +514,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
   InvariantLearner learner;
-  Sandbox sb(sandbox_);
-  bool learning_successful = dual.learn_invariants(sb, learner);
+  bool learning_successful = dual.learn_invariants(learner);
   if (!learning_successful) {
     cout << "Learning invariants failed!" << endl;
     return false;
@@ -675,12 +674,16 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   /** Get complete PODs */
   for (size_t bound = 1; bound < 2; ++bound) {
     cout << " ~~~~~ BOUND " << bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    DualBuilder builder(data_collector_, template_pod);
+    DualBuilder builder(data_collector_, template_pod, *control_learner_);
     builder.set_bound(bound);
     while (builder.has_next()) {
       cout << " ~~~~~~~~~~~~~~~~~~~ next try!! " << endl;
       auto current = builder.next();
       current.print_all();
+      bool correct = verify_dual(current);
+      if(correct) {
+        return true;
+      }
     }
   }
 

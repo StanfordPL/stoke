@@ -11,12 +11,12 @@ void DualBuilder::init() {
 
 /** Is there a next POD available? */
 bool DualBuilder::has_next() const {
-  if(first_)
+  if (first_)
     return true;
 
   // go through the frontiers; do any of them have a next class?
-  for(auto& frontier : frontiers_) {
-    if(frontier.current_class_index < frontier.all_classes.size() - 1) {
+  for (auto& frontier : frontiers_) {
+    if (frontier.current_class_index < frontier.all_classes.size() - 1) {
       return true;
     }
   }
@@ -28,9 +28,9 @@ DualAutomata DualBuilder::next() {
   assert(has_next());
 
   /** if it's the first call to next, just generate what we have. */
-  if(first_) { 
+  if (first_) {
     cout << "[next] generating initial POD" << endl;
-    while(!frontiers_complete()) {
+    while (!frontiers_complete()) {
       next_frontier();
     }
     first_ = false;
@@ -38,7 +38,7 @@ DualAutomata DualBuilder::next() {
   }
 
   /** if there's another equivalence class in this frontier, go for it. */
-  if(frontier_has_next_class()) {
+  if (frontier_has_next_class()) {
     next_class();
     cout << "[next] frontier has next class:" << endl;
     auto frontier = frontiers_.back();
@@ -51,11 +51,11 @@ DualAutomata DualBuilder::next() {
     then increment its class.  Then, rebuild future frontiers until we're
     in business. */
   cout << "[next] frontier exhausted; backtracking" << endl;
-  while(frontiers_.size() && !frontier_has_next_class()) {
+  while (frontiers_.size() && !frontier_has_next_class()) {
     remove_frontier();
   }
 
-  if(frontiers_.size() == 0) {
+  if (frontiers_.size() == 0) {
     // oops, has_next() should have returned false!
     throw "next() called with has_next() == false or bug";
     return template_;
@@ -66,7 +66,7 @@ DualAutomata DualBuilder::next() {
     frontier.all_classes[frontier.current_class_index].debug();
   }
 
-  while(!frontiers_complete()) {
+  while (!frontiers_complete()) {
     next_frontier();
   }
   return generate_current_pod();
@@ -82,6 +82,40 @@ DualAutomata DualBuilder::generate_current_pod() {
   }
 
   return copy;
+}
+
+bool DualBuilder::exit_works(DualAutomata::Edge& e) {
+  /** get counts from frontier. */
+  map<size_t, size_t> target_block_counts;
+  map<size_t, size_t> rewrite_block_counts;
+  if (frontiers_.size()) {
+    auto frontier = frontiers_.back();
+    target_block_counts = frontier.get_block_counts(false);
+    rewrite_block_counts = frontier.get_block_counts(true);
+  }
+
+  /** add counts for this edge. */
+  for (auto blk : e.te) {
+    target_block_counts[blk]++;
+  }
+  for (auto blk : e.re) {
+    rewrite_block_counts[blk]++;
+  }
+
+  /** generate some fake paths... */
+  CfgPath tp;
+  CfgPath rp;
+  for(auto it : target_block_counts) {
+    for(size_t i = 0; i < it.second; ++i)
+      tp.push_back(it.first);
+  }
+  for(auto it : rewrite_block_counts) {
+    for(size_t i = 0; i < it.second; ++i)
+      rp.push_back(it.first);
+  }
+
+  /** add up all the relevant variables. */
+  return control_learner_.inductive_pair_feasible(tp, rp);
 }
 
 uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
@@ -184,29 +218,39 @@ void DualBuilder::next_frontier() {
 
         cout << "Processing pair " << tp << " / " << rp << endl;
 
-        /** Classify each path into an equivalence class to the destination node. */
-        /** If a path disagrees with an already established equivalence class for
-          a node, then we throw it out. */
-
-        /** If a path goes to a new node without any equvialence class, then we
-          have to treat that as a new equivalence class for this frontier. */
-        auto classification = get_invariant_class(current, e);
-        cout << "  classification of this edge pair: " << classification << endl;
-        if (f.all_classes[0].invariant_values.count(current)) {
-          if (f.all_classes[0].invariant_values[current] == classification) {
-            // OK, add this edge in
-            cout << "   - this edge looks okay" << endl;
+        if(current == template_.exit_state()) {
+          if(exit_works(e)) {
+            cout << "   - this exit edge looks okay" << endl;
             f.all_classes[0].edges.push_back(e);
-          }  else {
-            cout << "   - this edge won't work; skipping" << endl;
-            cout << "   - expected classification: " << f.all_classes[0].invariant_values[current] << endl;
-            // we skip this edge
-            continue;
+          } else {
+            cout << "   - this exit edge won't work; skipping" << endl;
           }
         } else {
-          // add this option to a new map used for classes
-          cout << "   - this edge goes to a new state" << endl;
-          possible_classes[current][classification].push_back(e);
+
+          /** Classify each path into an equivalence class to the destination node. */
+          /** If a path disagrees with an already established equivalence class for
+            a node, then we throw it out. */
+
+          /** If a path goes to a new node without any equvialence class, then we
+            have to treat that as a new equivalence class for this frontier. */
+          auto classification = get_invariant_class(current, e);
+          cout << "  classification of this edge pair: " << classification << endl;
+          if (f.all_classes[0].invariant_values.count(current)) {
+            if (f.all_classes[0].invariant_values[current] == classification) {
+              // OK, add this edge in
+              cout << "   - this edge looks okay" << endl;
+              f.all_classes[0].edges.push_back(e);
+            }  else {
+              cout << "   - this edge won't work; skipping" << endl;
+              cout << "   - expected classification: " << f.all_classes[0].invariant_values[current] << endl;
+              // we skip this edge
+              continue;
+            }
+          } else {
+            // add this option to a new map used for classes
+            cout << "   - this edge goes to a new state" << endl;
+            possible_classes[current][classification].push_back(e);
+          }
         }
       }
     }
