@@ -192,6 +192,8 @@ size_t DdecValidator::learn_inductive_paths_at_block(
   Cfg::id_type rewrite_block
 ) {
 
+  cout << "LEARNING PATHS AT BLOCKS " << target_block << " / " << rewrite_block << endl;
+
   size_t found_pair = 0;
 
   for (size_t k = 0; k < 4; ++k) {
@@ -199,19 +201,27 @@ size_t DdecValidator::learn_inductive_paths_at_block(
     auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
 
-    /*
-    cout << "Target paths for " << target_block << endl;
+    cout << "Target paths for " << target_block << " bound=" << bound << endl;
     for (auto it : target_paths) {
-      cout << it << endl;
+      cout << "    " << it << endl;
     }
-    cout << "Rewrite paths for " << rewrite_block << endl;
+    cout << "Rewrite paths for " << rewrite_block << " bound=" << bound << endl;
     for (auto it : rewrite_paths) {
-      cout << it << endl;
+      cout << "    " << it << endl;
     }
-    */
 
     for (auto tp : target_paths) {
       for (auto rp : rewrite_paths) {
+
+        /** if we have a loop with another block, the last node on the end is redundant. */
+        if(tp.size() > 1 && tp[1] != tp[0]) {
+          tp.erase(tp.end()-1);
+        }
+        if(rp.size() > 1 && rp[1] != rp[0]) {
+          rp.erase(rp.end()-1);
+        }
+
+
         if (control_learner_->inductive_pair_feasible(tp, rp)) {
           cout << "Found inductive pair " << tp << " and " << rp << endl;
           target_inductive_paths.push_back(tp);
@@ -228,6 +238,42 @@ size_t DdecValidator::learn_inductive_paths_at_block(
   return 0;
 }
 
+void DdecValidator::add_loop_to_node(
+    DualAutomata& pod,
+    const vector<CfgPath>& target_inductive_paths,
+    const vector<CfgPath>& rewrite_inductive_paths,
+    Cfg::id_type target_block, 
+    Cfg::id_type rewrite_block,
+    ConjunctionInvariant* invariant
+    ) {
+
+  // add node to dual automata
+  DualAutomata::State node(target_block, rewrite_block);
+  for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
+    /** move the first block in the path to the end. */
+    auto tp = target_inductive_paths[k];
+    auto rp = rewrite_inductive_paths[k];
+    tp.push_back(tp[0]);
+    tp.erase(tp.begin());
+    rp.push_back(rp[0]);
+    rp.erase(rp.begin());
+
+    DualAutomata::Edge e(node, tp, rp);
+    pod.add_edge(e);
+  }
+  pod.set_invariant(node, invariant);
+
+  // print stuff for the user
+  cout << "--------- FOUND A GOOD NODE -----------" << endl;
+  cout << "PATHS" << endl;
+  for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
+    cout << "  " << target_inductive_paths[k] << " / ";
+    cout << rewrite_inductive_paths[k] << endl;
+  }
+  cout << "INVARIANTS" << endl;
+  invariant->write_pretty(cout);
+}
+
 DualAutomata DdecValidator::learn_inductive_paths() {
   cout << "============================================================" << endl;
   cout << "Learning inductive paths and invariants" << endl;
@@ -241,6 +287,8 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   // Figure out possible inductive program paths and corresponding invariants
   size_t target_num_scc = target_sccs.count();
   size_t rewrite_num_scc = rewrite_sccs.count();
+  cout << "Target SCCs: " << target_sccs.count() << endl;
+  cout << "Rewrite SCCs: " << rewrite_sccs.count() << endl;
   for (size_t i = 0; i < target_num_scc; ++i) {
     auto target_blocks = target_sccs.get_blocks(i);
     bool found_something_for_target_scc = false;
@@ -249,6 +297,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
       auto rewrite_blocks = rewrite_sccs.get_blocks(j);
 
       bool next_scc = false;
+      cout << "TRYING SCCS " << i << " / " << j << endl;
 
       for (auto& target_block : target_blocks) {
         for (auto& rewrite_block : rewrite_blocks) {
@@ -275,35 +324,15 @@ DualAutomata DdecValidator::learn_inductive_paths() {
 
           if (quality == 1) {
             // we found a good pair of blocks for this SCC!
+            cout << "FOUND SOMETHING FOR THIS SCC!" << endl;
             next_scc = true;
             found_something_for_target_scc = true;
-
-            // add node to dual automata
-            DualAutomata::State node(target_block, rewrite_block);
-            for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
-              /** move the first block in the path to the end. */
-              auto tp = target_inductive_paths[k];
-              auto rp = rewrite_inductive_paths[k];
-              tp.push_back(tp[0]);
-              tp.erase(tp.begin());
-              rp.push_back(rp[0]);
-              rp.erase(rp.begin());
-
-              DualAutomata::Edge e(node, tp, rp);
-              pod.add_edge(e);
-            }
-            pod.set_invariant(node, invariant);
-
-            // print stuff for the user
-            cout << "--------- FOUND A GOOD NODE -----------" << endl;
-            cout << "PATHS" << endl;
-            for (size_t k = 0; k < target_inductive_paths.size(); ++k) {
-              cout << "  " << target_inductive_paths[k] << " / ";
-              cout << rewrite_inductive_paths[k] << endl;
-            }
-            cout << "INVARIANTS" << endl;
-            invariant->write_pretty(cout);
-
+            add_loop_to_node(pod,
+                             target_inductive_paths,
+                             rewrite_inductive_paths,
+                             target_block,
+                             rewrite_block,
+                             invariant);
             break;
           }
         }
@@ -610,7 +639,7 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
     assert(target_inductive_paths[k].size() > 0);
     assert(rewrite_inductive_paths[k].size() > 0);
 
-    if (target_inductive_paths[k][0] == target_block && 
+    if (target_inductive_paths[k][0] == target_block &&
         rewrite_inductive_paths[k][0] == rewrite_block) {
       target_paths.push_back(target_inductive_paths[k]);
       rewrite_paths.push_back(rewrite_inductive_paths[k]);
@@ -644,7 +673,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << endl;
 
   /** Get complete PODs */
-  for (size_t bound = 0; bound < 3; ++bound) {
+  for (size_t bound = 1; bound < 2; ++bound) {
     cout << " ~~~~~ BOUND " << bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     DualBuilder builder(data_collector_, template_pod);
     builder.set_bound(bound);
