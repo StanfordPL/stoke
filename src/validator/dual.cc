@@ -219,7 +219,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
 }
 
 
-bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
+bool DualAutomata::learn_invariants(InvariantLearner& learner) {
 
 
   reachable_states_.clear();
@@ -231,7 +231,7 @@ bool DualAutomata::learn_invariants(Sandbox& sb, InvariantLearner& learner) {
   auto rewrite_traces = data_collector_.get_traces(rewrite_);
 
   // Step 1: get data at each state.
-  for (size_t i = 0; i < sb.size(); ++i) {
+  for (size_t i = 0; i < target_traces.size(); ++i) {
     auto target_trace = target_traces[i];
     auto rewrite_trace = rewrite_traces[i];
 

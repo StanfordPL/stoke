@@ -175,7 +175,7 @@ public:
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
   /** Learn invariants.  Returns 'true' if no error. */
-  bool learn_invariants(Sandbox&, InvariantLearner&);
+  bool learn_invariants(InvariantLearner&);
 
   /** Get invariant at state. */
   ConjunctionInvariant* get_invariant(State& state) const {
