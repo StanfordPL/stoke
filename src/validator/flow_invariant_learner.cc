@@ -180,7 +180,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
         cout << "         " << term << endl;
         term.coefficient *= multiplier;
         terms.push_back(term);
-        if(term.is_ghost == false)
+        if (term.is_ghost == false)
           non_ghost_count++;
       }
     }

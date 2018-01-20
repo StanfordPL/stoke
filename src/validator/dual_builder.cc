@@ -4,26 +4,79 @@
 using namespace stoke;
 using namespace std;
 
+
+void DualBuilder::init() {
+  first_ = true;
+}
+
 /** Is there a next POD available? */
 bool DualBuilder::has_next() const {
-  return !frontiers_complete();
+  if(first_)
+    return true;
+
+  // go through the frontiers; do any of them have a next class?
+  for(auto& frontier : frontiers_) {
+    if(frontier.current_class_index < frontier.all_classes.size() - 1) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Build the next possible automata. */
 DualAutomata DualBuilder::next() {
+  assert(has_next());
 
-  while (!frontiers_complete()) {
-    next_frontier();
+  /** if it's the first call to next, just generate what we have. */
+  if(first_) { 
+    cout << "[next] generating initial POD" << endl;
+    while(!frontiers_complete()) {
+      next_frontier();
+    }
+    first_ = false;
+    return generate_current_pod();
   }
 
+  /** if there's another equivalence class in this frontier, go for it. */
+  if(frontier_has_next_class()) {
+    next_class();
+    cout << "[next] frontier has next class:" << endl;
+    auto frontier = frontiers_.back();
+    frontier.all_classes[frontier.current_class_index].debug();
+
+    return generate_current_pod();
+  }
+
+  /** remove frontiers until we get to one that has a next equivalence class,
+    then increment its class.  Then, rebuild future frontiers until we're
+    in business. */
+  cout << "[next] frontier exhausted; backtracking" << endl;
+  while(frontiers_.size() && !frontier_has_next_class()) {
+    remove_frontier();
+  }
+
+  if(frontiers_.size() == 0) {
+    // oops, has_next() should have returned false!
+    throw "next() called with has_next() == false or bug";
+    return template_;
+  } else {
+    next_class();
+    cout << "[next] frontier has next class:" << endl;
+    auto frontier = frontiers_.back();
+    frontier.all_classes[frontier.current_class_index].debug();
+  }
+
+  while(!frontiers_complete()) {
+    next_frontier();
+  }
   return generate_current_pod();
 }
 
 DualAutomata DualBuilder::generate_current_pod() {
   DualAutomata copy = template_;
-  for(auto frontier : frontiers_) {
+  for (auto frontier : frontiers_) {
     auto cls = frontier.all_classes[frontier.current_class_index];
-    for(auto e : cls.edges) {
+    for (auto e : cls.edges) {
       copy.add_edge(e);
     }
   }
@@ -35,17 +88,17 @@ uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::
   /** get counts from frontier. */
   map<size_t, size_t> target_block_counts;
   map<size_t, size_t> rewrite_block_counts;
-  if(frontiers_.size()) {
+  if (frontiers_.size()) {
     auto frontier = frontiers_.back();
     target_block_counts = frontier.get_block_counts(false);
     rewrite_block_counts = frontier.get_block_counts(true);
   }
 
   /** add counts for this edge. */
-  for(auto blk : e.te) {
+  for (auto blk : e.te) {
     target_block_counts[blk]++;
   }
-  for(auto blk : e.re) {
+  for (auto blk : e.re) {
     rewrite_block_counts[blk]++;
   }
 
@@ -53,10 +106,10 @@ uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::
   uint64_t sum = 0;
 
   auto variables = equ->get_variables();
-  for(auto var : variables) {
-    if(var.is_ghost) {
-      auto name = var.name.c_str(); 
-      if(name[0] != 'n')
+  for (auto var : variables) {
+    if (var.is_ghost) {
+      auto name = var.name.c_str();
+      if (name[0] != 'n')
         continue;
       name++;
       size_t number = strtoul(name, NULL, 10);
@@ -118,7 +171,7 @@ void DualBuilder::next_frontier() {
 
   /** Find all paths up to bound from current node to all others. */
   for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
-    cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << endl;
+    cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << " bound=" << bound_ << endl;
     auto current = topo_sort[i];
     auto target_dest = current.ts;
     auto rewrite_dest = current.rs;
@@ -188,12 +241,12 @@ void DualBuilder::next_frontier() {
 
     // get all edges and classifications into this class
     auto& curr_class = f.all_classes[i];
-    for(auto state_class_edges : possible_classes) {
+    for (auto state_class_edges : possible_classes) {
       auto state = state_class_edges.first;
       auto classdata = state_class_edges.second;
       size_t index = 0;
-      for(auto class_edges : classdata) {
-        if(index == state_choice_map[state]) {
+      for (auto class_edges : classdata) {
+        if (index == state_choice_map[state]) {
           auto classification = class_edges.first;
           auto edges = class_edges.second;
           curr_class.invariant_values[state] = classification;
@@ -211,13 +264,13 @@ void DualBuilder::next_frontier() {
 
 /** Remove the last frontier -- nothing left to try. */
 void DualBuilder::remove_frontier() {
-
+  frontiers_.erase(frontiers_.end()-1);
 }
 
 /** Does the current frontier have another equivalence class to try? */
 bool DualBuilder::frontier_has_next_class() const {
   auto current = frontiers_.back();
-  if (current.current_class_index < current.all_classes.size())
+  if (current.current_class_index < current.all_classes.size() - 1)
     return true;
   return false;
 }
@@ -237,14 +290,14 @@ bool DualBuilder::frontiers_complete() const {
 
 map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   /** see if we can recurse to any previous frontier. */
-  for(size_t i = 0; i < frontier_index; ++i) {
+  for (size_t i = 0; i < frontier_index; ++i) {
     auto frontier = parent->frontiers_[i];
     auto equ_class = frontier.all_classes[frontier.current_class_index];
-    for(auto e : equ_class.edges) {
-      if(e.to == head) {
+    for (auto e : equ_class.edges) {
+      if (e.to == head) {
         auto prior_map = frontier.get_block_counts(is_rewrite);
         auto& path = is_rewrite ? e.re : e.te;
-        for(auto block : path) {
+        for (auto block : path) {
           prior_map[block]++;
         }
         return prior_map;
