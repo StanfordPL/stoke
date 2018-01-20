@@ -103,7 +103,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     for (size_t i = 0; i < len; ++i) {
       cout << "  ";
     }
-    cout << "* Exploring successor: " << *it << endl;
+    cout << "* Exploring successor: " << *it << " count=" << this_count << "/" << max_count << endl;
 #endif
 
     path_so_far.push_back(*it);

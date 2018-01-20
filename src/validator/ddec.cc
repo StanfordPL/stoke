@@ -214,10 +214,10 @@ size_t DdecValidator::learn_inductive_paths_at_block(
       for (auto rp : rewrite_paths) {
 
         /** if we have a loop with another block, the last node on the end is redundant. */
-        if(tp.size() > 1 && tp[1] != tp[0]) {
+        if (tp.size() > 1 && tp[1] != tp[0]) {
           tp.erase(tp.end()-1);
         }
-        if(rp.size() > 1 && rp[1] != rp[0]) {
+        if (rp.size() > 1 && rp[1] != rp[0]) {
           rp.erase(rp.end()-1);
         }
 
@@ -239,13 +239,13 @@ size_t DdecValidator::learn_inductive_paths_at_block(
 }
 
 void DdecValidator::add_loop_to_node(
-    DualAutomata& pod,
-    const vector<CfgPath>& target_inductive_paths,
-    const vector<CfgPath>& rewrite_inductive_paths,
-    Cfg::id_type target_block, 
-    Cfg::id_type rewrite_block,
-    ConjunctionInvariant* invariant
-    ) {
+  DualAutomata& pod,
+  const vector<CfgPath>& target_inductive_paths,
+  const vector<CfgPath>& rewrite_inductive_paths,
+  Cfg::id_type target_block,
+  Cfg::id_type rewrite_block,
+  ConjunctionInvariant* invariant
+) {
 
   // add node to dual automata
   DualAutomata::State node(target_block, rewrite_block);

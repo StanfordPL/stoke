@@ -21,6 +21,7 @@ public:
         - inductive paths for each node
         - linear equalities for equivalence classes  */
   DualBuilder(DataCollector& collector, const DualAutomata& templ) :
+    first_(true),
     data_collector_(collector),
     template_(templ),
     target_(template_.get_target()),
@@ -51,14 +52,14 @@ private:
 
     void debug() {
       std::cout << "  ## Class" << std::endl;
-      for(auto pair : invariant_values) {
+      for (auto pair : invariant_values) {
         std::cout << "    " << pair.first << " --> ";
-        for(auto it : pair.second) {
+        for (auto it : pair.second) {
           std::cout << it << "  ";
         }
         std::cout << std::endl;
       }
-      for(auto e : edges) {
+      for (auto e : edges) {
         std::cout << "    " << e << std::endl;
       }
     }
@@ -77,10 +78,10 @@ private:
     void debug() {
       std::cout << "###### FRONTIER" << std::endl;
       std::cout << "head = " << head << std::endl;
-      for(auto it : nodes)
+      for (auto it : nodes)
         std::cout << it;
       std::cout << std::endl;
-      for(auto cls : all_classes)
+      for (auto cls : all_classes)
         cls.debug();
     }
   };
@@ -90,6 +91,8 @@ private:
   std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata::State&, DualAutomata::Edge&);
 
+  /** Run after constructor; find first POD. */
+  void init();
   /** Find the next frontier and all the possible equivalence classes. */
   void next_frontier();
   /** Remove the last frontier -- nothing left to try. */
@@ -110,6 +113,9 @@ private:
 
   /** bound */
   size_t bound_;
+
+  /** have we generated any PODs yet? */
+  bool first_;
 
   /** Dependencies */
   DataCollector& data_collector_;
