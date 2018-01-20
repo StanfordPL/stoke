@@ -222,7 +222,7 @@ size_t DdecValidator::learn_inductive_paths_at_block(
         }
 
 
-        if (control_learner_->inductive_pair_feasible(tp, rp)) {
+        if (control_learner_->pair_feasible(tp, rp, true)) {
           cout << "Found inductive pair " << tp << " and " << rp << endl;
           target_inductive_paths.push_back(tp);
           rewrite_inductive_paths.push_back(rp);
@@ -681,7 +681,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto current = builder.next();
       current.print_all();
       bool correct = verify_dual(current);
-      if(correct) {
+      if (correct) {
         return true;
       }
     }

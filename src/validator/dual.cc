@@ -6,6 +6,9 @@
 using namespace stoke;
 using namespace std;
 
+#define DEBUG_LEARN_STATE_DATA(X) { X }
+#define DEBUG_IS_PREFIX(X) { X } 
+
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (this->ts < other.ts) {
     return true;
@@ -63,12 +66,12 @@ DualAutomata::Edge::Edge(DualAutomata::State tail, const CfgPath& tp, const CfgP
 
 bool DualAutomata::is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2) {
   if (tr1.size() > tr2.size()) {
-    //cout << "     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;
+    DEBUG_IS_PREFIX(cout << "[is_prefix]     tr1:" << tr1.size() << " > tr2:" << tr2.size() << endl;)
     return false;
   }
 
   for (size_t i = 0; i < tr1.size(); ++i) {
-    //cout << "      tr1[" << i << "]=" << tr1[i] << "; tr2[" << i << "]=" << tr2[i].first << endl;
+    DEBUG_IS_PREFIX(cout << "[is_prefix]      tr1[" << i << "]=" << tr1[i] << "; tr2[" << i << "]=" << tr2[i].block_id << endl;)
     if (tr1[i] != tr2[i].block_id) {
       return false;
     }
@@ -114,8 +117,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
   /** Configure initial traces */
   auto tt_copy = target_trace;
   auto rt_copy = rewrite_trace;
-  tt_copy.erase(tt_copy.begin());
-  rt_copy.erase(rt_copy.begin());
 
   initial.target_trace = tt_copy;
   initial.rewrite_trace = rt_copy;
@@ -142,11 +143,11 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
       if (exit == tr_state.state) {
 
         if (tr_state.rewrite_trace.size() > 0) {
-          //cout << "problem: at exit state, but there's still unconsumed rewrite trace" << endl;
+          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed rewrite trace" << endl;)
           return false;
         }
         if (tr_state.target_trace.size() > 0) {
-          //cout << "problem: at exit state, but there's still unconsumed target trace" << endl;
+          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed target trace" << endl;)
           return false;
         }
 
@@ -157,26 +158,26 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
       bool found_matching_edge = false;
 
       for (auto edge : next_edges_[tr_state.state]) {
-        /*
-        cout << "  Considering edge: " << edge.from << " -> " << edge.to << endl;
+        DEBUG_LEARN_STATE_DATA(
+        cout << "[lsd] Considering edge: " << edge.from << " -> " << edge.to << endl;
         cout << "     ";
         for (auto blk : edge.te)
           cout << blk << "  ";
         cout << "; ";
         for (auto blk : edge.re)
           cout << blk << "  ";
-        cout << endl; */
+        cout << endl;)
 
 
         // check if edge's target path is prefix of tr_state's target path
         if (!is_prefix(edge.te, tr_state.target_trace)) {
-          //cout << "  target prefix fail" << endl;
+          DEBUG_LEARN_STATE_DATA(cout << "  target prefix fail" << endl;)
           continue;
         }
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
-          //cout << "  rewrite prefix fail" << endl;
-          //cout << "  edge.re: " << edge.re << endl;
+          DEBUG_LEARN_STATE_DATA(cout << "  rewrite prefix fail" << endl;)
+          DEBUG_LEARN_STATE_DATA(cout << "  edge.re: " << edge.re << endl;)
           continue;
         }
 
@@ -204,11 +205,11 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
 
         next.push_back(follow);
         reachable_states_.insert(follow.state);
-        //std::cout << "  - REACHABLE: " << follow.state << std::endl;
+        DEBUG_LEARN_STATE_DATA(std::cout << "  - REACHABLE: " << follow.state << std::endl;)
       }
 
       if (!found_matching_edge) {
-        //std::cout << "  - Could not find matching edge" << std::endl;
+        DEBUG_LEARN_STATE_DATA(std::cout << "  - Could not find matching edge" << std::endl;)
         //return false;
       }
     }
@@ -244,19 +245,10 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
     rewrite_trace.push_back(rewrite_last);
 
 
-    /*
-    cout << "target trace: ";
-    for (size_t i = 0; i < target_trace.size(); ++i) {
-      cout << target_trace[i].cs << " ";
-    }
-    cout << endl;
-
-    cout << "rewrite trace: ";
-    for (size_t i = 0; i < rewrite_trace.size(); ++i) {
-      cout << rewrite_trace[i].cs << " ";
-    }
-    cout << endl;
-    */
+    DEBUG_LEARN_STATE_DATA(
+    cout << "target trace: " << DataCollector::project_states(target_trace) << endl;
+    cout << "rewrite trace: " << DataCollector::project_states(rewrite_trace) << endl;
+    )
 
 
     bool ok = learn_state_data(target_trace, rewrite_trace);
@@ -284,7 +276,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
     string rewrite_cc = rewrite_instr.is_jcc() ? rewrite_opc.substr(1, rewrite_opc.size()-1) : "";
 
     /* For debugging states encountered. */
-    /*
+    DEBUG_LEARN_STATE_DATA(
     stringstream ts;
     ts << "state" << state << "-target.txt";
     string target_filename = ts.str();
@@ -301,8 +293,9 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
     rewrite_file.open(rewrite_filename, ios::out);
     CpuStates rewrite_out(rewrite_state_data_[state]);
     rewrite_out.write_text(rewrite_file);
-    rewrite_file.close();
-    */
+    rewrite_file.close();)
+
+    // TODO: if there aren't enough states here, sound a warning
 
     auto target_pos = Cfg::loc_type(state.ts, target_.num_instrs(state.ts)-1);
     auto rewrite_pos = Cfg::loc_type(state.rs, target_.num_instrs(state.rs)-1);

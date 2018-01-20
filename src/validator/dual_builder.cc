@@ -105,17 +105,17 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
   /** generate some fake paths... */
   CfgPath tp;
   CfgPath rp;
-  for(auto it : target_block_counts) {
-    for(size_t i = 0; i < it.second; ++i)
+  for (auto it : target_block_counts) {
+    for (size_t i = 0; i < it.second; ++i)
       tp.push_back(it.first);
   }
-  for(auto it : rewrite_block_counts) {
-    for(size_t i = 0; i < it.second; ++i)
+  for (auto it : rewrite_block_counts) {
+    for (size_t i = 0; i < it.second; ++i)
       rp.push_back(it.first);
   }
 
   /** add up all the relevant variables. */
-  return control_learner_.inductive_pair_feasible(tp, rp);
+  return control_learner_.pair_feasible(tp, rp, false);
 }
 
 uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
@@ -175,21 +175,25 @@ std::vector<uint64_t> DualBuilder::get_invariant_class(DualAutomata::State& s, D
 void DualBuilder::next_frontier() {
   assert(!frontiers_complete());
 
-  cout << "==== Next Frontier ====" << endl;
+  cout << "==== Next Frontier ==== " << frontiers_.size() << endl;
 
   const auto& topo_sort = template_.get_topological_sort();
   size_t frontier_count = topo_sort.size();
 
-  Frontier f;
-  f.frontier_index = frontiers_.size();;
+  /** Add a new frontier to the list and get a reference to it. */
+  Frontier new_f;
+  new_f.frontier_index = frontiers_.size();;
+  frontiers_.push_back(new_f);
+  Frontier& f = frontiers_.back();
+
   f.parent = this;
 
   /** Get the next node in the topological sort. */
   f.head = topo_sort[f.frontier_index];
 
   /** Copy the equivalence class from the previous frontier. */
-  if (frontiers_.size()) {
-    auto previous = frontiers_.back();
+  if (frontiers_.size() > 1) {
+    auto previous = frontiers_[f.frontier_index-1];
     f.all_classes.push_back(previous.all_classes[previous.current_class_index]);
     f.all_classes[0].edges.clear();
   } else {
@@ -218,8 +222,8 @@ void DualBuilder::next_frontier() {
 
         cout << "Processing pair " << tp << " / " << rp << endl;
 
-        if(current == template_.exit_state()) {
-          if(exit_works(e)) {
+        if (current == template_.exit_state()) {
+          if (exit_works(e)) {
             cout << "   - this exit edge looks okay" << endl;
             f.all_classes[0].edges.push_back(e);
           } else {
@@ -301,7 +305,6 @@ void DualBuilder::next_frontier() {
     }
   }
 
-  frontiers_.push_back(f);
   cout << "Adding frontier..." << endl;
   f.debug();
 }
@@ -334,11 +337,13 @@ bool DualBuilder::frontiers_complete() const {
 
 map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   /** see if we can recurse to any previous frontier. */
+  cout << "[get_block_counts] frontier_index = " << frontier_index << endl;
   for (size_t i = 0; i < frontier_index; ++i) {
     auto frontier = parent->frontiers_[i];
     auto equ_class = frontier.all_classes[frontier.current_class_index];
     for (auto e : equ_class.edges) {
       if (e.to == head) {
+        cout << "[get_block_counts]        recursing! " << e << endl;
         auto prior_map = frontier.get_block_counts(is_rewrite);
         auto& path = is_rewrite ? e.re : e.te;
         for (auto block : path) {
@@ -350,6 +355,7 @@ map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   }
 
   /** couldn't find anything... */
+  cout << "[get_block_counts]        could not recurse!" << endl;
   map<size_t, size_t> block_counts;
   return block_counts;
 }

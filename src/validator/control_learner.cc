@@ -21,7 +21,7 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-#define DEBUG_CUTPOINTS(X) { }
+#define DEBUG_CONTROL_LEARNER(X) { X }
 
 
 using namespace std;
@@ -46,36 +46,6 @@ IntMatrix remove_duplicate_rows(IntMatrix matrix) {
   return final_matrix;
 }
 
-
-/** Remove all constant columns, except the first one. */
-IntMatrix ControlLearner::remove_constant_cols(IntMatrix matrix) {
-  vector<size_t> constant_columns;
-  for (size_t i = 1; i < matrix[0].size(); ++i) {
-    bool col_constant = true;
-    int64_t starting_value = matrix[0][i];
-    for (size_t j = 1; j < matrix.size(); ++j) {
-      if (matrix[j][i] != starting_value) {
-        col_constant = false;
-        break;
-      }
-    }
-    if (col_constant)
-      constant_columns.push_back(i);
-  }
-  IntMatrix output_matrix;
-  for (size_t i = 0; i < matrix.size(); ++i) {
-    IntVector new_row;
-    for (size_t j = 0; j < matrix[i].size(); ++j) {
-      if (find(constant_columns.begin(), constant_columns.end(), -1) != constant_columns.end()) {
-        new_row.push_back(matrix[i][j]);
-      } else {
-        new_row.push_back(0);
-      }
-    }
-    output_matrix.push_back(new_row);
-  }
-  return output_matrix;
-}
 
 size_t ControlLearner::target_block_to_index(Cfg::id_type n) {
   assert(n < target_.num_blocks());
@@ -169,7 +139,7 @@ bool ControlLearner::does_repeat(const CfgPath& pattern, const CfgPath& total) {
 void ControlLearner::compute() {
 
   // Collect data
-  cout << "COLLECTING DATA..." << endl;
+  DEBUG_CONTROL_LEARNER(cout << "COLLECTING DATA..." << endl;)
   for (size_t i = 0; i < sandbox_.size(); ++i) {
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
@@ -180,7 +150,7 @@ void ControlLearner::compute() {
     rewrite_traces_.push_back(trace);
   }
 
-  cout << "BUILDING MATRIX..." << endl;
+  DEBUG_CONTROL_LEARNER(cout << "BUILDING MATRIX..." << endl;)
   // tc# -> segment# -> # of occurrences
   IntMatrix starting_matrix(sandbox_.size(), total_block_indexes());
 
@@ -213,16 +183,18 @@ void ControlLearner::compute() {
   auto final_matrix = remove_duplicate_rows(starting_matrix);
 
   /** Debug */
+  DEBUG_CONTROL_LEARNER(
   cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
   for (size_t i = 0; i < final_matrix.size(); ++i) {
     for (size_t j = 0; j < final_matrix[i].size(); ++j) {
       cout << "  " << final_matrix[i][j];
     }
     cout << endl;
-  }
+  })
 
   kernel_generators_ = final_matrix.solve_diophantine();
 
+  DEBUG_CONTROL_LEARNER(
   // Print what basis vectors say
   for (size_t i = 0; i < kernel_generators_.size(); ++i) {
     //if (!to_print[i])
@@ -231,7 +203,7 @@ void ControlLearner::compute() {
   }
 
   cout << "MATRIX" << endl;
-  kernel_generators_.print();
+  kernel_generators_.print();)
 
 }
 
@@ -306,7 +278,7 @@ void ControlLearner::callback(const StateCallbackData& data, void* arg) {
 
 
 
-bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
+bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
   IntVector test(total_block_indexes());
   for (auto it : tp) {
     if (target_.get_exit() == it)
@@ -318,8 +290,20 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
       continue;
     test[rewrite_block_to_index(it)]++;
   }
+  if(inductive) {
+    test[0] = 0;
+  } else {
+    test[0] = 1;
+  }
+
+  /*
+  cout << "MATRIX = " << endl;
+  kernel_generators_.print();
+  cout << "VECTOR = " << endl;
+  test.print(); */
 
   // DEBUGGING (find which relations didn't hold)
+  DEBUG_CONTROL_LEARNER(
   cout << "For pair " << tp << " | " << rp << " the following failed." << endl;
   auto mult = kernel_generators_*test;
   for (size_t i = 0; i < mult.size(); ++i) {
@@ -327,7 +311,8 @@ bool ControlLearner::inductive_pair_feasible(CfgPath tp, CfgPath rp) {
       cout << "    ";
       print_basis_vector(kernel_generators_[i]);
     }
-  }
+  })
+  
 
   return kernel_generators_.in_nullspace(test);
 }

@@ -63,7 +63,11 @@ public:
     return rewrite_traces_;
   }
 
-  bool inductive_pair_feasible(CfgPath tp, CfgPath rp);
+  /** Given two paths, is it possible that these occur together in a real execution? 
+    If inductive is true, we're asking about partial paths in a loop.  Otherwise,
+    we're asking about whole executions. */
+  bool pair_feasible(CfgPath tp, CfgPath rp, bool inductive=true);
+
 
   /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. Returns true if the callback managed to return true. */
   bool update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);
@@ -131,10 +135,6 @@ private:
   /** Check if a path repeats in another path */
   static bool does_repeat(const CfgPath& pattern, const CfgPath& total);
 
-
-  ////////////////////////////// Matrix Functions //////////////////////////////
-
-  IntMatrix remove_constant_cols(IntMatrix matrix);
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
