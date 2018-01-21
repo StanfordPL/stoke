@@ -399,6 +399,7 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
       cout << "   have ceg     " << checker_has_ceg() << endl;
 
       // Add a path into the dual that was previously missing
+      /*
       if (!current_okay && checker_has_ceg() && (checker_get_target_ceg() != ceg || first)) {
         cout << "Attemping to add edge:" << endl;
         ceg = checker_get_target_ceg();
@@ -427,6 +428,7 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
         }
       }
       first = false;
+      */
     }
   }
 
@@ -556,7 +558,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     valid = discharge_exhaustive(dual);
     if (!valid) {
       if (old_edge_count == dual.count_edges()) {
-        cout << "Couldn't verify exhaustive nor find counterexample (bug?)." << endl;
+        cout << "Couldn't verify exhaustive nor use counterexample." << endl;
         return false;
       } else {
         cout << "Couldn't verify exhaustive; going to try again." << endl;

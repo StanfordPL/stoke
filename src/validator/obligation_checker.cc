@@ -190,7 +190,13 @@ DataCollector::Trace ObligationChecker::check_ceg_path(const Cfg& cfg,
     Cfg::id_type block,
     const CpuState& state) {
 
-  auto last_instr_index = cfg.get_index({block, cfg.num_instrs(block)-1});
+  size_t last_instr_index = 0;
+  if(block == cfg.get_entry())  {
+    last_instr_index = 0;
+  } else {
+    last_instr_index = cfg.get_index({block, cfg.num_instrs(block)-1});
+  }
+
   auto last_instr = cfg.get_code()[last_instr_index];
   if (!last_instr.is_any_jump()) {
     last_instr_index++;

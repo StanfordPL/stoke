@@ -63,7 +63,7 @@ public:
     return rewrite_traces_;
   }
 
-  /** Given two paths, is it possible that these occur together in a real execution? 
+  /** Given two paths, is it possible that these occur together in a real execution?
     If inductive is true, we're asking about partial paths in a loop.  Otherwise,
     we're asking about whole executions. */
   bool pair_feasible(CfgPath tp, CfgPath rp, bool inductive=true);

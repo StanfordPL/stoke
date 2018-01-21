@@ -184,9 +184,9 @@ void ControlLearner::compute() {
 
   /** Debug */
   DEBUG_CONTROL_LEARNER(
-  cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
+    cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
   for (size_t i = 0; i < final_matrix.size(); ++i) {
-    for (size_t j = 0; j < final_matrix[i].size(); ++j) {
+  for (size_t j = 0; j < final_matrix[i].size(); ++j) {
       cout << "  " << final_matrix[i][j];
     }
     cout << endl;
@@ -195,15 +195,15 @@ void ControlLearner::compute() {
   kernel_generators_ = final_matrix.solve_diophantine();
 
   DEBUG_CONTROL_LEARNER(
-  // Print what basis vectors say
+    // Print what basis vectors say
   for (size_t i = 0; i < kernel_generators_.size(); ++i) {
-    //if (!to_print[i])
-    //  continue;
-    print_basis_vector(kernel_generators_[i]);
+  //if (!to_print[i])
+  //  continue;
+  print_basis_vector(kernel_generators_[i]);
   }
 
   cout << "MATRIX" << endl;
-  kernel_generators_.print();)
+       kernel_generators_.print();)
 
 }
 
@@ -290,7 +290,7 @@ bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
       continue;
     test[rewrite_block_to_index(it)]++;
   }
-  if(inductive) {
+  if (inductive) {
     test[0] = 0;
   } else {
     test[0] = 1;
@@ -304,15 +304,15 @@ bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
 
   // DEBUGGING (find which relations didn't hold)
   DEBUG_CONTROL_LEARNER(
-  cout << "For pair " << tp << " | " << rp << " the following failed." << endl;
-  auto mult = kernel_generators_*test;
+    cout << "For pair " << tp << " | " << rp << " the following failed." << endl;
+    auto mult = kernel_generators_*test;
   for (size_t i = 0; i < mult.size(); ++i) {
-    if (mult[i]) {
+  if (mult[i]) {
       cout << "    ";
       print_basis_vector(kernel_generators_[i]);
     }
   })
-  
+
 
   return kernel_generators_.in_nullspace(test);
 }
