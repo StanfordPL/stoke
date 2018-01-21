@@ -72,12 +72,7 @@ public:
   std::ostream& write_pretty(std::ostream& os) const {
 
     if (invariants_.size() == 0) {
-      os << "true";
-      return os;
-    }
-
-    if (invariants_.size() == 1) {
-      invariants_[0]->write(os);
+      os << "    true" << std::endl;
       return os;
     }
 

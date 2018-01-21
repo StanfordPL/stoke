@@ -7,7 +7,7 @@ using namespace stoke;
 using namespace std;
 
 #define DEBUG_LEARN_STATE_DATA(X) { X }
-#define DEBUG_IS_PREFIX(X) { X } 
+#define DEBUG_IS_PREFIX(X) { X }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (this->ts < other.ts) {
@@ -159,21 +159,21 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
 
       for (auto edge : next_edges_[tr_state.state]) {
         DEBUG_LEARN_STATE_DATA(
-        cout << "[lsd] Considering edge: " << edge.from << " -> " << edge.to << endl;
-        cout << "     ";
-        for (auto blk : edge.te)
+          cout << "[lsd] Considering edge: " << edge.from << " -> " << edge.to << endl;
+          cout << "     ";
+          for (auto blk : edge.te)
           cout << blk << "  ";
-        cout << "; ";
-        for (auto blk : edge.re)
-          cout << blk << "  ";
-        cout << endl;)
+          cout << "; ";
+          for (auto blk : edge.re)
+            cout << blk << "  ";
+            cout << endl;)
 
 
-        // check if edge's target path is prefix of tr_state's target path
-        if (!is_prefix(edge.te, tr_state.target_trace)) {
-          DEBUG_LEARN_STATE_DATA(cout << "  target prefix fail" << endl;)
-          continue;
-        }
+            // check if edge's target path is prefix of tr_state's target path
+            if (!is_prefix(edge.te, tr_state.target_trace)) {
+              DEBUG_LEARN_STATE_DATA(cout << "  target prefix fail" << endl;)
+              continue;
+            }
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
           DEBUG_LEARN_STATE_DATA(cout << "  rewrite prefix fail" << endl;)
@@ -246,8 +246,8 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
 
 
     DEBUG_LEARN_STATE_DATA(
-    cout << "target trace: " << DataCollector::project_states(target_trace) << endl;
-    cout << "rewrite trace: " << DataCollector::project_states(rewrite_trace) << endl;
+      cout << "target trace: " << DataCollector::project_states(target_trace) << endl;
+      cout << "rewrite trace: " << DataCollector::project_states(rewrite_trace) << endl;
     )
 
 
@@ -277,29 +277,27 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
 
     /* For debugging states encountered. */
     DEBUG_LEARN_STATE_DATA(
-    stringstream ts;
-    ts << "state" << state << "-target.txt";
-    string target_filename = ts.str();
-    ofstream target_file;
-    target_file.open(target_filename, ios::out);
-    CpuStates target_out(target_state_data_[state]);
-    target_out.write_text(target_file);
-    target_file.close();
+      stringstream ts;
+      ts << "state" << state << "-target.txt";
+      string target_filename = ts.str();
+      ofstream target_file;
+      target_file.open(target_filename, ios::out);
+      CpuStates target_out(target_state_data_[state]);
+      target_out.write_text(target_file);
+      target_file.close();
 
-    stringstream rs;
-    rs << "state" << state << "-rewrite.txt";
-    string rewrite_filename = rs.str();
-    ofstream rewrite_file;
-    rewrite_file.open(rewrite_filename, ios::out);
-    CpuStates rewrite_out(rewrite_state_data_[state]);
-    rewrite_out.write_text(rewrite_file);
-    rewrite_file.close();)
+      stringstream rs;
+      rs << "state" << state << "-rewrite.txt";
+      string rewrite_filename = rs.str();
+      ofstream rewrite_file;
+      rewrite_file.open(rewrite_filename, ios::out);
+      CpuStates rewrite_out(rewrite_state_data_[state]);
+      rewrite_out.write_text(rewrite_file);
+      rewrite_file.close();)
 
     // TODO: if there aren't enough states here, sound a warning
 
-    auto target_pos = Cfg::loc_type(state.ts, target_.num_instrs(state.ts)-1);
-    auto rewrite_pos = Cfg::loc_type(state.rs, target_.num_instrs(state.rs)-1);
-    auto inv = learner.learn(target_.live_outs(target_pos), rewrite_.live_outs(rewrite_pos),
+    auto inv = learner.learn(target_.live_outs(state.ts), rewrite_.live_outs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state],
                              target_cc, rewrite_cc);
     invariants_[state] = inv;
@@ -343,7 +341,13 @@ void DualAutomata::print_all() const {
   for (auto p : next_edges_) {
     auto state = State(p.first.ts, p.first.rs);
     cout << "STATE (" << p.first.ts << ", " << p.first.rs << ")" << endl;
-    cout << "  " << *get_invariant(state) << endl;
+    auto inv = get_invariant(state);
+    auto conj = dynamic_cast<ConjunctionInvariant*>(inv);
+    if(conj != NULL) {
+      conj->write_pretty(cout);
+    } else {
+      cout << "  " << *inv << endl;
+    }
     for (auto e : p.second) {
       cout << "    to (" << e.to.ts << ", " << e.to.rs << ") via target: ";
       for (auto n : e.te) {
