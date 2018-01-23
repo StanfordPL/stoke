@@ -367,6 +367,9 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
   for (auto edge : edges) {
     path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
   }
+  cout << "[discharge_exhaustive] Skipping this check!! We're unsound!" << endl;
+  return true;
+  /*
   bool ok = verify_exhaustive(target_, rewrite_,
                               state.ts, state.rs,
                               path_pairs, *invariant);
@@ -377,11 +380,12 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
     cout << "NOT EXHAUSTIVE FOR " << state << endl;
     return false;
   }
+  */
 }
 
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
   bool okay = true;
-  for (auto state : dual.get_reachable_states()) {
+  for (auto state : dual.get_edge_reachable_states()) {
     if (state == dual.exit_state())
       continue;
 
@@ -440,7 +444,7 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
   // Now we run a fixedpoint algorithm to get the provable invariants
   set<DualAutomata::State> worklist;
 
-  for (auto reachable : dual.get_reachable_states())
+  for (auto reachable : dual.get_edge_reachable_states())
     worklist.insert(reachable);
 
   // TODO: we can make this faster if the worklist contains *edges* rather than
@@ -518,9 +522,23 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   InvariantLearner learner;
   bool learning_successful = dual.learn_invariants(learner);
   if (!learning_successful) {
-    cout << "Learning invariants failed!" << endl;
+    cout << "[verify_dual] Learning invariants failed!" << endl;
     return false;
   }
+
+
+  auto edge_reachable = dual.get_edge_reachable_states();
+  for(auto state : edge_reachable) {
+    if(state == dual.start_state() || state == dual.exit_state())
+      continue;
+    auto inv = dual.get_invariant(state);
+    if(inv->size() < 2) {
+      cout << "[verify_dual] Could not learn invariant at state " << state << endl;
+      cout << "[verify_dual] Aboring." << endl;
+      return false;
+    }
+  }
+
   auto start_state = dual.start_state();
   auto end_state = dual.exit_state();
   dual.set_invariant(start_state, get_initial_invariant());
@@ -528,7 +546,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   /** Add NoSignals invariant everywhere */
   auto ns_invariant = new NoSignalsInvariant();
-  auto reachable = dual.get_reachable_states();
+  auto reachable = dual.get_edge_reachable_states();
   for (auto rs : reachable) {
     auto orig_inv = dual.get_invariant(rs);
     orig_inv->add_invariant(ns_invariant);
@@ -652,6 +670,48 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
   return inv_trans;
 }
 
+bool DdecValidator::sanity_check(DualAutomata& pod) {
+  /** get set of globally reachable states. */ 
+  set<DualAutomata::State> global_reachable = pod.get_edge_reachable_states();
+  cout << "[sanity] global reachable: ";
+  for(auto r : global_reachable) 
+    cout << r << "  ";
+  cout << endl;
+  
+  /** make sure that exit is reachable from all states...
+    ... if not, we're sure not to pass the exhaustiveness check. */
+  for(auto state : global_reachable) {
+    size_t init_count = 0;
+    set<DualAutomata::State> reachable;
+    reachable.insert(state);
+
+    size_t curr_count = reachable.size();
+    while(curr_count > init_count) {
+      init_count = curr_count;
+
+      for(auto r : reachable) {
+        for(auto p : pod.next_states(r)) {
+          reachable.insert(p);
+        }
+      }
+
+      curr_count = reachable.size();
+    }
+
+    if(reachable.count(pod.exit_state()) == 0) {
+      cout << "[sanity] exit state not reachable from " << state << endl;
+      return false;
+    } else {
+      cout << "[sanity] states reachable from " << state << " are ";
+      for(auto r : reachable) 
+        cout << r << "  ";
+      cout << endl;
+    }
+  }
+  return true;
+
+}
+
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   init_mm();
@@ -674,17 +734,24 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << endl;
 
   /** Get complete PODs */
-  for (size_t bound = 1; bound < 2; ++bound) {
-    cout << " ~~~~~ BOUND " << bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    DualBuilder builder(data_collector_, template_pod, *control_learner_);
-    builder.set_bound(bound);
-    while (builder.has_next()) {
-      cout << " ~~~~~~~~~~~~~~~~~~~ next try!! " << endl;
-      auto current = builder.next();
-      current.print_all();
-      bool correct = verify_dual(current);
-      if (correct) {
-        return true;
+  for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
+    for(size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
+      cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+      DualBuilder builder(data_collector_, template_pod, *control_learner_);
+      builder.set_bound(target_bound, rewrite_bound);
+      while (builder.has_next()) {
+        cout << " ~~~~~~~~~~~~~~~~~~~ next try!! " << endl;
+        auto current = builder.next();
+        current.print_all();
+        bool sane = sanity_check(current);
+        if(!sane) {
+          cout << " * this candidate is insane!! skipping." << endl;
+          continue;
+        }
+        bool correct = verify_dual(current);
+        if (correct) {
+          return true;
+        }
       }
     }
   }

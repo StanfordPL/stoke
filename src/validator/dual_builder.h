@@ -32,8 +32,9 @@ public:
   }
 
   /** Set the bound. */
-  DualBuilder& set_bound(size_t n) {
-    bound_ = n;
+  DualBuilder& set_bound(size_t n, size_t m) {
+    target_bound_ = n;
+    rewrite_bound_ = m;
     return *this;
   }
 
@@ -44,6 +45,20 @@ public:
   DualAutomata next();
 
 private:
+
+  typedef std::vector<uint64_t> NodeClass;
+  typedef std::map<DualAutomata::State, NodeClass> NodeClassMap;
+  typedef std::pair<std::map<Cfg::id_type, uint64_t>, std::map<Cfg::id_type, uint64_t>> PathCounts;
+
+  /** For a given set of target/rewrite counts, get the class at a node.*/
+  //NodeClass get_class_at_node(DualAutomata::State&, PathCounts&);
+  /** Get the next best class for each node. */
+  //bool has_next_classmap();
+  //NodeClassMap next_classmap();
+  /** Generate a POD for a set of classes. */
+  //DualAutomata generate_pod_for_classmap(NodeClassMap&);
+  /** Generate POD edges for pair of nodes given classmap */
+  //add_pod_edges(DualAutomata&, NodeClassMap&, DualAutomata::Node begin, DualAutomata::Node end);
 
   /** Data Structures */
   struct EquivalenceClass {
@@ -118,7 +133,8 @@ private:
   std::vector<Frontier> frontiers_;
 
   /** bound */
-  size_t bound_;
+  size_t target_bound_;
+  size_t rewrite_bound_;
 
   /** have we generated any PODs yet? */
   bool first_;

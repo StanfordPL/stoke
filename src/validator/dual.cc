@@ -7,7 +7,7 @@ using namespace stoke;
 using namespace std;
 
 #define DEBUG_LEARN_STATE_DATA(X) { X }
-#define DEBUG_IS_PREFIX(X) { X }
+#define DEBUG_IS_PREFIX(X) { }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (this->ts < other.ts) {
@@ -106,8 +106,15 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
-bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
-                                    const DataCollector::Trace& rewrite_trace) {
+bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
+                                    const DataCollector::Trace& orig_rewrite_trace) {
+
+  /** Copy traces, remove 0 block. */
+  auto target_trace = orig_target_trace;
+  auto rewrite_trace = orig_rewrite_trace;
+  target_trace.erase(target_trace.begin());
+  rewrite_trace.erase(rewrite_trace.begin());
+
   /** Setup initial state */
   TraceState initial;
   initial.state = start_state();
@@ -129,7 +136,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
   vector<TraceState> current;
   vector<TraceState> next;
   next.push_back(initial);
-  reachable_states_.insert(initial.state);
+  data_reachable_states_.insert(initial.state);
 
   auto exit = exit_state();
 
@@ -204,7 +211,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
         rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
 
         next.push_back(follow);
-        reachable_states_.insert(follow.state);
+        data_reachable_states_.insert(follow.state);
         DEBUG_LEARN_STATE_DATA(std::cout << "  - REACHABLE: " << follow.state << std::endl;)
       }
 
@@ -223,7 +230,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& target_trace,
 bool DualAutomata::learn_invariants(InvariantLearner& learner) {
 
 
-  reachable_states_.clear();
+  data_reachable_states_.clear();
   invariants_.clear();
   target_state_data_.clear();
   rewrite_state_data_.clear();
@@ -262,7 +269,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
   target_.recompute();
   rewrite_.recompute();
 
-  for (auto state : reachable_states_) {
+  for (auto state : data_reachable_states_) {
     if (state == exit_state() || state == start_state())
       continue;
 
@@ -343,7 +350,7 @@ void DualAutomata::print_all() const {
     cout << "STATE (" << p.first.ts << ", " << p.first.rs << ")" << endl;
     auto inv = get_invariant(state);
     auto conj = dynamic_cast<ConjunctionInvariant*>(inv);
-    if(conj != NULL) {
+    if (conj != NULL) {
       conj->write_pretty(cout);
     } else {
       cout << "  " << *inv << endl;
@@ -405,7 +412,7 @@ void DualAutomata::remove_prefixes() {
 
   while (!done) {
     done = true;
-    for (auto state : reachable_states_) {
+    for (auto state : data_reachable_states_) {
       auto edges = next_edges_[state];
 
       for (auto e1 : edges) {
@@ -426,6 +433,28 @@ void DualAutomata::remove_prefixes() {
         break;
     }
   }
+}
+
+std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() {
+
+  set<State> global_reachable;
+  global_reachable.insert(start_state());
+
+  size_t init, curr;
+  do {
+    init = global_reachable.size();
+    for(auto r : global_reachable) {
+      cout << "[sanity] from " << r << endl;
+      for(auto p : next_states(r)) {
+        cout << "[sanity]    inserting " << p << endl;
+        global_reachable.insert(p);
+      }
+    }
+
+    curr = global_reachable.size();
+  } while(curr > init);
+
+  return global_reachable;
 }
 
 namespace std {

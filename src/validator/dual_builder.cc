@@ -209,15 +209,29 @@ void DualBuilder::next_frontier() {
 
   /** Find all paths up to bound from current node to all others. */
   for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
-    cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << " bound=" << bound_ << endl;
+    cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << " bound=" << target_bound_ << "/" << rewrite_bound_ << endl;
     auto current = topo_sort[i];
     auto target_dest = current.ts;
     auto rewrite_dest = current.rs;
-    auto tps = CfgPaths::enumerate_paths(target_, bound_, f.head.ts, target_dest);
-    auto rps = CfgPaths::enumerate_paths(rewrite_, bound_, f.head.rs, rewrite_dest);
+
+    auto tmp_target_bound = target_bound_;
+    if(f.head.ts == target_dest)
+      tmp_target_bound++;
+
+    auto tmp_rewrite_bound = rewrite_bound_;
+    if(f.head.rs == rewrite_dest)
+      tmp_rewrite_bound++;
+
+    auto tps = CfgPaths::enumerate_paths(target_, tmp_target_bound, f.head.ts, target_dest);
+    auto rps = CfgPaths::enumerate_paths(rewrite_, tmp_rewrite_bound, f.head.rs, rewrite_dest);
 
     for (auto tp : tps) {
+      tp.erase(tp.begin());
+
       for (auto rp : rps) {
+        rp.erase(rp.begin());
+
+
         DualAutomata::Edge e(f.head, tp, rp);
 
         cout << "Processing pair " << tp << " / " << rp << endl;
@@ -337,13 +351,13 @@ bool DualBuilder::frontiers_complete() const {
 
 map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   /** see if we can recurse to any previous frontier. */
-  cout << "[get_block_counts] frontier_index = " << frontier_index << endl;
+  //cout << "[get_block_counts] frontier_index = " << frontier_index << endl;
   for (size_t i = 0; i < frontier_index; ++i) {
     auto frontier = parent->frontiers_[i];
     auto equ_class = frontier.all_classes[frontier.current_class_index];
     for (auto e : equ_class.edges) {
       if (e.to == head) {
-        cout << "[get_block_counts]        recursing! " << e << endl;
+        //cout << "[get_block_counts]        recursing! " << e << endl;
         auto prior_map = frontier.get_block_counts(is_rewrite);
         auto& path = is_rewrite ? e.re : e.te;
         for (auto block : path) {
@@ -355,8 +369,9 @@ map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   }
 
   /** couldn't find anything... */
-  cout << "[get_block_counts]        could not recurse!" << endl;
+  //cout << "[get_block_counts]        could not recurse!" << endl;
   map<size_t, size_t> block_counts;
+  block_counts[0] = 1;
   return block_counts;
 }
 
