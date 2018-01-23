@@ -528,11 +528,11 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
 
   auto edge_reachable = dual.get_edge_reachable_states();
-  for(auto state : edge_reachable) {
-    if(state == dual.start_state() || state == dual.exit_state())
+  for (auto state : edge_reachable) {
+    if (state == dual.start_state() || state == dual.exit_state())
       continue;
     auto inv = dual.get_invariant(state);
-    if(inv->size() < 2) {
+    if (inv->size() < 2) {
       cout << "[verify_dual] Could not learn invariant at state " << state << endl;
       cout << "[verify_dual] Aboring." << endl;
       return false;
@@ -671,26 +671,26 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
 }
 
 bool DdecValidator::sanity_check(DualAutomata& pod) {
-  /** get set of globally reachable states. */ 
+  /** get set of globally reachable states. */
   set<DualAutomata::State> global_reachable = pod.get_edge_reachable_states();
   cout << "[sanity] global reachable: ";
-  for(auto r : global_reachable) 
+  for (auto r : global_reachable)
     cout << r << "  ";
   cout << endl;
-  
+
   /** make sure that exit is reachable from all states...
     ... if not, we're sure not to pass the exhaustiveness check. */
-  for(auto state : global_reachable) {
+  for (auto state : global_reachable) {
     size_t init_count = 0;
     set<DualAutomata::State> reachable;
     reachable.insert(state);
 
     size_t curr_count = reachable.size();
-    while(curr_count > init_count) {
+    while (curr_count > init_count) {
       init_count = curr_count;
 
-      for(auto r : reachable) {
-        for(auto p : pod.next_states(r)) {
+      for (auto r : reachable) {
+        for (auto p : pod.next_states(r)) {
           reachable.insert(p);
         }
       }
@@ -698,12 +698,12 @@ bool DdecValidator::sanity_check(DualAutomata& pod) {
       curr_count = reachable.size();
     }
 
-    if(reachable.count(pod.exit_state()) == 0) {
+    if (reachable.count(pod.exit_state()) == 0) {
       cout << "[sanity] exit state not reachable from " << state << endl;
       return false;
     } else {
       cout << "[sanity] states reachable from " << state << " are ";
-      for(auto r : reachable) 
+      for (auto r : reachable)
         cout << r << "  ";
       cout << endl;
     }
@@ -735,7 +735,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   /** Get complete PODs */
   for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
-    for(size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
+    for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
       cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
       DualBuilder builder(data_collector_, template_pod, *control_learner_);
       builder.set_bound(target_bound, rewrite_bound);
@@ -744,7 +744,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         auto current = builder.next();
         current.print_all();
         bool sane = sanity_check(current);
-        if(!sane) {
+        if (!sane) {
           cout << " * this candidate is insane!! skipping." << endl;
           continue;
         }

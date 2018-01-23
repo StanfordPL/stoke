@@ -1,0 +1,18 @@
+
+REPRESENTATIVE EXAMPLE
+
+The function takes as input 'start' and 'end' and increments a counter 'position' from 'start' until it reaches 'end'.   The vectorized version has a "warm-up" loop where the counter is first incremented to a multiple of 8, then incremented 8-at-a-time, and finally a cool-down loop that finishes incrementing the counter to 'end'.  The source code can be found in source.c, and control flow graphs in simple.pdf and simple_vec.pdf.
+
+
+There are a few places in this program where aligning paths between the target and rewrite is tricky.  Here's one representative situation of what we've been facing:
+
+Suppose you're at the start state of both programs.  There are two paths (A and B) in the vectorized rewrite from the start state to basic block 15 (the beginning of the cleanup loop) that do not take any backedges.  Path A is 1 2 3 10 11 12 13 14 15 and path B is 1 2 3 4 5 6 10 11 12 13 14 15.  Path A corresponds to no executions of the target loop (i.e. the position counter is not incremented) while path B corresponds to one execution (i.e. position incremented by one).  If we're trying to build the proof obligation digraph (i.e. learn invariants and corresponding edges), we now have a chicken-and-egg problem:
+
+Option 1: We could try learning the invariants first from data.  However, it's not clear how to group program states from execution traces together.  If we look at program states after executing path A and path B together, then we find that we can't learn any invariants relating 'position' with other variables because sometimes the value if off-by-one.  For instance, we would not be able to learn 'position in target' = 'position in rewrite' because for some states this is off-by-one.
+
+Option 2: We could try figuring out which paths from the target align to which paths from the rewrite first.  But, without the invariant, it's not clear how they should line up.  For example, should we be trying to find paths through the target and rewrite ending at the "cutpoint" such that the values for 'position' agree?  Maybe, but perhaps the right invariant is actually that 'position' of the target is one more than 'position' for the rewrite.  In that case, it's not clear how the paths of both programs align.
+
+The 3rd option, which seems to work in some cases (like this one, incidentally, but not in others), is to learn linear relationships between the number of executions over basic blocks over all traces, and use these relationships to solve for the number of executions of a loop in one program that corresponds to a path taken in the other.  However, we have found that the linear relationships that we learn are not precise enough to sufficiently constrain the linear algebra to get correct solutions.  While this option is viable in simple examples like this one, the more complex the example becomes the more likely the linear algebra problem is to be underconstrained, even if there's a lot of data (debugging why exactly is quite challenging).
+
+What we need is a 4th option that's principled and will work reliably on larger examples as well.
+
