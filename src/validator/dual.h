@@ -165,7 +165,7 @@ public:
   /** Return total number of edges. */
   size_t count_edges() {
     size_t count = 0;
-    for (auto it : get_reachable_states()) {
+    for (auto it : get_edge_reachable_states()) {
       count += next_edges(it).size();
     }
     return count;
@@ -203,9 +203,11 @@ public:
   }
 
   /** Get set of reachable states (from data). */
-  std::set<State> get_reachable_states() {
-    return reachable_states_;
+  std::set<State> get_data_reachable_states() {
+    return data_reachable_states_;
   }
+  /** Get set of reachable states (from edges). */
+  std::set<State> get_edge_reachable_states();
 
   /** Perform topological sort on nodes with SCC data. */
   void compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrite_scc);
@@ -260,7 +262,7 @@ private:
   Cfg& target_;
   Cfg& rewrite_;
 
-  std::set<State> reachable_states_;
+  std::set<State> data_reachable_states_;
   std::map<State, std::vector<Edge>> next_edges_;
   std::map<State, std::vector<Edge>> prev_edges_;
 

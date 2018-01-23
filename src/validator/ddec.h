@@ -102,6 +102,8 @@ private:
   bool discharge_exhaustive(DualAutomata& dual);
   /** Discharge exhaustive for a particular state */
   bool discharge_exhaustive(DualAutomata& dual, DualAutomata::State);
+  /** Check a POD to see if it's obviously wrong. */
+  bool sanity_check(DualAutomata& dual);
 
   /** Compute the initial invariant */
   ConjunctionInvariant* get_initial_invariant() const;
