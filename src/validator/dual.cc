@@ -443,16 +443,16 @@ std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() {
   size_t init, curr;
   do {
     init = global_reachable.size();
-    for(auto r : global_reachable) {
+    for (auto r : global_reachable) {
       cout << "[sanity] from " << r << endl;
-      for(auto p : next_states(r)) {
+      for (auto p : next_states(r)) {
         cout << "[sanity]    inserting " << p << endl;
         global_reachable.insert(p);
       }
     }
 
     curr = global_reachable.size();
-  } while(curr > init);
+  } while (curr > init);
 
   return global_reachable;
 }

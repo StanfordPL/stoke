@@ -215,11 +215,11 @@ void DualBuilder::next_frontier() {
     auto rewrite_dest = current.rs;
 
     auto tmp_target_bound = target_bound_;
-    if(f.head.ts == target_dest)
+    if (f.head.ts == target_dest)
       tmp_target_bound++;
 
     auto tmp_rewrite_bound = rewrite_bound_;
-    if(f.head.rs == rewrite_dest)
+    if (f.head.rs == rewrite_dest)
       tmp_rewrite_bound++;
 
     auto tps = CfgPaths::enumerate_paths(target_, tmp_target_bound, f.head.ts, target_dest);
