@@ -304,6 +304,8 @@ tests: debug
 test: tests
 	bin/stoke_test
 	echo -e "\a"
+ddec_test:
+	./popl19/test.sh
 fast_tests: debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug" MISC_OPTIONS="-DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
 	bin/stoke_test
