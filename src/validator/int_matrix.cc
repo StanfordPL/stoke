@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/kerberos/kerberos.h"
 #include "src/validator/int_matrix.h"
+#include "src/validator/sage.h"
 
 #include <cassert>
 #include <chrono>
@@ -87,14 +87,9 @@ IntMatrix IntMatrix::solve_diophantine() const {
   assert(check_rectangle());
 
   auto& matrix = *this;
-  cout << "Writing out sage code" << endl;
-  string tmp_in = tmpnam(NULL) + string(".sage");
-  string tmp_out = tmpnam(NULL) + string(".out");
-  string tmp_err = tmpnam(NULL) + string(".err");
-
-  renew_kerberos_permissions();
-  umask(0077);
-  ofstream of(tmp_in);
+  Sage sage;
+  auto& of = sage.get_stream();
+  of << "f = open(\"" << sage.get_tmp_filename() << "\", 'w')" << endl;
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
   of << "ZZ=IntegerRing()" << endl;
@@ -115,18 +110,20 @@ IntMatrix IntMatrix::solve_diophantine() const {
   of << "basis = [ [0]*nz_diag + [0]*i + [1] + [0]*(bv_len-nz_diag-i-1) for i in range(0,bv_len-nz_diag)]" << endl;
   of << "dim = len(basis)" << endl;
   of << "outputs = [ V*vector(b) for b in basis ]" << endl;
-  of << "print len(outputs), len(outputs[0])" << endl;
+  of << "print >>f, len(outputs), len(outputs[0])" << endl;
   of << "for output in outputs:" << endl;
-  of << "\tprint \" \".join(map(lambda x:str(x), output))" << endl;
+  of << "\tprint >>f, \" \".join(map(lambda x:str(x), output))" << endl;
+  of << "f.close()" << endl;
   of << endl;
-  of.close();
-  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2> ") + tmp_err).c_str());
+
+  /** Run sage */
+  sage.run();
+
+  ifstream in(sage.get_tmp_filename());
 
   /** Read basis vectors from sage */
   IntMatrix basis_vectors;
   size_t output_rows, output_cols;
-  renew_kerberos_permissions();
-  ifstream in(tmp_out);
   in >> output_rows >> output_cols;
   if (!in.good()) {
     assert(false);
@@ -142,6 +139,8 @@ IntMatrix IntMatrix::solve_diophantine() const {
       /** Check to make sure that we don't have any parser errors */
       if (!in.good()) {
         assert(false);
+        cout << "Got bad SAGE output" << endl;
+        exit(1);
         return basis_vectors;
       }
 
@@ -155,19 +154,14 @@ IntMatrix IntMatrix::solve_diophantine() const {
 
 IntMatrix IntMatrix::nullspace64() const {
   auto& matrix = *this;
-  cout << "Writing out sage code for nullspace over Z/2^64Z" << endl;
-  string base = tmpnam(NULL);
-  string tmp_in = base + string(".sage");
-  string tmp_out = base + string(".out");
-  string tmp_err = base + string(".err");
 
-  renew_kerberos_permissions();
-  umask(0077);
-  ofstream of(tmp_in);
+  Sage sage;
+  auto& of = sage.get_stream();
+  of << "f = open(\"" << sage.get_tmp_filename() << "\", 'w')" << endl;
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
-  of << "src=ZZ^rows/(ZZ^rows * 2**64)" << endl;
-  of << "dst=ZZ^cols/(ZZ^cols * 2**64)" << endl;
+  of << "src=ZZ**rows/(ZZ**rows * 2**64)" << endl;
+  of << "dst=ZZ**cols/(ZZ**cols * 2**64)" << endl;
   of << "A = matrix([";
   for (size_t i = 0; i < matrix.size(); ++i) {
     of << "[ ";
@@ -186,29 +180,19 @@ IntMatrix IntMatrix::nullspace64() const {
   of << "phi = dst.hom(vectors, src)" << endl;
   of << "ker = phi.kernel()" << endl;
   of << "output = [dst(b) for b in phi.kernel().gens()]" << endl;
-  of << "print len(output)" << endl;
+  of << "print >>f, len(output)" << endl;
   of << "for entry in output:" << endl;
   of << "\tfor item in entry:" << endl;
-  of << "\t\tprint item" << endl;
+  of << "\t\tprint >>f, item" << endl;
+  of << "f.close()" << endl;
   of << endl;
 
-  of.close();
-
-
-
-  auto start_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-
-  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2>") + tmp_err).c_str());
-
-  auto end_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-
-  cout << "Nullspace computation took " << dec << (end_time - start_time).count() << " ms" << endl;
+  sage.run();
+  ifstream in(sage.get_tmp_filename());
 
   /** Read basis vectors from sage */
   size_t output_rows;
   size_t output_cols = matrix[0].size();
-  renew_kerberos_permissions();
-  ifstream in(tmp_out);
   in >> output_rows;
   if (!in.good()) {
     cout << "Couldn't read output rows :(" << endl;
@@ -225,6 +209,8 @@ IntMatrix IntMatrix::nullspace64() const {
       if (!in.good()) {
         //cout << "Couldn't read entry :(" << endl;
         assert(false);
+        cout << "Got bad SAGE output" << endl;
+        exit(1);
         return output;
       }
 
@@ -238,14 +224,11 @@ IntMatrix IntMatrix::nullspace64() const {
 
 IntVector IntMatrix::solve_diophantine(IntVector b) const {
   auto& matrix = *this;
-  cout << "Writing out sage code" << endl;
-  string tmp_in = tmpnam(NULL) + string(".sage");
-  string tmp_out = tmpnam(NULL) + string(".out");
-  string tmp_err = tmpnam(NULL) + string(".err");
 
-  renew_kerberos_permissions();
-  umask(0077);
-  ofstream of(tmp_in);
+  Sage sage;
+
+  auto& of = sage.get_stream();
+  of << "f = open(\"" << sage.get_tmp_filename() << "\", 'w')" << endl;
   of << "rows=" << matrix.size() << endl;
   of << "cols=" << matrix[0].size() << endl;
   of << "ZZ=IntegerRing()" << endl;
@@ -270,19 +253,17 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
   of << "D = U*C" << endl;
   of << "solution = [ D[i][0] // B[i][i] for i in range(0, nz_diag) ] + [0]*(cols-nz_diag)" << endl;
   of << "output = V*vector(solution)" << endl;
-  of << "print len(output)" << endl;
+  of << "print >>f, len(output)" << endl;
   of << "for entry in output:" << endl;
-  of << "\tprint entry" << endl;
+  of << "\tprint >>f, entry" << endl;
+  of << "f.close()" << endl;
   of << endl;
 
-  of.close();
-  int status = system((string("sage ") + tmp_in + string(" > ") + tmp_out + string(" 2>") + tmp_err).c_str());
-
+  sage.run();
+  ifstream in(sage.get_tmp_filename());
   /** Read basis vectors from sage */
   IntVector output;
   size_t output_rows;
-  renew_kerberos_permissions();
-  ifstream in(tmp_out);
   in >> output_rows;
   if (!in.good()) {
     assert(false);
@@ -295,6 +276,8 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
     /** Check to make sure that we don't have any parser errors */
     if (!in.good()) {
       assert(false);
+      cout << "Got bad SAGE output" << endl;
+      exit(1);
       return output;
     }
 

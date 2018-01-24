@@ -1,4 +1,7 @@
 
+#ifndef STOKE_KERBEROS_KERBEROS
+#define STOKE_KERBEROS_KERBEROS
+
 #include <cstdlib>
 #include <iostream>
 
@@ -8,7 +11,7 @@ namespace stoke {
   long-running jobs.  If we run these commands before any file I/O, the risk of this
   is much less. */
 
-void renew_kerberos_permissions() {
+static void renew_kerberos_permissions() {
 
 #ifdef STOKE_ENABLE_KERBEROS_RENEW
 
@@ -29,3 +32,4 @@ void renew_kerberos_permissions() {
 }
 
 }
+#endif
