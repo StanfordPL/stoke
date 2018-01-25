@@ -21,7 +21,7 @@ simple_vec(uint64_t start, uint64_t end) {
     pos++; 
 
   /** vectorized loop */
-  while(pos + VECTORIZE <= end && pos < end) 
+  while(VECTORIZE <= end - pos)
     pos += VECTORIZE;
 
   /** clean up */
