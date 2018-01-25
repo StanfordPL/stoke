@@ -367,9 +367,8 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
   for (auto edge : edges) {
     path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
   }
-  cout << "[discharge_exhaustive] Skipping this check!! We're unsound!" << endl;
-  return true;
-  /*
+  //cout << "[discharge_exhaustive] Skipping this check!! We're unsound!" << endl;
+  //return true;
   bool ok = verify_exhaustive(target_, rewrite_,
                               state.ts, state.rs,
                               path_pairs, *invariant);
@@ -380,7 +379,6 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
     cout << "NOT EXHAUSTIVE FOR " << state << endl;
     return false;
   }
-  */
 }
 
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
