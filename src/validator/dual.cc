@@ -217,7 +217,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
       if (!found_matching_edge) {
         DEBUG_LEARN_STATE_DATA(std::cout << "  - Could not find matching edge" << std::endl;)
-        //return false;
+        return false;
       }
     }
   }
@@ -253,14 +253,14 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
 
 
     DEBUG_LEARN_STATE_DATA(
-      cout << "target trace: " << DataCollector::project_states(target_trace) << endl;
-      cout << "rewrite trace: " << DataCollector::project_states(rewrite_trace) << endl;
+      cout << "[learn_invariants] target trace: " << DataCollector::project_states(target_trace) << endl;
+      cout << "[learn_invariants] rewrite trace: " << DataCollector::project_states(rewrite_trace) << endl;
     )
 
 
     bool ok = learn_state_data(target_trace, rewrite_trace);
     if (!ok) {
-      cout << "LEARN_STATE_DATA returned FALSE!" << endl;
+      cout << "[learn_invariants] lsd returned FALSE!" << endl;
       return false;
     }
   }
@@ -308,7 +308,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
                              target_state_data_[state], rewrite_state_data_[state],
                              target_cc, rewrite_cc);
     invariants_[state] = inv;
-    cout << "Invariant at " << state << ": " << *inv << endl;
+    cout << "[learn_invariants] Invariant at " << state << ": " << *inv << endl;
     // TODO check that the invariants look good enough
   }
 
