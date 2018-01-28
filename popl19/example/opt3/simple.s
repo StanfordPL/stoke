@@ -2,21 +2,21 @@
   .globl simple
   .type simple, @function
 
-#! file-offset 0x90
-#! rip-offset  0x50
+#! file-offset 0xb0
+#! rip-offset  0x70
 #! capacity    16 bytes
 
 # Text                #  Line  RIP   Bytes  Opcode               
-.simple:              #        0x50  0      OPC=<label>          
-  cmpq %rdi, %rsi     #  1     0x50  3      OPC=cmpq_r64_r64     
-  movq %rdi, %rax     #  2     0x53  3      OPC=movq_r64_r64     
-  cmovaeq %rsi, %rax  #  3     0x56  4      OPC=cmovaeq_r64_r64  
-  retq                #  4     0x5a  1      OPC=retq             
-  nop                 #  5     0x5b  1      OPC=nop              
-  nop                 #  6     0x5c  1      OPC=nop              
-  nop                 #  7     0x5d  1      OPC=nop              
-  nop                 #  8     0x5e  1      OPC=nop              
-  nop                 #  9     0x5f  1      OPC=nop              
+.simple:              #        0x70  0      OPC=<label>          
+  cmpq %rdi, %rsi     #  1     0x70  3      OPC=cmpq_r64_r64     
+  movq %rdi, %rax     #  2     0x73  3      OPC=movq_r64_r64     
+  cmovaeq %rsi, %rax  #  3     0x76  4      OPC=cmovaeq_r64_r64  
+  retq                #  4     0x7a  1      OPC=retq             
+  nop                 #  5     0x7b  1      OPC=nop              
+  nop                 #  6     0x7c  1      OPC=nop              
+  nop                 #  7     0x7d  1      OPC=nop              
+  nop                 #  8     0x7e  1      OPC=nop              
+  nop                 #  9     0x7f  1      OPC=nop              
                                                                  
 .size simple, .-simple
 

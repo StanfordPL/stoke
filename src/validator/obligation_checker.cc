@@ -214,8 +214,9 @@ DataCollector::Trace ObligationChecker::check_ceg_path(const Cfg& cfg,
 
   cout << "DEBUGGING TRACE" << endl;
   for (auto it : trace) {
-    cout << it.block_id << endl;
+    cout << it.block_id << "  ";
   }
+  cout << endl;
 
   return trace;
 }

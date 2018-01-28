@@ -564,8 +564,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
                           {}, {}, *actual_final, *expected_final);
     if (!final_ok) {
-      cout << "Could not complete final proof step." << endl;
-      cout << "Maybe DDEC missed an important invariant?" << endl;
+      cout << "[verify_dual] Could not complete final proof step." << endl;
+      cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
       return false;
     }
 
@@ -574,10 +574,10 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     valid = discharge_exhaustive(dual);
     if (!valid) {
       if (old_edge_count == dual.count_edges()) {
-        cout << "Couldn't verify exhaustive nor use counterexample." << endl;
+        cout << "[verify_dual] Couldn't verify exhaustive nor use counterexample." << endl;
         return false;
       } else {
-        cout << "Couldn't verify exhaustive; going to try again." << endl;
+        cout << "[verify_dual] Couldn't verify exhaustive; going to try again." << endl;
       }
     }
   }
@@ -738,14 +738,15 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       DualBuilder builder(data_collector_, template_pod, *control_learner_);
       builder.set_bound(target_bound, rewrite_bound);
       while (builder.has_next()) {
-        cout << " ~~~~~~~~~~~~~~~~~~~ next try!! " << endl;
+        cout << "[verify] next POD" << endl;
         auto current = builder.next();
         current.print_all();
         bool sane = sanity_check(current);
         if (!sane) {
-          cout << " * this candidate is insane!! skipping." << endl;
+          cout << "[verify] this candidate is insane!! skipping." << endl;
           continue;
         }
+        cout << "[verify] found a sane POD. " << endl;
         bool correct = verify_dual(current);
         if (correct) {
           return true;
