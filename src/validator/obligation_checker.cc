@@ -813,7 +813,10 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     const Invariant& assume) {
 
   cout << "================== verify exhaustive =======================" << endl;
-  cout << "Assuming " << assume << endl;
+  cout << "Assuming ";
+  static_cast<const ConjunctionInvariant&>(assume).write_pretty(cout);
+  cout << endl;
+
   for (auto pair : path_pairs) {
     cout << pair.first << " / " << pair.second << endl;
     cout << "-------" << endl;
