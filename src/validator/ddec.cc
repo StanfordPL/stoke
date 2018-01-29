@@ -323,6 +323,13 @@ DualAutomata DdecValidator::learn_inductive_paths() {
       bool next_scc = false;
       cout << "TRYING SCCS " << i << " / " << j << endl;
 
+      float best_quality = 0;
+      vector<CfgPath> best_target_inductive_paths;
+      vector<CfgPath> best_rewrite_inductive_paths;
+      Cfg::id_type best_target_block = 0;
+      Cfg::id_type best_rewrite_block = 0;
+      ConjunctionInvariant* best_invariant = NULL;
+
       for (auto& target_block : target_blocks) {
         for (auto& rewrite_block : rewrite_blocks) {
           vector<CfgPath> target_inductive_paths;
@@ -346,23 +353,37 @@ DualAutomata DdecValidator::learn_inductive_paths() {
           auto quality = invariant_quality(invariant, target_block, rewrite_block);
           cout << " quality = " << quality << endl;
 
+          if(quality > best_quality) {
+            cout << "   (best yet)" << endl;
+            best_quality = quality;
+            best_target_inductive_paths = target_inductive_paths;
+            best_rewrite_inductive_paths = rewrite_inductive_paths;
+            best_target_block = target_block;
+            best_rewrite_block = rewrite_block;
+            best_invariant = invariant;
+          }
+
           if (quality == 1) {
-            // we found a good pair of blocks for this SCC!
-            cout << "FOUND SOMETHING FOR THIS SCC!" << endl;
             next_scc = true;
-            found_something_for_target_scc = true;
-            add_loop_to_node(pod,
-                             target_inductive_paths,
-                             rewrite_inductive_paths,
-                             target_block,
-                             rewrite_block,
-                             invariant);
             break;
           }
         }
         if (next_scc)
           break;
       }
+
+      if (best_quality > 0) {
+        // we found a good pair of blocks for this SCC!
+        cout << "FOUND SOMETHING FOR THIS SCC!" << endl;
+        add_loop_to_node(pod,
+                         best_target_inductive_paths,
+                         best_rewrite_inductive_paths,
+                         best_target_block,
+                         best_rewrite_block,
+                         best_invariant);
+        found_something_for_target_scc = true;
+      }
+
     }
 
     if (!found_something_for_target_scc) {

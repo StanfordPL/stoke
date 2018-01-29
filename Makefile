@@ -248,7 +248,9 @@ BIN=\
 	bin/stoke_debug_verify \
 	bin/stoke_debug_cfg \
 	bin/stoke_extract \
-	bin/stoke_debug_invariant
+	bin/stoke_debug_invariant \
+	bin/stoke_testcase \
+	bin/stoke_debug_sandbox
 
 #bin/stoke_extract \
 	bin/stoke_replace \

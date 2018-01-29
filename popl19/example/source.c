@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #define VECTORIZE 4
 
@@ -53,18 +54,26 @@ simple_cheat(uint64_t start, uint64_t end) {
 
 int main (int argc, char* argv[])
 {
-  /** For testing */
-  for(uint64_t start = 0; start <= 32; start++) {
-    for(uint64_t end = start; end <= start+32; end++) {
-      uint64_t x = simple(start, end);
-      uint64_t y = simple_vec(start, end);
-      uint64_t z = simple_cheat(start, end);
+  srand(0);
 
-      printf("start %lu end %lu simple %lu simple_vec %lu simple_cheat %lu  ", start, end, x, y, z);
-      if(x == y && y == z) {
-        printf("OK\n");
-      } else {
-        printf("ERROR\n");
+  /** For testing */
+  for(size_t k = 0; k < 4; ++k) {
+    uint64_t min = (uint64_t)rand();
+    for(uint64_t count = min; count <= min+32; count++) {
+      uint64_t start = count;
+
+      for(uint64_t end = start; end <= start+32; end++) {
+        uint64_t x = simple(start, end);
+        uint64_t y = simple_vec(start, end);
+        uint64_t z = simple_cheat(start, end);
+
+        printf("start %lu end %lu simple %lu simple_vec %lu simple_cheat %lu  ", start, end, x, y, z);
+        if(x == y && y == z) {
+          printf("OK\n");
+        } else {
+          printf("ERROR\n");
+          return 1;
+        }
       }
     }
   }
