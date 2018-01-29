@@ -285,6 +285,83 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
   return inequalities;
 }
 
+// https://stackoverflow.com/questions/19738919/gcd-function-for-c
+uint64_t InvariantLearner::euclid(uint64_t a, uint64_t b)
+{
+    while (b != 0)
+    {
+        a %= b;
+        a ^= b;
+        b ^= a;
+        a ^= b;
+    }
+
+    return a;
+}
+
+
+vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
+    RegSet target_regs, 
+    RegSet rewrite_regs, 
+    const vector<CpuState>& target_states, 
+    const vector<CpuState>& rewrite_states) const {
+
+  vector<EqualityInvariant*> modulos;
+
+  // For now, let's look at unsigned target-target and rewrite-rewrite modulo equalities
+
+  for (size_t k = 0; k < 2; ++k) {
+    auto regs = k ? rewrite_regs : target_regs;
+    const auto& states = k ? rewrite_states : target_states;
+
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+      for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
+
+        if(*i <= *j) // don't put this in loop guard: might not be in order?
+          continue;
+
+        /** collect all the differences. */
+        vector<uint64_t> differences;
+        for(auto& it : states) {
+          differences.push_back(it[*i] - it[*j]);
+        }
+
+        /** get gcd of all differences of differences */
+        uint64_t gcd = 0;
+        uint64_t some_diff = differences[0];
+        for(size_t s = 1; s < differences.size(); ++s) {
+          auto difference = differences[s] - some_diff;
+          if(difference != 0) {
+            if(gcd == 0)
+              gcd = difference;
+            else
+              gcd = euclid(gcd, difference);
+          }
+
+          if(gcd == 1)
+            break;
+        }
+
+        /** if we have a gcd greater than 1, create an invariant. */
+        if (gcd > 1) {
+          Variable v(*i, k);
+          v.coefficient = 1;
+          Variable w(*j, k);
+          w.coefficient = -1;
+          auto terms = {v , w};
+          some_diff = some_diff % gcd;
+          auto inv = new EqualityInvariant(terms, some_diff, gcd);
+          assert(inv->check(target_states, rewrite_states));
+          modulos.push_back(inv);
+        }
+
+      }
+    }
+  }
+
+  return modulos;
+}
+
 /** Return a set of possible lower-n bit invariants. */
 vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrite_regs) {
 
@@ -830,6 +907,15 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
       }
     }
   }
+
+  // Modulo invariants
+  if (enable_nonlinear_) {
+    auto modulos = build_modulo_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+    for(auto it : modulos)
+      conj->add_invariant(it);
+  }
+
+
 
   // flag invariants
   if (enable_nonlinear_) {
