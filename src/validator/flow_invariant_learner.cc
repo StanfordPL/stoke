@@ -199,8 +199,8 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
 void FlowInvariantLearner::collect_data(size_t tc_index) {
 
   /** These are cached by data collector; no real performance hit here. */
-  auto target_traces = data_collector_.get_traces(*target_);
-  auto rewrite_traces = data_collector_.get_traces(*rewrite_);
+  const auto& target_traces = data_collector_.get_traces(*target_);
+  const auto& rewrite_traces = data_collector_.get_traces(*rewrite_);
 
   /** Pick out the traces we're interested in. */
   auto target_trace = target_traces[tc_index];

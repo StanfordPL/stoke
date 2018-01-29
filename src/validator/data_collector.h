@@ -57,7 +57,7 @@ public:
   DataCollector(Sandbox& sandbox) : sandbox_(sandbox) {
   }
 
-  std::vector<Trace> get_traces(Cfg& target);
+  const std::vector<Trace>& get_traces(Cfg& target);
 
   static CfgPath project_states(Trace& trace) {
     CfgPath p;
