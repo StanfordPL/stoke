@@ -24,7 +24,7 @@ using namespace x64asm;
 
 
 
-std::vector<DataCollector::Trace> DataCollector::get_traces(Cfg& cfg) {
+const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 
   if (cache_.count(&cfg)) {
     return cache_[&cfg];
@@ -39,7 +39,7 @@ std::vector<DataCollector::Trace> DataCollector::get_traces(Cfg& cfg) {
   }
   cout << "... DONE" << endl;
   cache_[&cfg] = traces;
-  return traces;
+  return cache_[&cfg];
 
 }
 
