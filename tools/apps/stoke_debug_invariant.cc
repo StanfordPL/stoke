@@ -72,6 +72,26 @@ cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& rewrite_testcases
   .usage("<path/to/file>")
   .description("Testcases for Rewrite");
 
+
+cpputil::Heading& condition_heading =
+  cpputil::Heading::create("Conditional Flags Selection:");
+
+cpputil::ValueArg<string>& target_flag_arg =
+  cpputil::ValueArg<string>::create("target_flag")
+  .alternate("tf")
+  .usage("<string>")
+  .default_val("")
+  .description("Flag (e.g. 'ne') to split test cases on");
+
+cpputil::ValueArg<string>& rewrite_flag_arg =
+  cpputil::ValueArg<string>::create("rewrite_flag")
+  .alternate("rf")
+  .usage("<string>")
+  .default_val("")
+  .description("Flag (e.g. 'ne') to split test cases on");
+
+
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -84,8 +104,32 @@ int main(int argc, char** argv) {
   InvariantLearner learner;
   learner.set_enable_nonlinear(!only_linear_arg.value());
   learner.set_seed(seed);
+
+  auto target_tcs_orig = target_testcases_arg.value();
+  auto rewrite_tcs_orig = rewrite_testcases_arg.value();
+
+  vector<CpuState> target_tcs;
+  vector<CpuState> rewrite_tcs;
+
+  /*
+  for(size_t i = 0; i < target_tcs_orig.size(); ++i) {
+    auto target = target_tcs_orig[i];
+    auto rewrite = rewrite_tcs_orig[i];
+    if(!target[Constants::eflags_zf()] && rewrite[Constants::eflags_zf()]) {
+      target_tcs.push_back(target);
+      rewrite_tcs.push_back(rewrite);
+    }
+  }*/
+
+  target_tcs = target_tcs_orig;
+  rewrite_tcs = rewrite_tcs_orig;
+
+  cout << "Analyzing " << target_tcs.size() << " testcases." << endl;
+
+
   auto invs = learner.learn(target_regs_arg.value(), rewrite_regs_arg.value(),
-                            target_testcases_arg.value(), rewrite_testcases_arg.value());
+                            target_tcs, rewrite_tcs,
+                            target_flag_arg.value(), rewrite_flag_arg.value());
 
   for (size_t i = 0; i < invs->size(); ++i) {
     cout << *(*invs)[i] << endl;
