@@ -261,7 +261,6 @@ void DdecValidator::add_loop_to_node(
     DualAutomata::Edge e(node, tp, rp);
     pod.add_edge(e);
   }
-  pod.set_invariant(node, invariant);
 
   // print stuff for the user
   cout << "--------- FOUND A GOOD NODE -----------" << endl;
@@ -272,6 +271,31 @@ void DdecValidator::add_loop_to_node(
   }
   cout << "INVARIANTS" << endl;
   invariant->write_pretty(cout);
+
+  // get relevant invariants only
+  ConjunctionInvariant* copy = new ConjunctionInvariant();
+  for(size_t i = 0; i < invariant->size(); ++i) {
+    auto conj = static_cast<EqualityInvariant*>((*invariant)[i]);
+    auto variables = conj->get_variables();
+    size_t ghost_count = 0;
+    size_t non_ghost_count = 0;
+    for (size_t j = 0; j < variables.size(); ++j) {
+      auto term = variables[j];
+      cout << "         " << term << endl;
+      if (term.is_ghost == false)
+        non_ghost_count++;
+      else 
+        ghost_count++;
+    }
+
+    if(non_ghost_count > 0 && ghost_count > 1)  {
+      copy->add_invariant(conj);
+    }
+  }
+
+  pod.set_invariant(node, copy);
+
+
 }
 
 DualAutomata DdecValidator::learn_inductive_paths() {
@@ -732,8 +756,12 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << endl;
 
   /** Get complete PODs */
-  for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
-    for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
+  //for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
+  //  for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
+  /** TODO: Remove HANDHOLD */
+  size_t target_bound = 8;
+  size_t rewrite_bound = 3;
+    {
       cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
       DualBuilder builder(data_collector_, template_pod, *control_learner_);
       builder.set_bound(target_bound, rewrite_bound);
@@ -753,7 +781,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         }
       }
     }
-  }
+  //}
 
 
   delete control_learner_;
