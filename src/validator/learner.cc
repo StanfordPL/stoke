@@ -795,6 +795,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // mod2^n invariants
+  /* -- these are already covered by the linear invariants
   if (enable_nonlinear_) {
     auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
     for (auto modulo : potential_mod2n) {
@@ -804,7 +805,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
         delete modulo;
       }
     }
-  }
+  } */
 
   // sign invariants
   if (enable_nonlinear_) {
