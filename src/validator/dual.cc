@@ -161,12 +161,14 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         continue;
       }
 
-      //cout << "processing trace state @ " << tr_state.state << endl;
+      cout << "[lsd] processing trace state @ " << tr_state.state << endl;
+      cout << "[lsd]            target rem  = " << DataCollector::project_states(tr_state.target_trace) << endl;
+      cout << "[lsd]            rewrite rem = " << DataCollector::project_states(tr_state.rewrite_trace) << endl;
       bool found_matching_edge = false;
 
       for (auto edge : next_edges_[tr_state.state]) {
         DEBUG_LEARN_STATE_DATA(
-          cout << "[lsd] Considering edge: " << edge.from << " -> " << edge.to << endl;
+          cout << "[lsd]   Considering edge: " << edge.from << " -> " << edge.to << endl;
           cout << "     ";
           for (auto blk : edge.te)
           cout << blk << "  ";
@@ -178,13 +180,13 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
             // check if edge's target path is prefix of tr_state's target path
             if (!is_prefix(edge.te, tr_state.target_trace)) {
-              DEBUG_LEARN_STATE_DATA(cout << "  target prefix fail" << endl;)
+              DEBUG_LEARN_STATE_DATA(cout << "     target prefix fail" << endl;)
               continue;
             }
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
-          DEBUG_LEARN_STATE_DATA(cout << "  rewrite prefix fail" << endl;)
-          DEBUG_LEARN_STATE_DATA(cout << "  edge.re: " << edge.re << endl;)
+          DEBUG_LEARN_STATE_DATA(cout << "     rewrite prefix fail" << endl;)
+          DEBUG_LEARN_STATE_DATA(cout << "     edge.re: " << edge.re << endl;)
           continue;
         }
 
@@ -212,11 +214,11 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
-        DEBUG_LEARN_STATE_DATA(std::cout << "  - REACHABLE: " << follow.state << std::endl;)
+        DEBUG_LEARN_STATE_DATA(std::cout << "   - REACHABLE: " << follow.state << std::endl;)
       }
 
       if (!found_matching_edge) {
-        DEBUG_LEARN_STATE_DATA(std::cout << "  - Could not find matching edge" << std::endl;)
+        DEBUG_LEARN_STATE_DATA(std::cout << "   - Could not find matching edge" << std::endl;)
         return false;
       }
     }
@@ -274,7 +276,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
       continue;
 
     auto target_instr = target_.get_last_of_block(state.ts);
-    auto rewrite_instr = target_.get_last_of_block(state.ts);
+    auto rewrite_instr = rewrite_.get_last_of_block(state.rs);
 
     string target_opc = Handler::get_opcode(target_instr);
     string rewrite_opc = Handler::get_opcode(rewrite_instr);
