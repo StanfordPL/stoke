@@ -265,9 +265,21 @@ void DualBuilder::next_frontier() {
               continue;
             }
           } else {
-            // add this option to a new map used for classes
-            cout << "   - this edge goes to a new state" << endl;
-            possible_classes[current][classification].push_back(e);
+
+            // TODO: remove this handhold
+            bool is_zero = true;
+            for(auto val : classification) {
+              if(val != 0)
+                is_zero = false;
+            }
+
+            if(is_zero) {
+              // add this option to a new map used for classes
+              cout << "   - this edge goes to a new state" << endl;
+              possible_classes[current][classification].push_back(e);
+            } else {
+              cout << "   - skipping this edge (handhold)" << endl;
+            }
           }
         }
       }
