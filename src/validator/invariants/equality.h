@@ -39,8 +39,10 @@ class EqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  EqualityInvariant(std::vector<Variable> terms, long constant) : terms_(terms) {
-    constant_ = constant;
+  EqualityInvariant(std::vector<Variable> terms, long constant, uint64_t modulus = 0) : 
+    terms_(terms), constant_(constant), modulus_(modulus) {
+
+    assert(modulus_ != 1);
 
     for (auto it : terms) {
       assert(it.size == 8);
@@ -56,7 +58,13 @@ public:
       sum = sum + SymBitVector::constant(64, term.coefficient)*value64;
     }
 
-    return sum == SymBitVector::constant(64, constant_);
+    if(modulus_ == 0)
+      return sum == SymBitVector::constant(64, constant_);
+    else
+      return 
+        ((sum - SymBitVector::constant(64, constant_)) 
+          % SymBitVector::constant(64, modulus_)) 
+        == SymBitVector::constant(64, 0);
   }
 
   /** Check if this invariant holds over a concrete state. */
@@ -68,7 +76,10 @@ public:
       sum = sum + term.coefficient*value64;
     }
 
-    return sum == (uint64_t)constant_;
+    if(modulus_ == 0)
+      return sum == (uint64_t)constant_;
+    else
+      return ((uint64_t)constant_ - sum) % modulus_ == 0;
   }
 
   std::ostream& write(std::ostream& os) const {
@@ -98,6 +109,9 @@ public:
       os << " = 0x" << constant_;
       os << std::dec;
     }
+    if(modulus_ != 0) {
+      os << " (mod " << modulus_ << ")";
+    }
 
     return os;
   }
@@ -111,6 +125,7 @@ private:
 
   std::vector<Variable> terms_;
   long constant_;
+  uint64_t modulus_;
 
 };
 

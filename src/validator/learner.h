@@ -17,6 +17,7 @@
 
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/inequality.h"
 
 #include "src/validator/int_matrix.h"
@@ -130,6 +131,14 @@ private:
   std::vector<InequalityInvariant*> build_inequality_invariants
   (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
+  /** Create set of invariants of form x - y == c (mod N) that
+   hold over given data. */
+  std::vector<EqualityInvariant*> build_modulo_invariants(
+    x64asm::RegSet target_regs, 
+    x64asm::RegSet rewrite_regs, 
+    const std::vector<CpuState>& target_states, 
+    const std::vector<CpuState>& rewrite_states) const;
+
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;
 
@@ -142,6 +151,9 @@ private:
   size_t sample_tcs_;
   /** Random generator. */
   std::default_random_engine gen_;
+
+  /** utility: compute gcd of two ints. */
+  static uint64_t euclid(uint64_t, uint64_t);
 
 };
 
