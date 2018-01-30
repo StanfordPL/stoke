@@ -520,7 +520,9 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
         cout << it << " ";
       }
       cout << endl;
-      cout << "Assuming: " << *start_inv << endl << endl;
+      cout << "Assuming: ";
+      start_inv->write_pretty(cout);
+      cout << endl << endl;
 
       // check the invariants in the conjunction one at a time
       for (size_t i = 0; i < end_inv->size(); ++i) {

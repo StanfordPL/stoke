@@ -163,7 +163,26 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 
 }
 
-bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2) {
+bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2, const CpuState& ceg_expected, const CpuState& ceg_expected2) {
+
+  CEG_DEBUG(
+      // TODO: this is totally broken.
+  // Next, we run only the relevant blocks of the target/rewrite.
+    CpuState target_output = run_sandbox_on_path(target, P, ceg);
+    CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
+
+  // Lastly, we check that the final states do not satisfy the invariant
+    cout << "  TARGET (actual) END state:" << endl << target_output << endl;
+    cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;
+
+    if(target_output != ceg_expected) {
+      cout << "  WARNING!!! Got a different counterexample from sandbox than from validator." << endl;
+    }
+    if(rewrite_output != ceg_expected2) {
+      cout << "  WARNING!!! Got a different counterexample from sandbox than from validator." << endl;
+    }
+
+  )
 
   // First, the counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
@@ -171,15 +190,8 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
     return false;
   }
 
-  // Next, we run only the relevant blocks of the target/rewrite.
-  CpuState target_output = run_sandbox_on_path(target, P, ceg);
-  CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
-
-  // Lastly, we check that the final states do not satisfy the invariant
-  CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
-  CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
-  if (prove.check(target_output, rewrite_output)) {
-    CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
+  if(prove.check(ceg_expected, ceg_expected2)) {
+    CEG_DEBUG(cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;)
     return false;
   }
 
