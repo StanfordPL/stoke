@@ -139,9 +139,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
 
         auto& path = variable.is_rewrite ? rewrite_path : target_path;
 
-        string ghost = variable.name;
-        ghost = ghost.substr(1);
-        Cfg::id_type block = stoul(ghost);
+        Cfg::id_type block = variable.get_ghost_bb();
         uint64_t count = 0;
         for (auto blk : path) {
           if (blk == block)
@@ -258,9 +256,7 @@ vector<Variable> FlowInvariantLearner::get_shadow_vars(const Cfg& cfg, bool is_r
   vector<Variable> vars;
 
   for (Cfg::id_type i = cfg.get_entry(); i < cfg.get_exit(); ++i) {
-    stringstream ss;
-    ss << "n" << i;
-    Variable v(ss.str(), is_rewrite);
+    auto v = Variable::bb_ghost(i, is_rewrite);
     vars.push_back(v);
   }
 
