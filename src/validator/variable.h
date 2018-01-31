@@ -44,6 +44,12 @@ struct Variable {
   /** From a concrete state, find the value of this term. */
   uint64_t from_state(const CpuState& target, const CpuState& rewrite) const;
 
+  /** Make basic block ghost variable. */
+  static Variable bb_ghost(size_t n, bool is_rewrite);
+
+  /** Get basic block from ghost variable. */
+  size_t get_ghost_bb();
+
   Variable(x64asm::Operand op, bool rewrite) : is_rewrite(rewrite), size(op.size()/8), offset(0),
     coefficient(1), operand(op), is_ghost(false), name("") { }
 

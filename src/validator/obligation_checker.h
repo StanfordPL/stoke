@@ -71,6 +71,7 @@ public:
   ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : Validator(solver, sandbox) {
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
+    set_basic_block_ghosts(true);
     filter_ = new DefaultFilter(handler_);
     delete_filter_ = true;
     stop_now_ = false;
@@ -108,6 +109,13 @@ public:
     transformation. */
   ObligationChecker& set_nacl(bool b) {
     nacl_ = b;
+    return *this;
+  }
+
+  /** Turn on per-basic block ghost variables.  This will track a ghost variable
+    for each basic block that gets incremented by one on each execution. */
+  ObligationChecker& set_basic_block_ghosts(bool b) {
+    basic_block_ghosts_ = b;
     return *this;
   }
 
@@ -201,6 +209,10 @@ private:
 
   /////////////// These methods handle paths and circuit building ////////////////
 
+
+  /** Add ghost variables into symbolic state for a CFG. */
+  void add_basic_block_ghosts(SymState& ss, const Cfg& cfg);
+
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map, bool ignore_last_line);
 
@@ -221,7 +233,10 @@ private:
   /** Check if a counterexample actually works. */
   bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
                             const CfgPath& Q, const Invariant& assume,
-                            const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
+                            const Invariant& prove, 
+                            const CpuState& ceg, const CpuState& ceg2,
+                            const CpuState& ceg_expected, const CpuState& ceg_expected2);
+
   /** Check if a counterexample actually works for path exhaustion. */
   DataCollector::Trace check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
 
@@ -275,6 +290,9 @@ private:
   AliasStrategy alias_strategy_;
   /** Add NaCl constraint for memory? */
   bool nacl_;
+
+  /** Track ghost variables per basic block? */
+  bool basic_block_ghosts_;
 
   /** Used for interrupts. */
   std::atomic<bool> stop_now_;

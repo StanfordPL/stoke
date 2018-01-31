@@ -48,6 +48,23 @@ uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) c
   }
 }
 
+Variable Variable::bb_ghost(size_t n, bool is_rewrite) {
+  std::stringstream ss;
+  ss << "n" << n;
+  Variable v(ss.str(), is_rewrite);
+  return v;
+}
+
+size_t Variable::get_ghost_bb() {
+  std::string ghost = name;
+  assert(ghost[0] == 'n');
+  ghost = ghost.substr(1);
+  size_t block = stoul(ghost);
+  return block;
+}
+
+
+
 
 namespace std {
 

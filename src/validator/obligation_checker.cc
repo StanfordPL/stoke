@@ -163,7 +163,17 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 
 }
 
-bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2, const CpuState& ceg_expected, const CpuState& ceg_expected2) {
+bool ObligationChecker::check_counterexample(
+    const Cfg& target, 
+    const Cfg& rewrite, 
+    const CfgPath& P, 
+    const CfgPath& Q, 
+    const Invariant& assume, 
+    const Invariant& prove, 
+    const CpuState& ceg, 
+    const CpuState& ceg2, 
+    const CpuState& ceg_expected, 
+    const CpuState& ceg_expected2) {
 
   CEG_DEBUG(
       // TODO: this is totally broken.
@@ -331,6 +341,15 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
   size_t end_index = start_index + cfg.num_instrs(bb);
 
+  /** increment ghost variable, if needed */
+  if(basic_block_ghosts_) {
+    auto name = Variable::bb_ghost(bb, false).name;
+    auto old = state.shadow[name];
+    auto updated = old + SymBitVector::constant(64, 1);
+    state.shadow[name] = updated;
+  }
+
+  /** symbolically execute each instruction */
   for (size_t i = start_index; i < end_index; ++i) {
     auto li = line_info.at(line_no);
     line_no++;
@@ -521,6 +540,17 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
   }
 }
 
+void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg) {
+
+  if(basic_block_ghosts_) {
+    for(size_t blk = cfg.get_entry(); blk < cfg.get_exit(); blk++) {
+      auto v = Variable::bb_ghost(blk, false).name;
+      ss.shadow[v] = SymBitVector::tmp_var(64);
+    }
+  }
+
+}
+
 
 bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
@@ -559,6 +589,9 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
   SymState state_t("1_INIT");
   SymState state_r("2_INIT");
+
+  add_basic_block_ghosts(state_t, target);
+  add_basic_block_ghosts(state_r, rewrite);
 
   if (flat_model) {
     state_t.memory = new FlatMemory();
@@ -644,6 +677,9 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Extract the final states of target/rewrite
   SymState state_t_final("1_FINAL");
   SymState state_r_final("2_FINAL");
+
+  add_basic_block_ghosts(state_t, target);
+  add_basic_block_ghosts(state_r, rewrite);
 
   for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe()))
     constraints.push_back(it);
@@ -759,7 +795,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
     if (check_abort()) return false;
 
-    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_)) {
+    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
       have_ceg_ = true;
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
     } else {
@@ -846,6 +882,9 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
   SymState state_t("1_INIT");
   SymState state_r("2_INIT");
+
+  add_basic_block_ghosts(state_t, target);
+  add_basic_block_ghosts(state_r, rewrite);
 
   if (flat_model) {
     state_t.memory = new FlatMemory();
