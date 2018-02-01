@@ -19,6 +19,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/inequality.h"
+#include "src/validator/invariants/range.h"
 
 #include "src/validator/int_matrix.h"
 #include "src/validator/obligation_checker.h"
@@ -32,12 +33,13 @@ public:
 
   InvariantLearner() {
     set_sample_tcs(25);
+    set_enable_shadow(true);
+    set_enable_nonlinear(true);
+    set_enable_memory(true);
   }
 
   InvariantLearner& add_ghost(Variable v) {
     ghosts_.push_back(v);
-    set_enable_nonlinear(true);
-    set_enable_memory(true);
     return *this;
   }
 
@@ -63,6 +65,12 @@ public:
     more than this number, we'll pick from among them randomly. */
   InvariantLearner& set_sample_tcs(size_t n) {
     sample_tcs_ = n;
+    return *this;
+  }
+
+  /** Enable invariants over basic block shadow variables. */
+  InvariantLearner& set_enable_shadow(bool b) {
+    enable_shadow_ = b;
     return *this;
   }
 
@@ -139,12 +147,21 @@ private:
     const std::vector<CpuState>& target_states, 
     const std::vector<CpuState>& rewrite_states) const;
 
+  /** Create set of invariants of form x - y == c (mod N) that
+   hold over given data. */
+  std::vector<RangeInvariant*> build_range_invariants(
+    x64asm::RegSet target_regs, 
+    x64asm::RegSet rewrite_regs, 
+    const std::vector<CpuState>& target_states, 
+    const std::vector<CpuState>& rewrite_states) const;
+
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;
 
   /** Some options */
   bool enable_nonlinear_;
   bool enable_memory_;
+  bool enable_shadow_;
 
   /** The maximum number of TCs we want to learn over.  If provided with
     more than this number, we'll pick from among them randomly. */

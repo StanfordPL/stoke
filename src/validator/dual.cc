@@ -1,6 +1,7 @@
 
 #include "src/state/cpu_states.h"
 #include "src/validator/dual.h"
+#include "src/validator/flow_invariant_learner.h"
 #include <fstream>
 
 using namespace stoke;
@@ -245,6 +246,9 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
     auto target_trace = target_traces[i];
     auto rewrite_trace = rewrite_traces[i];
 
+    FlowInvariantLearner::add_shadow_variables(target_, target_trace);
+    FlowInvariantLearner::add_shadow_variables(rewrite_, rewrite_trace);
+
     auto target_last = target_trace.back();
     target_last.block_id = target_.get_exit();
     target_trace.push_back(target_last);
@@ -305,8 +309,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
       rewrite_file.close();)
 
     // TODO: if there aren't enough states here, sound a warning
-
-    auto inv = learner.learn(target_.live_outs(state.ts), rewrite_.live_outs(state.rs),
+    auto inv = learner.learn(target_.def_outs(state.ts), rewrite_.def_outs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state],
                              target_cc, rewrite_cc);
     invariants_[state] = inv;

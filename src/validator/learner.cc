@@ -28,6 +28,7 @@
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/not.h"
 #include "src/validator/invariants/pointer_null.h"
+#include "src/validator/invariants/range.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -309,12 +310,34 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
   vector<EqualityInvariant*> modulos;
 
   // For now, let's look at unsigned target-target and rewrite-rewrite modulo equalities
-
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
     const auto& states = k ? rewrite_states : target_states;
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+
+      // first, let's get gcd for all values for just this register
+      uint64_t onereg_gcd = 0;
+      uint64_t onereg_val = states[0][*i];
+      for(auto& it : states) {
+        auto value = it[*i] - onereg_val;
+        if(value != 0) {
+          if(onereg_gcd == 0)
+            onereg_gcd = value;
+          else
+            onereg_gcd = euclid(onereg_gcd, value);
+        }
+      }
+      if(onereg_gcd > 1) {
+        Variable v(*i, k);
+        v.coefficient = 1;
+        auto terms = {v};
+        auto inv = new EqualityInvariant(terms, onereg_val % onereg_gcd, onereg_gcd);
+        assert(inv->check(target_states, rewrite_states));
+        modulos.push_back(inv);
+      }
+
+
       for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
 
         if(*i <= *j) // don't put this in loop guard: might not be in order?
@@ -360,6 +383,50 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
   }
 
   return modulos;
+}
+
+/** Return invariants over the range of a variable. */
+vector<RangeInvariant*> InvariantLearner::build_range_invariants(
+    RegSet target_regs, 
+    RegSet rewrite_regs, 
+    const vector<CpuState>& target_states, 
+    const vector<CpuState>& rewrite_states) const {
+
+  vector<RangeInvariant*> ranges;
+
+  for (size_t k = 0; k < 2; ++k) {
+    auto regs = k ? rewrite_regs : target_regs;
+    const auto& states = k ? rewrite_states : target_states;
+
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+
+      // first, let's get gcd for all values for just this register
+      uint64_t min = (uint64_t)(-1);
+      uint64_t max = 0;
+      for(auto& it : states) {
+        auto value = it[*i];
+        if(value > max)
+          max = value;
+        if(value < min)
+          min = value;
+      }
+      if(min > 0) {
+        Variable v(*i, k);
+        auto inv = new RangeInvariant(v, min, (uint64_t)(-1));
+        assert(inv->check(target_states, rewrite_states));
+        ranges.push_back(inv);
+      }
+      if(max < (uint64_t)(-1)) {
+        Variable v(*i, k);
+        auto inv = new RangeInvariant(v, 0, max);
+        assert(inv->check(target_states, rewrite_states));
+        ranges.push_back(inv);
+      }
+
+    }
+  }
+
+  return ranges;
 }
 
 /** Return a set of possible lower-n bit invariants. */
@@ -871,8 +938,8 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     }
   }
 
-  // mod2^n invariants
-  /* -- these are already covered by the linear invariants
+  // mod2^n invariants (handled by more general mod invariant)
+  /*
   if (enable_nonlinear_) {
     auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
     for (auto modulo : potential_mod2n) {
@@ -882,7 +949,8 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
         delete modulo;
       }
     }
-  } */
+  }
+  */
 
   // sign invariants
   if (enable_nonlinear_) {
@@ -912,6 +980,13 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   if (enable_nonlinear_) {
     auto modulos = build_modulo_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
     for(auto it : modulos)
+      conj->add_invariant(it);
+  }
+
+  // Modulo invariants
+  if (enable_nonlinear_) {
+    auto ranges = build_range_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+    for(auto it : ranges)
       conj->add_invariant(it);
   }
 
@@ -956,6 +1031,28 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   // Define columns that will be used to learn equalities
   vector<Variable> columns;
 
+  LEARNER_DEBUG(cout << "[learner] enable_shadow_ = " << enable_shadow_ << endl;)
+  if(enable_shadow_) {
+    /** get all shadow registers from target/rewrite states. */
+    for(size_t k = 0; k < 2; ++k) {
+      auto& states = k ? rewrite_states : target_states;
+      set<string> names;
+
+      LEARNER_DEBUG(cout << "[learner] getting shadow variables from " << states.size() << " states." << endl;)
+      for(auto& s : states) {
+        for(auto pair : s.shadow) {
+          names.insert(pair.first);
+        }
+      }
+
+      for(auto name : names) {
+        Variable v(name, k);
+        columns.push_back(v);
+      }
+    }
+  }
+
+  /** get variables corresponding to registers */
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {

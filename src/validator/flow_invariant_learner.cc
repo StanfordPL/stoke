@@ -244,9 +244,8 @@ void FlowInvariantLearner::add_shadow_variables(const Cfg& cfg, DataCollector::T
     /** Record shadow data in CPU state. */
     block_counts[block]++;
     for (auto pair : block_counts) {
-      stringstream ss;
-      ss << "n" << pair.first;
-      cs.shadow[ss.str()] = pair.second;
+      auto v = Variable::bb_ghost(pair.first, false).name;
+      cs.shadow[v] = pair.second;
     }
   }
 }
