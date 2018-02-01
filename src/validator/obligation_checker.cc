@@ -795,12 +795,16 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
     if (check_abort()) return false;
 
-    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
+    // TODO FIXME
+    // doesn't work right now because 
+    // (1) it doesn't get ghost variables in ceg
+    // (2) it doesn't run code on correct path */
+    /*if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
       have_ceg_ = true;
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
     } else {
       CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
-    }
+    }*/
 
     delete state_t.memory;
     delete state_r.memory;

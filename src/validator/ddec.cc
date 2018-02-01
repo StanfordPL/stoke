@@ -564,8 +564,7 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
 bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
-  InvariantLearner learner;
-  bool learning_successful = dual.learn_invariants(learner);
+  bool learning_successful = dual.learn_invariants(invariant_learner_);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     return false;
@@ -847,6 +846,18 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
 ConjunctionInvariant* DdecValidator::get_initial_invariant() const {
   auto initial_invariant = new ConjunctionInvariant();
+
+  /** set all shadow block variables to 0 */
+  auto shadow_target = FlowInvariantLearner::get_shadow_vars(target_, false);
+  auto shadow_rewrite = FlowInvariantLearner::get_shadow_vars(rewrite_, true);
+  auto shadows = shadow_target;
+  shadows.insert(shadows.begin(), shadow_rewrite.begin(), shadow_rewrite.end());
+  for(auto it : shadows) {
+    it.coefficient = 1;
+    auto init_zero = new EqualityInvariant({ it }, 0);
+    initial_invariant->add_invariant(init_zero);
+  }
+
   auto sei = new StateEqualityInvariant(target_.def_ins());
   initial_invariant->add_invariant(sei);
   initial_invariant->add_invariant(new MemoryEqualityInvariant());

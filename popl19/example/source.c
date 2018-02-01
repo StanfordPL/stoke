@@ -57,12 +57,17 @@ int main (int argc, char* argv[])
   srand(0);
 
   /** For testing */
-  for(size_t k = 0; k < 4; ++k) {
-    uint64_t min = (uint64_t)rand();
-    for(uint64_t count = min; count <= min+32; count++) {
+  for(size_t k = 0; k < 16; ++k) {
+    uint64_t min;
+    if(k % 2 == 0) {
+      min = (uint64_t)rand();
+    } else {
+      min = (((uint64_t)rand() << 32) | (uint64_t)rand());
+    }
+    for(uint64_t count = min; count < min+8; count++) {
       uint64_t start = count;
 
-      for(uint64_t end = start; end <= start+32; end++) {
+      for(uint64_t end = start; end <= start+20; end++) {
         uint64_t x = simple(start, end);
         uint64_t y = simple_vec(start, end);
         uint64_t z = simple_cheat(start, end);

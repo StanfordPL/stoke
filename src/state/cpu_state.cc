@@ -320,6 +320,12 @@ ostream& CpuState::write_text(ostream& os) const {
     seg.write_text(os);
   }
 
+  /*os << shadow.size() << " shadow variable(s)" << endl;
+
+  for(auto pair : shadow) {
+    os << "shadow " << pair.first << " " << pair.second << endl;
+  }*/
+
   return os;
 }
 

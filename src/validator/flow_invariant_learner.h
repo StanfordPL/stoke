@@ -37,6 +37,13 @@ public:
       std::vector<CfgPath>& target_paths,
       std::vector<CfgPath>& rewrite_paths);
 
+  /** Go through a trace and add shadow variables to each state. */
+  static void add_shadow_variables(const Cfg& cfg, DataCollector::Trace& t);
+  /** Get the set of shadow variables for a CFG (i.e. n1, n2, ...) */
+  static std::vector<Variable> get_shadow_vars(const Cfg& cfg, bool is_rewrite);
+
+
+
 private:
   typedef std::vector<std::pair<CpuState, CpuState>> TCPairs;
   typedef std::map<std::pair<Cfg::id_type, Cfg::id_type>, TCPairs> TCPairMap;
@@ -44,12 +51,6 @@ private:
   /** Collect all the CpuStates for each test case, update TCPairMap data structure,
     and record the last pair of states for each test case. */
   void collect_data(size_t tc_id);
-
-  /** Go through a trace and add shadow variables to each state. */
-  void add_shadow_variables(const Cfg& cfg, DataCollector::Trace& t);
-
-  /** Get the set of shadow variables for a CFG (i.e. n1, n2, ...) */
-  std::vector<Variable> get_shadow_vars(const Cfg& cfg, bool is_rewrite);
 
   /** Select from a vector elements at random. */
   template<typename T>
