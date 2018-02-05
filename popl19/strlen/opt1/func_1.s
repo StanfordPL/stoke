@@ -4,7 +4,7 @@
 
 #! file-offset 0xd7
 #! rip-offset  0x97
-#! capacity    199 bytes
+#! capacity    200 bytes
 
 # Text                           #  Line  RIP    Bytes  Opcode              
 .func_1:                         #        0x97   0      OPC=<label>         
@@ -44,52 +44,55 @@
   andq %rsi, %rdx                #  26    0xea   3      OPC=andq_r64_r64    
   testq %r8, %rdx                #  27    0xed   3      OPC=testq_r64_r64   
   je .L_d8                       #  28    0xf0   2      OPC=je_label        
-  cmpb $0x0, -0x8(%rcx)          #  29    0xf2   4      OPC=cmpb_m8_imm8    
-  jne .L_fc                      #  30    0xf6   2      OPC=jne_label       
-  subq %rdi, %rax                #  31    0xf8   3      OPC=subq_r64_r64    
-  retq                           #  32    0xfb   1      OPC=retq            
-.L_fc:                           #        0xfc   0      OPC=<label>         
-  cmpb $0x0, -0x7(%rcx)          #  33    0xfc   4      OPC=cmpb_m8_imm8    
-  jne .L_10a                     #  34    0x100  2      OPC=jne_label       
-  subq %rdi, %rax                #  35    0x102  3      OPC=subq_r64_r64    
-  addq $0x1, %rax                #  36    0x105  4      OPC=addq_r64_imm8   
-  retq                           #  37    0x109  1      OPC=retq            
-.L_10a:                          #        0x10a  0      OPC=<label>         
-  cmpb $0x0, -0x6(%rcx)          #  38    0x10a  4      OPC=cmpb_m8_imm8    
-  jne .L_118                     #  39    0x10e  2      OPC=jne_label       
-  subq %rdi, %rax                #  40    0x110  3      OPC=subq_r64_r64    
-  addq $0x2, %rax                #  41    0x113  4      OPC=addq_r64_imm8   
-  retq                           #  42    0x117  1      OPC=retq            
-.L_118:                          #        0x118  0      OPC=<label>         
-  cmpb $0x0, -0x5(%rcx)          #  43    0x118  4      OPC=cmpb_m8_imm8    
-  jne .L_126                     #  44    0x11c  2      OPC=jne_label       
-  subq %rdi, %rax                #  45    0x11e  3      OPC=subq_r64_r64    
-  addq $0x3, %rax                #  46    0x121  4      OPC=addq_r64_imm8   
-  retq                           #  47    0x125  1      OPC=retq            
-.L_126:                          #        0x126  0      OPC=<label>         
-  cmpb $0x0, -0x4(%rcx)          #  48    0x126  4      OPC=cmpb_m8_imm8    
-  jne .L_134                     #  49    0x12a  2      OPC=jne_label       
-  subq %rdi, %rax                #  50    0x12c  3      OPC=subq_r64_r64    
-  addq $0x4, %rax                #  51    0x12f  4      OPC=addq_r64_imm8   
-  retq                           #  52    0x133  1      OPC=retq            
-.L_134:                          #        0x134  0      OPC=<label>         
-  cmpb $0x0, -0x3(%rcx)          #  53    0x134  4      OPC=cmpb_m8_imm8    
-  jne .L_142                     #  54    0x138  2      OPC=jne_label       
-  subq %rdi, %rax                #  55    0x13a  3      OPC=subq_r64_r64    
-  addq $0x5, %rax                #  56    0x13d  4      OPC=addq_r64_imm8   
-  retq                           #  57    0x141  1      OPC=retq            
-.L_142:                          #        0x142  0      OPC=<label>         
-  cmpb $0x0, -0x2(%rcx)          #  58    0x142  4      OPC=cmpb_m8_imm8    
-  jne .L_150                     #  59    0x146  2      OPC=jne_label       
-  subq %rdi, %rax                #  60    0x148  3      OPC=subq_r64_r64    
-  addq $0x6, %rax                #  61    0x14b  4      OPC=addq_r64_imm8   
-  retq                           #  62    0x14f  1      OPC=retq            
-.L_150:                          #        0x150  0      OPC=<label>         
-  cmpb $0x0, -0x1(%rcx)          #  63    0x150  4      OPC=cmpb_m8_imm8    
-  jne .L_d8                      #  64    0x154  2      OPC=jne_label       
-  subq %rdi, %rax                #  65    0x156  3      OPC=subq_r64_r64    
-  addq $0x7, %rax                #  66    0x159  4      OPC=addq_r64_imm8   
-  retq                           #  67    0x15d  1      OPC=retq            
+  cmpb $0x0, (%rax)              #  29    0xf2   3      OPC=cmpb_m8_imm8    
+  jne .L_fb                      #  30    0xf5   2      OPC=jne_label       
+  subq %rdi, %rax                #  31    0xf7   3      OPC=subq_r64_r64    
+  retq                           #  32    0xfa   1      OPC=retq            
+.L_fb:                           #        0xfb   0      OPC=<label>         
+  cmpb $0x0, 0x1(%rax)           #  33    0xfb   4      OPC=cmpb_m8_imm8    
+  jne .L_109                     #  34    0xff   2      OPC=jne_label       
+  subq %rdi, %rax                #  35    0x101  3      OPC=subq_r64_r64    
+  addq $0x1, %rax                #  36    0x104  4      OPC=addq_r64_imm8   
+  retq                           #  37    0x108  1      OPC=retq            
+.L_109:                          #        0x109  0      OPC=<label>         
+  cmpb $0x0, 0x2(%rax)           #  38    0x109  4      OPC=cmpb_m8_imm8    
+  jne .L_117                     #  39    0x10d  2      OPC=jne_label       
+  subq %rdi, %rax                #  40    0x10f  3      OPC=subq_r64_r64    
+  addq $0x2, %rax                #  41    0x112  4      OPC=addq_r64_imm8   
+  retq                           #  42    0x116  1      OPC=retq            
+.L_117:                          #        0x117  0      OPC=<label>         
+  cmpb $0x0, 0x3(%rax)           #  43    0x117  4      OPC=cmpb_m8_imm8    
+  jne .L_125                     #  44    0x11b  2      OPC=jne_label       
+  subq %rdi, %rax                #  45    0x11d  3      OPC=subq_r64_r64    
+  addq $0x3, %rax                #  46    0x120  4      OPC=addq_r64_imm8   
+  retq                           #  47    0x124  1      OPC=retq            
+.L_125:                          #        0x125  0      OPC=<label>         
+  cmpb $0x0, 0x4(%rax)           #  48    0x125  4      OPC=cmpb_m8_imm8    
+  jne .L_133                     #  49    0x129  2      OPC=jne_label       
+  subq %rdi, %rax                #  50    0x12b  3      OPC=subq_r64_r64    
+  addq $0x4, %rax                #  51    0x12e  4      OPC=addq_r64_imm8   
+  retq                           #  52    0x132  1      OPC=retq            
+.L_133:                          #        0x133  0      OPC=<label>         
+  cmpb $0x0, 0x5(%rax)           #  53    0x133  4      OPC=cmpb_m8_imm8    
+  jne .L_141                     #  54    0x137  2      OPC=jne_label       
+  subq %rdi, %rax                #  55    0x139  3      OPC=subq_r64_r64    
+  addq $0x5, %rax                #  56    0x13c  4      OPC=addq_r64_imm8   
+  retq                           #  57    0x140  1      OPC=retq            
+.L_141:                          #        0x141  0      OPC=<label>         
+  cmpb $0x0, 0x6(%rax)           #  58    0x141  4      OPC=cmpb_m8_imm8    
+  jne .L_14f                     #  59    0x145  2      OPC=jne_label       
+  subq %rdi, %rax                #  60    0x147  3      OPC=subq_r64_r64    
+  addq $0x6, %rax                #  61    0x14a  4      OPC=addq_r64_imm8   
+  retq                           #  62    0x14e  1      OPC=retq            
+.L_14f:                          #        0x14f  0      OPC=<label>         
+  cmpb $0x0, 0x7(%rax)           #  63    0x14f  4      OPC=cmpb_m8_imm8    
+  jne .L_15d                     #  64    0x153  2      OPC=jne_label       
+  subq %rdi, %rax                #  65    0x155  3      OPC=subq_r64_r64    
+  addq $0x7, %rax                #  66    0x158  4      OPC=addq_r64_imm8   
+  retq                           #  67    0x15c  1      OPC=retq            
+.L_15d:                          #        0x15d  0      OPC=<label>         
+  nop                            #  68    0x15d  1      OPC=nop             
+  retq                           #  69    0x15e  1      OPC=retq            
                                                                             
 .size func_1, .-func_1
 

@@ -31,8 +31,11 @@
 #include "tools/io/reg_set.h"
 #include "tools/io/tunit.h"
 
-#include "tools/args/learner.inc"
+#include "tools/gadgets/functions.h"
+#include "tools/gadgets/learner.h"
+#include "tools/gadgets/rewrite.h"
 #include "tools/gadgets/seed.h"
+#include "tools/gadgets/target.h"
 
 
 using namespace cpputil;
@@ -101,9 +104,10 @@ int main(int argc, char** argv) {
   Cfg empty_cfg(empty, RegSet::universe(), RegSet::universe());
 
   SeedGadget seed;
-  InvariantLearner learner;
-  learner.set_enable_nonlinear(!only_linear_arg.value());
-  learner.set_seed(seed);
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns, false);
+  RewriteGadget rewrite(aux_fxns);
+  InvariantLearnerGadget learner(seed, target, rewrite);
 
   auto target_tcs_orig = target_testcases_arg.value();
   auto rewrite_tcs_orig = rewrite_testcases_arg.value();

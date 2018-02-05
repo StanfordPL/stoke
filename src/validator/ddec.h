@@ -51,11 +51,6 @@ public:
     bound_ = bound;
     return *this;
   }
-  /** Set invariant learner. */
-  DdecValidator& set_invariant_learner(InvariantLearner& iv) {
-    invariant_learner_ = iv;
-    return *this;
-  }
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);

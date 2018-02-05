@@ -38,6 +38,7 @@
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/functions.h"
+#include "tools/gadgets/learner.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/search.h"
 #include "tools/gadgets/search_state.h"
@@ -411,8 +412,7 @@ int main(int argc, char** argv) {
   SandboxGadget perf_sb(perf_set, aux_fxns);
 
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
-  InvariantLearner learner;
-  learner.set_seed(seed);
+  InvariantLearnerGadget learner(seed, target, rewrite);
   VerifierGadget verifier(test_sb, holdout_fxn, learner);
 
   ScbArg scb_arg {&Console::msg(), nullptr};

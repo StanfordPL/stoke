@@ -250,7 +250,8 @@ BIN=\
 	bin/stoke_extract \
 	bin/stoke_debug_invariant \
 	bin/stoke_testcase \
-	bin/stoke_debug_sandbox
+	bin/stoke_debug_sandbox \
+	bin/stoke_tcgen
 
 #bin/stoke_extract \
 	bin/stoke_replace \

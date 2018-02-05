@@ -38,6 +38,8 @@
 #include "tools/gadgets/testcases.h"
 #include "tools/io/state_diff.h"
 
+#define DEBUG(X) { }
+
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
@@ -65,7 +67,7 @@ auto& output_arg = ValueArg<string>::create("output")
 
 auto& stop_at = ValueArg<size_t>::create("max_tcs")
                 .description("once this many testcases are generated, stop")
-                .default_val(250);
+                .default_val(0);
 
 typedef struct {
   unsigned long size,resident,share,text,lib,data,dt;
@@ -154,6 +156,56 @@ CpuState mutate(CpuState cs, size_t iterations,
   return cs;
 }
 
+void make_tc_different_memory(
+    ObligationChecker& checker,
+    const Cfg& target,
+    const Cfg& rewrite,
+    vector<CpuState>& outputs, CpuState tc,
+    CfgPath p,
+    CfgPath rewrite_path,
+    Sandbox& sb,
+    default_random_engine& gen) {
+// Now, lets find another testcase that touches *different* memory.
+  ComboHandler handler;
+  FalseInvariant _false;
+  TrueInvariant _true;
+
+  auto segments = get_segments(tc);
+  if (segments.size()) {
+
+    vector<uint64_t> low;
+    vector<uint64_t> high;
+
+    for (auto segment : segments) {
+      low.push_back(segment->lower_bound());
+
+      // watch for overflow!
+      if (segment->upper_bound() == 0)
+        high.push_back((uint64_t)(-1));
+      else
+        high.push_back(segment->upper_bound());
+    }
+
+    checker.set_filter(new ForbiddenDereferenceFilter(handler, low, high));
+
+    checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false);
+
+    if (checker.checker_has_ceg()) {
+      auto tc2 = checker.checker_get_target_ceg();
+
+      if (!check_testcase(tc2, sb)) {
+        cerr << "Warning: skipping over invalid testcase" << endl;
+        return;
+      }
+
+      outputs.push_back(tc2);
+      for (size_t i = 0; i < mutants_arg.value(); ++i) {
+        auto mutated = mutate(tc2, iterations_arg.value(), sb, gen);
+        outputs.push_back(mutated);
+      }
+    }
+  }
+}
 
 int main(int argc, char** argv) {
 
@@ -177,9 +229,8 @@ int main(int argc, char** argv) {
   gen.seed((default_random_engine::result_type)seed);
 
   SolverGadget solver;
-  ObligationChecker checker(solver);
+  ObligationChecker checker(solver, sb);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-  checker.set_sandbox(&sb);
 
   // Step 1: enumerate paths up to a certain bound
   vector<CfgPath> paths;
@@ -216,22 +267,13 @@ int main(int argc, char** argv) {
   for (auto p : paths) {
 
     cout << "Working on path " << p << endl;
+    DEBUG(cout << "Output argument: " << output_arg.value() << endl;)
+    DEBUG(cout << "Output count: " << outputs.size() << endl;)
 
-    // Print anything we have so far
-    if (outputs.size() && output_arg.value() == "") {
-      outputs.write_text(cout);
-    } else if (outputs.size()) {
-      ofstream ofs(output_arg.value(), ios_base::app);
-      outputs.write_text(ofs);
-    }
-
-    found += outputs.size();
-    if (found > stop_at.value()) {
+    found = outputs.size();
+    if (stop_at.value() && found > stop_at.value()) {
       return 0;
     }
-
-    // Clear anything we have so far
-    outputs.clear();
 
     if (debug_arg.value()) {
       cerr << "Looking for testcase on path " << p << endl;
@@ -254,54 +296,23 @@ int main(int argc, char** argv) {
         cerr << " * Found testcase" << endl;
       }
 
+      /** Change some register values. */
       for (size_t i = 0; i < mutants_arg.value(); ++i) {
         auto mutated = mutate(tc, iterations_arg.value(), sb, gen);
         outputs.push_back(mutated);
       }
 
-      // Now, lets find another testcase that touches *different* memory.
-      auto segments = get_segments(tc);
-      if (segments.size()) {
-
-        vector<uint64_t> low;
-        vector<uint64_t> high;
-
-        for (auto segment : segments) {
-          low.push_back(segment->lower_bound());
-
-          // watch for overflow!
-          if (segment->upper_bound() == 0)
-            high.push_back((uint64_t)(-1));
-          else
-            high.push_back(segment->upper_bound());
-        }
-
-        checker.set_filter(new ForbiddenDereferenceFilter(handler, low, high));
-
-        checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false);
-
-        if (checker.checker_has_ceg()) {
-          auto tc2 = checker.checker_get_target_ceg();
-
-          if (!check_testcase(tc2, sb)) {
-            cerr << "Warning: skipping over invalid testcase" << endl;
-            continue;
-          }
-
-          outputs.push_back(tc2);
-          for (size_t i = 0; i < mutants_arg.value(); ++i) {
-            auto mutated = mutate(tc2, iterations_arg.value(), sb, gen);
-            outputs.push_back(mutated);
-          }
-        }
-
-      }
+      /** Use SMT Solver to make yet another testcase with different memory. */
+      make_tc_different_memory(checker, target, rewrite, outputs, tc, p, rewrite_path, sb, gen);
 
     } else {
       if (debug_arg.value())
         cerr << " * No testcase found" << endl;
     }
   }
+
+  DEBUG(cout << "Output argument: " << output_arg.value() << endl;)
+  DEBUG(cout << "Output count: " << outputs.size() << endl;)
 
   // Print anything we have so far
   if (outputs.size() && output_arg.value() == "") {
