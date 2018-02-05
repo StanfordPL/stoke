@@ -17,6 +17,32 @@ SymBitVector Variable::from_state(SymState& target, SymState& rewrite) const {
   }
 }
 
+bool Variable::is_valid(const CpuState& target, const CpuState& rewrite) const {
+
+  auto& cs = is_rewrite ? rewrite : target;
+
+  if (operand.is_typical_memory()) {
+    auto mem = static_cast<const x64asm::Mem&>(operand);
+    auto addr = cs.get_addr(mem);
+    for(size_t i = 0; i < mem.size()/8; ++i) {
+      if (!cs.is_valid(addr + i)) {
+        return false; // it would really be a segfault
+      }
+    }
+  }
+
+  return true;
+}
+
+bool Variable::is_valid(const vector<CpuState>& target, const vector<CpuState>& rewrite) const {
+  for(size_t i = 0; i < target.size(); ++i) {
+    if(!is_valid(target[i], rewrite[i]))
+      return false;
+  }
+
+  return true;
+}
+
 /** From a concrete state, find the value of this term. */
 uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) const {
 

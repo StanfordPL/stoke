@@ -24,15 +24,21 @@ class NonzeroInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  NonzeroInvariant(Variable v) : variable_(v) {
+  NonzeroInvariant(Variable v, bool negate = false) : variable_(v), negate_(negate){
   }
 
   SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
-    return variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
+    if(!negate_)
+      return variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
+    else
+      return !variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    return (variable_.from_state(target,rewrite) != 0);
+    if(!negate_)
+      return (variable_.from_state(target,rewrite) != 0);
+    else
+      return !(variable_.from_state(target,rewrite) != 0);
   }
 
   virtual std::vector<Variable> get_variables() const {
@@ -49,6 +55,7 @@ public:
 private:
 
   Variable variable_;
+  bool negate_;
 
 };
 

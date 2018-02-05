@@ -89,7 +89,7 @@ vector<Variable> InvariantLearner::pick_variables(const Cfg& target,
 }
 
 
-vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
+vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, RegSet target_regs, RegSet rewrite_regs) {
 
   vector<Variable> results;
 
@@ -106,77 +106,80 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
     }
   }
 
-  for (auto mem : memory_operands) {
-    for (size_t offset : {
-           0,8,-8
-         }) {
+  for(size_t k = 0; k < 2; ++k) {
 
-      // Make everything an M64
-      M64 mem_fixed(mem.get_seg(),
-                    mem.get_base(),
-                    mem.get_index(),
-                    mem.get_scale(),
-                    mem.get_disp() + offset);
+    auto& cfg = k ? target : rewrite;
+    auto regs = k ? target_regs : rewrite_regs;
 
-      Variable v(mem_fixed, false);
-      Variable w(mem_fixed, true);
-      results.push_back(v);
-      results.push_back(w);
-    }
-  }
+    for (auto mem : memory_operands) {
 
-  for (auto mem : memory_operands) {
-    for (size_t offset : {
-           0,4,-4
-         }) {
+      if(mem.contains_base()) {
+        if(!regs.contains(mem.get_base())) {
+          continue;
+        }
+      }
+      if(mem.contains_index()) {
+        if(!regs.contains(mem.get_index())) {
+          continue;
+        }
+      }
 
-      M32 mem_fixed(mem.get_seg(),
-                    mem.get_base(),
-                    mem.get_index(),
-                    mem.get_scale(),
-                    mem.get_disp() + offset);
+      for (size_t offset : {
+             0,8,-8
+           }) {
 
-      Variable v(mem_fixed, false);
-      Variable w(mem_fixed, true);
-      results.push_back(v);
-      results.push_back(w);
-    }
-  }
+        // Make everything an M64
+        M64 mem_fixed(mem.get_seg(),
+                      mem.get_base(),
+                      mem.get_index(),
+                      mem.get_scale(),
+                      mem.get_disp() + offset);
 
-  for (auto mem : memory_operands) {
-    for (size_t offset : {
-           0,2,-2
-         }) {
+        Variable v(mem_fixed, k);
+        results.push_back(v);
+      }
 
-      M16 mem_fixed(mem.get_seg(),
-                    mem.get_base(),
-                    mem.get_index(),
-                    mem.get_scale(),
-                    mem.get_disp() + offset);
+      for (size_t offset : {
+             0,4,-4
+           }) {
 
-      Variable v(mem_fixed, false);
-      Variable w(mem_fixed, true);
-      results.push_back(v);
-      results.push_back(w);
-    }
-  }
+        M32 mem_fixed(mem.get_seg(),
+                      mem.get_base(),
+                      mem.get_index(),
+                      mem.get_scale(),
+                      mem.get_disp() + offset);
 
+        Variable v(mem_fixed, k);
+        results.push_back(v);
+      }
 
-  for (auto mem : memory_operands) {
-    for (size_t offset : {
-           0,1,-1
-         }) {
+      for (size_t offset : {
+             0,2,-2
+           }) {
 
-      M8 mem_fixed(mem.get_seg(),
-                   mem.get_base(),
-                   mem.get_index(),
-                   mem.get_scale(),
-                   mem.get_disp() + offset);
+        M16 mem_fixed(mem.get_seg(),
+                      mem.get_base(),
+                      mem.get_index(),
+                      mem.get_scale(),
+                      mem.get_disp() + offset);
 
-      Variable v(mem_fixed, false);
-      Variable w(mem_fixed, true);
-      results.push_back(v);
-      results.push_back(w);
+        Variable v(mem_fixed, k);
+        results.push_back(v);
+      }
+
+      for (size_t offset : {
+             0,1,-1
+           }) {
+
+        M8 mem_fixed(mem.get_seg(),
+                     mem.get_base(),
+                     mem.get_index(),
+                     mem.get_scale(),
+                     mem.get_disp() + offset);
+
+        Variable v(mem_fixed, k);
+        results.push_back(v);
+      }
     }
   }
 
@@ -185,48 +188,23 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite) {
 
 
 /** Return a set of possible memory null invariants */
-vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs, const Cfg& target, const Cfg& rewrite) {
-  vector<MemoryNullInvariant*> invariants;
+vector<NonzeroInvariant*> InvariantLearner::build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs) const {
+  vector<NonzeroInvariant*> invariants;
 
-  for (size_t k = 0; k < 2; ++k) {
-    bool is_rewrite = k;
-    const Cfg& cfg = is_rewrite ? rewrite : target;
-    auto code = cfg.get_code();
-    auto regs = is_rewrite ? rewrite_regs : target_regs;
+  auto memory_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+  for (auto v : memory_vars) {
+    auto mni = new NonzeroInvariant(v, false);
+    invariants.push_back(mni);  
 
-    set<x64asm::Mem> memory_operands;
-    for (auto instr : code) {
-      if (instr.is_explicit_memory_dereference()) {
-        auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
-        //cout << "Considering operand " << mem << endl;
-        memory_operands.insert(mem);
-      }
-    }
-
-    for (auto it : memory_operands) {
-      //cout << "And now it is: " << it << endl;
-      if (it.contains_seg())
-        continue;
-      if (it.contains_base() && !regs.contains(it.get_base()))
-        continue;
-      if (it.contains_index() && !regs.contains(it.get_index()))
-        continue;
-
-      auto mni = new MemoryNullInvariant(it, is_rewrite, true);
-      invariants.push_back(mni);  //FIXME: bring me back to life
-
-      //cout << "Ok, made a " << *mni << endl;
-
-      //mni = new MemoryNullInvariant(it, is_rewrite, false);
-      //invariants.push_back(mni);
-    }
-
-
+    mni = new NonzeroInvariant(v, true);
+    invariants.push_back(mni);
   }
 
-  //for (auto it : invariants) {
-  //  cout << *it << endl;
-  //}
+
+  cout << "[learner][memory_null] Considering these invariants!" << endl;
+  for (auto it : invariants) {
+    cout << *it << endl;
+  }
 
   return invariants;
 }
@@ -589,9 +567,9 @@ ConjunctionInvariant* InvariantLearner::learn(
   string target_cc,
   string rewrite_cc) {
 
-  auto pair = choose_tcs(states, states2);
-  auto target_states = pair.first;
-  auto rewrite_states = pair.second;
+  //auto pair = choose_tcs(states, states2);
+  auto target_states = states;
+  auto rewrite_states = states2;
 
   // idea: sort state pairs into one, two, or four groups, and learn invariant over them
   vector<Invariant*> condition_invariants;
@@ -625,11 +603,24 @@ ConjunctionInvariant* InvariantLearner::learn(
   for (size_t i = 0; i < target_states.size(); ++i) {
     auto lhs = target_states[i];
     auto rhs = rewrite_states[i];
+
+    /*
+    cout << "==================== i = " << i << endl;
+    if(lhs[eflags_zf]) {
+      cout << "TARGET HAS ZF=1, i.e. !ne" << endl;
+    }
+    if(rhs[eflags_zf]) {
+      cout << "REWRITE HAS ZF=1, i.e. !ne" << endl;
+    } */
+
     for (size_t j = 0; j < condition_invariants.size(); ++j) {
       auto inv = condition_invariants[j];
       if (inv->check(lhs, rhs)) {
+        /* cout << "INV " << *inv << " holds" << endl; */
         state_sets[j].first.push_back(lhs);
         state_sets[j].second.push_back(rhs);
+      } else {
+        /* cout << "INV " << *inv << " fails" << endl; */
       }
     }
   }
@@ -998,19 +989,18 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     for (auto it : potential_flags)
       conj->add_invariant(it);
 
-    /*
-    auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target_, rewrite_);
+    auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs);
     for (auto mem_null : potential_memory_nulls) {
-      //cout << "Testing " << *mem_null << endl;
-      if (mem_null->check(target_states, rewrite_states)) {
-        //cout << " * pass" << endl;
+      cout << "[learner] Testing " << *mem_null << endl;
+      if (mem_null->check(target_states, rewrite_states) &&
+          mem_null->is_valid(target_states, rewrite_states)) {
+        cout << " * pass" << endl;
         conj->add_invariant(mem_null);
       } else {
-        //cout << " * fail" << endl;
+        cout << " * fail" << endl;
         delete mem_null;
       }
     }
-    */
   }
 
   if (enable_nonlinear_) {

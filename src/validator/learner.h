@@ -19,6 +19,8 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/inequality.h"
+#include "src/validator/invariants/memory_null.h"
+#include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/range.h"
 
 #include "src/validator/int_matrix.h"
@@ -31,7 +33,7 @@ class InvariantLearner {
 
 public:
 
-  InvariantLearner() {
+  InvariantLearner(const Cfg& target, const Cfg& rewrite) : target_(target), rewrite_(rewrite) {
     set_sample_tcs(25);
     set_enable_shadow(true);
     set_enable_nonlinear(true);
@@ -155,6 +157,10 @@ private:
     const std::vector<CpuState>& target_states, 
     const std::vector<CpuState>& rewrite_states) const;
 
+
+  std::vector<NonzeroInvariant*> build_memory_null_invariants(
+      x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;
 
@@ -171,6 +177,10 @@ private:
 
   /** utility: compute gcd of two ints. */
   static uint64_t euclid(uint64_t, uint64_t);
+
+  /** for picking memory derefernces. */
+  const Cfg& target_;
+  const Cfg& rewrite_;
 
 };
 

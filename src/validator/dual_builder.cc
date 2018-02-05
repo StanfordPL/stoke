@@ -93,6 +93,15 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
     target_block_counts = frontier.get_block_counts(false);
     rewrite_block_counts = frontier.get_block_counts(true);
   }
+  cout << "[exit_works] target block counts:" << endl;
+  for(auto it : target_block_counts) {
+    cout << "   " << it.first << " -> " << it.second << endl;
+  }
+  cout << "[exit_works] rewrite block counts:" << endl;
+  for(auto it : rewrite_block_counts) {
+    cout << "   " << it.first << " -> " << it.second << endl;
+  }
+
 
   /** add counts for this edge. */
   for (auto blk : e.te) {
@@ -207,6 +216,12 @@ void DualBuilder::next_frontier() {
       map<vector<uint64_t>, vector<DualAutomata::Edge>>> possible_classes;
   // state -> classification -> possible edges
 
+  std::map<DualAutomata::State, vector<uint64_t>> handhold_class;
+  handhold_class[DualAutomata::State(3,4)] = { 1 };
+  handhold_class[DualAutomata::State(3,12)] = { 0 };
+
+
+
   /** Find all paths up to bound from current node to all others. */
   for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
     cout << "Looking for paths from " << f.head << " to " << topo_sort[i] << " bound=" << target_bound_ << "/" << rewrite_bound_ << endl;
@@ -252,6 +267,11 @@ void DualBuilder::next_frontier() {
           /** If a path goes to a new node without any equvialence class, then we
             have to treat that as a new equivalence class for this frontier. */
           auto classification = get_invariant_class(current, e);
+          if(classification.size() > 1) {
+            classification.erase(classification.begin()+1);
+          }
+
+
           cout << "  classification of this edge pair: " << classification << endl;
           if (f.all_classes[0].invariant_values.count(current)) {
             if (f.all_classes[0].invariant_values[current] == classification) {
@@ -267,13 +287,8 @@ void DualBuilder::next_frontier() {
           } else {
 
             // TODO: remove this handhold
-            bool is_zero = true;
-            for(auto val : classification) {
-              if(val != 0)
-                is_zero = false;
-            }
-
-            if(is_zero) {
+            auto handhold_classification = handhold_class[current];
+            if(classification == handhold_classification) {
               // add this option to a new map used for classes
               cout << "   - this edge goes to a new state" << endl;
               possible_classes[current][classification].push_back(e);
@@ -363,7 +378,6 @@ bool DualBuilder::frontiers_complete() const {
 
 map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   /** see if we can recurse to any previous frontier. */
-  //cout << "[get_block_counts] frontier_index = " << frontier_index << endl;
   for (size_t i = 0; i < frontier_index; ++i) {
     auto frontier = parent->frontiers_[i];
     auto equ_class = frontier.all_classes[frontier.current_class_index];
@@ -380,8 +394,7 @@ map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
     }
   }
 
-  /** couldn't find anything... */
-  //cout << "[get_block_counts]        could not recurse!" << endl;
+  /** always, one encounter of the 0 block is possible :) */
   map<size_t, size_t> block_counts;
   block_counts[0] = 1;
   return block_counts;

@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   Sandbox sb;
   StateGen sg(&sb);
   for (size_t i = 0; i < 60; ++i) {
-    for (size_t j = 0; j < 8; ++j) {
+    for (size_t j = 0; j < 8; ++j) { // mod8 offset
       CpuState tc;
       sg.get(tc);
 

@@ -25,6 +25,8 @@
 #include "src/sandbox/sandbox.h"
 #include "src/target/cpu_info.h"
 #include "src/tunit/tunit.h"
+
+#include "tools/args/target.inc"
 #include "tools/args/in_out.inc"
 
 namespace stoke {
