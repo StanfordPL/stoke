@@ -1,5 +1,7 @@
 
 #include "src/validator/dual_builder.h"
+#include <fstream>
+#include <sstream>
 
 using namespace stoke;
 using namespace std;
@@ -217,10 +219,26 @@ void DualBuilder::next_frontier() {
   // state -> classification -> possible edges
 
   std::map<DualAutomata::State, vector<uint64_t>> handhold_class;
-  handhold_class[DualAutomata::State(3,4)] = { 1 };
-  handhold_class[DualAutomata::State(3,12)] = { 0 };
-
-
+  ifstream handhold("handhold.txt");
+  string handhold_line;
+  while(getline(handhold, handhold_line)) {
+    istringstream iss(handhold_line);
+    Cfg::id_type target_state;
+    Cfg::id_type rewrite_state;
+    iss >> target_state >> rewrite_state;
+    vector<uint64_t> values;
+    while(iss.good()) {
+      uint64_t v;
+      iss >> v;
+      values.push_back(v);
+    }
+    auto state = DualAutomata::State(target_state, rewrite_state);
+    handhold_class[state] = values;
+    cout << "handhold for " << state << ":";
+    for(auto it : values)
+      cout << " " << it;
+    cout << endl;
+  }
 
   /** Find all paths up to bound from current node to all others. */
   for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
@@ -267,9 +285,11 @@ void DualBuilder::next_frontier() {
           /** If a path goes to a new node without any equvialence class, then we
             have to treat that as a new equivalence class for this frontier. */
           auto classification = get_invariant_class(current, e);
+          /*
           if(classification.size() > 1) {
             classification.erase(classification.begin()+1);
           }
+          */
 
 
           cout << "  classification of this edge pair: " << classification << endl;
