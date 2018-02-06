@@ -482,80 +482,84 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
   return okay;
 }
 
+/** returns true if everything was successful. */
+bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge) {
+  // check this edge
+  bool ok = true;
+  auto start_inv = dual.get_invariant(edge.from);
+  auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
+
+  cout << "_____________________________" << endl;
+  cout << "Edge: " << edge.from << " -> " << edge.to << endl;
+  cout << "target: ";
+  for (auto it : edge.te) {
+    cout << it << " ";
+  }
+  cout << endl;
+  cout << "rewrite: ";
+  for (auto it : edge.re) {
+    cout << it << " ";
+  }
+  cout << endl;
+  cout << "Assuming: ";
+  start_inv->write_pretty(cout);
+  cout << endl << endl;
+
+  // check the invariants in the conjunction one at a time
+  for (size_t i = 0; i < end_inv->size(); ++i) {
+    auto partial_inv = (*end_inv)[i];
+    cout << "  Proving " << *partial_inv << endl;
+    bool valid = false;
+    try {
+      valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
+                    edge.te, edge.re, *start_inv, *partial_inv);
+    } catch (validator_error e) {
+      valid = false;
+      cout << "   * encountered " << e.what() << "; assuming false.";
+    }
+    //bool valid = true;
+    cout << "    " << (valid ? "true" : "false") << endl;
+    if (!valid) {
+      ok = false;
+      end_inv->remove(i);
+      i--;
+    }
+  }
+
+  return ok;
+}
+
 void DdecValidator::discharge_invariants(DualAutomata& dual) {
 
-  // Now we run a fixedpoint algorithm to get the provable invariants
-  set<DualAutomata::State> worklist;
+  auto sorted_states = dual.get_topological_sort();
 
-  for (auto reachable : dual.get_edge_reachable_states())
-    worklist.insert(reachable);
+  for(size_t i = 0; i < sorted_states.size(); ++i) {
+    auto current_state = sorted_states[i];
+    auto edges = dual.next_edges(current_state);
+    vector<DualAutomata::Edge> self_edges;
+    vector<DualAutomata::Edge> forward_edges;
 
-  // TODO: we can make this faster if the worklist contains *edges* rather than
-  //   states.
-  while (worklist.size()) {
-    // Pick a state
-    auto current = worklist.begin();
-
-    cout << "WORKLIST CURRENT " << *current << "; LIST=";
-    for (auto it : worklist) {
-      cout << it;
-    }
-    cout << endl;
-
-    bool ok = true;
-    for (auto edge : dual.next_edges(*current)) {
-      // check this edge
-      auto start_inv = dual.get_invariant(edge.from);
-      auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
-
-      cout << "_____________________________" << endl;
-      cout << "Edge: " << edge.from << " -> " << edge.to << endl;
-      cout << "target: ";
-      for (auto it : edge.te) {
-        cout << it << " ";
-      }
-      cout << endl;
-      cout << "rewrite: ";
-      for (auto it : edge.re) {
-        cout << it << " ";
-      }
-      cout << endl;
-      cout << "Assuming: ";
-      start_inv->write_pretty(cout);
-      cout << endl << endl;
-
-      // check the invariants in the conjunction one at a time
-      for (size_t i = 0; i < end_inv->size(); ++i) {
-        auto partial_inv = (*end_inv)[i];
-        cout << "  Proving " << *partial_inv << endl;
-        bool valid = false;
-        try {
-          valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
-                        edge.te, edge.re, *start_inv, *partial_inv);
-        } catch (validator_error e) {
-          valid = false;
-          cout << "   * encountered " << e.what() << "; assuming false.";
-        }
-        //bool valid = true;
-        cout << "    " << (valid ? "true" : "false") << endl;
-        if (!valid) {
-          ok = false;
-          end_inv->remove(i);
-          i--;
-        }
+    // STEP 0: classify edges
+    for(auto e : edges) {
+      if(e.to == e.from) {
+        self_edges.push_back(e);
+      } else {
+        forward_edges.push_back(e);
       }
     }
 
-    if (!ok) {
-      // add all successors of 'current' to the worklist
-      // remove 'current' from the worklist
-      auto tmp = *current;
-      worklist.erase(current);
-      auto to_add = dual.next_states(tmp);
-      worklist.insert(to_add.begin(), to_add.end());
-    } else {
-      // remove 'current' from the worklist
-      worklist.erase(current);
+    // STEP 1: visit all the self-edges (if any) until fixedpoint
+    bool fixpoint = false;
+    while(!fixpoint) {
+      fixpoint = true;
+      for(auto& e : self_edges) {
+        fixpoint &= discharge_edge(dual, e);
+      }
+    }
+    
+    // STEP 2: visit all the edges from this state to subsequent states
+    for(auto e : forward_edges) {
+      discharge_edge(dual, e);
     }
   }
 }
