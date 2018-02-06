@@ -1,3 +1,4 @@
 *trace*
 state*.txt
 *.tmp
+sage_*

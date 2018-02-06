@@ -780,7 +780,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   //for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
   //  for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
   /** TODO: Remove HANDHOLD */
-  size_t target_bound = 17;
+  size_t target_bound = 8;
   size_t rewrite_bound = 3;
     {
       cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
