@@ -91,6 +91,8 @@ private:
 
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);
+  /** Helper for discharge invariants that works on just one edge. */
+  bool discharge_edge(DualAutomata& d, DualAutomata::Edge& edge); 
   /** Discharge exhaustive for all states.  Ensures that the dual automata has all the
    paths it needs to be complete. Also updates the automata with extra edges from counterexamples
    if it fails (and can do so). */
