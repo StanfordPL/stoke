@@ -38,13 +38,15 @@ public:
 
   virtual ~SMTSolver() {}
 
+  virtual SMTSolver* clone() const = 0;
+
   /** Set the maximum time to spend solving */
   virtual SMTSolver& set_timeout(uint64_t ms) {
     timeout_ = ms;
     return *this;
   }
   /** Get the timeout last set. */
-  virtual uint64_t get_timeout() {
+  virtual uint64_t get_timeout() const {
     return timeout_;
   }
 

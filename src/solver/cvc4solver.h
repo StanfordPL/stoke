@@ -28,7 +28,7 @@ namespace stoke {
 class Cvc4Solver : public SMTSolver {
 
 public:
-  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {
+  Cvc4Solver() : SMTSolver(), smt_(NULL), uninterpreted_(false) {
     smt_ = new CVC4::SmtEngine(&em_);
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
@@ -36,6 +36,21 @@ public:
     smt_->setLogic("QF_AUFBV");
     smt_->push();
   }
+
+  Cvc4Solver(const Cvc4Solver& s) : SMTSolver(), smt_(NULL), uninterpreted_(false) {
+    smt_ = new CVC4::SmtEngine(&em_);
+    smt_->setOption("incremental", true);
+    smt_->setOption("produce-assignments", true);
+    smt_->setTimeLimit(s.get_timeout(), true);
+    smt_->setLogic("QF_AUFBV");
+    smt_->push();
+  }
+
+  Cvc4Solver& operator=(const Cvc4Solver& s) {
+    set_timeout(s.get_timeout());
+    return* this;
+  }
+
   ~Cvc4Solver() {
     delete smt_;
   }
@@ -63,6 +78,10 @@ public:
   void reset() {
     variables_ = std::map<std::string, CVC4::Expr>();
     uninterpreted_ = false;
+  }
+
+  SMTSolver* clone() const {
+    return new Cvc4Solver(*this);
   }
 
 private:

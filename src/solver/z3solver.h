@@ -39,6 +39,23 @@ public:
     context_.set("smt.phase_selection", 5);
   }
 
+  /** Create a Z3 solver from another one. */
+  Z3Solver(const Z3Solver& s) : SMTSolver(), solver_(context_) {
+    model_ = NULL;
+    timeout_ = s.get_timeout();
+    context_.set("timeout", (int)timeout_);
+    context_.set("smt.phase_selection", 5);
+  }
+
+  /** Copy assignment */
+  Z3Solver& operator=(const Z3Solver& s) {
+    error_ = "";
+    model_ = NULL;
+    set_timeout(s.get_timeout());
+    return *this;
+  }
+
+  /** Set the timeout on the solver. */
   SMTSolver& set_timeout(uint64_t ms) {
     timeout_ = ms;
     context_.set("timeout", (int)timeout_);
@@ -80,6 +97,11 @@ public:
     stop_now_.store(true);
     context_.interrupt();
   }
+
+  SMTSolver* clone() const {
+    return new Z3Solver(*this);
+  }
+
 
 private:
 
@@ -249,7 +271,6 @@ private:
     std::string error() {
       return error_;
     }
-
 
   private:
 

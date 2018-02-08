@@ -80,6 +80,19 @@ public:
     oc2_ = NULL;
   }
 
+  ObligationChecker(const ObligationChecker& oc) :
+    Validator(oc),
+    filter_(oc.filter_)
+  {
+    basic_block_ghosts_ = oc.basic_block_ghosts_;
+    delete_filter_ = false;
+    nacl_ = oc.nacl_;
+    alias_strategy_ = oc.alias_strategy_;
+    stop_now_ = false;
+    oc1_ = NULL;
+    oc2_ = NULL;
+  }
+
   ~ObligationChecker() {
     if (delete_filter_)
       delete filter_;
@@ -124,6 +137,7 @@ public:
     FALL_THROUGH,
     JUMP
   };
+
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const Cfg::id_type start, const CfgPath& P, size_t i);
 
@@ -138,8 +152,6 @@ public:
                          Cfg::id_type target_block, Cfg::id_type rewrite_block,
                          const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
                          const Invariant& assume);
-
-
 
   bool checker_has_ceg() {
     return have_ceg_;
