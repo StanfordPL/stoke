@@ -352,8 +352,9 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
           auto terms = {v , w};
           some_diff = some_diff % gcd;
           auto inv = new EqualityInvariant(terms, some_diff, gcd);
-          assert(inv->check(target_states, rewrite_states));
-          modulos.push_back(inv);
+          if(inv->check(target_states, rewrite_states)) {
+            modulos.push_back(inv);
+          }
         }
 
       }
@@ -489,34 +490,16 @@ vector<Invariant*> build_flag_invariants(
 
   vector<Invariant*> inv;
 
-  for (auto tf = target_regs.flags_begin(); tf != target_regs.flags_end(); ++tf) {
+  for(size_t k = 0; k < 2; ++k) {
+    auto& regs = k ? rewrite_regs : target_regs;
+    for (auto flag = regs.flags_begin(); flag != regs.flags_end(); ++flag) {
 
-    // Generate target flag true
-    // these leak memory it unused
-    Invariant* tf_true = new FlagSetInvariant(*tf, false, false);
-    Invariant* tf_false = new FlagSetInvariant(*tf, false, true);
-
-    // Generate target flag flase
-    for (auto rf = rewrite_regs.flags_begin(); rf != rewrite_regs.flags_end(); ++rf) {
-
-      Invariant* rf_true = new FlagSetInvariant(*rf, true, false);
-      Invariant* rf_false = new FlagSetInvariant(*rf, true, true);
-
-      auto target_implies_rewrite = new ImplicationInvariant(tf_true, rf_true);
-      auto not_target_implies_rewrite = new ImplicationInvariant(tf_false, rf_true);
-      auto target_implies_not_rewrite = new ImplicationInvariant(tf_true, rf_false);
-      auto not_target_implies_not_rewrite = new ImplicationInvariant(tf_false, rf_false);
-
-      bool keep = false;
-      keep |= add_or_delete_inv(inv, target_implies_rewrite, target_states, rewrite_states);
-      keep |= add_or_delete_inv(inv, not_target_implies_rewrite, target_states, rewrite_states);
-      keep |= add_or_delete_inv(inv, target_implies_not_rewrite, target_states, rewrite_states);
-      keep |= add_or_delete_inv(inv, not_target_implies_not_rewrite, target_states, rewrite_states);
-
-      if (!keep) {
-        delete rf_true;
-        delete rf_false;
-      }
+      // Generate target flag true
+      // these leak memory it unused
+      Invariant* flag_true = new FlagSetInvariant(*flag, k, false);
+      Invariant* flag_false = new FlagSetInvariant(*flag, k, true);
+      add_or_delete_inv(inv, flag_true, target_states, rewrite_states);
+      add_or_delete_inv(inv, flag_false, target_states, rewrite_states);
     }
   }
 

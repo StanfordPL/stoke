@@ -178,7 +178,7 @@ public:
   bool learn_invariants(InvariantLearner&);
 
   /** Get invariant at state. */
-  ConjunctionInvariant* get_invariant(State& state) const {
+  ConjunctionInvariant* get_invariant(const State& state) const {
     if (invariants_.count(state))
       return invariants_.at(state);
     else {

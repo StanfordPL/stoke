@@ -19,6 +19,7 @@
 #include "src/validator/dual.h"
 #include "src/validator/dual_builder.h"
 #include "src/validator/data_collector.h"
+#include "src/validator/discharge_state.h"
 #include "src/validator/flow_invariant_learner.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
@@ -40,15 +41,39 @@ public:
           flow_invariant_learner_(data_collector_, invariant_learner_)
   {
     set_no_bv(false);
+    set_thread_count(1);
   }
+
+  DdecValidator(const DdecValidator& rhs) :
+    ObligationChecker(rhs),
+    target_(rhs.target_),
+    rewrite_(rhs.rewrite_),
+    data_collector_(sandbox_),
+    invariant_learner_(rhs.invariant_learner_),
+    flow_invariant_learner_(data_collector_, invariant_learner_) {
+
+    no_bv_ = rhs.no_bv_;
+    bound_ = rhs.bound_;
+    thread_count_ = rhs.thread_count_;
+    std::cout << "[CCDEBUG] Calling DdecValidator's copy constructor: ";
+    std::cout << " this=" << this << " solver=" << &solver_ << std::endl;
+  }
+
   /** Turn off the bounded validator. */
   DdecValidator& set_no_bv(bool b) {
     no_bv_ = b;
     return *this;
   }
+
   /** Set the bound for bounded validator */
   DdecValidator& set_bound(size_t bound) {
     bound_ = bound;
+    return *this;
+  }
+
+  /** Set the number of threads. */
+  DdecValidator& set_thread_count(size_t n) {
+    thread_count_ = n;
     return *this;
   }
 
@@ -93,6 +118,13 @@ private:
   void discharge_invariants(DualAutomata&);
   /** Helper for discharge invariants that works on just one edge. */
   bool discharge_edge(DualAutomata& d, DualAutomata::Edge& edge); 
+  /** Helper that works on one conjunct. */
+  bool discharge_edge(DualAutomata& d, DualAutomata::Edge& edge, size_t conjunct, std::stringstream& ss);  
+  /** For running discharge_edge in a thread. */
+  static void discharge_thread(DdecValidator&, DualAutomata&, DischargeState&, size_t);
+  /** Start threads to discharge edges. */
+  void discharge_thread_run(DualAutomata&, DischargeState&);
+
   /** Discharge exhaustive for all states.  Ensures that the dual automata has all the
    paths it needs to be complete. Also updates the automata with extra edges from counterexamples
    if it fails (and can do so). */
@@ -130,6 +162,12 @@ private:
   bool try_sign_extend_;
   /** Skip the bounded validator? */
   bool no_bv_;
+
+  /** How many threads to use? */
+  size_t thread_count_;
+
+  /** Per-thread copies of this class. */
+  std::vector<DdecValidator> thread_copies_;
 
 };
 

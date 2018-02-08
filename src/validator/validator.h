@@ -52,6 +52,27 @@ public:
     setup_support_table();
   }
 
+  /** Copy constructor: the goal is to create a new Validator
+    that shares any configuration of the original one, but can safely be used
+    in a different thread.  They can share pointers to memory, but only if that
+    memory is only read.  Using copy constructor on sandbox is safe, and I think
+    it's safe to copy handler_ also. */
+  Validator(const Validator& rhs) : 
+    Verifier(),
+    sandbox_(rhs.sandbox_),
+    memory_manager_(),
+    solver_(*rhs.solver_.clone()),
+    handler_(rhs.handler_),
+    free_handler_(false),
+    support_table_(rhs.support_table_),
+    error_file_(""),
+    error_line_(0)
+   {
+     std::cout << "[CCDEBUG] calling Validator's copy constructor.";
+     std::cout << " this=" << this << " solver=" << &solver_ << std::endl;
+     has_error_ = false;
+  }
+
   virtual ~Validator() {
     if (free_handler_)
       delete &handler_;

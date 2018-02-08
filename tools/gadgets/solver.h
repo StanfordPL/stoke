@@ -44,6 +44,10 @@ public:
     set_timeout(timeout_arg);
   }
 
+  SMTSolver* clone() const {
+    return solver_->clone();
+  }
+
   SMTSolver& set_timeout(uint64_t ms) {
     solver_->set_timeout(ms);
     return *this;

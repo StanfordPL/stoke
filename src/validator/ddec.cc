@@ -35,6 +35,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
+#include <chrono>
 #include <algorithm>
 #include <set>
 
@@ -48,6 +49,7 @@
 #define DDEC_TC_DEBUG(X) { }
 
 using namespace std;
+using namespace std::chrono;
 using namespace stoke;
 using namespace x64asm;
 
@@ -483,11 +485,32 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
 }
 
 /** returns true if everything was successful. */
+bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge, size_t conjunct, stringstream& ss) {
+
+  auto start_inv = dual.get_invariant(edge.from);
+  auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
+  auto partial_inv = (*end_inv)[conjunct];
+  ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
+  ss << "    Edge " << edge << endl;
+  ss << "    Proving " << *partial_inv << endl;
+  bool valid = false;
+  try {
+    valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
+                  edge.te, edge.re, *start_inv, *partial_inv);
+  } catch (validator_error e) {
+    valid = false;
+    ss << "     encountered " << e.what() << "; assuming false." << endl;
+  }
+
+  return valid;
+}
+
+/** returns true if everything was successful. */
 bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge) {
   // check this edge
   bool ok = true;
   auto start_inv = dual.get_invariant(edge.from);
-  auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
+  auto end_inv = dual.get_invariant(edge.to);
 
   cout << "_____________________________" << endl;
   cout << "Edge: " << edge.from << " -> " << edge.to << endl;
@@ -507,37 +530,72 @@ bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge)
 
   // check the invariants in the conjunction one at a time
   for (size_t i = 0; i < end_inv->size(); ++i) {
-    auto partial_inv = (*end_inv)[i];
-    cout << "  Proving " << *partial_inv << endl;
-    bool valid = false;
-    try {
-      valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
-                    edge.te, edge.re, *start_inv, *partial_inv);
-    } catch (validator_error e) {
-      valid = false;
-      cout << "   * encountered " << e.what() << "; assuming false.";
-    }
-    //bool valid = true;
-    cout << "    " << (valid ? "true" : "false") << endl;
-    if (!valid) {
-      ok = false;
-      end_inv->remove(i);
-      i--;
-    }
+    stringstream ss;
+    ok &= discharge_edge(dual, edge, i, ss);
+    cout << ss.str();
   }
 
   return ok;
 }
 
+void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& state) {
+
+  if(thread_copies_.size() == 0) {
+    for(size_t i = 0; i < thread_count_; ++i) {
+      /** should invoke DdecValidator's copy constructor, which in turn makes
+        a new Validator with new solver.  Hopefully thread safe enough... */
+      thread_copies_.push_back(*this);
+    }
+  }
+
+  vector<thread> threads;
+  auto function = [&] (size_t i) -> void {
+    DdecValidator::discharge_thread(thread_copies_[i], dual, state, i);
+  };
+  for(size_t i = 0; i < thread_count_; ++i) {
+    threads.push_back(thread(function, i));
+  }
+
+  for(auto& thread : threads) {
+    thread.join();
+  }
+}
+
+void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, DischargeState& discharge_state, size_t i) {
+  while(true) {
+    auto problem = discharge_state.next_problem();
+    auto& edge = problem.first;
+    auto conjunct = problem.second;
+    if(conjunct == (size_t)(-1)) { /* we're done. */
+      cout << "[discharge_thread " << i << "] all done!" << endl;
+      return;
+    }
+    stringstream ss;
+    ss << "[discharge_thread " << i << "]" ;
+    milliseconds start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    bool success = ddec.discharge_edge(dual, edge, conjunct, ss);
+    milliseconds end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    auto diff = (end - start).count();
+    ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
+    auto str = ss.str();
+    discharge_state.report_outcome(edge, conjunct, success, str);
+  }
+}
+
 void DdecValidator::discharge_invariants(DualAutomata& dual) {
 
   auto sorted_states = dual.get_topological_sort();
+  cout << "[discharge_invariants] Topological sort: ";
+  for(auto it : sorted_states)
+    cout << "    " << it << endl;
 
   for(size_t i = 0; i < sorted_states.size(); ++i) {
     auto current_state = sorted_states[i];
     auto edges = dual.next_edges(current_state);
     vector<DualAutomata::Edge> self_edges;
     vector<DualAutomata::Edge> forward_edges;
+
+    cout << "[discharge_invariants] Processing state: " << current_state << endl;
 
     // STEP 0: classify edges
     for(auto e : edges) {
@@ -549,17 +607,30 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
     }
 
     // STEP 1: visit all the self-edges (if any) until fixedpoint
-    bool fixpoint = false;
-    while(!fixpoint) {
-      fixpoint = true;
-      for(auto& e : self_edges) {
-        fixpoint &= discharge_edge(dual, e);
+    cout << "[discharge_invariants] State " << current_state << " has " << self_edges.size() << " self edges." << endl;
+    if(self_edges.size()) {
+      bool update_required = true;
+      while(update_required) {
+        cout << "[discharge_invariants] Running self-loop threads" << endl;
+        DischargeState discharge_loop(dual, self_edges);
+        discharge_thread_run(dual, discharge_loop);
+        cout << "[discharge_invariants] self-loop threads done." << endl;
+        update_required = discharge_loop.update_dual();
+        cout << "[discharge_invariants] Update required = " << update_required << endl;
+        dual.print_all();
       }
     }
     
     // STEP 2: visit all the edges from this state to subsequent states
-    for(auto e : forward_edges) {
-      discharge_edge(dual, e);
+    cout << "[discharge_invariants] State " << current_state << " has " << forward_edges.size() << " forward edges." << endl;
+    if(forward_edges.size()) {
+      cout << "[discharge_invariants] Running forward edge threads" << endl;
+      DischargeState discharge_forward(dual, forward_edges);
+      cout << "[discharge_invariants] discharge_forward created" << endl;
+      discharge_thread_run(dual, discharge_forward);
+      cout << "[discharge_invariants] forward edge threads done" << endl;
+      discharge_forward.update_dual();
+      dual.print_all();
     }
   }
 }
@@ -784,8 +855,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   //for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
   //  for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
   /** TODO: Remove HANDHOLD */
-  size_t target_bound = 8;
-  size_t rewrite_bound = 3;
+  size_t target_bound = 5;
+  size_t rewrite_bound = 2;
     {
       cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
       DualBuilder builder(data_collector_, template_pod, *control_learner_);

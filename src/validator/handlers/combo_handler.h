@@ -55,10 +55,10 @@ protected:
   /** Get the handler and support level for an instruction */
   Handler* get_handler(const x64asm::Instruction& instr, SupportLevel& sl);
 
-  /** Default prioritized list of handlers */
+  /** Default prioritized list of handlers */ // TODO: make the Handler* below const.
   virtual std::vector<Handler*> default_handler_list() const;
 
-  /** Internal list of handlers that we use */
+  /** Internal list of handlers that we use */ // TODO: make the Handler* below const.
   const std::vector<Handler*> handlers_;
   /** Whether we need to free these handlers */
   const bool free_handlers_;

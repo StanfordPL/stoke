@@ -29,12 +29,12 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { }
-#define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
-#define DEBUG_ARMS_RACE(X) { }
+#define CONSTRAINT_DEBUG(X) {  }
+#define BUILD_TC_DEBUG(X) {  }
+#define ALIAS_DEBUG(X) {  }
+#define ALIAS_CASE_DEBUG(X) {  }
+#define ALIAS_STRING_DEBUG(X) {  }
+#define DEBUG_ARMS_RACE(X) {  } 
 
 #ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
@@ -487,7 +487,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     auto run_oc = [&] (size_t index) {
       DEBUG_ARMS_RACE(cout << "Thread " << index << " starting at "
                       << duration_cast<microseconds>(
-                        high_resolution_clock::now() - start_time).count() << endl;)
+                        high_resolution_clock::now() - start_time).count() << endl;) 
 
       auto& oc = index == 0 ? *oc1_ : *oc2_;
 
@@ -520,9 +520,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
         this->ceg_tf_ = oc.checker_get_target_ceg_end();
         this->ceg_rf_ = oc.checker_get_rewrite_ceg_end();
       }
+      /*
       DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
                       << duration_cast<microseconds>(
-                        high_resolution_clock::now() - start_time).count() << endl;)
+                        high_resolution_clock::now() - start_time).count() << endl;) */
 
 
     };
@@ -562,7 +563,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 #endif
 
   OBLIG_DEBUG(cout << "===========================================" << endl;)
-  OBLIG_DEBUG(cout << "Obligation Check." << endl;)
+  OBLIG_DEBUG(cout << "Obligation Check. solver_=" << &solver_ << " this=" << this << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << P << " Q: " << Q << endl;)
   OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
   OBLIG_DEBUG(cout << "Proving: " << prove << endl;)

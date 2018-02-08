@@ -116,6 +116,7 @@ private:
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);
+      ddec->set_thread_count(ddec_thread_count);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);
