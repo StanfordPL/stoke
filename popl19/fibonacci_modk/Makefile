@@ -8,9 +8,9 @@ all:
 	stoke debug cfg --target opt1/fib.s -o fib.pdf
 	stoke debug cfg --target opt1/fib_unroll.s -o fib_unroll.pdf
 
-testcases:
+tests:
 	- rm -f testcases
-	stoke_tcgen --target opt1/fib_unroll.s --bound 5 --mutants 3 --max_jumps 16 --output testcases
+	stoke_tcgen --def_in "{ %rdi %rsi }" --live_out "{ %rax }" --target opt1/fib_unroll.s --bound 5 --mutants 3 --max_jumps 16 --output testcases
 
 clean:
 	rm -rf opt1* opt3* *.pdf sage* stoke_sage* state* *.tmp
