@@ -311,8 +311,10 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
         v.coefficient = 1;
         auto terms = {v};
         auto inv = new EqualityInvariant(terms, onereg_val % onereg_gcd, onereg_gcd);
-        assert(inv->check(target_states, rewrite_states));
-        modulos.push_back(inv);
+        if(inv->check(target_states, rewrite_states))
+          modulos.push_back(inv);
+        else
+          delete inv;
       }
 
 
@@ -354,6 +356,8 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
           auto inv = new EqualityInvariant(terms, some_diff, gcd);
           if(inv->check(target_states, rewrite_states)) {
             modulos.push_back(inv);
+          } else {
+            delete inv;
           }
         }
 
