@@ -29,18 +29,19 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) {  }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
 #define DEBUG_ARMS_RACE(X) {  } 
 
-#ifdef STOKE_DEBUG_CEG
-#define CEG_DEBUG(X) { X }
-#else
+//#ifdef STOKE_DEBUG_CEG
+//#define CEG_DEBUG(X) { X }
+//#else
+//#define CEG_DEBUG(X) { }
+//#endif
 #define CEG_DEBUG(X) { }
-#endif
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )

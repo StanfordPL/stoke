@@ -46,6 +46,14 @@
 #define DDEC_DEBUG(X) {   }
 #endif
 
+#ifdef STOKE_DEBUG_CEG
+#define CEG_DEBUG(X) { X }
+#else
+#define CEG_DEBUG(X) {   }
+#endif
+
+
+
 #define DDEC_TC_DEBUG(X) { }
 
 using namespace std;
@@ -577,6 +585,24 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
     milliseconds end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto diff = (end - start).count();
     ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
+    CEG_DEBUG(
+      if(!success && ddec.checker_has_ceg()) {
+        auto ceg_t = ddec.checker_get_target_ceg();
+        auto ceg_r = ddec.checker_get_rewrite_ceg();
+        auto ceg_t_end = ddec.checker_get_target_ceg_end();
+        auto ceg_r_end = ddec.checker_get_rewrite_ceg_end();
+
+        ss << "    (counterexample)" << endl << endl;
+        ss << "TARGET COUNTEREXAMPLE" << endl << endl << ceg_t << endl << endl;
+        ss << "REWRITE COUNTEREXAMPLE" << endl << endl << ceg_r << endl << endl;
+        ss << "TARGET COUNTEREXAMPLE - END" << endl << endl << ceg_t_end << endl << endl;
+        ss << "REWRITE COUNTEREXAMPLE - END" << endl << endl << ceg_r_end << endl << endl;
+      } else if (!success) {
+        ss << "    (could not generate counterexample)" << endl;
+      } else {
+        ss << "    (verified!)" << endl;
+      }
+    )
     auto str = ss.str();
     discharge_state.report_outcome(edge, conjunct, success, str);
   }
