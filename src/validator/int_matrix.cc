@@ -133,7 +133,7 @@ IntMatrix IntMatrix::solve_diophantine() const {
     IntVector row;
     for (size_t j = 0; j < output_cols; ++j) {
 
-      int64_t x;
+      uint64_t x;
       in >> x;
 
       /** Check to make sure that we don't have any parser errors */
@@ -144,7 +144,7 @@ IntMatrix IntMatrix::solve_diophantine() const {
         return basis_vectors;
       }
 
-      row.push_back(x);
+      row.push_back((int64_t)x);
     }
     basis_vectors.push_back(row);
   }
@@ -270,7 +270,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
     return output;
   }
   for (size_t i = 0; i < output_rows; ++i) {
-    int64_t x;
+    uint64_t x;
     in >> x;
 
     /** Check to make sure that we don't have any parser errors */
@@ -281,7 +281,7 @@ IntVector IntMatrix::solve_diophantine(IntVector b) const {
       return output;
     }
 
-    output.push_back(x);
+    output.push_back((int64_t)x);
   }
 
   return output;

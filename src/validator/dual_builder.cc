@@ -113,6 +113,18 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
     rewrite_block_counts[blk]++;
   }
 
+
+  cout << "[exit_works] updated target block counts:" << endl;
+  for(auto it : target_block_counts) {
+    cout << "   " << it.first << " -> " << it.second << endl;
+  }
+  cout << "[exit_works] updated rewrite block counts:" << endl;
+  for(auto it : rewrite_block_counts) {
+    cout << "   " << it.first << " -> " << it.second << endl;
+  }
+
+
+
   /** generate some fake paths... */
   CfgPath tp;
   CfgPath rp;
@@ -403,7 +415,7 @@ map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
     auto equ_class = frontier.all_classes[frontier.current_class_index];
     for (auto e : equ_class.edges) {
       if (e.to == head) {
-        //cout << "[get_block_counts]        recursing! " << e << endl;
+        cout << "[get_block_counts]        recursing! " << e << endl;
         auto prior_map = frontier.get_block_counts(is_rewrite);
         auto& path = is_rewrite ? e.re : e.te;
         for (auto block : path) {
