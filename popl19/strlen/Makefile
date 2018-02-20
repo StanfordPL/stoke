@@ -9,5 +9,8 @@ all:
 	stoke debug cfg --target opt1/func_2.s -o strlen.pdf
 
 tcgen:
-	stoke_tcgen --target opt1/func_1.s --bound 3 --def_in "{ %rdi %rsi }" --live_out "{ %rax }" --output tcs/tcgen --mutants 0
+	stoke_tcgen --target opt1/func_1.s --bound 4 --def_in "{ %rdi %rsi }" --live_out "{ %rax }" --output tcs/tcgen --mutants 0
 	cat tcs/tcgen tcs/testcases.four > tcs/testcases.combo
+
+clean:
+	rm -rf opt1* opt3* *.pdf sage* stoke_sage* state* *.tmp

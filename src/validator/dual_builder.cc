@@ -1,11 +1,11 @@
 
 #include "src/validator/dual_builder.h"
+#include "src/validator/optional.h"
 #include <fstream>
 #include <sstream>
 
 using namespace stoke;
 using namespace std;
-
 
 void DualBuilder::init() {
   first_ = true;
@@ -226,11 +226,10 @@ void DualBuilder::next_frontier() {
   }
   f.current_class_index = 0;
 
-  map<DualAutomata::State,
-      map<vector<uint64_t>, vector<DualAutomata::Edge>>> possible_classes;
+  map<DualAutomata::State, vector<DualAutomata::Edge>> possible_edges;
   // state -> classification -> possible edges
 
-  std::map<DualAutomata::State, vector<uint64_t>> handhold_class;
+  std::map<DualAutomata::State, vector<optional<uint64_t>>> handhold_class;
   ifstream handhold("handhold.txt");
   string handhold_line;
   while(getline(handhold, handhold_line)) {
@@ -238,17 +237,29 @@ void DualBuilder::next_frontier() {
     Cfg::id_type target_state;
     Cfg::id_type rewrite_state;
     iss >> target_state >> rewrite_state;
-    vector<uint64_t> values;
+    vector<optional<uint64_t>> values;
     while(iss.good()) {
-      uint64_t v;
-      iss >> v;
-      values.push_back(v);
+      iss >> ws;
+      char next = iss.peek();
+      if(next == '*') {
+        string s_tmp;
+        iss >> s_tmp;
+        values.push_back(optional<uint64_t>());
+        continue;
+      } else {
+        uint64_t v;
+        iss >> v;
+        values.push_back(optional<uint64_t>(v));
+      }
     }
     auto state = DualAutomata::State(target_state, rewrite_state);
     handhold_class[state] = values;
     cout << "handhold for " << state << ":";
     for(auto it : values)
-      cout << " " << it;
+      if(it.has_value())
+        cout << " " << *it;
+      else
+        cout << " *";
     cout << endl;
   }
 
@@ -320,10 +331,19 @@ void DualBuilder::next_frontier() {
 
             // TODO: remove this handhold
             auto handhold_classification = handhold_class[current];
-            if(classification == handhold_classification) {
+            assert(handhold_classification.size() == classification.size());
+            bool matches = true;
+            for(size_t i = 0; i < handhold_classification.size(); ++i) {
+              auto entry = handhold_classification[i];
+              if(entry.has_value()) {
+                matches &= (*handhold_classification[i] == classification[i]);
+              }
+            }
+
+            if(matches) {
               // add this option to a new map used for classes
-              cout << "   - this edge goes to a new state" << endl;
-              possible_classes[current][classification].push_back(e);
+              cout << "   - this edge works" << endl;
+              possible_edges[current].push_back(e);
             } else {
               cout << "   - skipping this edge (handhold)" << endl;
             }
@@ -334,48 +354,10 @@ void DualBuilder::next_frontier() {
   }
 
   /** Add classes into proper data-structure. */
-  size_t total_choices = 1;
-  for (auto state_class_edges : possible_classes) {
-    cout << "state " << state_class_edges.first << " has " << state_class_edges.second.size() << "choices" << endl;
-    total_choices *= state_class_edges.second.size();
-  }
-
-  auto template_class = f.all_classes[0];
-  cout << "TOTAL CHOICES = " << total_choices << endl;
-  for (size_t i = 0; i < total_choices; ++i) {
-    cout << "  choice " << i << endl;
-    // create new equivalance class, except when i = 0 (already exists)
-    if (i != 0) {
-      f.all_classes.push_back(template_class);
-    }
-
-    // for this choice, which class for each state are we picking?
-    map<DualAutomata::State, size_t> state_choice_map;
-    uint64_t current_divisor = 1;
-    for (auto state_class_edges : possible_classes) {
-      auto state = state_class_edges.first;
-      uint64_t current_choice = (i/current_divisor) % state_class_edges.second.size();
-      current_divisor *= state_class_edges.second.size();
-      state_choice_map[state] = current_choice;
-      cout << "     " << state << " -> " << current_choice << endl;
-    }
-
-    // get all edges and classifications into this class
-    auto& curr_class = f.all_classes[i];
-    for (auto state_class_edges : possible_classes) {
-      auto state = state_class_edges.first;
-      auto classdata = state_class_edges.second;
-      size_t index = 0;
-      for (auto class_edges : classdata) {
-        if (index == state_choice_map[state]) {
-          auto classification = class_edges.first;
-          auto edges = class_edges.second;
-          curr_class.invariant_values[state] = classification;
-          curr_class.edges.insert(curr_class.edges.begin(), edges.begin(), edges.end());
-        }
-        index++;
-      }
-    }
+  auto& curr_class = f.all_classes[0];
+  for (auto state_edges : possible_edges) {
+    auto edges = state_edges.second;
+    curr_class.edges.insert(curr_class.edges.begin(), edges.begin(), edges.end());
   }
 
   cout << "Adding frontier..." << endl;

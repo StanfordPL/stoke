@@ -123,40 +123,6 @@ ConjunctionInvariant* transform_with_assumption(Invariant* assume, ConjunctionIn
 
 
 
-void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
-
-  if (no_bv_) //if not using the bounded validator for testcases, skip this entirely.
-    return;
-
-  auto target_paths = CfgPaths::enumerate_paths(target, bound_);
-  auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound_);
-
-  Code nop_code;
-  nop_code.push_back(x64asm::Instruction(x64asm::NOP));
-  Cfg nop_cfg(nop_code);
-  vector<size_t> empty_path;
-  empty_path.push_back(1);
-
-  FalseInvariant _false;
-  TrueInvariant _true;
-
-  for (auto p : target_paths) {
-    DDEC_DEBUG(cout << "Trying path " << p << " ; on target" << endl;)
-    bool equiv = check(target, nop_cfg, target.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
-    if (!equiv && checker_has_ceg()) {
-      sandbox_.insert_input(checker_get_target_ceg());
-    }
-  }
-  for (auto p : rewrite_paths) {
-    DDEC_DEBUG(cout << "Trying path " << p << " ; on rewrite" << endl;)
-    bool equiv = check(rewrite, nop_cfg, rewrite.get_entry(), nop_cfg.get_entry(), p, empty_path, _true, _false);
-    if (!equiv && checker_has_ceg()) {
-      sandbox_.insert_input(checker_get_target_ceg());
-    }
-  }
-
-}
-
 template <typename T>
 T find_min(vector<T> v) {
   assert(v.size() > 0);
@@ -414,26 +380,197 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   return pod;
 }
 
+bool path_is_constant(CfgPath& p) {
+
+  auto first = p[0];
+  for(size_t i = 1; i < p.size(); ++i) {
+    if(p[i] != first)
+      return false;
+  }
+  return true;
+}
+
+CfgPath extend_until_branch(const Cfg& cfg, Cfg::id_type current) {
+  CfgPath prefix;
+  Cfg::id_type orig = current;
+  while(cfg.succ_size(current) == 1) {
+    current = *cfg.succ_begin(current);
+    prefix.push_back(current);
+  }
+  cout << "[extend_until_branch] @" << orig << " -> " << prefix << " @ " << current << endl;
+  return prefix;
+}
+
+vector<CfgPath> paths_to_branch(const Cfg& cfg, Cfg::id_type start) {
+
+  vector<CfgPath> paths;
+  CfgPath prefix;
+
+  /** Get the prefix. */
+  auto current = start;
+  prefix = extend_until_branch(cfg, current);
+  if(prefix.size())
+    current = prefix.back();
+
+  /** Now see if we have a branch or not. */
+  if(cfg.succ_size(current) == 0) {
+    /** We've reached the exit, and there are no branch points. */
+    paths.push_back(prefix);
+    cout << "paths_to_branch(" << start << ") = " << prefix << endl;
+    return paths;
+
+  } else if(cfg.succ_size(current) == 2) {
+    auto successors = cfg.succ_begin(current);
+    auto next1 = *successors++;
+    auto next2 = *successors++;
+    auto path1 = extend_until_branch(cfg, next1);
+    auto path2 = extend_until_branch(cfg, next2);
+
+    CfgPath extend1;
+    CfgPath extend2;
+    extend1.insert(extend1.end(), prefix.begin(), prefix.end());
+    extend1.push_back(next1);
+    extend1.insert(extend1.end(), path1.begin(), path1.end());
+
+    extend2.insert(extend2.end(), prefix.begin(), prefix.end());
+    extend2.push_back(next2);
+    extend2.insert(extend2.end(), path2.begin(), path2.end());
+
+    paths.push_back(extend1);
+    paths.push_back(extend2);
+    cout << "paths_to_branch(" << start << ") = " << extend1 << " and " << extend2 << endl;
+    cout << "    prefix = " << prefix << endl;
+    cout << "    next1 = " << next1 << endl;
+    cout << "    next2 = " << next2 << endl;
+    cout << "    path1 = " << path1 << endl;
+    cout << "    path2 = " << path2 << endl;
+    return paths;
+
+  } else {
+    assert(false);
+    cout << "Bad succ_size() " << __FILE__ << ":" << __LINE__ << endl;
+    exit(1);
+  }
+
+  return paths;
+}
+
+vector<CfgPath> paths_to_branch_bound(const Cfg& cfg, Cfg::id_type start, size_t n) {
+  assert(n >= 1);
+
+  if(n == 1) {
+    return paths_to_branch(cfg, start);
+  } else {
+    vector<CfgPath> output;
+    auto recurse = paths_to_branch_bound(cfg, start, n-1);
+    for(auto& p : recurse) {
+      auto last = p.back();
+      auto extension = paths_to_branch(cfg, last);
+      for(auto& it : extension) {
+        CfgPath concat;
+        concat.insert(concat.end(), p.begin(), p.end());
+        concat.insert(concat.end(), it.begin(), it.end());
+        output.push_back(concat);
+      }
+    }
+    return output;
+  }
+}
 
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State state) {
   Invariant* invariant = dual.get_invariant(state);
   auto edges = dual.next_edges(state);
-  vector<pair<CfgPath, CfgPath>> path_pairs;
+  vector<pair<CfgPath, CfgPath>> safe_path_pairs;
+  cout << "[verify_exhaustive] STATE = " << state << endl;
   for (auto edge : edges) {
-    path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
+    safe_path_pairs.push_back(pair<CfgPath,CfgPath>(edge.te, edge.re));
+    cout << "[verify_exhaustive] SAFE: " << edge.te << " / " << edge.re << endl;
   }
-  //cout << "[discharge_exhaustive] Skipping this check!! We're unsound!" << endl;
-  //return true;
-  bool ok = verify_exhaustive(target_, rewrite_,
-                              state.ts, state.rs,
-                              path_pairs, *invariant);
-  if (ok) {
-    cout << "VERIFIED EXHAUSTIVE FOR " << state << endl;
-    return true;
-  } else {
-    cout << "NOT EXHAUSTIVE FOR " << state << endl;
-    return false;
+
+  size_t max_bound = target_bound_ < rewrite_bound_ ? rewrite_bound_ : target_bound_;
+  bool inconclusive = false;
+  for(size_t i = 1; (i <= max_bound) || inconclusive; ++i) {
+    auto target_paths = paths_to_branch_bound(target_, state.ts, i);
+    auto rewrite_paths = paths_to_branch_bound(rewrite_, state.rs, i);
+
+    for(auto& it : target_paths) {
+      assert(it.size() > 0);
+      cout << "INVESTIGATING TP " << it << endl;
+    }
+    for(auto& it : rewrite_paths) {
+      assert(it.size() > 0);
+      cout << "INVESTIGATING RP " << it << endl;
+    }
+
+
+    bool all_work = true;
+    inconclusive = false;
+    for(auto& tp : target_paths) {
+      for(auto& rp : rewrite_paths) {
+
+        // 1. is there a (x,y) \in safe_pair_paths a prefix of (tp, rp)?
+        //    "   "    "  "     "         "        a suffix of (tp, rp)?
+        bool found_match = false;
+        for(auto pairs : safe_path_pairs) {
+          auto x = pairs.first;
+          auto y = pairs.second;
+
+          if(CfgPaths::is_prefix(x, tp) && CfgPaths::is_prefix(y, rp)) {
+            cout << "[verify_exhaustive] SKIPPING: " << tp << " / " << rp << endl;
+            found_match = true;
+            break;
+          }
+
+          if(CfgPaths::is_prefix(tp, x) && CfgPaths::is_prefix(rp, y)) {
+            cout << "[verify_exhaustive] INCONCLUSIVE: " << tp << " / " << rp << endl;
+            found_match = true;
+            inconclusive = true;
+            all_work = false;
+            break;
+          }
+        }
+        if(found_match)
+          continue;
+
+        // 2. are these paths feasible?
+        FalseInvariant fi;
+        auto inv = dual.get_invariant(state);
+        bool safe = check(target_, rewrite_, state.ts, state.rs,
+                              tp, rp, *inv, fi);
+        if(!safe) {
+          all_work = false;
+          cout << "[verify_exhaustive] FOUND BAD PAIR WITH BOUND " << i;
+          cout << " AND PATH " << tp << " / " << rp << endl;
+
+          CEG_DEBUG(
+            if(checker_has_ceg()) {
+              auto ceg_t = checker_get_target_ceg();
+              auto ceg_r = checker_get_rewrite_ceg();
+              auto ceg_t_end = checker_get_target_ceg_end();
+              auto ceg_r_end = checker_get_rewrite_ceg_end();
+
+              cout << "    (counterexample)" << endl << endl;
+              cout << "TARGET COUNTEREXAMPLE" << endl << endl << ceg_t << endl << endl;
+              cout << "REWRITE COUNTEREXAMPLE" << endl << endl << ceg_r << endl << endl;
+              //cout << "TARGET COUNTEREXAMPLE - END" << endl << endl << ceg_t_end << endl << endl;
+              //cout << "REWRITE COUNTEREXAMPLE - END" << endl << endl << ceg_r_end << endl << endl;
+            } 
+          )
+        } else {
+          cout << "[verify_exhaustive] WORKS: " << tp << " / " << rp << endl;
+        }
+      }
+    }
+
+    if(all_work) {
+      cout << "[verify_exhaustive] VERIFIED EXHAUSTIVE FOR " << state << endl;
+      return true;
+    }
   }
+
+  cout << "[verify_exhaustive] COULD NOT VERIFY EXHAUSTIVE FOR " << state << endl;
+  cout << "[verify_exhaustive] TRY INCREASING TARGET/REWRITE BOUNDS" << endl;
+  return false;
 }
 
 bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
@@ -878,15 +1015,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << endl;
 
   /** Get complete PODs */
-  //for (size_t target_bound = 1; target_bound < 9; ++target_bound) {
-  //  for (size_t rewrite_bound = 1; rewrite_bound < 2; ++rewrite_bound) {
-  /** TODO: Remove HANDHOLD */
-  size_t target_bound = 5;
-  size_t rewrite_bound = 2;
     {
-      cout << " ~~~~~ BOUND " << target_bound << "/" << rewrite_bound << " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
       DualBuilder builder(data_collector_, template_pod, *control_learner_);
-      builder.set_bound(target_bound, rewrite_bound);
+      builder.set_bound(target_bound_, rewrite_bound_);
       while (builder.has_next()) {
         cout << "[verify] next POD" << endl;
         auto current = builder.next();
@@ -903,7 +1034,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         }
       }
     }
-  //}
 
 
   delete control_learner_;

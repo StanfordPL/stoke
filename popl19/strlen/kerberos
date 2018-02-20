@@ -1,8 +1,0 @@
-Ticket cache: FILE:/tmp/krb5cc_14505_L8BFYZ
-Default principal: berkeley@CS.STANFORD.EDU
-
-Valid starting       Expires              Service principal
-12/30/2017 22:39:14  01/02/2018 22:39:14  krbtgt/CS.STANFORD.EDU@CS.STANFORD.EDU
-	renew until 01/29/2018 21:27:01
-12/30/2017 22:39:14  01/02/2018 22:39:14  afs/cs.stanford.edu@CS.STANFORD.EDU
-	renew until 01/29/2018 21:27:01
