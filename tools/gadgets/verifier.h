@@ -105,16 +105,15 @@ private:
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
       auto bv = new BoundedValidator(*solver_, sandbox);
-      bv->set_bound(bound_arg.value());
       bv->set_alias_strategy(parse_alias());
-      bv->set_no_bailout(no_bailout_arg.value());
+      bv->set_bound(bound_arg.value());
       bv->set_nacl(verify_nacl_arg);
+      bv->set_no_bailout(no_bailout_arg.value());
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_, sandbox, inv);
-      ddec->set_no_bv(no_ddec_bv_arg.value());
       ddec->set_alias_strategy(parse_alias());
-      ddec->set_bound(bound_arg.value());
+      ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);
       ddec->set_thread_count(ddec_thread_count);
       return ddec;

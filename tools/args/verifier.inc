@@ -44,15 +44,6 @@ cpputil::FlagArg& verify_nacl_arg =
   cpputil::FlagArg::create("verify_nacl")
   .description("add constraints to bound index registers away from 32-bit boundary");
 
-cpputil::Heading& ddec_headings =
-  cpputil::Heading::create("DDEC Options:");
-
-cpputil::ValueArg<int>& ddec_thread_count =
-  cpputil::ValueArg<int>::create("ddec_threads")
-  .usage("<int>")
-  .description("How many threads to use for DDEC.")
-  .default_val(1);
-
 
 } // namespace stoke
 

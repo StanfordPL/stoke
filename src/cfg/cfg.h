@@ -186,6 +186,11 @@ public:
     assert(id < num_blocks());
     return succs_[id].end();
   }
+  /** Returns the number of successors a block has. */
+  size_t succ_size(id_type id) const {
+    assert(id < num_blocks());
+    return succs_[id].size();
+  }
 
   /** Returns true if control can pass from this basic block to another either because it is
     not terminated by a jump instruction or it is terminated by a conditional jump instruction

@@ -40,7 +40,6 @@ public:
           invariant_learner_(inv),
           flow_invariant_learner_(data_collector_, invariant_learner_)
   {
-    set_no_bv(false);
     set_thread_count(1);
   }
 
@@ -52,22 +51,17 @@ public:
     invariant_learner_(rhs.invariant_learner_),
     flow_invariant_learner_(data_collector_, invariant_learner_) {
 
-    no_bv_ = rhs.no_bv_;
-    bound_ = rhs.bound_;
+    target_bound_ = rhs.target_bound_;
+    rewrite_bound_ = rhs.rewrite_bound_;
     thread_count_ = rhs.thread_count_;
     std::cout << "[CCDEBUG] Calling DdecValidator's copy constructor: ";
     std::cout << " this=" << this << " solver=" << &solver_ << std::endl;
   }
 
-  /** Turn off the bounded validator. */
-  DdecValidator& set_no_bv(bool b) {
-    no_bv_ = b;
-    return *this;
-  }
-
   /** Set the bound for bounded validator */
-  DdecValidator& set_bound(size_t bound) {
-    bound_ = bound;
+  DdecValidator& set_bound(size_t target_bound, size_t rewrite_bound) {
+    target_bound_ = target_bound;
+    rewrite_bound_ = rewrite_bound;
     return *this;
   }
 
@@ -92,9 +86,6 @@ private:
 
   /** Generate a warning for the user about a possible failure reason. */
   void warn(std::string s);
-
-  /** Generate some extra testcases, for funsies. */
-  void make_tcs(const Cfg& target, const Cfg& rewrite);
 
   /** Learn inductive paths and invariants and make a dual autoamta template (without edges). */
   DualAutomata learn_inductive_paths();
@@ -156,12 +147,11 @@ private:
 
 
   /** Bound */
-  size_t bound_;
+  size_t target_bound_;
+  size_t rewrite_bound_;
 
   /** Try to sign extend values? */
   bool try_sign_extend_;
-  /** Skip the bounded validator? */
-  bool no_bv_;
 
   /** How many threads to use? */
   size_t thread_count_;

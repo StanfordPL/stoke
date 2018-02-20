@@ -25,17 +25,24 @@ namespace stoke {
 cpputil::Heading& ddec_validator_options =
   cpputil::Heading::create("DDEC Verifier Options:");
 
-cpputil::FlagArg& no_try_sign_extend_arg =
-  cpputil::FlagArg::create("no_try_sign_extend")
-  .description("Do not try to find invariants using sign extension");
+cpputil::ValueArg<size_t>& target_bound_arg =
+  cpputil::ValueArg<size_t>::create("target_bound")
+  .usage("<int>")
+  .description("Bound on loop iterations from one DDEC cutpoint to the next in the target.")
+  .default_val(5);
 
-cpputil::FlagArg& no_ddec_bv_arg =
-  cpputil::FlagArg::create("no_ddec_bv")
-  .description("Do not use the bounded validator to refine DDEC invariants.");
+cpputil::ValueArg<size_t>& rewrite_bound_arg =
+  cpputil::ValueArg<size_t>::create("rewrite_bound")
+  .usage("<int>")
+  .description("Bound on loop iterations from one DDEC cutpoint to the next in the rewrite.")
+  .default_val(2);
 
-cpputil::FlagArg& sound_nullspace_arg =
-  cpputil::FlagArg::create("sound_nullspace")
-  .description("Use sound nullspace computation over bitvectors.");
+cpputil::ValueArg<int>& ddec_thread_count =
+  cpputil::ValueArg<int>::create("ddec_threads")
+  .usage("<int>")
+  .description("How many threads to use for DDEC.")
+  .default_val(1);
+
 
 } // namespace stoke
 
