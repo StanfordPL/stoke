@@ -24,6 +24,7 @@ class NonzeroInvariant : public Invariant {
 public:
   using Invariant::check;
 
+  // negate false -> check if nonzero
   NonzeroInvariant(Variable v, bool negate = false) : variable_(v), negate_(negate){
   }
 
@@ -48,7 +49,10 @@ public:
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << variable_ << " != 0";
+    if(!negate_)
+      os << variable_ << " != 0";
+    else
+      os << variable_ << " == 0";
     return os;
   }
 

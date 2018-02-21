@@ -73,6 +73,8 @@ typedef struct {
   unsigned long size,resident,share,text,lib,data,dt;
 } statm_t;
 
+CpuState debug_bad_output;
+
 // source: https://stackoverflow.com/questions/1558402/memory-usage-of-current-process-in-c
 void read_memory_status(statm_t& result)
 {
@@ -115,8 +117,12 @@ bool check_testcase(CpuState cs, Sandbox& sb) {
   sb.clear_inputs();
   sb.insert_input(cs);
   sb.run(0);
-  return sb.get_output(0)->code == ErrorCode::NORMAL;
-
+  auto code = sb.get_output(0)->code;
+  if(code != ErrorCode::NORMAL) {
+    debug_bad_output = *sb.get_output(0);
+  }
+  
+  return code == ErrorCode::NORMAL;
 }
 
 /** Make a different testcase for the program. */
@@ -142,6 +148,7 @@ CpuState mutate(CpuState cs, size_t iterations,
       if (segments.size()) {
         auto memory = segments[gen() % segments.size()];
         auto addr = (gen() % memory->size()) + memory->lower_bound();
+        memory->set_valid(addr, true);
         (*memory)[addr] ^= (int8_t)(gen() % 256);
       }
       break;
@@ -194,7 +201,7 @@ void make_tc_different_memory(
       auto tc2 = checker.checker_get_target_ceg();
 
       if (!check_testcase(tc2, sb)) {
-        cerr << "Warning: skipping over invalid testcase" << endl;
+        cerr << "Warning: skipping over invalid testcase." << endl;
         return;
       }
 
@@ -288,6 +295,8 @@ int main(int argc, char** argv) {
       if (!check_testcase(tc, sb)) {
         cerr << "Warning: skipping over invalid (original) testcase" << endl;
         cerr << tc << endl;
+        cerr << "Output state" << endl;
+        cerr << debug_bad_output << endl;
         continue;
       }
 

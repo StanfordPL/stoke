@@ -63,6 +63,24 @@ struct Variable {
   Variable(std::string var, bool rewrite, size_t sz=8) : is_rewrite(rewrite), size(sz),
     offset(0), coefficient(1), operand(x64asm::rax), is_ghost(true), name(var) { }
 
+  bool operator<(const Variable& other) const {
+    if(is_rewrite != other.is_rewrite)
+      return is_rewrite < other.is_rewrite;
+    if(size != other.size)
+      return size < other.size;
+    if(coefficient != other.coefficient)
+      return coefficient < other.coefficient;
+    if(operand != other.operand)
+      return operand < other.operand;
+    if(name != other.name)
+      return name < other.name;
+    if(is_ghost != other.is_ghost)
+      return is_ghost < other.is_ghost;
+    if(offset != other.offset)
+      return offset < other.offset;
+    return false;
+  }
+
 };
 
 }
