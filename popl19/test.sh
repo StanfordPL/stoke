@@ -8,7 +8,8 @@ for BENCHMARK in "example"  \
                  "fibonacci_modk" \
                  "fibonacci_peel_unroll" \
                  "fibonacci_peel_unroll_modk" \
-                 "strlen_unroll2"; do
+                 "strlen_unroll2" \
+                 "strlen_unroll3"; do
   echo "BENCHMARK $BENCHMARK"
   cd $DIR/$BENCHMARK
   ./test.sh
