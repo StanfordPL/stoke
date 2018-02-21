@@ -27,6 +27,7 @@ using namespace z3;
 using namespace std;
 using namespace std::chrono;
 
+//#define DEBUG_Z3_PERFORMANCE 1
 #define DEBUG_Z3(X) { }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
@@ -115,13 +116,18 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Run the solver and see */
   try {
-#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+#if defined(DEBUG_Z3_INTERFACE_PERFORMANCE) || defined(DEBUG_Z3_PERFORMANCE)
     microseconds solver_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
     if (check_abort()) return false;
     auto result = solver_.check();
-#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+#if defined(DEBUG_Z3_INTERFACE_PERFORMANCE) || defined(DEBUG_Z3_PERFORMANCE)
     microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
+#ifdef DEBUG_Z3_PERFORMANCE
+    cout << "[z3perf] " << (solver_end-solver_start).count()/1000 << "ms" << endl;
+#endif
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
     solver_time_ += (solver_end - solver_start).count();
 #endif
 

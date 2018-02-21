@@ -119,11 +119,17 @@ int main(int argc, char** argv) {
   for(size_t i = 0; i < target_tcs_orig.size(); ++i) {
     auto target = target_tcs_orig[i];
     auto rewrite = rewrite_tcs_orig[i];
-    if(!target[Constants::eflags_zf()] && rewrite[Constants::eflags_zf()]) {
-      target_tcs.push_back(target);
-      rewrite_tcs.push_back(rewrite);
-    }
-  }*/
+    // Question 1: is rax + rdi - rdx' constant?
+    Variable target_rax(rax, false);
+    auto v1 = target[rax];
+    auto v2 = target[rdi];
+    auto v3 = rewrite[rdx];
+    auto v4 = v1 + v2 - v3;
+    cout << "rax + rdi - rdx' = " << v4 << endl;
+    // Question 2: is rax*40...0 constant?
+    cout << "0x4000000000000000*rax = " << 0x4000000000000000*target[rax] << endl;
+  }
+  */
 
   target_tcs = target_tcs_orig;
   rewrite_tcs = rewrite_tcs_orig;

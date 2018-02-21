@@ -91,7 +91,7 @@ vector<Variable> InvariantLearner::pick_variables(const Cfg& target,
 
 vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, RegSet target_regs, RegSet rewrite_regs) {
 
-  vector<Variable> results;
+  set<Variable> results;
 
   set<x64asm::Mem> memory_operands;
   for (auto& prog : {
@@ -124,66 +124,77 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
         }
       }
 
-      for (size_t offset : {
-             0,8,-8
-           }) {
+      if(mem.size() == 64) { 
+        for (size_t offset : {
+               0,8,-8
+             }) {
 
-        // Make everything an M64
-        M64 mem_fixed(mem.get_seg(),
-                      mem.get_base(),
-                      mem.get_index(),
-                      mem.get_scale(),
-                      mem.get_disp() + offset);
+          // Make everything an M64
+          M64 mem_fixed(mem.get_seg(),
+                        mem.get_base(),
+                        mem.get_index(),
+                        mem.get_scale(),
+                        mem.get_disp() + offset);
 
-        Variable v(mem_fixed, k);
-        results.push_back(v);
+          Variable v(mem_fixed, k);
+          results.insert(v);
+        }
       }
 
-      for (size_t offset : {
-             0,4,-4
-           }) {
+      if(mem.size() == 32) {
+        for (size_t offset : {
+               0,4,-4
+             }) {
 
-        M32 mem_fixed(mem.get_seg(),
-                      mem.get_base(),
-                      mem.get_index(),
-                      mem.get_scale(),
-                      mem.get_disp() + offset);
+          M32 mem_fixed(mem.get_seg(),
+                        mem.get_base(),
+                        mem.get_index(),
+                        mem.get_scale(),
+                        mem.get_disp() + offset);
 
-        Variable v(mem_fixed, k);
-        results.push_back(v);
+          Variable v(mem_fixed, k);
+          results.insert(v);
+        }
       }
 
-      for (size_t offset : {
-             0,2,-2
-           }) {
+      if(mem.size() == 16) {
+        for (size_t offset : {
+               0,2,-2
+             }) {
 
-        M16 mem_fixed(mem.get_seg(),
-                      mem.get_base(),
-                      mem.get_index(),
-                      mem.get_scale(),
-                      mem.get_disp() + offset);
+          M16 mem_fixed(mem.get_seg(),
+                        mem.get_base(),
+                        mem.get_index(),
+                        mem.get_scale(),
+                        mem.get_disp() + offset);
 
-        Variable v(mem_fixed, k);
-        results.push_back(v);
+          Variable v(mem_fixed, k);
+          results.insert(v);
+        }
       }
 
-      for (size_t offset : {
-             0,1,-1
-           }) {
+      if(mem.size() == 8) {
+        for (size_t offset : {
+               0,1,-1
+             }) {
 
-        M8 mem_fixed(mem.get_seg(),
-                     mem.get_base(),
-                     mem.get_index(),
-                     mem.get_scale(),
-                     mem.get_disp() + offset);
+          M8 mem_fixed(mem.get_seg(),
+                       mem.get_base(),
+                       mem.get_index(),
+                       mem.get_scale(),
+                       mem.get_disp() + offset);
 
-        Variable v(mem_fixed, k);
-        results.push_back(v);
+          Variable v(mem_fixed, k);
+          results.insert(v);
+        }
       }
     }
   }
 
-  return results;
+  vector<Variable> condensed;
+  condensed.insert(condensed.begin(), results.begin(), results.end());
+
+  return condensed;
 }
 
 
@@ -976,16 +987,18 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     for (auto it : potential_flags)
       conj->add_invariant(it);
 
-    auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs);
-    for (auto mem_null : potential_memory_nulls) {
-      cout << "[learner] Testing " << *mem_null << endl;
-      if (mem_null->check(target_states, rewrite_states) &&
-          mem_null->is_valid(target_states, rewrite_states)) {
-        cout << " * pass" << endl;
-        conj->add_invariant(mem_null);
-      } else {
-        cout << " * fail" << endl;
-        delete mem_null;
+    if(enable_memory_) {
+      auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs);
+      for (auto mem_null : potential_memory_nulls) {
+        cout << "[learner] Testing " << *mem_null << endl;
+        if (mem_null->check(target_states, rewrite_states) &&
+            mem_null->is_valid(target_states, rewrite_states)) {
+          cout << " * pass" << endl;
+          conj->add_invariant(mem_null);
+        } else {
+          cout << " * fail" << endl;
+          delete mem_null;
+        }
       }
     }
   }
@@ -1065,11 +1078,13 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   */
 
   // check if memory is always non-zero?
+  /*
   for (auto var : mem_vars) {
     auto inv = new NonzeroInvariant(var);
     LEARNER_DEBUG(cout << "Checking if " << *inv << " holds..." << endl;)
     add_or_delete_inv(conj, inv, target_states, rewrite_states);
   }
+  */
 
   LEARNER_DEBUG(
     cout << "Columns" << endl;

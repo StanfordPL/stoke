@@ -26,6 +26,10 @@ cpputil::FlagArg& only_linear_arg =
   cpputil::FlagArg::create("only_linear")
   .description("Only learn linear invariants");
 
+cpputil::FlagArg& no_learn_memory_arg =
+  cpputil::FlagArg::create("only_non_memory")
+  .description("Only learn invariants without memory");
+
 } // namespace stoke
 
 #endif
