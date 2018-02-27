@@ -28,7 +28,7 @@ public:
   HoldOutVerifierTest() {
     sb_ = new Sandbox();
     fxn_ = new CorrectnessCost(sb_);
-    hov = new HoldOutVerifier(*fxn_);
+    hov = new HoldOutVerifier(*sb_, *fxn_);
   }
 
   ~HoldOutVerifierTest() {

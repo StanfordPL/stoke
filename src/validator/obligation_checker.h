@@ -69,7 +69,7 @@ public:
   };
 
   ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : Validator(solver, sandbox) {
-    set_alias_strategy(AliasStrategy::STRING);
+    set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
     filter_ = new DefaultFilter(handler_);

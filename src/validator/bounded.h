@@ -41,7 +41,7 @@ public:
     ObligationChecker(solver, sandbox), target_final_state_(), rewrite_final_state_()
   {
     set_bound(2);
-    set_alias_strategy(AliasStrategy::STRING);
+    set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_no_bailout(false);
   }
