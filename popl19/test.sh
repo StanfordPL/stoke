@@ -3,7 +3,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export PATH=$PATH:$DIR/../bin
 
-for BENCHMARK in "example"  \
+for BENCHMARK in "example2"  \
+                 "example4"  \
                  "fibonacci"  \
                  "fibonacci_modk" \
                  "fibonacci_peel_unroll" \
