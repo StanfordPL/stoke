@@ -44,9 +44,8 @@ public:
     sg_sandbox = new Sandbox();
     sg_sandbox->set_max_jumps(4096);
     sg_sandbox->set_abi_check(false);
-    validator = new BoundedValidator(*solver);
+    validator = new BoundedValidator(*solver, *sandbox);
     validator->set_bound(2);
-    validator->set_sandbox(sandbox);
     validator->set_alias_strategy(std::tr1::get<0>(param));
     validator->set_heap_out(true);
     validator->set_stack_out(true);

@@ -674,7 +674,7 @@ private:
 
   /* Used to build a validator */
   BoundedValidator make_validator() {
-    BoundedValidator v(s_);
+    BoundedValidator v(s_, sb_);
     // historically these tests have not been used to check
     // equivalence of final heap states
     v.set_heap_out(false);
@@ -687,6 +687,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
+  Sandbox sb_;
   BoundedValidator v_;
   /* The solver we're using */
 #ifndef NOCVC4

@@ -39,6 +39,10 @@ public:
     return counter_examples_;
   }
 
+  virtual ~HoldOutVerifier() {
+
+  }
+
 protected:
   Sandbox& sandbox_;
 

@@ -37,7 +37,8 @@ public:
     sg_sandbox = new Sandbox();
     sg_sandbox->set_max_jumps(4096);
     sg_sandbox->set_abi_check(false);
-    validator = new DdecValidator(*solver);
+    InvariantLearner learner;
+    validator = new DdecValidator(*solver, *sandbox, learner);
     validator->set_bound(2);
     validator->set_sandbox(sandbox);
     validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);

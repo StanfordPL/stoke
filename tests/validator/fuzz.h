@@ -92,7 +92,8 @@ TEST_F(ValidatorFuzzTest, XchgInstructionsRandomState) {
   success_count_ = 0;
 
   // Setup transforms pool
-  Validator v(z3_, ch_);
+  Sandbox sb;
+  Validator v(z3_, sb, ch_);
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
 
@@ -167,7 +168,8 @@ TEST_F(ValidatorFuzzTest, ShiftInstructionsRandomState) {
   success_count_ = 0;
 
   // Setup transforms pool
-  Validator v(z3_, ch_);
+  Sandbox sb;
+  Validator v(z3_, sb, ch_);
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
 
@@ -464,7 +466,8 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   success_count_ = 0;
 
   // Setup transforms pool
-  Validator v(z3_, ch_);
+  Sandbox sb;
+  Validator v(z3_, sb, ch_);
 
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
