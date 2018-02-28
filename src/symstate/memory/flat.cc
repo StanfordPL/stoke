@@ -18,7 +18,7 @@ using namespace stoke;
 using namespace std;
 
 /** Updates the memory with a write. */
-SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
+SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo deref) {
 
   // Little Endian
   // The least significant bit of value (i.e. the lowest bits) go in the lowest addresses
@@ -50,7 +50,7 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 }
 
 /** Reads from the memory.  Returns value and segv condition. */
-std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t size, DereferenceInfo deref) {
   // Update the access list
   auto access_var = SymBitVector::tmp_var(64);
   constraints_.push_back(access_var == address);

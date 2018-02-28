@@ -32,7 +32,10 @@ public:
     assert(v1.size == v2.size);
   }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
+
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
 
     auto lhs = variable1_.from_state(target, rewrite);
     auto rhs = variable2_.from_state(target, rewrite);

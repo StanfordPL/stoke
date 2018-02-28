@@ -169,8 +169,8 @@ bool ObligationChecker::check_counterexample(
     const Cfg& rewrite, 
     const CfgPath& P, 
     const CfgPath& Q, 
-    const Invariant& assume, 
-    const Invariant& prove, 
+    Invariant& assume, 
+    Invariant& prove, 
     const CpuState& ceg, 
     const CpuState& ceg2, 
     const CpuState& ceg_expected, 
@@ -248,7 +248,7 @@ bool ObligationChecker::exhaustive_check_counterexample(
   const Cfg& target, const Cfg& rewrite,
   Cfg::id_type target_start, Cfg::id_type rewrite_start,
   const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-  const Invariant& assume,
+  Invariant& assume,
   const CpuState& ceg, const CpuState& ceg2) {
 
   auto target_trace = check_ceg_path(target, target_start, ceg);
@@ -304,7 +304,8 @@ bool ObligationChecker::exhaustive_check_counterexample(
 SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
     SymState& state_orig,
     Cfg::id_type cfg_start,
-    const CfgPath& P) {
+    const CfgPath& P,
+    size_t& invariant_number) {
 
   cout << "get_path_constraint start=" << cfg_start << " P=" << P << endl;
 
@@ -314,11 +315,10 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
 
   // Generate line map
   LineMap line_map;
-  generate_linemap(cfg, P, line_map);
+  generate_linemap(cfg, P, line_map, false);
 
-  size_t x = 0;
   auto ji = get_jump_inv(cfg, cfg_start, P, true);
-  SymBool conjunction = (*ji)(state_orig, state_orig, x, x);
+  SymBool conjunction = (*ji)(state_orig, state_orig, invariant_number);
   // Build the circuits
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
@@ -389,7 +389,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
       return;
     } else {
       // Build the handler for the instruction
-      state.set_lineno(line_no-1);
+      state.set_deref(li.deref);
       state.rip = SymBitVector::constant(64, li.rip_offset);
 
       if (nacl_) {
@@ -458,7 +458,16 @@ ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_t
   }
 }
 
-bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+bool ObligationChecker::check(
+    const Cfg& target, 
+    const Cfg& rewrite, 
+    Cfg::id_type target_block, 
+    Cfg::id_type rewrite_block, 
+    const CfgPath& P, 
+    const CfgPath& Q, 
+    Invariant& assume, 
+    Invariant& prove, 
+    const vector<CpuState>& testcases) {
   stop_now_.store(false);
 
   if (alias_strategy_ == AliasStrategy::ARMS_RACE) {
@@ -497,7 +506,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
       bool my_result = false;
       try {
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
-        my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove);
+        my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
         DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
         DEBUG_ARMS_RACE(cout << "Index " << index << " took " <<
                         duration_cast<microseconds>(t1-t0).count() << endl;)
@@ -538,7 +547,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, Cfg::id_typ
     return result;
 
   } else {
-    return check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove);
+    return check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
   }
 }
 
@@ -554,7 +563,7 @@ void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg) {
 }
 
 
-bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
+bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, Invariant& assume, Invariant& prove, const vector<CpuState>& testcases) {
 
   stop_now_.store(false);
 
@@ -613,10 +622,8 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   };
 
   // Add given assumptions
-  // TODO pass line numbers as appropriate here
-  size_t target_invariant_lineno = 0;
-  size_t rewrite_invariant_lineno = 0;
-  auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
+  size_t invariant_lineno = 0;
+  auto assumption = assume(state_t, state_r, invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
   constraints.push_back(assumption);
 
@@ -625,24 +632,22 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Generate line maps
   LineMap target_line_map;
   LineMap rewrite_line_map;
-  generate_linemap(target, P, target_line_map);
-  generate_linemap(rewrite, Q, rewrite_line_map);
+  generate_linemap(target, P, target_line_map, false);
+  generate_linemap(rewrite, Q, rewrite_line_map, true);
 
   // Build the circuits
-  size_t line_no = 0;
-
   if (P.size() > 0) {
     auto ji = get_jump_inv(target, target_block, P, true);
-    SymBool conj = (*ji)(state_t, state_t, line_no, line_no);
+    SymBool conj = (*ji)(state_t, state_t, invariant_lineno);
     constraints.push_back(conj);
   }
   if (Q.size() > 0) {
     auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
-    SymBool conj = (*ji)(state_r, state_r, line_no, line_no);
+    SymBool conj = (*ji)(state_r, state_r, invariant_lineno);
     constraints.push_back(conj);
   }
 
-  line_no = 0;
+  size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
     build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, i == P.size() - 1);
   line_no = 0;
@@ -670,8 +675,8 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   }
 
   // Build inequality constraint
-  // TODO pass line numbers as appropriate
-  auto prove_constraint = !prove(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
+  invariant_lineno++;
+  auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
   constraints.push_back(prove_constraint);
@@ -840,7 +845,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
 }
 
-void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate) {
+void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite) {
   auto function = cfg.get_function();
 
   size_t line_no = 0;
@@ -852,9 +857,17 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
     size_t end_index = start_index + cfg.num_instrs(node);
     for (size_t i = start_index; i < end_index; ++i) {
 
+      /** build derefernece info */
+      DereferenceInfo deref;
+      deref.line_number = line_no;
+      deref.is_rewrite = is_rewrite;
+      deref.is_invariant = false;
+      deref.implicit_dereference = false;
+
       LineInfo li;
       li.line_number = i;
       li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
+      li.deref = deref;
       to_populate[line_no++] = li;
     }
   }
@@ -864,11 +877,11 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     Cfg::id_type target_block, Cfg::id_type rewrite_block,
     const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-    const Invariant& assume) {
+    Invariant& assume) {
 
   cout << "================== verify exhaustive =======================" << endl;
   cout << "Assuming ";
-  static_cast<const ConjunctionInvariant&>(assume).write_pretty(cout);
+  static_cast<ConjunctionInvariant&>(assume).write_pretty(cout);
   cout << endl;
 
   for (auto pair : path_pairs) {
@@ -912,9 +925,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   }
 
   // Add given assumptions
-  size_t target_invariant_lineno = 0;
-  size_t rewrite_invariant_lineno = 0;
-  auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
+  size_t invariant_number = 0;
+  auto assumption = assume(state_t, state_r, invariant_number);
   cout << "Assuming " << assumption << endl;
   constraints.push_back(assumption);
 
@@ -972,8 +984,8 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     vector<SymBool> arm_constraints;
 
     cout << "Getting path constraints..." << endl;
-    auto P_constraint = get_path_constraint(target, state_t, target_block, P);
-    auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q);
+    auto P_constraint = get_path_constraint(target, state_t, target_block, P, invariant_number);
+    auto Q_constraint = get_path_constraint(rewrite, state_r, rewrite_block, Q, invariant_number);
 
     SymBool mem_constraint = SymBool::_true();
 

@@ -37,6 +37,7 @@ public:
   struct TracePoint {
     Cfg::id_type block_id;
     CpuState cs;
+    size_t line_number;
 
     bool operator==(const TracePoint& other) const {
       return block_id == other.block_id;
@@ -86,6 +87,7 @@ private:
 
   struct CallbackParam {
     Cfg::id_type block_id;
+    size_t line_number;
     Trace* trace;
   };
 

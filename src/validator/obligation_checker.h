@@ -28,6 +28,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/solver/z3solver.h"
+#include "src/symstate/dereference_info.h"
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
@@ -145,13 +146,14 @@ public:
   bool check(const Cfg& target, const Cfg& rewrite,
              Cfg::id_type target_block, Cfg::id_type rewrite_block,
              const CfgPath& p, const CfgPath& q,
-             const Invariant& assume, const Invariant& prove);
+             Invariant& assume, Invariant& prove,
+             const std::vector<CpuState>& testcases);
 
   /** Verify a set of paths from a location are exhausive */
   bool verify_exhaustive(const Cfg& target, const Cfg& rewrite,
                          Cfg::id_type target_block, Cfg::id_type rewrite_block,
                          const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                         const Invariant& assume);
+                         Invariant& assume);
 
   bool checker_has_ceg() {
     return have_ceg_;
@@ -193,13 +195,15 @@ private:
   bool check_core(const Cfg& target, const Cfg& rewrite,
                   Cfg::id_type target_block, Cfg::id_type rewrite_block,
                   const CfgPath& p, const CfgPath& q,
-                  const Invariant& assume, const Invariant& prove);
+                  Invariant& assume, Invariant& prove,
+                  const std::vector<CpuState>& testcases);
 
 
 
   struct LineInfo {
     size_t line_number;
     uint64_t rip_offset;
+    DereferenceInfo deref;
   };
 
 
@@ -229,7 +233,7 @@ private:
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map, bool ignore_last_line);
 
   /** Get constraint expressing that a particular path is taken from some state. */
-  SymBool get_path_constraint(const Cfg& cfg, SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P);
+  SymBool get_path_constraint(const Cfg& cfg, SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P, size_t& invariant_no);
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {
@@ -244,8 +248,8 @@ private:
 
   /** Check if a counterexample actually works. */
   bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
-                            const CfgPath& Q, const Invariant& assume,
-                            const Invariant& prove, 
+                            const CfgPath& Q, Invariant& assume,
+                            Invariant& prove, 
                             const CpuState& ceg, const CpuState& ceg2,
                             const CpuState& ceg_expected, const CpuState& ceg_expected2);
 
@@ -255,7 +259,7 @@ private:
   bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_start, Cfg::id_type rewrite_start,
                                        const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                                       const Invariant& assume,
+                                       Invariant& assume,
                                        const CpuState& ceg, const CpuState& ceg2);
 
 
@@ -265,7 +269,7 @@ private:
   /** Rewrite a CFG so that it always executes a particular path, replacing
     jumps with NOPs.  Fill a map that contains information relating the new
     line numbers with the original ones. */
-  void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate);
+  void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate, bool is_rewrite);
 
 
   Invariant* get_jump_inv(const Cfg& cfg, Cfg::id_type, const CfgPath& p, bool is_rewrite);

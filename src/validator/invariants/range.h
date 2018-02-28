@@ -28,7 +28,10 @@ public:
   RangeInvariant(const Variable& v, uint64_t min=0, uint64_t max=(uint64_t)(-1)) :
     variable_(v), min_(min), max_(max) { }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
+
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
 
     auto v = variable_.from_state(target, rewrite);
     return (SymBitVector::constant(v.width(), min_) <= v) &

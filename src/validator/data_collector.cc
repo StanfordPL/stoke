@@ -70,14 +70,17 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
       TracePoint tp;
       tp.block_id = block;
       tp.cs = *sandbox_.get_input(testcase);
+      tp.line_number = 0;
       trace.push_back(tp);
 
     } else if (has_jump) {
       index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+      cp->line_number = index;
       //DEBUG_CUTPOINTS(cout << "  - instrumenting before index=" << index << std::endl;)
       sandbox_.insert_before(label, index, callback, cp);
     } else {
       index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+      cp->line_number = index;
       //DEBUG_CUTPOINTS(cout << "  - instrumenting after index=" << index << std::endl;)
       sandbox_.insert_after(label, index, callback, cp);
     }
@@ -89,6 +92,36 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
     delete it;
 
 }
+
+/* void DataCollector::mine_memory_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
+  size_t index;
+  auto label = cfg.get_function().get_leading_label();
+  sandbox_.clear_callbacks();
+  sandbox_.insert_function(cfg);
+  sandbox_.set_entrypoint(label);
+
+  std::vector<CallbackParam*> to_free;
+
+  const auto& code = cfg.get_code();
+  for(size_t i = 0; i < code.size(); ++i) {
+    auto instr = code[i];
+
+    CallbackParam* cp = new CallbackParam();
+    to_free.push_back(cp);
+
+    cp->block_id = cfg.get_loc(i).second;
+    cp->trace = &trace;
+    cp->line_number = i;
+
+    if(instr.is_memory_dereference())
+      sandbox_.insert_before(label, index, callback, cp);
+  }
+
+  sandbox_.run(testcase);
+
+  for (auto it : to_free)
+    delete it;
+} */
 
 
 bool DataCollector::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
@@ -102,12 +135,14 @@ bool DataCollector::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
 }
 
 void DataCollector::callback(const StateCallbackData& data, void* arg) {
-  auto args = *((CallbackParam*)arg);
+  auto args = (CallbackParam*)(arg);
 
   TracePoint tp;
-  tp.block_id = args.block_id;
   tp.cs = data.state;
+  tp.block_id = args->block_id;
+  tp.line_number = args->line_number;
 
-  args.trace->push_back(tp);
+  args->trace->push_back(tp);
+  delete args;
 }
 

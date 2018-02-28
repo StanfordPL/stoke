@@ -17,6 +17,7 @@
 #define _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 
 #include "src/symstate/bitvector.h"
+#include "src/symstate/dereference_info.h"
 
 namespace stoke {
 
@@ -38,10 +39,10 @@ public:
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
-  virtual SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) = 0;
+  virtual SymBool write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo deref) = 0;
 
   /** Reads from the memory.  Returns value and segv condition. */
-  virtual std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) = 0;
+  virtual std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo deref) = 0;
 
   /** Get list of accesses accessed (via read or write).  This is needed for
    * marking relevant cells valid in the counterexample. */

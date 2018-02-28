@@ -38,11 +38,12 @@ public:
     return *this;
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     SymBool b = SymBool::_true();
 
     for (auto it : invariants_) {
-      b = b & (*it)(left, right, tln, rln);
+      b = b & (*it)(left, right, number);
+      number++;
     }
 
     return b;
@@ -62,14 +63,14 @@ public:
   }
 
   bool check (const CpuState& target, const CpuState& rewrite) const {
-    for (auto it : invariants_) {
-      if (!it->check(target, rewrite))
-        return false;
-    }
-    return true;
+   for (auto it : invariants_) {
+     if (!it->check(target, rewrite))
+       return false;
+     }
+     return true;
   }
 
-  std::ostream& write_pretty(std::ostream& os) const {
+ std::ostream& write_pretty(std::ostream& os) const {
 
     if (invariants_.size() == 0) {
       os << "    true" << std::endl;

@@ -535,8 +535,9 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
         // 2. are these paths feasible?
         FalseInvariant fi;
         auto inv = dual.get_invariant(state);
+        vector<CpuState> testcases;
         bool safe = check(target_, rewrite_, state.ts, state.rs,
-                              tp, rp, *inv, fi);
+                              tp, rp, *inv, fi, testcases);
         if(!safe) {
           all_work = false;
           cout << "[verify_exhaustive] FOUND BAD PAIR WITH BOUND " << i;
@@ -639,9 +640,10 @@ bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge,
   ss << "    Edge " << edge << endl;
   ss << "    Proving " << *partial_inv << endl;
   bool valid = false;
+  vector<CpuState> testcases;
   try {
     valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
-                  edge.te, edge.re, *start_inv, *partial_inv);
+                  edge.te, edge.re, *start_inv, *partial_inv, testcases);
   } catch (validator_error e) {
     valid = false;
     ss << "     encountered " << e.what() << "; assuming false." << endl;
@@ -844,8 +846,9 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     auto actual_final = dual.get_invariant(end_state);
     auto expected_final = get_final_invariant();
 
+    vector<CpuState> testcases;
     bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-                          {}, {}, *actual_final, *expected_final);
+                          {}, {}, *actual_final, *expected_final, testcases);
     if (!final_ok) {
       cout << "[verify_dual] Could not complete final proof step." << endl;
       cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;

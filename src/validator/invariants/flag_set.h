@@ -32,7 +32,7 @@ public:
     invert_ = invert;
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     auto& state = is_rewrite_ ? right : left;
 
     if (invert_)

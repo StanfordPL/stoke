@@ -33,11 +33,12 @@ public:
     return *this;
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     SymBool b = SymBool::_false();
 
     for (auto it : invariants_) {
-      b = b | (*it)(left, right, tln, rln);
+      b = b | (*it)(left, right, number);
+      number++;
     }
 
     return b;
