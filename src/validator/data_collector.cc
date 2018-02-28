@@ -143,6 +143,5 @@ void DataCollector::callback(const StateCallbackData& data, void* arg) {
   tp.line_number = args->line_number;
 
   args->trace->push_back(tp);
-  delete args;
 }
 
