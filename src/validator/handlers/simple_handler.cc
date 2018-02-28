@@ -199,14 +199,14 @@ void SimpleHandler::add_all() {
       auto addr = ss.get_addr(*(reinterpret_cast<M8*>(&op_base))) + bit_offset_div_8;
       // Retrive byte and segfault flag from memory. We need to manually segfault
       // because normally that is handled in SymState::operator[Operand] which we are bypassing.
-      auto byte_sigsev = ss.memory->read(addr, 8, ss.get_lineno());
+      auto byte_sigsev = ss.memory->read(addr, 8, ss.get_deref());
       ss.set_sigsegv(byte_sigsev.second);
       ss.set(eflags_cf, (byte_sigsev.first >> bit_offset_mod_8)[0]);
       if (modify) {
         // Construct a mask with a 1 bit in the affected bit and 0's elsewhere
         auto mask = SymBitVector::constant(8, 0x1) << bit_offset_mod_8;
         auto write_byte = operation(byte_sigsev.first, mask);
-        auto sigsev = ss.memory->write(addr, write_byte, 8, ss.get_lineno());
+        auto sigsev = ss.memory->write(addr, write_byte, 8, ss.get_deref());
         ss.set_sigsegv(sigsev);
       }
     }

@@ -19,7 +19,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { }
+#define DEBUG_ARM(X) { X }
 
 void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints) {
 
@@ -41,8 +41,21 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   if (stop_now_ && *stop_now_) return;
   // 1. For every pair of memory accesses, perform up to three queries to determine if they belong in the same cell
   DEBUG_ARM(cout << "==== ARM ON " << all_accesses_.size() << " ACCESSES " << endl;)
-  for (size_t i = 0; i < all_accesses_.size(); ++i) {
-    for (size_t j = i+1; j < all_accesses_.size(); ++j) {
+  DEBUG_ARM(
+    for(size_t i = 0; i < all_accesses_.size(); ++i) {
+      cout << " ACCESS " << i << ":" << endl;
+      auto access = all_accesses_[i];  
+      auto di = access.deref;
+      cout << "      di.is_rewrite = " << (di.is_rewrite ? "true" : "false") << endl;
+      cout << "      di.is_invariant = " << (di.is_invariant ? "true" : "false") << endl;
+      cout << "      di.implicit = " << (di.implicit_dereference ? "true" : "false") << endl;
+      cout << "      di.line_number = " << di.line_number << endl;
+      cout << "      di.invariant_number = " << di.invariant_number << endl;
+    }
+  )
+
+  for (size_t i = 1; i < all_accesses_.size(); ++i) {
+    for (size_t j = 0; j < i; ++j) {
       auto a1 = all_accesses_[i];
       auto a2 = all_accesses_[j];
 
@@ -178,7 +191,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   }
 
   auto debug_state = [&]() {
-    DEBUG_ARM(
+    /*DEBUG_ARM(
       cout << "HEAP 1: " << heap_ << endl;
     for (auto cell : cells_) {
     cout << "  cell " << cell.index << ": dirty " << cell.dirty << " : " << cell.cache << endl;
@@ -186,7 +199,7 @@ void ArmMemory::generate_constraints(ArmMemory* am, std::vector<SymBool>& initia
   cout << "HEAP 2: " << am->heap_ << endl;
   for (auto cell : cells_) {
     cout << "  cell " << cell.index << ": dirty " << cell.other_dirty << " : " << cell.other_cache << endl;
-  })
+  }) */
   };
 
   auto flush_dirty = [&](size_t skip_index = (size_t)(-1)) -> bool{

@@ -28,7 +28,10 @@ public:
     variable_(var), zero_bits_(zero_bits) {
   }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
+
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
 
     uint64_t mask = (1 << zero_bits_) - 1;
     auto value = variable_.from_state(target, rewrite);

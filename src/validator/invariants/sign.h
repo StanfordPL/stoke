@@ -28,7 +28,10 @@ public:
     variable_(var), positive_(positive) {
   }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
+
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
 
     auto value = variable_.from_state(target, rewrite);
 

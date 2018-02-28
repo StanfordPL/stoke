@@ -26,10 +26,11 @@ public:
 
   ImplicationInvariant(Invariant* a, Invariant* b) : a_(a), b_(b) { }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
 
-    auto a = (*a_)(left, right, tln, rln);
-    auto b = (*b_)(left, right, tln, rln);
+    auto a = (*a_)(left, right, number);
+    number++;
+    auto b = (*b_)(left, right, number);
 
     return !a | b;
   }

@@ -33,7 +33,7 @@ public:
     }
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     SymBool b = SymBool::_true();
     for (auto it : left.equality_constraints(right, rs_, ghost_names_))
       b = b & it;

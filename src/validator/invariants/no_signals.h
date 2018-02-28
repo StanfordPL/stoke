@@ -28,7 +28,7 @@ public:
   NoSignalsInvariant() {
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
 
     return (left.sigbus == SymBool::_false()) &
            (left.sigfpe == SymBool::_false()) &

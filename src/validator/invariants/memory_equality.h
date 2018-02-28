@@ -30,7 +30,11 @@ public:
 
   MemoryEqualityInvariant() {}
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
+
+    set_di(left, number, false);
+    set_di(right, number, true);
+
     if (left.memory == 0 && right.memory == 0)
       return SymBool::_true();
 

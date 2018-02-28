@@ -132,12 +132,12 @@ public:
       const x64asm::RegSet& rs = x64asm::RegSet::universe(),
       const std::vector<std::string>& ghosts = {}) const;
 
-  /** Set the line number.  Used as a parameter to access memory. */
-  void set_lineno(size_t line) {
-    lineno_ = line;
+  /** Set memory dereference info */
+  void set_deref(DereferenceInfo deref) {
+    deref_ = deref;
   }
-  size_t get_lineno() const {
-    return lineno_;
+  DereferenceInfo get_deref() const {
+    return deref_;
   }
 
   /** Replace symbolic values with variables and add constraints.*/
@@ -156,7 +156,7 @@ private:
   bool delete_memory_;
 
   /** The current line number */
-  size_t lineno_;
+  DereferenceInfo deref_;
 };
 
 }; //namespace stoke

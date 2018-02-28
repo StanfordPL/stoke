@@ -28,14 +28,22 @@ public:
   PointerNullInvariant(Variable v, size_t bytes) : variable_(v), size_(bytes) {
   }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& target_line_no, size_t& rewrite_line_no) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
 
     /** Get symbolic address */
     auto var_value = variable_.from_state(target, rewrite);
 
     /** Read from memory and check if zero. */
     auto state = variable_.is_rewrite ? rewrite : target;
-    auto mem_value = state.memory->read(var_value, size_*8, 0);
+
+    DereferenceInfo di;
+    di.is_invariant = true;
+    di.invariant_number = number;
+    di.is_rewrite = variable_.is_rewrite;
+    di.implicit_dereference = false;
+    di.line_number = (size_t)(-1);
+    
+    auto mem_value = state.memory->read(var_value, size_*8, di);
     auto result = mem_value.first == SymBitVector::constant(size_*8, 0);
 
     return result;

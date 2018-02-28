@@ -28,11 +28,15 @@ public:
   NonzeroInvariant(Variable v, bool negate = false) : variable_(v), negate_(negate){
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
+
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
+
     if(!negate_)
-      return variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
+      return variable_.from_state(target, rewrite) != SymBitVector::constant(variable_.size*8, 0);
     else
-      return !variable_.from_state(left, right) != SymBitVector::constant(variable_.size*8, 0);
+      return !variable_.from_state(target, rewrite) != SymBitVector::constant(variable_.size*8, 0);
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {

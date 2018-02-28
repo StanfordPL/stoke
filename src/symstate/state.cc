@@ -60,7 +60,8 @@ void SymState::build_from_cpustate(const CpuState& cs) {
       uint8_t value = mem[addr];
       auto addr_bv = SymBitVector::constant(64, addr);
       auto val_bv = SymBitVector::constant(8, value);
-      fm->write(addr_bv, val_bv, 8, 0);
+      DereferenceInfo di; 
+      fm->write(addr_bv, val_bv, 8, di);
     }
   }
 
@@ -136,7 +137,7 @@ SymBitVector SymState::operator[](const Operand o) {
     auto addr = get_addr(m);
 
     if (memory) {
-      auto p = memory->read(addr, size, lineno_);
+      auto p = memory->read(addr, size, deref_);
       set_sigsegv(p.second);
       return p.first;
     } else {
@@ -158,7 +159,7 @@ SymBitVector SymState::lookup(const Operand o) const {
     auto addr = get_addr(m);
 
     if (memory) {
-      auto p = memory->read(addr, size, lineno_);
+      auto p = memory->read(addr, size, deref_);
       return p.first;
     } else {
       return SymBitVector::tmp_var(size);
@@ -259,7 +260,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto addr = get_addr(m);
 
     if (memory) {
-      auto segv = memory->write(addr, bv, width, lineno_);
+      auto segv = memory->write(addr, bv, width, deref_);
       set_sigsegv(segv);
     } else {
       set_sigsegv(SymBool::tmp_var());

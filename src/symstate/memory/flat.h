@@ -46,10 +46,10 @@ public:
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
-  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
+  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo info);
 
   /** Reads from the memory.  Returns value and segv condition. */
-  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no);
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo info);
 
   /** Create a formula expressing these memory cells with another set. */
   SymBool equality_constraint(FlatMemory& other);

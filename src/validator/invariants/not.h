@@ -26,8 +26,8 @@ public:
 
   NotInvariant(Invariant* a) : a_(a) { }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
-    auto a = (*a_)(left, right, tln, rln);
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
+    auto a = (*a_)(left, right, number);
     return !a;
   }
 

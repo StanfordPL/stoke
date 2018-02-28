@@ -30,21 +30,16 @@ public:
     is_rewrite_ = is_rewrite;
   }
 
-  SymBool operator()(SymState& target, SymState& rewrite, size_t& target_line_no, size_t& rewrite_line_no) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& number) {
 
-    /*
+    set_di(target, number, false);
+    set_di(rewrite, number, true);
+
     std::cout << "Visiting ";
     write(std::cout);
-    std::cout << " with nos " << target_line_no << " / " << rewrite_line_no << std::endl;
-    */
+    std::cout << " with no " << number << std::endl;
 
     auto& state = is_rewrite_ ? rewrite : target;
-
-    if (is_rewrite_) {
-      state.set_lineno(--rewrite_line_no);
-    } else {
-      state.set_lineno(--target_line_no);
-    }
 
     auto result = state.lookup(m_) == SymBitVector::constant(m_.size(), 0);
 

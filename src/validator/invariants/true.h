@@ -27,7 +27,7 @@ public:
 
   TrueInvariant() {}
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     return SymBool::_true();
   }
 

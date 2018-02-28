@@ -52,7 +52,7 @@ public:
   }
 
 
-  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) {
     if (predicate_ == "") {
       // fallthrough is aways taken
       if (fallthrough_)

@@ -27,9 +27,13 @@ class Invariant {
 
 public:
 
+  Invariant() {
+    setup_di();
+  }
+
   virtual ~Invariant() { }
 
-  virtual SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const = 0;
+  virtual SymBool operator()(SymState& left, SymState& right, size_t& number) = 0;
 
   virtual std::ostream& write(std::ostream& out) const = 0;
 
@@ -75,6 +79,23 @@ public:
   }
 
   ConjunctionInvariant* AND(Invariant* other);
+
+protected:
+
+  void setup_di() {
+    di.line_number = (uint64_t)(-1);
+    di.invariant_number = 0;
+    di.is_invariant = true;
+    di.implicit_dereference = false;
+  }
+
+  void set_di(SymState& ss, size_t number, bool is_rewrite) {
+    di.invariant_number = number;
+    ss.set_deref(di);
+  }
+
+private:
+  DereferenceInfo di;
 };
 
 } // namespace stoke
