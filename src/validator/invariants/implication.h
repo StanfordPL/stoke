@@ -35,6 +35,13 @@ public:
     return !a | b;
   }
 
+  void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number) {
+    a_->get_dereference_map(deref_map, target, rewrite, number);
+    number++;
+    b_->get_dereference_map(deref_map, target, rewrite, number);
+  };
+
+
   bool check (const CpuState& target, const CpuState& rewrite) const {
 
     auto a = a_->check(target, rewrite);

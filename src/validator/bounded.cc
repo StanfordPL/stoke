@@ -51,7 +51,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   //BOUNDED_DEBUG(cout << "[bv] heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
-  vector<CpuState> testcases;
+  vector<pair<CpuState, CpuState>> testcases;
   if (heap_out_ || stack_out_) {
     equiv = check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases);
   } else {

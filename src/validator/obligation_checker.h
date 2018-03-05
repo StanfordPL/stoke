@@ -142,18 +142,19 @@ public:
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const Cfg::id_type start, const CfgPath& P, size_t i);
 
-  /** Check. */
+  /** Check.  This is a wrapper around check_core that will do parallelism. */
   bool check(const Cfg& target, const Cfg& rewrite,
              Cfg::id_type target_block, Cfg::id_type rewrite_block,
              const CfgPath& p, const CfgPath& q,
              Invariant& assume, Invariant& prove,
-             const std::vector<CpuState>& testcases);
+             const std::vector<std::pair<CpuState, CpuState>>& testcases);
 
   /** Verify a set of paths from a location are exhausive */
+  /*
   bool verify_exhaustive(const Cfg& target, const Cfg& rewrite,
                          Cfg::id_type target_block, Cfg::id_type rewrite_block,
                          const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                         Invariant& assume);
+                         Invariant& assume); */
 
   bool checker_has_ceg() {
     return have_ceg_;
@@ -196,7 +197,7 @@ private:
                   Cfg::id_type target_block, Cfg::id_type rewrite_block,
                   const CfgPath& p, const CfgPath& q,
                   Invariant& assume, Invariant& prove,
-                  const std::vector<CpuState>& testcases);
+                  const std::vector<std::pair<CpuState, CpuState>>& testcases);
 
 
 

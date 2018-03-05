@@ -74,6 +74,15 @@ uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) c
   }
 }
 
+/** Does this have a memory dereference? */
+bool Variable::is_dereference() const {
+  if(is_ghost)
+    return false;
+  return operand.is_typical_memory();
+}
+
+
+
 Variable Variable::bb_ghost(size_t n, bool is_rewrite) {
   std::stringstream ss;
   ss << "n" << n;
