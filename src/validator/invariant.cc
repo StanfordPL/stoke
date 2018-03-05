@@ -23,7 +23,33 @@ ostream& operator<<(ostream& os, const stoke::Invariant& inv) {
 
 }
 
-namespace stoke {
+using namespace std;
+using namespace stoke;
+
+void Invariant::get_dereference_map(DereferenceMap& deref_map, 
+                                    const CpuState& target, 
+                                    const CpuState& rewrite, 
+                                    size_t& number) {
+
+  auto vars = get_variables();
+  vector<Variable> memory_variables;
+
+  for(auto var : vars) {
+    if(var.is_dereference()) {
+      memory_variables.push_back(var);
+    }
+  }
+
+  assert(memory_variables.size() < 2);
+  if(memory_variables.size() > 0) {
+    auto var = memory_variables[0];
+    auto value = var.from_state(target, rewrite);
+    auto di = get_di(number, var.is_rewrite);
+    deref_map[di] = value;
+  }
+
+};
+
 
 ConjunctionInvariant* Invariant::AND(Invariant* other) {
   auto ci = new ConjunctionInvariant();
@@ -32,5 +58,4 @@ ConjunctionInvariant* Invariant::AND(Invariant* other) {
   return ci;
 }
 
-}
 

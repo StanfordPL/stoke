@@ -35,6 +35,8 @@ public:
 
   virtual SymBool operator()(SymState& left, SymState& right, size_t& number) = 0;
 
+  virtual void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number);
+
   virtual std::ostream& write(std::ostream& out) const = 0;
 
   virtual bool operator==(const Invariant& other) const {
@@ -89,8 +91,15 @@ protected:
     di.implicit_dereference = false;
   }
 
+  DereferenceInfo get_di(size_t number, bool is_rewrite) {
+    di.invariant_number = number;
+    di.is_rewrite = is_rewrite;
+    return di;
+  }
+
   void set_di(SymState& ss, size_t number, bool is_rewrite) {
     di.invariant_number = number;
+    di.is_rewrite = is_rewrite;
     ss.set_deref(di);
   }
 

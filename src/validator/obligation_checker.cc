@@ -467,7 +467,7 @@ bool ObligationChecker::check(
     const CfgPath& Q, 
     Invariant& assume, 
     Invariant& prove, 
-    const vector<CpuState>& testcases) {
+    const vector<pair<CpuState, CpuState>>& testcases) {
   stop_now_.store(false);
 
   if (alias_strategy_ == AliasStrategy::ARMS_RACE) {
@@ -563,7 +563,7 @@ void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg) {
 }
 
 
-bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, Invariant& assume, Invariant& prove, const vector<CpuState>& testcases) {
+bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, Invariant& assume, Invariant& prove, const vector<pair<CpuState, CpuState>>& testcases) {
 
   stop_now_.store(false);
 
@@ -621,11 +621,29 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
     return false;
   };
 
+  // Build dereference map
+  DereferenceMaps deref_maps;
+  for(const auto& tc : testcases) {
+    DereferenceMap deref_map;
+    deref_maps.push_back(deref_map);
+  }
+
   // Add given assumptions
   size_t invariant_lineno = 0;
   auto assumption = assume(state_t, state_r, invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
   constraints.push_back(assumption);
+
+  // Update dereference maps for the assumption if ARM
+  if(arm_model) {
+    size_t tmp_invariant_lineno = 0;
+    for(size_t i = 0; i < deref_maps.size(); ++i) {
+      auto& deref_map = deref_maps[i];
+      const auto& tc_pair = testcases[i];
+      assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+    }
+  }
+
 
   if (check_abort()) return false;
 
@@ -713,7 +731,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
     target_arm->set_interrupt_var(&stop_now_);
     if (check_abort()) return false;
-    target_arm->generate_constraints(rewrite_arm, constraints);
+    target_arm->generate_constraints(rewrite_arm, constraints, deref_maps);
 
     if (check_abort()) return false;
     auto target_con = target_arm->get_constraints();
@@ -874,6 +892,7 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 
 }
 
+/*
 bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     Cfg::id_type target_block, Cfg::id_type rewrite_block,
     const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
@@ -958,7 +977,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
   constraints.push_back(assume_mem_constraint);
 
 
-  /** collect accesses */
+  // collect accesses 
   vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
   other_maps.push_back(state_t.memory->get_access_list());
   other_maps.push_back(state_r.memory->get_access_list());
@@ -968,7 +987,7 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
     auto P = path_pair.first;
     auto Q = path_pair.second;
 
-    /** To do the proof, both need to make progress. */
+    // To do the proof, both need to make progress.
     if (P.size() == 0 || Q.size() == 0)
       continue;
 
@@ -1094,4 +1113,5 @@ bool ObligationChecker::verify_exhaustive(const Cfg& target, const Cfg& rewrite,
 
   return true;
 }
+*/
 

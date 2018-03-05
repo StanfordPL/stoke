@@ -47,6 +47,8 @@ struct Variable {
   bool is_valid(const CpuState& target, const CpuState& rewrite) const;
   bool is_valid(const std::vector<CpuState>& target, const std::vector<CpuState>& rewrite) const;
 
+  /** Does this have a memory dereference? */
+  bool is_dereference() const;
 
   /** Make basic block ghost variable. */
   static Variable bb_ghost(size_t n, bool is_rewrite);

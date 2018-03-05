@@ -44,6 +44,14 @@ public:
     return b;
   }
 
+  void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number) {
+    for(auto it : invariants_) {
+      it->get_dereference_map(deref_map, target, rewrite, number);
+      number++;
+    }
+  };
+
+
   Invariant* operator[](size_t n) {
     assert(n < invariants_.size());
     return invariants_[n];
