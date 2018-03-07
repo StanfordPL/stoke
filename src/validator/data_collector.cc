@@ -44,6 +44,50 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 }
 
 
+std::vector<DataCollector::Trace> DataCollector::get_detailed_trace(const Cfg& cfg) {
+
+  vector<Trace> traces;
+  for(size_t testcase = 0; testcase < sandbox_.size(); ++testcase) {
+    size_t index;
+    auto label = cfg.get_function().get_leading_label();
+    sandbox_.clear_callbacks();
+    sandbox_.clear_inputs();
+    sandbox_.insert_function(cfg);
+    sandbox_.set_entrypoint(label);
+
+    std::vector<CallbackParam*> to_free;
+
+    Trace trace;
+
+    auto code = cfg.get_code();
+    for(size_t i = 0; i < code.size(); ++i) {
+
+      CallbackParam* cp = new CallbackParam();
+      to_free.push_back(cp);
+
+      cp->block_id = cfg.get_loc(i).first;
+      cp->trace = &trace;
+      cp->line_number = i;
+
+      auto instr = code[i];
+      if(instr.is_any_jump()) {
+        sandbox_.insert_before(label, i, callback, cp);
+      } else {
+        sandbox_.insert_after(label, i, callback, cp);
+      }
+    }
+
+    sandbox_.run(testcase);
+
+    for (auto it : to_free)
+      delete it;
+
+    traces.push_back(trace);
+  }
+
+  return traces;
+}
+
 void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
 
   size_t index;

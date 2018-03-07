@@ -640,7 +640,16 @@ bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge,
   ss << "    Edge " << edge << endl;
   ss << "    Proving " << *partial_inv << endl;
   bool valid = false;
+
+  // Get test cases from dual
+  auto target_testcases = dual.get_target_data(edge);
+  auto rewrite_testcases = dual.get_rewrite_data(edge);
   vector<pair<CpuState, CpuState>> testcases;
+  for(size_t i = 0; i < target_testcases.size(); ++i) {
+    testcases.push_back(pair<CpuState, CpuState>(target_testcases[i], rewrite_testcases[i]));
+  }
+
+  // Run the obligation check
   try {
     valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
                   edge.te, edge.re, *start_inv, *partial_inv, testcases);

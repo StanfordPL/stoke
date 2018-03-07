@@ -197,6 +197,16 @@ public:
     return rewrite_state_data_[s];
   }
 
+  /** Get data for edge. */
+  std::vector<CpuState> get_target_data(Edge& e) {
+    return target_edge_data_[e];
+  }
+  std::vector<CpuState> get_rewrite_data(Edge& e) {
+    return rewrite_edge_data_[e];
+  }
+
+
+
   /** Forcibly set invariant. */
   void set_invariant(State& state, ConjunctionInvariant* inv) {
     invariants_[state] = inv;
@@ -269,6 +279,8 @@ private:
   std::map<State, ConjunctionInvariant*> invariants_;
   std::map<State, std::vector<CpuState>> target_state_data_;
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
+  std::map<Edge, std::vector<CpuState>> target_edge_data_;
+  std::map<Edge, std::vector<CpuState>> rewrite_edge_data_;
 
   DataCollector data_collector_;
   std::vector<DualAutomata::State> topological_sort_;

@@ -69,7 +69,13 @@ public:
     ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
   };
 
-  ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : Validator(solver, sandbox) {
+  ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : 
+    Validator(solver, sandbox) ,
+    oc_sandbox_(),
+    oc_data_collector_(oc_sandbox_)
+  {
+
+
     set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
@@ -83,6 +89,8 @@ public:
 
   ObligationChecker(const ObligationChecker& oc) :
     Validator(oc),
+    oc_sandbox_(),
+    oc_data_collector_(oc_sandbox_),
     filter_(oc.filter_)
   {
     basic_block_ghosts_ = oc.basic_block_ghosts_;
@@ -192,6 +200,10 @@ public:
 
 private:
 
+  /** Sandbox and Data Collector for working with test cases */
+  Sandbox oc_sandbox_;
+  DataCollector oc_data_collector_;
+
   /** Check. */
   bool check_core(const Cfg& target, const Cfg& rewrite,
                   Cfg::id_type target_block, Cfg::id_type rewrite_block,
@@ -270,7 +282,7 @@ private:
   /** Rewrite a CFG so that it always executes a particular path, replacing
     jumps with NOPs.  Fill a map that contains information relating the new
     line numbers with the original ones. */
-  void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate, bool is_rewrite);
+  void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate, bool is_rewrite, x64asm::Code& code);
 
 
   Invariant* get_jump_inv(const Cfg& cfg, Cfg::id_type, const CfgPath& p, bool is_rewrite);
