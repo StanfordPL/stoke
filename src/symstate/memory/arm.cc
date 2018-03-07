@@ -38,7 +38,7 @@ void ArmMemory::generate_constraints(
         cout << "; invariant: " << di.invariant_number;
       else
         cout << "; line: " << di.line_number;
-      cout << " --> " << pair.second;
+      cout << " --> " << pair.second << endl;
     } 
   }
   )
