@@ -60,7 +60,7 @@ public:
 
   const std::vector<Trace>& get_traces(Cfg& target);
 
-  std::vector<Trace> get_detailed_trace(const Cfg& target);
+  std::vector<Trace> get_detailed_traces(const Cfg& target);
 
   static CfgPath project_states(Trace& trace) {
     CfgPath p;

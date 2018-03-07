@@ -44,14 +44,14 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 }
 
 
-std::vector<DataCollector::Trace> DataCollector::get_detailed_trace(const Cfg& cfg) {
+std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& cfg) {
 
   vector<Trace> traces;
+  cout << "[get_detailed_trace] sandbox_.size() = " << sandbox_.size() << endl;
   for(size_t testcase = 0; testcase < sandbox_.size(); ++testcase) {
     size_t index;
     auto label = cfg.get_function().get_leading_label();
     sandbox_.clear_callbacks();
-    sandbox_.clear_inputs();
     sandbox_.insert_function(cfg);
     sandbox_.set_entrypoint(label);
 
@@ -70,6 +70,7 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_trace(const Cfg& c
       cp->line_number = i;
 
       auto instr = code[i];
+      cout << "[get_detailed_trace] instrumenting " << instr << endl;
       if(instr.is_any_jump()) {
         sandbox_.insert_before(label, i, callback, cp);
       } else {
@@ -77,7 +78,11 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_trace(const Cfg& c
       }
     }
 
+    cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
+    cout << *sandbox_.get_input(testcase) << endl;
     sandbox_.run(testcase);
+    cout << "[get_detailed_trace] output" << endl;
+    cout << *sandbox_.get_output(testcase) << endl;
 
     for (auto it : to_free)
       delete it;

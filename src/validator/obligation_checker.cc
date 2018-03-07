@@ -577,6 +577,7 @@ bool ObligationChecker::check_core(
 
   stop_now_.store(false);
 
+
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
   microseconds perf_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -593,7 +594,10 @@ bool ObligationChecker::check_core(
   // Get a list of all aliasing cases.
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
   bool arm_model = alias_strategy_ == AliasStrategy::ARM;
-  bool arm_testcases = arm_model && testcases.size() > 0;
+  bool arm_testcases = arm_model && (testcases.size() > 0);
+
+  cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
+  cout << "[check_core] arm_testcases = " << arm_testcases << endl;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -652,6 +656,7 @@ bool ObligationChecker::check_core(
       size_t tmp_invariant_lineno = 0;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
+      cout << "[check_core] adding assume dereference map" << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
     }
   }
@@ -696,19 +701,23 @@ bool ObligationChecker::check_core(
       auto& unroll_code = k ? rewrite_unroll : target_unroll;
       auto& testcase = k ? testcases[0].second : testcases[0].first;
       auto& linemap = k ? rewrite_line_map : target_line_map;
+      //cout << "[check_core] adding code dereferences k=" << k << endl;
 
       Cfg unroll_cfg(unroll_code);
-      auto trace = oc_data_collector_.get_detailed_trace(unroll_cfg);
-
       oc_sandbox_.clear_inputs();
       oc_sandbox_.insert_input(testcase);
+      DataCollector oc_data_collector(oc_sandbox_);
+      auto traces = oc_data_collector.get_detailed_traces(unroll_cfg);
 
-      for(size_t i = 0; i < trace.size(); ++i) {
+      //cout << "[check_core] traces.size() = " << traces.size() << endl;
+      for(size_t i = 0; i < traces[0].size(); ++i) {
         auto instr = unroll_code[i];
+        //cout << "[check_core] dereferences for " << instr << endl;
         if(instr.is_memory_dereference()) {
           auto dri = linemap[i].deref;
-          auto state = trace[0][i].cs;
+          auto state = traces[0][i].cs;
           auto addr = state.get_addr(instr);
+          //cout << "[check_core]     * found one!" << endl;
           deref_maps[0][dri] = addr;
         }
       }
@@ -718,6 +727,7 @@ bool ObligationChecker::check_core(
       size_t tmp_invariant_lineno = invariant_lineno;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
+      cout << "[check_core] adding prove dereference map" << endl;
       prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
     }
   }
@@ -947,6 +957,7 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 
     }
   }
+  unrolled.push_back(Instruction(Opcode::RET));
 
 }
 

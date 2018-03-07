@@ -70,9 +70,7 @@ public:
   };
 
   ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : 
-    Validator(solver, sandbox) ,
-    oc_sandbox_(),
-    oc_data_collector_(oc_sandbox_)
+    Validator(solver, sandbox)
   {
 
 
@@ -89,8 +87,6 @@ public:
 
   ObligationChecker(const ObligationChecker& oc) :
     Validator(oc),
-    oc_sandbox_(),
-    oc_data_collector_(oc_sandbox_),
     filter_(oc.filter_)
   {
     basic_block_ghosts_ = oc.basic_block_ghosts_;
@@ -202,7 +198,6 @@ private:
 
   /** Sandbox and Data Collector for working with test cases */
   Sandbox oc_sandbox_;
-  DataCollector oc_data_collector_;
 
   /** Check. */
   bool check_core(const Cfg& target, const Cfg& rewrite,
