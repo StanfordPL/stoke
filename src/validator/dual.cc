@@ -178,12 +178,12 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
             cout << blk << "  ";
             cout << endl;)
 
+        // check if edge's target path is prefix of tr_state's target path
+        if (!is_prefix(edge.te, tr_state.target_trace)) {
+          DEBUG_LEARN_STATE_DATA(cout << "     target prefix fail" << endl;)
+          continue;
+        }
 
-            // check if edge's target path is prefix of tr_state's target path
-            if (!is_prefix(edge.te, tr_state.target_trace)) {
-              DEBUG_LEARN_STATE_DATA(cout << "     target prefix fail" << endl;)
-              continue;
-            }
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
           DEBUG_LEARN_STATE_DATA(cout << "     rewrite prefix fail" << endl;)
@@ -193,11 +193,13 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
         found_matching_edge = true;
 
-
         // if so, we:
         // (1) update the state
         TraceState follow = tr_state;
         follow.state = edge.to;
+
+        CpuState target_start = follow.target_trace[0].cs;
+        CpuState rewrite_start = follow.rewrite_trace[0].cs;
 
         // (2) update the CpuStates
         if (edge.te.size())
@@ -212,6 +214,8 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         // (4) record the CpuState in the right place
         target_state_data_[edge.to].push_back(follow.target_current);
         rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
+        target_edge_data_[edge].push_back(target_start);
+        rewrite_edge_data_[edge].push_back(rewrite_start);
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);

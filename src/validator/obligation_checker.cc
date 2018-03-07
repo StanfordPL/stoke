@@ -315,7 +315,8 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
 
   // Generate line map
   LineMap line_map;
-  generate_linemap(cfg, P, line_map, false);
+  Code c;
+  generate_linemap(cfg, P, line_map, false, c);
 
   auto ji = get_jump_inv(cfg, cfg_start, P, true);
   SymBool conjunction = (*ji)(state_orig, state_orig, invariant_number);
@@ -563,7 +564,16 @@ void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg) {
 }
 
 
-bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::id_type target_block, Cfg::id_type rewrite_block, const CfgPath& P, const CfgPath& Q, Invariant& assume, Invariant& prove, const vector<pair<CpuState, CpuState>>& testcases) {
+bool ObligationChecker::check_core(
+	const Cfg& target, 
+  const Cfg& rewrite, 
+  Cfg::id_type target_block, 
+  Cfg::id_type rewrite_block, 
+  const CfgPath& P, 
+  const CfgPath& Q, 
+  Invariant& assume, 
+  Invariant& prove, 
+  const vector<pair<CpuState, CpuState>>& testcases) {
 
   stop_now_.store(false);
 
@@ -583,6 +593,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Get a list of all aliasing cases.
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
   bool arm_model = alias_strategy_ == AliasStrategy::ARM;
+  bool arm_testcases = arm_model && testcases.size() > 0;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -626,6 +637,7 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   for(const auto& tc : testcases) {
     DereferenceMap deref_map;
     deref_maps.push_back(deref_map);
+    break;
   }
 
   // Add given assumptions
@@ -635,9 +647,9 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   constraints.push_back(assumption);
 
   // Update dereference maps for the assumption if ARM
-  if(arm_model) {
-    size_t tmp_invariant_lineno = 0;
+  if(arm_testcases) {
     for(size_t i = 0; i < deref_maps.size(); ++i) {
+      size_t tmp_invariant_lineno = 0;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
@@ -650,8 +662,10 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
   // Generate line maps
   LineMap target_line_map;
   LineMap rewrite_line_map;
-  generate_linemap(target, P, target_line_map, false);
-  generate_linemap(rewrite, Q, rewrite_line_map, true);
+  Code target_unroll;
+  Code rewrite_unroll;
+  generate_linemap(target, P, target_line_map, false, target_unroll);
+  generate_linemap(rewrite, Q, rewrite_line_map, true, rewrite_unroll);
 
   // Build the circuits
   if (P.size() > 0) {
@@ -674,6 +688,41 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
+
+
+  // Update dereference maps for the code if ARM and we have testcases
+  if(arm_model) {
+    for(size_t k = 0; k < 2; ++k) {
+      auto& unroll_code = k ? rewrite_unroll : target_unroll;
+      auto& testcase = k ? testcases[0].second : testcases[0].first;
+      auto& linemap = k ? rewrite_line_map : target_line_map;
+
+      Cfg unroll_cfg(unroll_code);
+      auto trace = oc_data_collector_.get_detailed_trace(unroll_cfg);
+
+      oc_sandbox_.clear_inputs();
+      oc_sandbox_.insert_input(testcase);
+
+      for(size_t i = 0; i < trace.size(); ++i) {
+        auto instr = unroll_code[i];
+        if(instr.is_memory_dereference()) {
+          auto dri = linemap[i].deref;
+          auto state = trace[0][i].cs;
+          auto addr = state.get_addr(instr);
+          deref_maps[0][dri] = addr;
+        }
+      }
+    }
+
+    for(size_t i = 0; i < deref_maps.size(); ++i) {
+      size_t tmp_invariant_lineno = invariant_lineno;
+      auto& deref_map = deref_maps[i];
+      const auto& tc_pair = testcases[i];
+      prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+    }
+  }
+
+
 
   if (check_abort()) return false;
 
@@ -863,8 +912,9 @@ bool ObligationChecker::check_core(const Cfg& target, const Cfg& rewrite, Cfg::i
 
 }
 
-void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite) {
-  auto function = cfg.get_function();
+void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
+  auto& function = cfg.get_function();
+  auto& code = cfg.get_code();
 
   size_t line_no = 0;
   for (auto node : p) {
@@ -887,6 +937,14 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
       li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
       li.deref = deref;
       to_populate[line_no++] = li;
+
+      auto& instr = code[i];
+      if(!instr.is_any_jump())
+        unrolled.push_back(instr);
+      else
+        unrolled.push_back(Instruction(Opcode::NOP));
+      assert(line_no == unrolled.size());
+
     }
   }
 

@@ -26,6 +26,23 @@ void ArmMemory::generate_constraints(
     std::vector<SymBool>& initial_constraints,
     const DereferenceMaps& deref_maps) {
 
+  DEBUG_ARM(cout << "=========== PRINTING DEREFERENCE MAPS WOHOOOOOOOOOO =============" << endl;)
+  DEBUG_ARM(
+  size_t count = 0;
+  for(auto& dm : deref_maps) {
+    cout << "==== MAP " << count++ << endl;
+    for(auto pair : dm) {
+      auto di = pair.first;
+      cout << "   is_rewrite: " << di.is_rewrite;
+      if(di.is_invariant)
+        cout << "; invariant: " << di.invariant_number;
+      else
+        cout << "; line: " << di.line_number;
+      cout << " --> " << pair.second;
+    } 
+  }
+  )
+
   all_accesses_.clear();
   cells_.clear();
   access_offsets_.clear();
