@@ -707,7 +707,7 @@ bool ObligationChecker::check_core(
 
 
   // Update dereference maps for the code if ARM and we have testcases
-  if(arm_model) {
+  if(arm_testcases) {
     for(size_t k = 0; k < 2; ++k) {
       auto& unroll_code = k ? rewrite_unroll : target_unroll;
       auto& testcase = k ? testcases[0].second : testcases[0].first;
