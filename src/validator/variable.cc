@@ -81,6 +81,15 @@ bool Variable::is_dereference() const {
   return operand.is_typical_memory();
 }
 
+uint64_t Variable::get_addr(const CpuState& target, const CpuState& rewrite) const {
+  const Mem& mem = static_cast<const Mem&>(operand);
+  if(is_rewrite) {
+    return rewrite.get_addr(mem);
+  } else {
+    return target.get_addr(mem);
+  }
+}
+
 
 
 Variable Variable::bb_ghost(size_t n, bool is_rewrite) {
