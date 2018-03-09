@@ -656,8 +656,19 @@ bool ObligationChecker::check_core(
       size_t tmp_invariant_lineno = 0;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
-      cout << "[check_core] adding assume dereference map" << endl;
+      //cout << "[check_core] adding assume dereference map" << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      //cout << "[check_core] debugging assume dereference map 1" << endl;
+      //cout << "deref_map size = " << deref_map.size() << endl;
+      //cout << "addr = " << &deref_map << endl;
+      //for(auto it : deref_map) {
+      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
+      //}
+      //cout << "[check_core] debugging assume dereference map 2" << endl;
+      //cout << "addr = " << &deref_maps[i] << endl;
+      //for(auto it : deref_maps[i]) {
+      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
+      //}
     }
   }
 
