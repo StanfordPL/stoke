@@ -15,11 +15,12 @@
 #include <iomanip>
 
 #include "src/symstate/memory/arm.h"
+#include "src/unionfind/unionfind.h"
 
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { X }
+#define DEBUG_ARM(X) {  }
 
 void ArmMemory::generate_constraints(
     ArmMemory* am, 
@@ -52,6 +53,13 @@ void ArmMemory::generate_constraints(
   cells_.clear();
   access_offsets_.clear();
 
+  // Check that initial invariants are sane
+  bool sane = solver_.is_sat(initial_constraints);
+  if(!sane) {
+    DEBUG_ARM(cout << "Initial constraints unsatisfiable... ARM is easy here :)" << endl;)
+    return;
+  }
+
   // 0. Get all the memory accesses in one place to look at.
   auto other_accesses = am->accesses_;
   all_accesses_.insert(all_accesses_.begin(), accesses_.begin(), accesses_.end());
@@ -63,8 +71,6 @@ void ArmMemory::generate_constraints(
     all_accesses_.push_back(it);
   }
 
-  if (stop_now_ && *stop_now_) return;
-  // 1. For every pair of memory accesses, perform up to three queries to determine if they belong in the same cell
   DEBUG_ARM(cout << "==== ARM ON " << all_accesses_.size() << " ACCESSES " << endl;)
   DEBUG_ARM(
     for(size_t i = 0; i < all_accesses_.size(); ++i) {
@@ -72,6 +78,7 @@ void ArmMemory::generate_constraints(
       auto access = all_accesses_[i];  
       auto di = access.deref;
       bool have_info = deref_map.count(di) > 0;
+      cout << "      address = " << access.address << endl;
       cout << "      di.is_rewrite = " << (di.is_rewrite ? "true" : "false") << endl;
       cout << "      di.is_invariant = " << (di.is_invariant ? "true" : "false") << endl;
       cout << "      di.implicit = " << (di.implicit_dereference ? "true" : "false") << endl;
@@ -84,6 +91,58 @@ void ArmMemory::generate_constraints(
     }
   )
 
+  if (stop_now_ && *stop_now_) return;
+
+  // 1. figure out relationships between offsets
+  if(deref_maps.size() > 0) {
+    generate_constraints_offsets_data(initial_constraints, deref_map);
+  } else {
+    generate_constraints_offsets_nodata(initial_constraints);
+  }
+
+  // 2. get the cells and enumerate constraints
+  generate_constraints_enumerate_cells();
+  generate_constraints_given_cells(am);
+}
+
+void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_constraints,
+                                                  DereferenceMap& deref_map) {
+  UnionFind<size_t> unionfind;
+
+  for(size_t i = 0; i < all_accesses_.size(); ++i) {
+    auto i_access = all_accesses_[i];
+    auto i_di = i_access.deref;
+    auto i_addr = deref_map[i_di];
+    auto components = unionfind.components();
+    unionfind.add(i);
+
+    for(auto j : components) {
+      auto j_access = all_accesses_[j];
+      auto j_di = j_access.deref;
+      auto j_addr = deref_map[j_di];
+      auto diff = (j_addr - i_addr);
+      DEBUG_ARM(cout << "-> CONJECTURE: accesses " << i << " , " << j << " are offset by " << diff << endl;)
+
+      /** Try to prove that the address of deref i is always a fixed offset of deref j */
+      auto check = !(i_access.address + SymBitVector::constant(64, diff) == j_access.address);
+      initial_constraints.push_back(check);
+      if (stop_now_ && *stop_now_) return;
+      bool works = !solver_.is_sat(initial_constraints);
+      initial_constraints.pop_back();
+      if (works) {
+        access_offsets_[i][j] = diff;
+        access_offsets_[j][i] = -diff;
+        unionfind.join(i,j);
+        DEBUG_ARM(cout << "    * TRUE" << endl;)
+      } else {
+        DEBUG_ARM(cout << "    * FALSE" << endl;)
+      }
+    }
+  }
+} 
+
+void ArmMemory::generate_constraints_offsets_nodata(std::vector<SymBool>& initial_constraints) {
+  // 1. For every pair of memory accesses, perform up to three queries to determine if they belong in the same cell
   for (size_t i = 1; i < all_accesses_.size(); ++i) {
     for (size_t j = 0; j < i; ++j) {
       auto a1 = all_accesses_[i];
@@ -144,6 +203,9 @@ void ArmMemory::generate_constraints(
     }
     cout << endl;
   })
+}
+
+void ArmMemory::generate_constraints_enumerate_cells() {
 
   // 2. Enumerate cells
 
@@ -202,8 +264,6 @@ void ArmMemory::generate_constraints(
   auto& access = all_accesses_[i];
     cout << "i=" << i << " access " << access.index << " size " << access.size/8 << " cell " << access.cell << " offset " << access.cell_offset << endl;
   })
-
-  generate_constraints_given_cells(am);
 
 }
 
