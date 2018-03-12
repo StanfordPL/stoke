@@ -130,6 +130,10 @@ public:
 
 private:
 
+
+  /** Helper function for generate_constraints. */
+  void generate_constraints_given_cells(ArmMemory* am);
+
   std::atomic<bool>* stop_now_;
 
   struct Cell {

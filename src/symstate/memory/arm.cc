@@ -203,6 +203,12 @@ void ArmMemory::generate_constraints(
     cout << "i=" << i << " access " << access.index << " size " << access.size/8 << " cell " << access.cell << " offset " << access.cell_offset << endl;
   })
 
+  generate_constraints_given_cells(am);
+
+}
+
+void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
+
   // 3. Simulate execution
   //      ... each "cell" is like a cache.
   //      ... You don't write it unless you need to read from another cell.
@@ -332,7 +338,10 @@ void ArmMemory::generate_constraints(
     cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
   )
 
+
+
 }
+
 
 void ArmMemory::recurse_cell_assignment(size_t access_index) {
 
