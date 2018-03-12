@@ -471,6 +471,7 @@ bool ObligationChecker::check(
     const vector<pair<CpuState, CpuState>>& testcases) {
   stop_now_.store(false);
 
+  arm_won_ = false;
   if (alias_strategy_ == AliasStrategy::ARMS_RACE) {
     DEBUG_ARMS_RACE(cout << "===================================" << endl;)
 
@@ -480,13 +481,13 @@ bool ObligationChecker::check(
 
     if (oc1_ == NULL) {
       assert(oc2_ == NULL);
-      z3_1_ = new Z3Solver();
-      oc1_ = new ObligationChecker(*z3_1_, sandbox_);
+      solver1_ = solver_.clone();
+      oc1_ = new ObligationChecker(*solver1_, sandbox_);
       oc1_->set_filter(filter_);
       oc1_->set_alias_strategy(AliasStrategy::FLAT);
 
-      z3_2_ = new Z3Solver();
-      oc2_ = new ObligationChecker(*z3_2_, sandbox_);
+      solver2_ = solver_.clone();
+      oc2_ = new ObligationChecker(*solver2_, sandbox_);
       oc2_->set_filter(filter_);
       oc2_->set_alias_strategy(AliasStrategy::ARM);
     }
@@ -520,6 +521,8 @@ bool ObligationChecker::check(
       bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
       if (success && i_was_first) {
         DEBUG_ARMS_RACE(cout << "Index " << index << " was first!" << endl;)
+        if(index == 1)
+          arm_won_ = true;
         auto& other_oc = index == 0 ? *oc2_ : *oc1_;
         other_oc.interrupt();
 
@@ -597,7 +600,7 @@ bool ObligationChecker::check_core(
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
   //cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
-  cout << "[check_core] arm_testcases = " << arm_testcases << endl;
+  OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());

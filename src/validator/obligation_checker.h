@@ -109,6 +109,10 @@ public:
     return *this;
   }
 
+  AliasStrategy get_alias_strategy() {
+    return alias_strategy_;
+  }
+
   ObligationChecker& set_filter(Filter* filter) {
     if (delete_filter_)
       delete filter_;
@@ -194,7 +198,14 @@ public:
     solver_.interrupt();
   }
 
+  /** Did ARM beat the flat model? */
+  bool arm_won() {
+    return arm_won_;
+  }
+
 private:
+
+  bool arm_won_;
 
   /** Sandbox and Data Collector for working with test cases */
   Sandbox oc_sandbox_;
@@ -286,8 +297,8 @@ private:
 
   ObligationChecker* oc1_;
   ObligationChecker* oc2_;
-  Z3Solver* z3_1_;
-  Z3Solver* z3_2_;
+  SMTSolver* solver1_;
+  SMTSolver* solver2_;
 
   /////////////// Bookkeeping //////////////////
 

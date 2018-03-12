@@ -20,7 +20,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) {  }
+#define DEBUG_ARM(X) { }
 
 void ArmMemory::generate_constraints(
     ArmMemory* am, 
@@ -134,6 +134,8 @@ void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_
         access_offsets_[j][i] = -diff;
         unionfind.join(i,j);
         DEBUG_ARM(cout << "    * TRUE" << endl;)
+        /** no need to check with other components since we know they're separate. */
+        break;
       } else {
         DEBUG_ARM(cout << "    * FALSE" << endl;)
       }

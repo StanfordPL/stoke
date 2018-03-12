@@ -13,27 +13,25 @@ class UnionFind {
     void add(T t) {
       components_.insert(t);
       internal_map_[t] = t;
-      rank_[t] = 0;
     }
 
     void join(T t, T u) {
       auto c1 = lookup(t);
       auto c2 = lookup(u);
 
+      /** not high performance, but I prefer having the 
+        representative of each component being the smallest
+        value. */
       if(c1 == c2) {
         // no-op
         return;
-      } else if (rank_[c1] < rank_[c2]) {
+      } else if (c1 < c2) {
         internal_map_[c2] = c1;
         components_.erase(c2);
-      } else if (rank_[c2] < rank_[c1]) {
+      } else if (c2 < c1) {
         internal_map_[c1] = c2;
         components_.erase(c1);
-      } else {
-        internal_map_[c1] = c2;
-        components_.erase(c1);
-        rank_[c2]++;
-      }
+      } 
     }
 
     T lookup(T t) {
@@ -51,7 +49,6 @@ class UnionFind {
 
   private:
     std::map<T, T> internal_map_;
-    std::map<T, size_t> rank_;
     std::set<T> components_;
 
 };
