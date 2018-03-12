@@ -29,14 +29,10 @@ class UnionFind {
       } else if (rank_[c2] < rank_[c1]) {
         internal_map_[c1] = c2;
         components_.erase(c1);
-      }
-        
-        (c1 < c2) {
-        internal_map_[c2] = c1;
-        components_.erase(c2);
       } else {
         internal_map_[c1] = c2;
         components_.erase(c1);
+        rank_[c2]++;
       }
     }
 
@@ -46,7 +42,6 @@ class UnionFind {
         return x;
       T y = lookup(x);
       internal_map_[t] = y;
-      rank_[t] = 1;
       return y;
     }
 
