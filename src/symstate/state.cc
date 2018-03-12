@@ -131,24 +131,7 @@ SymBool SymState::operator[](const Eflags f) const {
 
 SymBitVector SymState::operator[](const Operand o) {
 
-  if (o.is_typical_memory()) {
-    auto& m = reinterpret_cast<const M8&>(o);
-    uint16_t size = o.size();
-    auto addr = get_addr(m);
-
-    if (memory) {
-      auto p = memory->read(addr, size, deref_);
-      set_sigsegv(p.second);
-      return p.first;
-    } else {
-      set_sigsegv(SymBool::tmp_var());
-      return SymBitVector::tmp_var(size);
-    }
-
-  } else {
-    return lookup(o);
-  }
-
+  return lookup(o);
 }
 
 SymBitVector SymState::lookup(const Operand o) const {

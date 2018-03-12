@@ -596,7 +596,7 @@ bool ObligationChecker::check_core(
   bool arm_model = alias_strategy_ == AliasStrategy::ARM;
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
-  cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
+  //cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
   cout << "[check_core] arm_testcases = " << arm_testcases << endl;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
@@ -649,6 +649,7 @@ bool ObligationChecker::check_core(
   auto assumption = assume(state_t, state_r, invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
   constraints.push_back(assumption);
+  invariant_lineno++;
 
   // Update dereference maps for the assumption if ARM
   if(arm_testcases) {
@@ -657,6 +658,8 @@ bool ObligationChecker::check_core(
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
       //cout << "[check_core] adding assume dereference map" << endl;
+      //cout << tc_pair.first << endl << endl;
+      //cout << tc_pair.second << endl << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
       //cout << "[check_core] debugging assume dereference map 1" << endl;
       //cout << "deref_map size = " << deref_map.size() << endl;
@@ -686,12 +689,14 @@ bool ObligationChecker::check_core(
   // Build the circuits
   if (P.size() > 0) {
     auto ji = get_jump_inv(target, target_block, P, true);
-    SymBool conj = (*ji)(state_t, state_t, invariant_lineno);
+    size_t tmp_invariant_lineno = invariant_lineno;
+    SymBool conj = (*ji)(state_t, state_t, tmp_invariant_lineno);
     constraints.push_back(conj);
   }
   if (Q.size() > 0) {
     auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
-    SymBool conj = (*ji)(state_r, state_r, invariant_lineno);
+    size_t tmp_invariant_lineno = invariant_lineno;
+    SymBool conj = (*ji)(state_r, state_r, tmp_invariant_lineno);
     constraints.push_back(conj);
   }
 
@@ -708,9 +713,12 @@ bool ObligationChecker::check_core(
 
   // Update dereference maps for the code if ARM and we have testcases
   if(arm_testcases) {
+    CpuState last_target;
+    CpuState last_rewrite;
     for(size_t k = 0; k < 2; ++k) {
       auto& unroll_code = k ? rewrite_unroll : target_unroll;
       auto& testcase = k ? testcases[0].second : testcases[0].first;
+      auto& last = k ? last_rewrite : last_target;
       auto& linemap = k ? rewrite_line_map : target_line_map;
       //cout << "[check_core] adding code dereferences k=" << k << endl;
 
@@ -731,6 +739,7 @@ bool ObligationChecker::check_core(
           //cout << "[check_core]     * found one!" << endl;
           deref_maps[0][dri] = addr;
         }
+        last = traces[0][i].cs;
       }
     }
 
@@ -738,8 +747,8 @@ bool ObligationChecker::check_core(
       size_t tmp_invariant_lineno = invariant_lineno;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
-      cout << "[check_core] adding prove dereference map" << endl;
-      prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      //cout << "[check_core] adding prove dereference map" << endl;
+      prove.get_dereference_map(deref_map, last_target, last_rewrite, tmp_invariant_lineno);
     }
   }
 
@@ -763,7 +772,6 @@ bool ObligationChecker::check_core(
   }
 
   // Build inequality constraint
-  invariant_lineno++;
   auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
   CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
