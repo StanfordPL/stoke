@@ -535,7 +535,16 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
         // 2. are these paths feasible?
         FalseInvariant fi;
         auto inv = dual.get_invariant(state);
+
+        auto target_testcases = dual.get_target_data(state);
+        auto rewrite_testcases = dual.get_rewrite_data(state);
+
+
         vector<pair<CpuState, CpuState>> testcases;
+        for(size_t i = 0; i < 1 && i < target_testcases.size(); ++i) {
+          testcases.push_back(pair<CpuState, CpuState>(target_testcases[i], rewrite_testcases[i]));
+        }
+
         bool safe = check(target_, rewrite_, state.ts, state.rs,
                               tp, rp, *inv, fi, testcases);
         if(!safe) {
@@ -645,7 +654,7 @@ bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge,
   auto target_testcases = dual.get_target_data(edge);
   auto rewrite_testcases = dual.get_rewrite_data(edge);
   vector<pair<CpuState, CpuState>> testcases;
-  for(size_t i = 0; i < target_testcases.size(); ++i) {
+  for(size_t i = 0; i < 1 && i < target_testcases.size(); ++i) {
     testcases.push_back(pair<CpuState, CpuState>(target_testcases[i], rewrite_testcases[i]));
   }
 
@@ -733,6 +742,13 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
     milliseconds end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto diff = (end - start).count();
     ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
+    if(ddec.get_alias_strategy() == AliasStrategy::ARMS_RACE) {
+      if(ddec.arm_won()) {
+        ss << "    (arm won)" << endl;
+      } else {
+        ss << "    (flat won)" << endl;
+      }
+    }
     CEG_DEBUG(
       if(!success && ddec.checker_has_ceg()) {
         auto ceg_t = ddec.checker_get_target_ceg();

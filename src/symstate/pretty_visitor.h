@@ -190,7 +190,7 @@ public:
 
   /** Visit a bit-vector constant */
   void visit(const SymBitVectorConstant * const bv) {
-    os_ << "0x" << std::hex << bv->constant_ << small_num(bv->size_);
+    os_ << "0x" << std::hex << bv->constant_ << small_num(bv->size_) << std::dec;
     reset();
   }
 
