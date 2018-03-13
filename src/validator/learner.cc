@@ -36,7 +36,7 @@
 #include "src/validator/learner.h"
 #include "src/validator/null.h"
 
-#define LEARNER_DEBUG(X) { X }
+#define LEARNER_DEBUG(X) { }
 
 using namespace std;
 using namespace stoke;

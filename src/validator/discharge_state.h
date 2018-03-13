@@ -5,7 +5,7 @@
 #include "src/validator/dual.h"
 #include <mutex>
 
-#define DEBUG_DISCHARGE_STATE(X) { X }
+#define DEBUG_DISCHARGE_STATE(X) { }
 
 namespace stoke {
 
