@@ -34,7 +34,7 @@
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
-#define DEBUG_ARMS_RACE(X) {  } 
+#define DEBUG_ARMS_RACE(X)  X  
 
 //#ifdef STOKE_DEBUG_CEG
 //#define CEG_DEBUG(X) { X }
@@ -481,14 +481,10 @@ bool ObligationChecker::check(
 
     if (oc1_ == NULL) {
       assert(oc2_ == NULL);
-      solver1_ = solver_.clone();
-      oc1_ = new ObligationChecker(*solver1_, sandbox_);
-      oc1_->set_filter(filter_);
+      oc1_ = new ObligationChecker(*this);
       oc1_->set_alias_strategy(AliasStrategy::FLAT);
 
-      solver2_ = solver_.clone();
-      oc2_ = new ObligationChecker(*solver2_, sandbox_);
-      oc2_->set_filter(filter_);
+      oc2_ = new ObligationChecker(*this);
       oc2_->set_alias_strategy(AliasStrategy::ARM);
     }
 
@@ -497,7 +493,7 @@ bool ObligationChecker::check(
     // for debug purposes
 
     auto run_oc = [&] (size_t index) {
-      DEBUG_ARMS_RACE(cout << "Thread " << index << " starting at "
+      DEBUG_ARMS_RACE(cout << "Thread " << std::dec << index << " starting at "
                       << duration_cast<microseconds>(
                         high_resolution_clock::now() - start_time).count() << endl;) 
 
@@ -508,7 +504,7 @@ bool ObligationChecker::check(
       bool my_result = false;
       try {
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
-        my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
+          my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
         DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
         DEBUG_ARMS_RACE(cout << "Index " << index << " took " <<
                         duration_cast<microseconds>(t1-t0).count() << endl;)
@@ -534,10 +530,9 @@ bool ObligationChecker::check(
         this->ceg_tf_ = oc.checker_get_target_ceg_end();
         this->ceg_rf_ = oc.checker_get_rewrite_ceg_end();
       }
-      /*
       DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
                       << duration_cast<microseconds>(
-                        high_resolution_clock::now() - start_time).count() << endl;) */
+                        high_resolution_clock::now() - start_time).count() << endl;)
 
 
     };

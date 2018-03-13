@@ -5,7 +5,7 @@
 #include "src/validator/dual.h"
 #include <mutex>
 
-#define DEBUG_DISCHARGE_STATE(X) { }
+#define DEBUG_DISCHARGE_STATE(X) { X }
 
 namespace stoke {
 
@@ -13,7 +13,7 @@ class DischargeState {
 
   public:
     
-  DischargeState(DualAutomata& dual, const std::vector<DualAutomata::Edge>& es) : 
+  DischargeState(const DualAutomata& dual, const std::vector<DualAutomata::Edge>& es) : 
     dual_(dual), edges_(es), next_edge_(0), next_conjunct_(0), done_(false) {
   }
 
@@ -135,7 +135,7 @@ private:
     DEBUG_DISCHARGE_STATE(std::cout << "[advance_problem] ending at edge/conjunct " << next_edge_ << "/" << next_conjunct_ << " done=" << done_ << std::endl;)
   }
 
-  DualAutomata& dual_;
+  const DualAutomata& dual_;
   const std::vector<DualAutomata::Edge>& edges_;
   size_t next_edge_;
   size_t next_conjunct_;

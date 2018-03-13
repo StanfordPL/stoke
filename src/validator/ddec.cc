@@ -545,8 +545,14 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual, DualAutomata::State
           testcases.push_back(pair<CpuState, CpuState>(target_testcases[i], rewrite_testcases[i]));
         }
 
-        bool safe = check(target_, rewrite_, state.ts, state.rs,
+        bool safe = false;
+        try{
+          safe = check(target_, rewrite_, state.ts, state.rs,
                               tp, rp, *inv, fi, testcases);
+        } catch (validator_error e) {
+          safe = false;
+          cout << "     encountered " << e.what() << "; assuming false." << endl;
+        }
         if(!safe) {
           all_work = false;
           cout << "[verify_exhaustive] FOUND BAD PAIR WITH BOUND " << i;
@@ -640,10 +646,10 @@ bool DdecValidator::discharge_exhaustive(DualAutomata& dual) {
 }
 
 /** returns true if everything was successful. */
-bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge, size_t conjunct, stringstream& ss) {
+bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata::Edge& edge, size_t conjunct, stringstream& ss) {
 
   auto start_inv = dual.get_invariant(edge.from);
-  auto end_inv = static_cast<ConjunctionInvariant*>(dual.get_invariant(edge.to));
+  auto end_inv = dual.get_invariant(edge.to);
   auto partial_inv = (*end_inv)[conjunct];
   ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
   ss << "    Edge " << edge << endl;
@@ -671,7 +677,7 @@ bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge,
 }
 
 /** returns true if everything was successful. */
-bool DdecValidator::discharge_edge(DualAutomata& dual, DualAutomata::Edge& edge) {
+bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata::Edge& edge) {
   // check this edge
   bool ok = true;
   auto start_inv = dual.get_invariant(edge.from);
@@ -721,14 +727,18 @@ void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& sta
     threads.push_back(thread(function, i));
   }
 
+  size_t count = 0;
   for(auto& thread : threads) {
     thread.join();
+    cout << "[discharge_thread_run] joined thread " << count++ << endl;
   }
 }
 
 void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, DischargeState& discharge_state, size_t i) {
   while(true) {
+    cout << "[discharge_thread " << i << "] getting another problem" << endl;
     auto problem = discharge_state.next_problem();
+    cout << "[discharge_thread " << i << "] got problem" << endl;
     auto& edge = problem.first;
     auto conjunct = problem.second;
     if(conjunct == (size_t)(-1)) { /* we're done. */
@@ -872,8 +882,16 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     auto expected_final = get_final_invariant();
 
     vector<pair<CpuState, CpuState>> testcases;
-    bool final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
+
+    bool final_ok = false;
+    try {
+      final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
                           {}, {}, *actual_final, *expected_final, testcases);
+    } catch (validator_error e) {
+      final_ok = false;
+      cout << "     encountered " << e.what() << "; assuming false." << endl;
+    }
+
     if (!final_ok) {
       cout << "[verify_dual] Could not complete final proof step." << endl;
       cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
