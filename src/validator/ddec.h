@@ -38,7 +38,8 @@ public:
     target_({}), rewrite_({}),
           data_collector_(sandbox),
           invariant_learner_(inv),
-          flow_invariant_learner_(data_collector_, invariant_learner_)
+          flow_invariant_learner_(data_collector_, invariant_learner_),
+          control_learner_(NULL)
   {
     set_thread_count(1);
   }
@@ -49,7 +50,8 @@ public:
     rewrite_(rhs.rewrite_),
     data_collector_(sandbox_),
     invariant_learner_(rhs.invariant_learner_),
-    flow_invariant_learner_(data_collector_, invariant_learner_) {
+    flow_invariant_learner_(data_collector_, invariant_learner_),
+    control_learner_(NULL) {
 
     target_bound_ = rhs.target_bound_;
     rewrite_bound_ = rhs.rewrite_bound_;
@@ -108,9 +110,9 @@ private:
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);
   /** Helper for discharge invariants that works on just one edge. */
-  bool discharge_edge(DualAutomata& d, DualAutomata::Edge& edge); 
+  bool discharge_edge(const DualAutomata& d, const DualAutomata::Edge& edge); 
   /** Helper that works on one conjunct. */
-  bool discharge_edge(DualAutomata& d, DualAutomata::Edge& edge, size_t conjunct, std::stringstream& ss);  
+  bool discharge_edge(const DualAutomata& d, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream& ss);  
   /** For running discharge_edge in a thread. */
   static void discharge_thread(DdecValidator&, DualAutomata&, DischargeState&, size_t);
   /** Start threads to discharge edges. */

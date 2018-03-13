@@ -83,6 +83,8 @@ public:
 
     oc1_ = NULL;
     oc2_ = NULL;
+    solver1_ = NULL;
+    solver2_ = NULL;
   }
 
   ObligationChecker(const ObligationChecker& oc) :
@@ -96,6 +98,8 @@ public:
     stop_now_ = false;
     oc1_ = NULL;
     oc2_ = NULL;
+    solver1_ = NULL;
+    solver2_ = NULL;
   }
 
   ~ObligationChecker() {

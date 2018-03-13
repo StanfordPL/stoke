@@ -56,7 +56,7 @@ public:
     }
   };
 
-  Invariant* operator[](size_t n) {
+  Invariant* operator[](size_t n) const {
     assert(n < invariants_.size());
     return invariants_[n];
   }
