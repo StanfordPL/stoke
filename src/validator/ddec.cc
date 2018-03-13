@@ -43,13 +43,13 @@
 #ifdef STOKE_DEBUG_DDEC
 #define DDEC_DEBUG(X) { X }
 #else
-#define DDEC_DEBUG(X) {   }
+#define DDEC_DEBUG(X) { }
 #endif
 
 #ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
 #else
-#define CEG_DEBUG(X) {   }
+#define CEG_DEBUG(X) { }
 #endif
 
 

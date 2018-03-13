@@ -191,17 +191,29 @@ public:
 
   /** Get data for state. */
   std::vector<CpuState> get_target_data(State s) const {
+    if(target_state_data_.count(s) == 0)
+      return std::vector<CpuState>();
+
     return target_state_data_.at(s);
   }
   std::vector<CpuState> get_rewrite_data(State s) const {
+    if(rewrite_state_data_.count(s) == 0)
+      return std::vector<CpuState>();
+
     return rewrite_state_data_.at(s);
   }
 
   /** Get data for edge. */
   std::vector<CpuState> get_target_data(const Edge& e) const {
+    if(target_edge_data_.count(e) == 0)
+      return std::vector<CpuState>();
+
     return target_edge_data_.at(e);
   }
   std::vector<CpuState> get_rewrite_data(const Edge& e) const {
+    if(rewrite_edge_data_.count(e) == 0)
+      return std::vector<CpuState>();
+
     return rewrite_edge_data_.at(e);
   }
 

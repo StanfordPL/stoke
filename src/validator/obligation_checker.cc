@@ -34,7 +34,7 @@
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
-#define DEBUG_ARMS_RACE(X)  X  
+#define DEBUG_ARMS_RACE(X)  { }
 
 //#ifdef STOKE_DEBUG_CEG
 //#define CEG_DEBUG(X) { X }
@@ -539,6 +539,7 @@ bool ObligationChecker::check(
 
     auto t1 = thread(run_oc, 0);
     auto t2 = thread(run_oc, 1);
+    cout << "In thread " << this_thread::get_id() << " we have created " << t1.get_id() << " and " << t2.get_id() << " for arms race" << endl;
 
     t1.join();
     t2.join();
