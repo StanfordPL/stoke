@@ -29,7 +29,11 @@ public:
     }
 
     std::ostream& print(std::ostream& os) const {
-      os << "(" << ts << ", " << rs << ")";
+      if(ts == (Cfg::id_type)(-1) && rs == (Cfg::id_type)(-1)) {
+        os << "FAIL";
+      } else {
+        os << "(" << ts << ", " << rs << ")";
+      }
       return os;
     }
 
@@ -92,6 +96,14 @@ public:
     return exit;
   }
 
+  /** Get the failure state. */
+  State fail_state() const {
+    State fail;
+    fail.ts = (Cfg::id_type)(-1);
+    fail.rs = (Cfg::id_type)(-1);
+    return fail;
+  }
+
   /** Add a feastible edge.  Returns true if not already present. */
   bool add_edge(Edge path) {
 
@@ -116,31 +128,41 @@ public:
   }
 
   /** Get the list of next states from a starting point. */
-  std::vector<State> next_states(State s) {
+  std::vector<State> next_states(State s) const {
     std::vector<State> states;
-    for (auto edge : next_edges_[s]) {
+    if(!next_edges_.count(s))
+      return states;
+    for (auto edge : next_edges_.at(s)) {
       states.push_back(edge.to);
     }
     return states;
   }
 
   /** Get the list of previous states from here. */
-  std::vector<State> prev_states(State s) {
+  std::vector<State> prev_states(State s) const {
     std::vector<State> states;
-    for (auto edge : prev_edges_[s]) {
+    if(!prev_edges_.count(s))
+      return states;
+    for (auto edge : prev_edges_.at(s)) {
       states.push_back(edge.from);
     }
     return states;
   }
 
   /** Get the list of edges from this state. */
-  std::vector<Edge> next_edges(State s) {
-    return next_edges_[s];
+  std::vector<Edge> next_edges(State s) const {
+    std::vector<Edge> empty;
+    if(!next_edges_.count(s))
+      return empty;
+    return next_edges_.at(s);
   }
 
   /** Get the list of edges to this state. */
-  std::vector<Edge> prev_edges(State s) {
-    return prev_edges_[s];
+  std::vector<Edge> prev_edges(State s) const {
+    std::vector<Edge> empty;
+    if(!prev_edges_.count(s))
+      return empty;
+    return prev_edges_.at(s);
   }
 
   /** Get the list of edges between two states */
@@ -217,7 +239,8 @@ public:
     return rewrite_edge_data_.at(e);
   }
 
-
+  /** Compute failure edges. */
+  std::vector<Edge> compute_failure_edges(const Cfg& target, const Cfg& rewrite) const;
 
   /** Forcibly set invariant. */
   void set_invariant(State& state, ConjunctionInvariant* inv) {
@@ -225,11 +248,11 @@ public:
   }
 
   /** Get set of reachable states (from data). */
-  std::set<State> get_data_reachable_states() {
+  std::set<State> get_data_reachable_states() const {
     return data_reachable_states_;
   }
   /** Get set of reachable states (from edges). */
-  std::set<State> get_edge_reachable_states();
+  std::set<State> get_edge_reachable_states() const;
 
   /** Perform topological sort on nodes with SCC data. */
   void compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrite_scc);
@@ -277,6 +300,8 @@ private:
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_edge_prefix(const CfgPath& tr1, const CfgPath& tr2);
 
+  /** Get fringe states of single CFG. */
+  std::set<CfgPath> get_cfg_fringe(const Cfg& cfg, State state, bool is_rewrite) const;
 
   /** Remove an edge prefix from a trace. */
   void remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2);

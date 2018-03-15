@@ -130,6 +130,7 @@ private:
   /** Compute the initial invariant */
   ConjunctionInvariant* get_initial_invariant() const;
   ConjunctionInvariant* get_final_invariant() const;
+  ConjunctionInvariant* get_fail_invariant() const;
 
   /** Is the invariant at a pair of basic blocks useful? */
   double invariant_quality(
