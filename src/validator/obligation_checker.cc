@@ -503,6 +503,7 @@ bool ObligationChecker::check(
 
       bool success = false;
       bool my_result = false;
+      have_ceg_ = false;
       try {
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
           my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
@@ -511,6 +512,7 @@ bool ObligationChecker::check(
                         duration_cast<microseconds>(t1-t0).count() << endl;)
         success = true;
       } catch (std::exception e) {
+        DEBUG_ARMS_RACE(cout << "Index " << index << " got exception " << e << endl;)
         // todo: record exception
       }
 
@@ -540,7 +542,6 @@ bool ObligationChecker::check(
 
     auto t1 = thread(run_oc, 0);
     auto t2 = thread(run_oc, 1);
-    cout << "In thread " << this_thread::get_id() << " we have created " << t1.get_id() << " and " << t2.get_id() << " for arms race" << endl;
 
     t1.join();
     t2.join();
@@ -552,12 +553,25 @@ bool ObligationChecker::check(
   }
 }
 
-void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg) {
-
+vector<string> ObligationChecker::get_ghost_names(const Cfg& cfg) {
+  vector<string> outputs;
   if(basic_block_ghosts_) {
     for(size_t blk = cfg.get_entry(); blk < cfg.get_exit(); blk++) {
       auto v = Variable::bb_ghost(blk, false).name;
-      ss.shadow[v] = SymBitVector::tmp_var(64);
+      outputs.push_back(v);
+    }
+  }
+  return outputs;
+}
+
+void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, string suffix) {
+
+  if(basic_block_ghosts_) {
+    auto names = get_ghost_names(cfg);
+    for(auto v : names) {
+      stringstream name;
+      name << v << "_" << suffix;
+      ss.shadow[v] = SymBitVector::var(64, name.str());
     }
   }
 
@@ -616,8 +630,8 @@ bool ObligationChecker::check_core(
   SymState state_t("1_INIT");
   SymState state_r("2_INIT");
 
-  add_basic_block_ghosts(state_t, target);
-  add_basic_block_ghosts(state_r, rewrite);
+  add_basic_block_ghosts(state_t, target, "1_INIT");
+  add_basic_block_ghosts(state_r, rewrite, "2_INIT");
 
   if (flat_model) {
     state_t.memory = new FlatMemory();
@@ -781,12 +795,14 @@ bool ObligationChecker::check_core(
   SymState state_t_final("1_FINAL");
   SymState state_r_final("2_FINAL");
 
-  add_basic_block_ghosts(state_t, target);
-  add_basic_block_ghosts(state_r, rewrite);
+  add_basic_block_ghosts(state_t_final, target, "1_FINAL");
+  add_basic_block_ghosts(state_r_final, rewrite, "2_FINAL");
+  auto target_ghost_names = get_ghost_names(target);
+  auto rewrite_ghost_names = get_ghost_names(rewrite);
 
-  for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe()))
+  for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe(), target_ghost_names))
     constraints.push_back(it);
-  for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
+  for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe(), rewrite_ghost_names))
     constraints.push_back(it);
 
   if (check_abort()) return false;
@@ -845,10 +861,10 @@ bool ObligationChecker::check_core(
 
   if (is_sat) {
     if (check_abort()) return false;
-    ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
-    ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
-    ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL");
-    ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL");
+    ceg_t_ = Validator::state_from_model(solver_, "_1_INIT", target_ghost_names);
+    ceg_r_ = Validator::state_from_model(solver_, "_2_INIT", rewrite_ghost_names);
+    ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL", target_ghost_names);
+    ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL", rewrite_ghost_names);
 
     if (check_abort()) return false;
     bool ok = true;

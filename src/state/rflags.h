@@ -119,17 +119,6 @@ public:
   /** Read text. */
   std::istream& read_text(std::istream& is, const char** names);
 
-  /** Write binary. */
-  std::ostream& write_bin(std::ostream& os) const {
-    os.write((const char*)contents_.data(), sizeof(uint64_t));
-    return os;
-  }
-  /** Read binary. */
-  std::istream& read_bin(std::istream& is) {
-    is.read((char*)contents_.data(), sizeof(uint64_t));
-    return is;
-  }
-
 private:
   /** Rflag contents. */
   cpputil::BitVector contents_;

@@ -320,11 +320,11 @@ ostream& CpuState::write_text(ostream& os) const {
     seg.write_text(os);
   }
 
-  /*os << shadow.size() << " shadow variable(s)" << endl;
+  os << shadow.size() << " shadow variable(s)" << endl;
 
   for(auto pair : shadow) {
     os << "shadow " << pair.first << " " << pair.second << endl;
-  }*/
+  }
 
   return os;
 }
@@ -350,6 +350,32 @@ istream& CpuState::read_text_segments(istream& is) {
     segments.push_back(m);
   }
   is >> ws;
+
+  return is;
+}
+
+istream& CpuState::read_shadow_vars(istream& is) {
+  string s;
+  string name;
+  uint64_t value;
+
+  size_t n;
+  is >> n;
+  getline(is, s);
+  if (s != " shadow variable(s)") {
+    fail(is) << "Expected shadow variables.  Got \"" << s << "\"." << endl;
+    return is;
+  }
+
+  for(size_t i = 0; i < n; ++i) {
+    is >> ws;
+    is >> s >> name >> value;
+    if(s != "shadow") {
+      fail(is) << "Expected 'shadow' but got \"" << s << "\"." << endl;
+      return is;
+    }
+    shadow[name] = value;
+  }
 
   return is;
 }
@@ -415,49 +441,16 @@ istream& CpuState::read_text(istream& is) {
   if (future >= '0' && future <= '9') {
     read_text_segments(is);
   }
+  is >> ws;
 
-  return is;
-}
-
-ostream& CpuState::write_bin(ostream& os) const {
-  os.write((const char*)&code, sizeof(ErrorCode));
-  gp.write_bin(os);
-  sse.write_bin(os);
-  rf.write_bin(os);
-  stack.write_bin(os);
-  heap.write_bin(os);
-  data.write_bin(os);
-
-  // Write other segments
-  size_t seg_count = segments.size();
-  os.write((const char*)&seg_count, sizeof(size_t));
-  for (auto seg : segments)
-    seg.write_bin(os);
-
-  return os;
-}
-
-istream& CpuState::read_bin(istream& is) {
-  is.read((char*)&code, sizeof(ErrorCode));
-  gp.read_bin(is);
-  sse.read_bin(is);
-  rf.read_bin(is);
-  stack.read_bin(is);
-  heap.read_bin(is);
-  data.read_bin(is);
-
-  // Read other segments
-  size_t seg_count;
-  is.read((char*)&seg_count, sizeof(size_t));
-  for (size_t i = 0; i < seg_count; ++i) {
-    Memory seg;
-    seg.read_bin(is);
-    segments.push_back(seg);
+  future = is.peek();
+  if (future >= '0' && future <= '9') {
+    read_shadow_vars(is);
   }
-
-
+  
   return is;
 }
+
 
 } // namespace stoke
 

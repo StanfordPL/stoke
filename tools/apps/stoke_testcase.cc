@@ -117,10 +117,6 @@ auto& register_mask_arg = ValueArg<string>::create("register_mask")
 
 
 auto& conv_opt = Heading::create("File conversion options:");
-auto& compress = FlagArg::create("compress")
-                 .description("Convert testcase file from text to binary");
-auto& decompress = FlagArg::create("decompress")
-                   .description("Convert testcase file from binary to text");
 auto& in = ValueArg<string>::create("in")
            .alternate("i")
            .usage("<path/to/file.tc>")
@@ -356,63 +352,13 @@ int trace() {
   return 0;
 }
 
-int do_compress() {
-  ifstream ifs(in.value());
-  if (!ifs.is_open()) {
-    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
-  }
-
-  CpuStates cs;
-  cs.read_text(ifs);
-  if (ifs.fail()) {
-    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
-  }
-
-  if (out.has_been_provided()) {
-    ofstream ofs(out.value());
-    cs.write_bin(ofs);
-  } else {
-    cs.write_bin(Console::msg());
-    Console::msg() << endl;
-  }
-
-  return 0;
-}
-
-int do_decompress() {
-  ifstream ifs(in.value());
-  if (!ifs.is_open()) {
-    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
-  }
-
-  CpuStates cs;
-  cs.read_bin(ifs);
-  if (ifs.fail()) {
-    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
-  }
-
-  if (out.has_been_provided()) {
-    ofstream ofs(out.value());
-    cs.write_text(ofs);
-  } else {
-    cs.write_text(Console::msg());
-    Console::msg() << endl;
-  }
-
-  return 0;
-}
-
 int main(int argc, char** argv) {
   target_arg.required(false);
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  if (compress.value()) {
-    return do_compress();
-  } else if (decompress.value()) {
-    return do_decompress();
-  } else if (target_arg.has_been_provided()) {
+  if (target_arg.has_been_provided()) {
     return auto_gen();
   } else {
     return trace();

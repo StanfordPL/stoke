@@ -36,29 +36,6 @@ public:
   /** Read text. */
   std::istream& read_text(std::istream& is);
 
-  /** Write binary. */
-  std::ostream& write_bin(std::ostream& os) const {
-    const auto size = this->size();
-    os.write((const char*)&size, sizeof(size_t));
-
-    for (size_t i = 0, ie = this->size(); i < ie; ++i) {
-      (*this)[i].write_bin(os);
-    }
-
-    return os;
-  }
-  /** Read binary. */
-  std::istream& read_bin(std::istream& is) {
-    size_t size = 0;
-    is.read((char*)&size, sizeof(size_t));
-
-    this->resize(size);
-    for (size_t i = 0; i < size; ++i) {
-      (*this)[i].read_bin(is);
-    }
-
-    return is;
-  }
 };
 
 } // namespace stoke

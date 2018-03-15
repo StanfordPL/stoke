@@ -755,8 +755,10 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
     if(ddec.get_alias_strategy() == AliasStrategy::ARMS_RACE) {
       if(ddec.arm_won()) {
         ss << "    (arm won)" << endl;
-      } else {
+      } else if (success || ddec.checker_has_ceg()) {
         ss << "    (flat won)" << endl;
+      } else {
+        ss << "    (both failed)" << endl;
       }
     }
     CEG_DEBUG(

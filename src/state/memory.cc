@@ -44,43 +44,6 @@ istream& Memory::read_text(istream& is) {
   return is;
 }
 
-ostream& Memory::write_bin(ostream& os) const {
-  os.write((const char*)&base_, sizeof(uint64_t));
-
-  const size_t content_size = contents_.num_fixed_bytes();
-  os.write((const char*)&content_size, sizeof(size_t));
-  os.write((const char*)contents_.data(), content_size);
-
-  const size_t mask_size = valid_.num_fixed_bytes();
-  os.write((const char*)&mask_size, sizeof(size_t));
-  os.write((const char*)valid_.data(), mask_size);
-
-  return os;
-}
-
-istream& Memory::read_bin(istream& is) {
-  is.read((char*)&base_, sizeof(uint64_t));
-
-  size_t content_size = 0;
-  is.read((char*)&content_size, sizeof(size_t));
-
-  // Fail for memories that are larger than 100 KB
-  if (content_size > 100*1024) {
-    fail(is) << "Only memories of size up to 100KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
-    return is;
-  }
-
-  contents_.resize_for_fixed_bytes(content_size);
-  is.read((char*)contents_.data(), content_size);
-
-  size_t mask_size = 0;
-  is.read((char*)&mask_size, sizeof(size_t));
-  valid_.resize_for_fixed_bytes(mask_size);
-  is.read((char*)valid_.data(), mask_size);
-
-  return is;
-}
-
 void Memory::write_text_summary(ostream& os) const {
   os << "[ ";
   HexWriter<uint64_t, 8>()(os, upper_bound());
