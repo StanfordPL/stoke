@@ -87,10 +87,11 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
 
 
 
-CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) {
+CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
+                                    vector<string> shadow_vars) {
   CpuState cs;
 
-  // Get the values of registers
+  // 64-bit GP registers
   for (size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
@@ -98,12 +99,14 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     //cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
   }
 
+  // XMMs/YMMs
   for (size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
     cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
   }
 
+  // flags
   for (size_t i = 0; i < eflags.size(); ++i) {
     if (!cs.rf.is_status(eflags[i].index()))
       continue;
@@ -111,6 +114,13 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     stringstream name;
     name << eflags[i] << name_suffix;
     cs.rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
+  }
+
+  // shadow variables
+  for(auto var : shadow_vars) {
+    stringstream name;
+    name << var << name_suffix;
+    cs.shadow[var] = smt.get_model_bv(name.str(), 64).get_fixed_quad(0);
   }
 
   // Figure out error code

@@ -167,11 +167,6 @@ public:
   /** Read text. */
   std::istream& read_text(std::istream& is);
 
-  /** Write binary. */
-  std::ostream& write_bin(std::ostream& os) const;
-  /** Read binary. */
-  std::istream& read_bin(std::istream& is);
-
 private:
   /** Virtual base address. */
   uint64_t base_;

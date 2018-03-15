@@ -30,22 +30,18 @@ private:
 
     StateGen sg(&sb);
     sg.get(state_, cfg);
+
+    size_t shadows = (rand() % 8);
+    for(size_t i = 0; i < shadows; ++i) {
+      stringstream ss;
+      ss << "var" << i;
+      state_.shadow[ss.str()] = rand();
+    }
   }
 
 protected:
   CpuState state_;
 };
-
-// Checks whether write_bin and read_bin are inverses
-TEST_F(StateRandomTest, Issue55Bin) {
-  std::stringstream ss;
-  state_.write_bin(ss);
-
-  CpuState result;
-  result.read_bin(ss);
-
-  ASSERT_EQ(state_, result);
-}
 
 // Checks whether write_text and read_text are inverses
 TEST_F(StateRandomTest, Issue55Text) {

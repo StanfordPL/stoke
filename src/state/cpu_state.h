@@ -57,7 +57,8 @@ struct CpuState {
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code &&
            gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
-           stack == rhs.stack && heap == rhs.heap && data == rhs.data;
+           stack == rhs.stack && heap == rhs.heap && data == rhs.data &&
+           segments == rhs.segments && shadow == rhs.shadow;
   }
   /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
@@ -271,11 +272,8 @@ struct CpuState {
   std::istream& read_text(std::istream& is);
   /** Read additional segments. */
   std::istream& read_text_segments(std::istream& is);
-
-  /** Write binary. */
-  std::ostream& write_bin(std::ostream& os) const;
-  /** Read binary. */
-  std::istream& read_bin(std::istream& is);
+  /** Read shadow variables. */
+  std::istream& read_shadow_vars(std::istream& is);
 
   /** The error code associated with this state. */
   ErrorCode code;
