@@ -839,6 +839,7 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
 bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
+
   bool learning_successful = dual.learn_invariants(invariant_learner_);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
@@ -847,7 +848,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   auto edge_reachable = dual.get_edge_reachable_states();
   for (auto state : edge_reachable) {
-    if (state == dual.start_state() || state == dual.exit_state())
+    if (state == dual.start_state() || state == dual.exit_state() || state == dual.fail_state())
       continue;
     auto inv = dual.get_invariant(state);
     if (inv->size() < 2) {
@@ -857,10 +858,19 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     }
   }
 
+  cout << "[verify_dual] Compute Failure Edges" << endl;
+  auto failure_edges = dual.compute_failure_edges(target_, rewrite_);
+  for(auto it : failure_edges) {
+    dual.add_edge(it);
+  }
+
+  /** Configure invariants. */
   auto start_state = dual.start_state();
   auto end_state = dual.exit_state();
+  auto fail_state = dual.fail_state();
   dual.set_invariant(start_state, get_initial_invariant());
   dual.set_invariant(end_state, get_final_invariant());
+  dual.set_invariant(fail_state, get_fail_invariant());
 
   /** Add NoSignals invariant everywhere */
   auto ns_invariant = new NoSignalsInvariant();
@@ -871,46 +881,38 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     dual.set_invariant(rs, orig_inv);
   }
 
-  bool valid = false;
-  while (!valid) {
-    dual.print_all();
-    discharge_invariants(dual);
-    dual.print_all();
+  /** Do the heavy lifting of the proof. */
+  dual.print_all();
+  discharge_invariants(dual);
+  dual.print_all();
 
-    /** Check if proof succeeds. */
-    auto actual_final = dual.get_invariant(end_state);
-    auto expected_final = get_final_invariant();
-
-    vector<pair<CpuState, CpuState>> testcases;
-
-    bool final_ok = false;
-    try {
-      final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-                          {}, {}, *actual_final, *expected_final, testcases);
-    } catch (validator_error e) {
-      final_ok = false;
-      cout << "     encountered " << e.what() << "; assuming false." << endl;
-    }
-
-    if (!final_ok) {
-      cout << "[verify_dual] Could not complete final proof step." << endl;
-      cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
-      return false;
-    }
-
-    cout << "Verifying exhaustive" << endl;
-    auto old_edge_count = dual.count_edges();
-    valid = discharge_exhaustive(dual);
-    if (!valid) {
-      if (old_edge_count == dual.count_edges()) {
-        cout << "[verify_dual] Couldn't verify exhaustive nor use counterexample." << endl;
-        return false;
-      } else {
-        cout << "[verify_dual] Couldn't verify exhaustive; going to try again." << endl;
-      }
-    }
+  /** Check that there's no path to the failure state. */
+  auto fail_invariant = dual.get_invariant(fail_state);
+  if(fail_invariant->size() == 0) {
+    cout << "[verify_dual] There's a feasible path to a fail state.  Proof failed." << endl;
+    return false;
   }
 
+  /** Perform the final check. */
+  auto actual_final = dual.get_invariant(end_state);
+  auto expected_final = get_final_invariant();
+  vector<pair<CpuState, CpuState>> testcases;
+  bool final_ok = false;
+  try {
+    final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
+                        {}, {}, *actual_final, *expected_final, testcases);
+  } catch (validator_error e) {
+    final_ok = false;
+    cout << "     encountered " << e.what() << "; assuming false." << endl;
+  }
+
+  if (!final_ok) {
+    cout << "[verify_dual] Could not complete final proof step." << endl;
+    cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
+    return false;
+  }
+
+  /** All done :) */
   cout << " ===== PROOF COMPLETE ===== " << endl;
   dual.print_all();
   return true;
@@ -1169,4 +1171,11 @@ ConjunctionInvariant* DdecValidator::get_final_invariant() const {
   //final_invariant->add_invariant(get_fixed_invariant());
 
   return final_invariant;
+}
+
+ConjunctionInvariant* DdecValidator::get_fail_invariant() const {
+  auto fail_invariant = new ConjunctionInvariant();
+  fail_invariant->add_invariant(new FalseInvariant());
+
+  return fail_invariant;
 }

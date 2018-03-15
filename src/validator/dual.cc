@@ -9,6 +9,7 @@ using namespace std;
 
 #define DEBUG_LEARN_STATE_DATA(X) { X }
 #define DEBUG_IS_PREFIX(X) { }
+#define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (this->ts < other.ts) {
@@ -280,7 +281,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
   rewrite_.recompute();
 
   for (auto state : data_reachable_states_) {
-    if (state == exit_state() || state == start_state())
+    if (state == exit_state() || state == start_state() || state == fail_state())
       continue;
 
     auto target_instr = target_.get_last_of_block(state.ts);
@@ -355,17 +356,12 @@ void DualAutomata::compute_topological_sort(CfgSccs& target_scc, CfgSccs& rewrit
 void DualAutomata::print_all() const {
 
   for (auto p : next_edges_) {
-    auto state = State(p.first.ts, p.first.rs);
-    cout << "STATE (" << p.first.ts << ", " << p.first.rs << ")" << endl;
-    auto inv = get_invariant(state);
-    auto conj = dynamic_cast<ConjunctionInvariant*>(inv);
-    if (conj != NULL) {
-      conj->write_pretty(cout);
-    } else {
-      cout << "  " << *inv << endl;
-    }
+    auto state = p.first;
+    cout << "STATE " << state << endl;
+    auto conj = get_invariant(state);
+    conj->write_pretty(cout);
     for (auto e : p.second) {
-      cout << "    to (" << e.to.ts << ", " << e.to.rs << ") via target: ";
+      cout << "    to " << e.to << " via target: ";
       for (auto n : e.te) {
         cout << n << "  ";
       }
@@ -376,6 +372,13 @@ void DualAutomata::print_all() const {
       cout << endl;
     }
   }
+
+  for(auto state : {exit_state(), fail_state()}) {
+    cout << "STATE " << state << endl;
+    auto conj = get_invariant(state);
+    conj->write_pretty(cout);
+  }
+
 
   if (topological_sort_.size() > 0) {
     cout << "TOPOLOGIAL SORT " << endl;
@@ -444,7 +447,7 @@ void DualAutomata::remove_prefixes() {
   }
 }
 
-std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() {
+std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() const {
 
   set<State> global_reachable;
   global_reachable.insert(start_state());
@@ -453,9 +456,11 @@ std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() {
   do {
     init = global_reachable.size();
     for (auto r : global_reachable) {
-      cout << "[sanity] from " << r << endl;
+      //cout << "[sanity] from " << r << endl;
       for (auto p : next_states(r)) {
-        cout << "[sanity]    inserting " << p << endl;
+        //cout << "[sanity]    inserting " << p << endl;
+        if(p == fail_state())
+          continue;
         global_reachable.insert(p);
       }
     }
@@ -464,6 +469,130 @@ std::set<DualAutomata::State> DualAutomata::get_edge_reachable_states() {
   } while (curr > init);
 
   return global_reachable;
+}
+
+std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool is_rewrite) const {
+
+  Cfg::id_type starting_block = is_rewrite ? state.rs : state.ts;
+  std::set<CfgPath> outputs;
+
+  /** Extract the list of safe paths starting at 'state' */
+  vector<CfgPath> safe_paths;
+  auto safe_edges = next_edges(state);
+  DEBUG_CFG_FRINGE("safe paths" << endl)
+  for(auto edge : safe_edges) {
+    auto& path = is_rewrite ? edge.re : edge.te;
+    safe_paths.push_back(path);
+    DEBUG_CFG_FRINGE("   " << path << endl)
+  }
+
+  /** Enumerate all the paths through the Cfg starting at a given basic block.
+    Once we get to a block that's not on any of the edges we record it as an
+    answer and stop searching. */
+  vector<CfgPath> current_paths;
+  vector<CfgPath> next_paths;
+  for(auto it = cfg.succ_begin(starting_block); it != cfg.succ_end(starting_block); ++it) {
+    current_paths.push_back({ *it });
+  }
+  while(current_paths.size()) {
+
+    DEBUG_CFG_FRINGE("current paths" << endl)
+
+    // find all of the next paths
+    next_paths.clear();
+    for(const auto& cp : current_paths) {
+      DEBUG_CFG_FRINGE("   " << cp << endl)
+      auto last_block = cp[cp.size() - 1];
+      for(auto it = cfg.succ_begin(last_block); it != cfg.succ_end(last_block); ++it) {
+        auto new_path = cp;
+        new_path.push_back(*it);
+        next_paths.push_back(new_path);
+      }  
+    }
+
+    // if any of the next paths are not covered by the safe edges, add it to
+    // the solution set
+    vector<size_t> to_remove;
+    DEBUG_CFG_FRINGE("next paths" << endl)
+    for(int i = (int)next_paths.size()-1; i >= 0; --i) {
+      const auto& np = next_paths[i];
+      bool in_answers = true;
+      for(const auto& sp : safe_paths) {
+        if(CfgPaths::is_prefix(np, sp) && np != sp) {
+          in_answers = false;
+          break;
+        }
+      }
+      if(in_answers) {
+        DEBUG_CFG_FRINGE("   " << np << "  (output)" << endl)
+        outputs.insert(np);
+        to_remove.push_back(i);
+      } else {
+        DEBUG_CFG_FRINGE("   " << np << "  (next round)" << endl)
+      }
+    }
+
+    for(auto item : to_remove) {
+      next_paths.erase(next_paths.begin() + item);
+    }
+    current_paths = next_paths;
+  }
+
+  return outputs;
+}
+
+std::vector<DualAutomata::Edge> DualAutomata::compute_failure_edges(const Cfg& target, const Cfg& rewrite) const {
+  std::vector<Edge> outputs;
+
+  /** for each state */
+  auto states = get_edge_reachable_states();
+  for(auto state : states) {
+    if(state == exit_state())
+      continue;
+    if(state == fail_state())
+      continue;
+
+    /** get the "fringe" points on each of the target and rewrite CFGs */
+    cout << "====== FRINGE FOR TARGET PROGRAM AND STATE " << state << endl;
+    auto target_fringe = get_cfg_fringe(target, state, false);
+    cout << "====== FRINGE FOR TARGET PROGRAM AND STATE " << state << endl;
+    auto rewrite_fringe = get_cfg_fringe(rewrite, state, true);
+
+    /** for every pair of fringe points, figure out if the comparison is needed. */
+    auto edges = next_edges(state);
+    for(auto target_path : target_fringe) {
+      for(auto rewrite_path : rewrite_fringe) {
+        cout << "Considering target_path=" << target_path;
+        cout << " rewrite_path=" << rewrite_path << endl;
+        bool match = false;
+        for(auto edge : edges) {
+          cout << "   Considering edge=" << edge << endl;
+          if(CfgPaths::is_prefix(edge.te, target_path) && 
+             CfgPaths::is_prefix(edge.re, rewrite_path)) {
+            cout << "      * match found!" << endl;
+            match = true;
+            break;
+          }
+        }
+
+        if(!match) {
+          Edge e;
+          e.te = target_path;
+          e.re = rewrite_path;
+          e.from = state;
+          e.to = fail_state();
+          outputs.push_back(e);
+        }
+      }
+    }
+  }
+
+  cout << "FAILURE EDGES" << endl;
+  for(auto edge : outputs) {
+    cout << edge << endl;
+  }
+
+  return outputs;
 }
 
 namespace std {

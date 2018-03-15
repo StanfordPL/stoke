@@ -489,6 +489,7 @@ bool ObligationChecker::check(
     }
 
     bool result = false;
+    bool have_ceg_ = false;
 
     // for debug purposes
 
@@ -524,11 +525,11 @@ bool ObligationChecker::check(
 
         // set output data
         result = my_result;
-        this->have_ceg_ = oc.checker_has_ceg();
-        this->ceg_t_ = oc.checker_get_target_ceg();
-        this->ceg_r_ = oc.checker_get_rewrite_ceg();
-        this->ceg_tf_ = oc.checker_get_target_ceg_end();
-        this->ceg_rf_ = oc.checker_get_rewrite_ceg_end();
+        have_ceg_ = oc.checker_has_ceg();
+        ceg_t_ = oc.checker_get_target_ceg();
+        ceg_r_ = oc.checker_get_rewrite_ceg();
+        ceg_tf_ = oc.checker_get_target_ceg_end();
+        ceg_rf_ = oc.checker_get_rewrite_ceg_end();
       }
       DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
                       << duration_cast<microseconds>(
