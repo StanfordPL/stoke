@@ -250,7 +250,13 @@ void safe_write(const void* data, int nbytes) {
   }
 }
 
+#define CSR_FLUSH_TO_ZERO         (1 << 15)
+
 int main() {
+
+  unsigned csr = __builtin_ia32_stmxcsr();
+  csr |= CSR_FLUSH_TO_ZERO;
+  __builtin_ia32_ldmxcsr(csr);
 
   Allocator allocator;
   int n;
