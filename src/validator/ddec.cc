@@ -837,6 +837,15 @@ void DdecValidator::discharge_invariants(DualAutomata& dual) {
       discharge_forward.update_dual();
       dual.print_all();
     }
+
+    // Bail out early if we've failed to prove something crucial.
+    auto fail_invariant = dual.get_invariant(dual.fail_state());
+    if(fail_invariant->size() == 0) {
+      cout << "[discharge_invariants] There's a feasible path to a fail state.  Proof failed." << endl;
+      return;
+    }
+
+
   }
 }
 
