@@ -196,6 +196,10 @@ public:
   void interrupt() {
     stop_now_.store(true);
     solver_.interrupt();
+    if(oc1_ != NULL)
+      oc1_->interrupt();
+    if(oc2_ != NULL)
+      oc2_->interrupt();
   }
 
   /** Did ARM beat the flat model? */

@@ -668,6 +668,9 @@ bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata:
   try {
     valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
                   edge.te, edge.re, *start_inv, *partial_inv, testcases);
+    if(has_error_) {
+      ss << "     " << error_ << endl;
+    }
   } catch (validator_error e) {
     valid = false;
     ss << "     encountered " << e.what() << "; assuming false." << endl;
@@ -753,9 +756,9 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
     auto diff = (end - start).count();
     ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
     if(ddec.get_alias_strategy() == AliasStrategy::ARMS_RACE) {
-      if(ddec.arm_won()) {
+      if(!ddec.has_error_ && ddec.arm_won()) {
         ss << "    (arm won)" << endl;
-      } else if (success || ddec.checker_has_ceg()) {
+      } else if (!ddec.has_error_) {
         ss << "    (flat won)" << endl;
       } else {
         ss << "    (both failed)" << endl;

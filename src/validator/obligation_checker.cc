@@ -34,6 +34,7 @@
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
+//#define DEBUG_ARMS_RACE(X)  X
 #define DEBUG_ARMS_RACE(X)  { }
 
 //#ifdef STOKE_DEBUG_CEG
@@ -489,7 +490,9 @@ bool ObligationChecker::check(
     }
 
     bool result = false;
-    bool have_ceg_ = false;
+    have_ceg_ = false;
+    bool has_error[2];
+    string error[2];
 
     // for debug purposes
 
@@ -500,38 +503,45 @@ bool ObligationChecker::check(
 
       auto& oc = index == 0 ? *oc1_ : *oc2_;
 
-
+      string name = index == 0 ? "flat" : "arm";
+      has_error[index] = false;
+      error[index] = "";
       bool success = false;
       bool my_result = false;
-      have_ceg_ = false;
+
       try {
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
           my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
         DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
-        DEBUG_ARMS_RACE(cout << "Index " << index << " took " <<
+        DEBUG_ARMS_RACE(cout << name << " took " <<
                         duration_cast<microseconds>(t1-t0).count() << endl;)
         success = true;
       } catch (std::exception e) {
-        DEBUG_ARMS_RACE(cout << "Index " << index << " got exception " << e << endl;)
-        // todo: record exception
+        stringstream ss;
+        ss << name << " got exception: " << e.what();
+        has_error[index] = true;
+        error[index] = ss.str();
+        DEBUG_ARMS_RACE(cout << ss.str() << endl);
       }
 
       size_t swap_zero = 0;
-      bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
-      if (success && i_was_first) {
-        DEBUG_ARMS_RACE(cout << "Index " << index << " was first!" << endl;)
-        if(index == 1)
-          arm_won_ = true;
-        auto& other_oc = index == 0 ? *oc2_ : *oc1_;
-        other_oc.interrupt();
+      if(success) {
+        bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
+        if (i_was_first) {
+          DEBUG_ARMS_RACE(cout << name << " was first!" << endl;)
+          if(index == 1)
+            arm_won_ = true;
+          auto& other_oc = index == 0 ? *oc2_ : *oc1_;
+          other_oc.interrupt();
 
-        // set output data
-        result = my_result;
-        have_ceg_ = oc.checker_has_ceg();
-        ceg_t_ = oc.checker_get_target_ceg();
-        ceg_r_ = oc.checker_get_rewrite_ceg();
-        ceg_tf_ = oc.checker_get_target_ceg_end();
-        ceg_rf_ = oc.checker_get_rewrite_ceg_end();
+          // set output data
+          result = my_result;
+          have_ceg_ = oc.checker_has_ceg();
+          ceg_t_ = oc.checker_get_target_ceg();
+          ceg_r_ = oc.checker_get_rewrite_ceg();
+          ceg_tf_ = oc.checker_get_target_ceg_end();
+          ceg_rf_ = oc.checker_get_rewrite_ceg_end();
+        }
       }
       DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
                       << duration_cast<microseconds>(
@@ -545,6 +555,22 @@ bool ObligationChecker::check(
 
     t1.join();
     t2.join();
+
+    /** compose error messages. */
+    has_error_ = (finished.load() == 0);
+    DEBUG_ARMS_RACE(cout << "has_error_ = " << has_error_ << endl;)
+    stringstream err_msg;
+    if(has_error[0]) {
+      err_msg << error[0];
+      if(has_error[1])
+        err_msg << " ; ";
+    }
+    if(has_error[1])
+      err_msg << error[1];
+    error_ = err_msg.str();
+    DEBUG_ARMS_RACE(cout << "have_ceg_ = " << have_ceg_ << endl;)
+    DEBUG_ARMS_RACE(cout << "error_ = " << error_ << endl;)
+
 
     return result;
 
