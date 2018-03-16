@@ -468,9 +468,9 @@ int main(int argc, char** argv) {
         };
         pair<double, double> t_real = mean(sample(reall, 5));
         pair<double, double> t_realtime = pair<double,double>(-1,-1);
-        // t_realtime = mean(sample(realtimel, 5));
+        t_realtime = mean(sample(realtimel, 5));
         double t_lat = -1;
-        // t_lat = latencyl();
+        t_lat = latencyl();
 
         if (!fake) {
           fout << "intermediates/result-" + to_string(id) + ".s";
