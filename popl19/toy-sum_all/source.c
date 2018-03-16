@@ -8,6 +8,8 @@
 int 
 __attribute__ ((noinline))
 sum_all(int* start, size_t count) {
+  count &= 0x0fffffff;
+
   int output = 0;
   for(size_t i = 0; i < count; ++i) {
     output += start[i];
@@ -18,6 +20,8 @@ sum_all(int* start, size_t count) {
 int 
 __attribute__ ((noinline))
 sum_all_unroll(int* start, size_t count) {
+  count &= 0x0fffffff;
+
   int output = 0;
   size_t i;
   for(i = 0; i+3 < count; i+=4) {

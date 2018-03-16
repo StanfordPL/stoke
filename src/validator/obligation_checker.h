@@ -36,6 +36,7 @@
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 #include "src/validator/filters/default.h"
+#include "src/validator/filters/bound_away.h"
 
 //#define DEBUG_CHECKER_PERFORMANCE
 
@@ -77,7 +78,7 @@ public:
     set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
-    filter_ = new DefaultFilter(handler_);
+    filter_ = new BoundAwayFilter(handler_, 0x100, 0xffffffffffffff00);
     delete_filter_ = true;
     stop_now_ = false;
 
