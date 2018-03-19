@@ -28,8 +28,8 @@
 #include "src/symstate/memory_manager.h"
 
 
-#define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { X }
+#define CONSTRAINT_DEBUG(X) { X }
 #define BUILD_TC_DEBUG(X) {  }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -177,6 +177,7 @@ bool ObligationChecker::check_counterexample(
     const CpuState& ceg_expected, 
     const CpuState& ceg_expected2) {
 
+  /*
   CEG_DEBUG(
       // TODO: this is totally broken.
   // Next, we run only the relevant blocks of the target/rewrite.
@@ -194,16 +195,16 @@ bool ObligationChecker::check_counterexample(
       cout << "  WARNING!!! Got a different counterexample from sandbox than from validator." << endl;
     }
 
-  )
+  )*/
 
   // First, the counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
-    CEG_DEBUG(cout << "  (Counterexample does not meet assumed invariant.)" << endl;);
+    cout << "  (Counterexample does not meet assumed invariant.)" << endl;
     return false;
   }
 
   if(prove.check(ceg_expected, ceg_expected2)) {
-    CEG_DEBUG(cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;)
+    cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;
     return false;
   }
 
@@ -623,12 +624,15 @@ bool ObligationChecker::check_core(
   microseconds perf_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
 
+  static mutex print_m;
+  OBLIG_DEBUG(print_m.lock();)
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check. solver_=" << &solver_ << " this=" << this << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << P << " Q: " << Q << endl;)
   OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
   OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)
+  OBLIG_DEBUG(print_m.unlock();)
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
@@ -637,7 +641,7 @@ bool ObligationChecker::check_core(
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
   //cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
-  OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
+  //OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -687,7 +691,6 @@ bool ObligationChecker::check_core(
   // Add given assumptions
   size_t invariant_lineno = 0;
   auto assumption = assume(state_t, state_r, invariant_lineno);
-  CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
   constraints.push_back(assumption);
   invariant_lineno++;
 
@@ -796,12 +799,7 @@ bool ObligationChecker::check_core(
 
   if (check_abort()) return false;
 
-  CONSTRAINT_DEBUG(
-    cout << endl << "CONSTRAINTS" << endl << endl;;
-  for (auto it : constraints) {
-  cout << it << endl;
-})
-
+  
   if (arm_model) {
     /** When we read out the constraint for the proof, we want to get the ending
       state of the heap, not the initial state. */
@@ -813,7 +811,6 @@ bool ObligationChecker::check_core(
 
   // Build inequality constraint
   auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
-  CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
   constraints.push_back(prove_constraint);
 
@@ -864,7 +861,14 @@ bool ObligationChecker::check_core(
                        rewrite_con.end());
   }
 
-
+  CONSTRAINT_DEBUG(print_m.lock();)
+  CONSTRAINT_DEBUG(cout << "[ConstraintDebug] for P: " << P << " Q: " << Q << endl;)
+    CONSTRAINT_DEBUG(
+      cout << endl << "CONSTRAINTS" << endl << endl;;
+    for (auto it : constraints) {
+    cout << it << endl;
+  })
+  CONSTRAINT_DEBUG(print_m.unlock();)
 
   // Step 4: Invoke the solver
 #ifdef DEBUG_CHECKER_PERFORMANCE
@@ -945,11 +949,11 @@ bool ObligationChecker::check_core(
     // doesn't work right now because 
     // (1) it doesn't get ghost variables in ceg
     // (2) it doesn't run code on correct path */
-    /*if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
+    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
     } else {
       CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
-    }*/
+    }
 
     delete state_t.memory;
     delete state_r.memory;

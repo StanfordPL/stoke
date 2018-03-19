@@ -71,13 +71,12 @@ vector<Variable> InvariantLearner::pick_variables(const Cfg& target,
 
     auto regset = live_out_regs(cfg, block);
     for (auto r = regset.gp_begin(); r != regset.gp_end(); ++r) {
+      if((*r).size() != 64) // TODO: revisit; what's the right thing to do here?
+        continue;
       Variable v(*r, k);
       variables.push_back(v);
     }
     for (auto r = regset.sse_begin(); r != regset.sse_end(); ++r) {
-      Variable v(*r, k);
-      variables.push_back(v);
-
       for (size_t i = 0; i < (*r).size()/64; ++i) {
         Variable v64(*r,k,8,i*8);
         variables.push_back(v64);
