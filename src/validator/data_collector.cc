@@ -35,6 +35,9 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
   for (size_t i = 0; i < sandbox_.size(); ++i) {
     Trace trace;
     mine_data(cfg, i, trace);
+    for(auto& tp : trace) {
+      tp.cs.shadow.clear();
+    }
     traces.push_back(trace);
   }
   cout << "... DONE" << endl;
