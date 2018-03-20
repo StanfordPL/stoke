@@ -19,6 +19,7 @@ STOKE has appeared in a number of publications.
 - [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf)
 - [**Stochastic Program Optimization** -- CACM 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/cacm16.pdf)
 - [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
+- [**Sound Loop Superoptimization for Google Native Client** -- ASPLOS 2017](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos17.pdf)
 
 # Download
 
