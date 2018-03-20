@@ -127,6 +127,16 @@ SymBitVector SymBitVector::sign_extend(uint16_t size) const {
   return SymBitVector(new SymBitVectorSignExtend(ptr, size));
 }
 
+SymBitVector SymBitVector::zero_extend(uint16_t size) const {
+  auto old_size = width();
+  if(old_size < size) {
+    auto diff = size-old_size;
+    return SymBitVector::constant(diff, 0) || *this;
+  } else {
+    return *this;
+  }
+}
+
 SymBitVector SymBitVector::s_mod(const SymBitVector& other) const {
   return SymBitVector(new SymBitVectorSignMod(ptr, other.ptr));
 }

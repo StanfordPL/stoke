@@ -28,8 +28,8 @@
 #include "src/symstate/memory_manager.h"
 
 
-#define OBLIG_DEBUG(X) { X }
-#define CONSTRAINT_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -199,12 +199,12 @@ bool ObligationChecker::check_counterexample(
 
   // First, the counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
-    cout << "  (Counterexample does not meet assumed invariant.)" << endl;
+    cout << "  (Counterexample does not meet assumed invariant.)  P=" << P << " Q=" << Q << " Prove=" << prove << endl;
     return false;
   }
 
   if(prove.check(ceg_expected, ceg_expected2)) {
-    cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;
+    cout << "  (Counterexample satisfies desired invariant; it shouldn't)  P=" << P << " Q=" << Q << " Prove=" << prove << endl;
     return false;
   }
 
@@ -929,9 +929,13 @@ bool ObligationChecker::check_core(
     if (!ok) {
       // We don't have memory accurate in our counterexample.  Just leave.
       have_ceg_ = false;
+      CEG_DEBUG(cout << "[counterexample-debug] for P: " << P << " Q: " << Q << endl;)
       CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
+
     }
 
+    CEG_DEBUG(print_m.lock();)
+    CEG_DEBUG(cout << "[counterexample-debug] for P: " << P << " Q: " << Q << endl;)
     CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
     CEG_DEBUG(cout << "TARGET START STATE" << endl;)
     CEG_DEBUG(cout << ceg_t_ << endl;)
@@ -941,6 +945,7 @@ bool ObligationChecker::check_core(
     CEG_DEBUG(cout << ceg_tf_ << endl;)
     CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
     CEG_DEBUG(cout << ceg_rf_ << endl;)
+    CEG_DEBUG(print_m.unlock();)
 
     if (check_abort()) return false;
 
@@ -950,9 +955,9 @@ bool ObligationChecker::check_core(
     // (1) it doesn't get ghost variables in ceg
     // (2) it doesn't run code on correct path */
     if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
-      CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
+      CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
     } else {
-      CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
+      CEG_DEBUG(cout << "  (Spurious counterexample detected) P=" << P << " Q=" << Q << endl;)
     }
 
     delete state_t.memory;
