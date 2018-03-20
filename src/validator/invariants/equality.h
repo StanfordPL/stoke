@@ -44,9 +44,6 @@ public:
 
     assert(modulus_ != 1);
 
-    for (auto it : terms) {
-      assert(it.size == 8);
-    }
   }
 
   /** Check if this invariant holds over an abstract state */
@@ -58,7 +55,8 @@ public:
     SymBitVector sum = SymBitVector::constant(64, 0);
 
     for (auto term : terms_) {
-      auto value64 = term.from_state(target, rewrite);
+      auto value = term.from_state(target, rewrite);
+      auto value64 = value.zero_extend(64);
       sum = sum + SymBitVector::constant(64, term.coefficient)*value64;
     }
 

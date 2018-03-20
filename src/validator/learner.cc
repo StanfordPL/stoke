@@ -36,7 +36,7 @@
 #include "src/validator/learner.h"
 #include "src/validator/null.h"
 
-#define LEARNER_DEBUG(X) { }
+#define LEARNER_DEBUG(X) { X }
 
 using namespace std;
 using namespace stoke;
@@ -1017,6 +1017,17 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
 
+  // Learn easy equalities over a really huge set of registers
+  vector<Variable> vector_columns;
+  auto vector_vars_target = sub_registers_for_regset(target_regs, false);
+  auto vector_vars_rewrite = sub_registers_for_regset(rewrite_regs, true);
+  vector_columns.insert(vector_columns.begin(), vector_vars_target.begin(), vector_vars_target.end());
+  vector_columns.insert(vector_columns.begin(), vector_vars_rewrite.begin(), vector_vars_rewrite.end());
+  auto easy_constants = learn_constants(vector_columns, target_states, rewrite_states);
+  auto easy_equality = learn_easy_equalities(vector_columns, target_states, rewrite_states);
+  conj->add_invariants(easy_equality);
+
+
   // Define columns that will be used to learn equalities
   vector<Variable> columns;
 
@@ -1043,7 +1054,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
   /** get variables corresponding to registers */
   for (size_t k = 0; k < 2; ++k) {
-    auto def_ins = k ? rewrite_regs : target_regs;
+    auto& def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
       if ((*r).size() == 64) {
         Variable c(*r, k);
@@ -1096,3 +1107,44 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
   return conj;
 }
+
+
+std::vector<Variable> InvariantLearner::sub_registers_for_regset(x64asm::RegSet rs, bool is_rewrite) const {
+  vector<Variable> outputs;
+  for (auto r = rs.gp_begin(); r != rs.gp_end(); ++r) {
+    size_t bytes = (*r).size()/8;
+    switch(bytes) {
+      case 8: {
+        // add register as output
+        Variable full_reg(*r, is_rewrite);
+        outputs.push_back(full_reg);
+      }
+      case 4: {
+        // add each quadword as an output
+        for(size_t i = 0; i < bytes; i+=4) {
+          Variable quad(*r, is_rewrite, 4, i);
+          outputs.push_back(quad);
+        }
+      }
+      case 2: {
+        // add each word as an output
+        for(size_t i = 0; i < bytes; i+=2) {
+          Variable word(*r, is_rewrite, 2, i);
+          outputs.push_back(word);
+        }
+      }
+      case 1: {
+        // add each byte as an output
+        for(size_t i = 0; i < bytes; i++) {
+          Variable abyte(*r, is_rewrite, 1, i);
+          outputs.push_back(abyte);
+        }
+        break;
+      }
+    }
+  }
+
+  return outputs;
+
+}
+

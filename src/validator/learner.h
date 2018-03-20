@@ -76,7 +76,7 @@ public:
     return *this;
   }
 
-  /** Get a reasonable set of variables for a program point. */
+  /** Get live-out variables for a program point. */
   std::vector<Variable> pick_variables(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_block,
                                        Cfg::id_type rewrite_block);
@@ -157,6 +157,8 @@ private:
     const std::vector<CpuState>& target_states, 
     const std::vector<CpuState>& rewrite_states) const;
 
+  /** Get all variables corresponding to relevant sub-variables of a register. */
+  std::vector<Variable> sub_registers_for_regset(x64asm::RegSet rs, bool is_rewrite) const;
 
   std::vector<NonzeroInvariant*> build_memory_null_invariants(
       x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
