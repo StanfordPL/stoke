@@ -38,6 +38,7 @@ public:
     set_enable_shadow(true);
     set_enable_nonlinear(true);
     set_enable_memory(true);
+    set_enable_vector_vars(false);
   }
 
   InvariantLearner& add_ghost(Variable v) {
@@ -54,6 +55,12 @@ public:
   /** Enable invariants over memory. */
   InvariantLearner& set_enable_memory(bool b) {
     enable_memory_ = b;
+    return *this;
+  }
+
+  /** Enable invariants over vector variables. */
+  InvariantLearner& set_enable_vector_vars(bool b) {
+    enable_vector_vars_ = b;
     return *this;
   }
 
@@ -167,6 +174,7 @@ private:
   std::vector<Variable> ghosts_;
 
   /** Some options */
+  bool enable_vector_vars_;
   bool enable_nonlinear_;
   bool enable_memory_;
   bool enable_shadow_;

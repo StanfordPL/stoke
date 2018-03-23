@@ -1017,15 +1017,17 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
 
-  // Learn easy equalities over a really huge set of registers
-  vector<Variable> vector_columns;
-  auto vector_vars_target = sub_registers_for_regset(target_regs, false);
-  auto vector_vars_rewrite = sub_registers_for_regset(rewrite_regs, true);
-  vector_columns.insert(vector_columns.begin(), vector_vars_target.begin(), vector_vars_target.end());
-  vector_columns.insert(vector_columns.begin(), vector_vars_rewrite.begin(), vector_vars_rewrite.end());
-  auto easy_constants = learn_constants(vector_columns, target_states, rewrite_states);
-  auto easy_equality = learn_easy_equalities(vector_columns, target_states, rewrite_states);
-  conj->add_invariants(easy_equality);
+  // Learn easy equalities over a really huge set of (sub) registers
+  if(enable_vector_vars_) {
+    vector<Variable> vector_columns;
+    auto vector_vars_target = sub_registers_for_regset(target_regs, false);
+    auto vector_vars_rewrite = sub_registers_for_regset(rewrite_regs, true);
+    vector_columns.insert(vector_columns.begin(), vector_vars_target.begin(), vector_vars_target.end());
+    vector_columns.insert(vector_columns.begin(), vector_vars_rewrite.begin(), vector_vars_rewrite.end());
+    auto easy_constants = learn_constants(vector_columns, target_states, rewrite_states);
+    auto easy_equality = learn_easy_equalities(vector_columns, target_states, rewrite_states);
+    conj->add_invariants(easy_equality);
+  }
 
 
   // Define columns that will be used to learn equalities

@@ -61,7 +61,7 @@ public:
     return invariants_[n];
   }
 
-  size_t size() {
+  size_t size() const {
     return invariants_.size();
   }
 
