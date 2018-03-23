@@ -29,13 +29,14 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { X }
 #define BUILD_TC_DEBUG(X) {  }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
 //#define DEBUG_ARMS_RACE(X)  X
 #define DEBUG_ARMS_RACE(X)  { }
+#define DEBUG_FIXPOINT(X) { } 
 
 //#ifdef STOKE_DEBUG_CEG
 //#define CEG_DEBUG(X) { X }
@@ -461,7 +462,98 @@ ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_t
   }
 }
 
+void ObligationChecker::split_invariant(const ConjunctionInvariant& assume,
+                                   ConjunctionInvariant& memory,
+                                   ConjunctionInvariant& nonmemory) {
+
+  for(size_t i = 0; i < assume.size(); ++i) {
+    auto inv = assume[i];
+    auto vars = inv->get_variables();
+    bool is_memory = false;
+    for(auto var : vars) {
+      if(var.is_dereference()) {
+        is_memory = true;
+        break;
+      }
+    }
+    if(is_memory)
+      memory.add_invariant(inv);
+    else
+      nonmemory.add_invariant(inv);
+  }
+
+}
+
 bool ObligationChecker::check(
+    const Cfg& target, 
+    const Cfg& rewrite, 
+    Cfg::id_type target_block, 
+    Cfg::id_type rewrite_block, 
+    const CfgPath& P, 
+    const CfgPath& Q, 
+    Invariant& assume, 
+    Invariant& prove, 
+    const vector<pair<CpuState, CpuState>>& testcases) {
+
+  return check_race(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
+
+  // The goal is to remove as many memory invariants possible from
+  // 'assume' before doing the proof.  Once we get a counterexample,
+  // we can add the needed memory invariants back in.
+
+  // Step 1: split 'assume' into memory and non-memory invariants.
+  auto assume_conj = static_cast<ConjunctionInvariant&>(assume);
+  ConjunctionInvariant extras; 
+  ConjunctionInvariant base;
+  split_invariant(assume_conj, extras, base);
+  DEBUG_FIXPOINT(cout << "[oc-fixpoint] assume_conj=" << assume_conj << endl;)
+  while(true) {
+
+    DEBUG_FIXPOINT(cout << "[oc-fixpoint] base=" << base << endl;)
+    DEBUG_FIXPOINT(cout << "[oc-fixpoint] extras=" << extras << endl;)
+
+    // Step 2: call check_race on the smallest 'assume' invariant that we can.
+    bool result = check_race(target, rewrite, target_block, rewrite_block, P, Q, base, prove, testcases);
+    if(result) {
+      // it worked!  we're done!
+      DEBUG_FIXPOINT(cout << "[oc-fixpoint] it verified!" << endl;)
+      return true;
+    } else {
+
+      // Step 3: if we have a counterexample, see if any of the memory invariants will fix it
+        // if so: repeat step 2;
+        // if not: return the counterexample
+      if(have_ceg_) {
+        bool index_works = false;
+        size_t index = 0;
+        for(size_t i = 0; i < extras.size(); ++i) {
+          auto inv = extras[i];
+          if(!inv->check(ceg_t_, ceg_r_)) {
+            index_works = true;
+            index = i;
+            DEBUG_FIXPOINT(cout << "[oc-fixpoint] invariant " << i << " might help! " << inv << endl;)
+            break;
+          }
+        }
+        if(index_works) {
+          auto inv = extras[index];
+          extras.remove(index);
+          base.add_invariant(inv);
+          continue;
+        } else {
+          DEBUG_FIXPOINT(cout << "[oc-fixpoint] remaining invariants won't help -- returning false." << endl;)
+        }
+      } else {
+        DEBUG_FIXPOINT(cout << "[oc-fixpoint] no ceg -- returning false." << endl;)
+      }
+      return false;
+    }
+  }
+
+
+}
+
+bool ObligationChecker::check_race(
     const Cfg& target, 
     const Cfg& rewrite, 
     Cfg::id_type target_block, 
@@ -512,7 +604,7 @@ bool ObligationChecker::check(
 
       try {
         DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
-          my_result = oc.check(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
+          my_result = oc.check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
         DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
         DEBUG_ARMS_RACE(cout << name << " took " <<
                         duration_cast<microseconds>(t1-t0).count() << endl;)
@@ -750,8 +842,8 @@ bool ObligationChecker::check_core(
   for (size_t i = 0; i < Q.size(); ++i)
     build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, i == Q.size() - 1);
 
-  constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
-  constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
+  constraints.insert(constraints.end(), state_t.constraints.begin(), state_t.constraints.end());
+  constraints.insert(constraints.end(), state_r.constraints.begin(), state_r.constraints.end());
 
 
   // Update dereference maps for the code if ARM and we have testcases
@@ -836,10 +928,10 @@ bool ObligationChecker::check_core(
     auto rewrite_flat = static_cast<FlatMemory*>(state_r.memory);
     auto target_con = target_flat->get_constraints();
     auto rewrite_con = rewrite_flat->get_constraints();
-    constraints.insert(constraints.begin(),
+    constraints.insert(constraints.end(),
                        target_con.begin(),
                        target_con.end());
-    constraints.insert(constraints.begin(),
+    constraints.insert(constraints.end(),
                        rewrite_con.begin(),
                        rewrite_con.end());
   } else if (arm_model) {
@@ -853,10 +945,10 @@ bool ObligationChecker::check_core(
     if (check_abort()) return false;
     auto target_con = target_arm->get_constraints();
     auto rewrite_con = rewrite_arm->get_constraints();
-    constraints.insert(constraints.begin(),
+    constraints.insert(constraints.end(),
                        target_con.begin(),
                        target_con.end());
-    constraints.insert(constraints.begin(),
+    constraints.insert(constraints.end(),
                        rewrite_con.begin(),
                        rewrite_con.end());
   }

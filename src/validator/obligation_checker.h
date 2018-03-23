@@ -151,7 +151,7 @@ public:
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const Cfg::id_type start, const CfgPath& P, size_t i);
 
-  /** Check.  This is a wrapper around check_core that will do parallelism. */
+  /** Check.  This is a wrapper around check_* functions that handles parallelism and fixpoint. */
   bool check(const Cfg& target, const Cfg& rewrite,
              Cfg::id_type target_block, Cfg::id_type rewrite_block,
              const CfgPath& p, const CfgPath& q,
@@ -222,6 +222,17 @@ private:
                   Invariant& assume, Invariant& prove,
                   const std::vector<std::pair<CpuState, CpuState>>& testcases);
 
+  /** A checking routine that calls check_core in parallel for ARM/Flat memory models. */
+  bool check_race(const Cfg& target, const Cfg& rewrite,
+             Cfg::id_type target_block, Cfg::id_type rewrite_block,
+             const CfgPath& p, const CfgPath& q,
+             Invariant& assume, Invariant& prove,
+             const std::vector<std::pair<CpuState, CpuState>>& testcases);
+
+  /** Split an invariant into memory/non-memory parts. */
+  void split_invariant(const ConjunctionInvariant& assume,
+                       ConjunctionInvariant& memory,
+                       ConjunctionInvariant& nonmemory);
 
 
   struct LineInfo {
