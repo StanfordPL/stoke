@@ -1,0 +1,2 @@
+% COMMAND-LINE: --decision=justification
+% EXPECT: sat

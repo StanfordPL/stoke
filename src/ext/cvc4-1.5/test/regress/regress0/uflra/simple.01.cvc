@@ -1,0 +1,5 @@
+% EXPECT: sat
+x, y: REAL;
+f: REAL -> REAL;
+
+CHECKSAT NOT (f(x) = f(y));

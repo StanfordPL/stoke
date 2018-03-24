@@ -1,0 +1,12 @@
+% EXPECT: sat
+
+DATATYPE RightistTree[T] =
+  node(left:BOOLEAN, right:RightistTree[T]) |
+  leaf(data:T)
+END;
+
+x : RightistTree[INT];
+
+ASSERT x /= leaf(0);
+
+CHECKSAT;

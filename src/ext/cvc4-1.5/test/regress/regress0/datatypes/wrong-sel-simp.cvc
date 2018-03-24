@@ -1,0 +1,6 @@
+% EXPECT: invalid
+DATATYPE
+  nat = succ(pred : nat) | zero
+END;
+
+QUERY pred(zero) = zero;

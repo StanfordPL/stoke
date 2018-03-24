@@ -1,0 +1,10 @@
+% EXPECT: sat
+OPTION "sets-ext";
+OPTION "logic" "ALL_SUPPORTED";
+Atom: TYPE;
+a : SET OF [Atom];
+b : SET OF [Atom];
+
+ASSERT a = (~ b);
+
+CHECKSAT;

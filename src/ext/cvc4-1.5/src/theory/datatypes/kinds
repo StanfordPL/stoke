@@ -1,0 +1,111 @@
+# kinds                                                               -*- sh -*-
+#
+# For documentation on this file format, please refer to
+# src/theory/builtin/kinds.
+#
+
+theory THEORY_DATATYPES ::CVC4::theory::datatypes::TheoryDatatypes "theory/datatypes/theory_datatypes.h"
+typechecker "theory/datatypes/theory_datatypes_type_rules.h"
+
+properties check presolve parametric propagate
+
+rewriter ::CVC4::theory::datatypes::DatatypesRewriter "theory/datatypes/datatypes_rewriter.h"
+
+# constructor type has a list of selector types followed by a return type
+operator CONSTRUCTOR_TYPE 1: "constructor"
+cardinality CONSTRUCTOR_TYPE \
+    "::CVC4::theory::datatypes::ConstructorProperties::computeCardinality(%TYPE%)" \
+    "theory/datatypes/theory_datatypes_type_rules.h"
+
+# selector type has domain type and a range type
+operator SELECTOR_TYPE 2 "selector"
+# can re-use function cardinality
+cardinality SELECTOR_TYPE \
+    "::CVC4::theory::builtin::FunctionProperties::computeCardinality(%TYPE%)" \
+    "theory/builtin/theory_builtin_type_rules.h"
+
+# tester type has a constructor type
+operator TESTER_TYPE 1 "tester"
+# can re-use function cardinality
+cardinality TESTER_TYPE \
+    "::CVC4::theory::builtin::FunctionProperties::computeCardinality(%TYPE%)" \
+    "theory/builtin/theory_builtin_type_rules.h"
+
+parameterized APPLY_CONSTRUCTOR APPLY_TYPE_ASCRIPTION 0: "constructor application; first parameter is the constructor, remaining parameters (if any) are parameters to the constructor"
+
+parameterized APPLY_SELECTOR SELECTOR_TYPE 1 "selector application; parameter is a datatype term (undefined if mis-applied)"
+parameterized APPLY_SELECTOR_TOTAL [SELECTOR_TYPE] 1 "selector application; parameter is a datatype term (defined rigidly if mis-applied)"
+
+parameterized APPLY_TESTER TESTER_TYPE 1 "tester application; first parameter is a tester, second is a datatype term"
+
+constant DATATYPE_TYPE \
+    ::CVC4::DatatypeIndexConstant \
+    "::CVC4::DatatypeIndexConstantHashFunction" \
+    "expr/datatype.h" \
+    "a datatype type index"
+cardinality DATATYPE_TYPE \
+    "%TYPE%.getDatatype().getCardinality(%TYPE%.toType())" \
+    "expr/datatype.h"
+well-founded DATATYPE_TYPE \
+    "%TYPE%.getDatatype().isWellFounded()" \
+    "%TYPE%.getDatatype().mkGroundTerm(%TYPE%.toType())" \
+    "expr/datatype.h"
+
+enumerator DATATYPE_TYPE \
+    "::CVC4::theory::datatypes::DatatypesEnumerator" \
+    "theory/datatypes/type_enumerator.h"
+
+operator PARAMETRIC_DATATYPE 1: "parametric datatype"
+cardinality PARAMETRIC_DATATYPE \
+    "DatatypeType(%TYPE%.toType()).getDatatype().getCardinality(%TYPE%.toType())" \
+    "expr/datatype.h"
+well-founded PARAMETRIC_DATATYPE \
+    "DatatypeType(%TYPE%.toType()).getDatatype().isWellFounded()" \
+    "DatatypeType(%TYPE%.toType()).getDatatype().mkGroundTerm(%TYPE%.toType())" \
+    "expr/datatype.h"
+
+enumerator PARAMETRIC_DATATYPE \
+    "::CVC4::theory::datatypes::DatatypesEnumerator" \
+    "theory/datatypes/type_enumerator.h"
+
+parameterized APPLY_TYPE_ASCRIPTION ASCRIPTION_TYPE 1 \
+    "type ascription, for datatype constructor applications; first parameter is an ASCRIPTION_TYPE, second is the datatype constructor application being ascribed"
+constant ASCRIPTION_TYPE \
+    ::CVC4::AscriptionType \
+    ::CVC4::AscriptionTypeHashFunction \
+    "expr/ascription_type.h" \
+    "a type parameter for type ascription; payload is an instance of the CVC4::AscriptionType class"
+
+typerule APPLY_CONSTRUCTOR ::CVC4::theory::datatypes::DatatypeConstructorTypeRule
+typerule APPLY_SELECTOR ::CVC4::theory::datatypes::DatatypeSelectorTypeRule
+typerule APPLY_SELECTOR_TOTAL ::CVC4::theory::datatypes::DatatypeSelectorTypeRule
+typerule APPLY_TESTER ::CVC4::theory::datatypes::DatatypeTesterTypeRule
+typerule APPLY_TYPE_ASCRIPTION ::CVC4::theory::datatypes::DatatypeAscriptionTypeRule
+
+# constructor applications are constant if they are applied only to constants
+construle APPLY_CONSTRUCTOR ::CVC4::theory::datatypes::DatatypeConstructorTypeRule
+
+constant TUPLE_UPDATE_OP \
+        ::CVC4::TupleUpdate \
+        ::CVC4::TupleUpdateHashFunction \
+        "util/tuple.h" \
+        "operator for a tuple update; payload is an instance of the CVC4::TupleUpdate class"
+parameterized TUPLE_UPDATE TUPLE_UPDATE_OP 2 "tuple update; first parameter is a TUPLE_UPDATE_OP (which references an index), second is the tuple, third is the element to store in the tuple at the given index"
+typerule TUPLE_UPDATE ::CVC4::theory::datatypes::TupleUpdateTypeRule
+
+constant RECORD_UPDATE_OP \
+        ::CVC4::RecordUpdate \
+        ::CVC4::RecordUpdateHashFunction \
+        "expr/record.h" \
+        "operator for a record update; payload is an instance CVC4::RecordUpdate class"
+parameterized RECORD_UPDATE RECORD_UPDATE_OP 2 "record update; first parameter is a RECORD_UPDATE_OP (which references a field), second is a record term to update, third is the element to store in the record in the given field"
+typerule RECORD_UPDATE ::CVC4::theory::datatypes::RecordUpdateTypeRule
+
+
+operator DT_SIZE 1 "datatypes size"
+typerule DT_SIZE ::CVC4::theory::datatypes::DtSizeTypeRule
+
+operator DT_HEIGHT_BOUND 2 "datatypes height bound"
+typerule DT_HEIGHT_BOUND ::CVC4::theory::datatypes::DtHeightBoundTypeRule
+
+endtheory

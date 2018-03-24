@@ -1,0 +1,9 @@
+% EXPECT: invalid
+DATATYPE
+   TypeGeneric = generic
+END;
+
+f: TypeGeneric -> INT;
+a: TypeGeneric;
+
+QUERY(f(a) = 0);

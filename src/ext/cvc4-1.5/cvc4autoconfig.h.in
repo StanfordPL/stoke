@@ -1,0 +1,150 @@
+/* cvc4autoconfig.h.in.  Generated from configure.ac by autoheader.  */
+
+#ifndef __CVC4__CVC4AUTOCONFIG_H
+#define __CVC4__CVC4AUTOCONFIG_H
+
+/* Define to 1 if Boost threading library has support for thread attributes */
+#undef BOOST_HAS_THREAD_ATTR
+
+/* Defined if using the CLN multi-precision arithmetic library. */
+#undef CVC4_CLN_IMP
+
+/* Extraversion component of the version of CVC4. */
+#undef CVC4_EXTRAVERSION
+
+/* Defined if using the GMP multi-precision arithmetic library. */
+#undef CVC4_GMP_IMP
+
+/* Whether CVC4 is built with the (optional) GPLed library dependences. */
+#undef CVC4_GPL_DEPS
+
+/* Major component of the version of CVC4. */
+#undef CVC4_MAJOR
+
+/* Minor component of the version of CVC4. */
+#undef CVC4_MINOR
+
+/* Release component of the version of CVC4. */
+#undef CVC4_RELEASE
+
+/* Full release string for CVC4. */
+#undef CVC4_RELEASE_STRING
+
+/* Defined if the requested minimum BOOST version is satisfied */
+#undef HAVE_BOOST
+
+/* Define to 1 if you have <boost/system/error_code.hpp> */
+#undef HAVE_BOOST_SYSTEM_ERROR_CODE_HPP
+
+/* Define to 1 if you have <boost/thread.hpp> */
+#undef HAVE_BOOST_THREAD_HPP
+
+/* Defined to 1 if clock_gettime() is supported by the platform. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the declaration of `optreset', and to 0 if you
+   don't. */
+#undef HAVE_DECL_OPTRESET
+
+/* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRERROR_R
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <ext/stdio_filebuf.h> header file. */
+#undef HAVE_EXT_STDIO_FILEBUF_H
+
+/* Defined to 1 if ffs() is supported by the platform. */
+#undef HAVE_FFS
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `gmp' library (-lgmp). */
+#undef HAVE_LIBGMP
+
+/* Define to 1 if you have the `profiler' library (-lprofiler). */
+#undef HAVE_LIBPROFILER
+
+/* Define to 1 to use libreadline */
+#undef HAVE_LIBREADLINE
+
+/* Define to 1 if you have the `tcmalloc' library (-ltcmalloc). */
+#undef HAVE_LIBTCMALLOC
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Defined to 1 if sigaltstack() is supported by the platform. */
+#undef HAVE_SIGALTSTACK
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Defined to 1 if strtok_r() is supported by the platform. */
+#undef HAVE_STRTOK_R
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if __gnu_cxx::is_sorted() exists */
+#undef IS_SORTED_IN_GNUCXX_NAMESPACE
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if rl_completion_entry_function is declared to return pointer
+   to char */
+#undef READLINE_COMPENTRY_FUNC_RETURNS_CHARP
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if strerror_r returns char *. */
+#undef STRERROR_R_CHAR_P
+
+/* If the compiler supports a TLS storage class define it to that here */
+#undef TLS
+
+#endif /* __CVC4__CVC4AUTOCONFIG_H */
