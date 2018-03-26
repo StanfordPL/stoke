@@ -128,7 +128,7 @@ public:
 
     switch (bv->type()) {
     case SymBitVector::NOT:
-      prefix(level_, bv, "!", bv->bv_);
+      prefix(level_, bv, "~", bv->bv_);
       break;
     case SymBitVector::U_MINUS:
       prefix(level_, bv, "-", bv->bv_);
