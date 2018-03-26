@@ -36,14 +36,14 @@ public:
     if(!negate_)
       return variable_.from_state(target, rewrite) != SymBitVector::constant(variable_.size*8, 0);
     else
-      return !variable_.from_state(target, rewrite) != SymBitVector::constant(variable_.size*8, 0);
+      return variable_.from_state(target, rewrite) == SymBitVector::constant(variable_.size*8, 0);
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
     if(!negate_)
-      return (variable_.from_state(target,rewrite) != 0);
+      return !(variable_.from_state(target,rewrite) == 0);
     else
-      return !(variable_.from_state(target,rewrite) != 0);
+      return (variable_.from_state(target,rewrite) == 0);
   }
 
   virtual std::vector<Variable> get_variables() const {
