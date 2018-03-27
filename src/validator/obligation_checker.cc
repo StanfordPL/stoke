@@ -29,21 +29,21 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { X }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
 #define ALIAS_STRING_DEBUG(X) {  }
 //#define DEBUG_ARMS_RACE(X)  X
 #define DEBUG_ARMS_RACE(X)  { }
-#define DEBUG_FIXPOINT(X) { } 
+#define DEBUG_FIXPOINT(X) { X } 
 
 //#ifdef STOKE_DEBUG_CEG
 //#define CEG_DEBUG(X) { X }
 //#else
 //#define CEG_DEBUG(X) { }
 //#endif
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -468,14 +468,18 @@ void ObligationChecker::split_invariant(const ConjunctionInvariant& assume,
 
   for(size_t i = 0; i < assume.size(); ++i) {
     auto inv = assume[i];
-    auto vars = inv->get_variables();
     bool is_memory = false;
+    /*
+    auto vars = inv->get_variables();
     for(auto var : vars) {
       if(var.is_dereference()) {
         is_memory = true;
         break;
       }
     }
+    */
+
+    is_memory = (dynamic_cast<MemoryEqualityInvariant*>(inv) != NULL);
     if(is_memory)
       memory.add_invariant(inv);
     else
@@ -495,7 +499,8 @@ bool ObligationChecker::check(
     Invariant& prove, 
     const vector<pair<CpuState, CpuState>>& testcases) {
 
-  return check_race(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
+  if(!fixpoint_up_)
+    return check_race(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
 
   // The goal is to remove as many memory invariants possible from
   // 'assume' before doing the proof.  Once we get a counterexample,
@@ -505,7 +510,7 @@ bool ObligationChecker::check(
   auto assume_conj = static_cast<ConjunctionInvariant&>(assume);
   ConjunctionInvariant extras; 
   ConjunctionInvariant base;
-  split_invariant(assume_conj, extras, base);
+  split_invariant(assume_conj, base, extras);
   DEBUG_FIXPOINT(cout << "[oc-fixpoint] assume_conj=" << assume_conj << endl;)
   while(true) {
 
@@ -524,21 +529,21 @@ bool ObligationChecker::check(
         // if so: repeat step 2;
         // if not: return the counterexample
       if(have_ceg_) {
-        bool index_works = false;
-        size_t index = 0;
+        vector<size_t> indexes;
         for(size_t i = 0; i < extras.size(); ++i) {
           auto inv = extras[i];
           if(!inv->check(ceg_t_, ceg_r_)) {
-            index_works = true;
-            index = i;
-            DEBUG_FIXPOINT(cout << "[oc-fixpoint] invariant " << i << " might help! " << inv << endl;)
-            break;
+            indexes.push_back(i);
+            DEBUG_FIXPOINT(cout << "[oc-fixpoint] invariant " << i << " might help! " << *inv << endl;)
           }
         }
-        if(index_works) {
-          auto inv = extras[index];
-          extras.remove(index);
-          base.add_invariant(inv);
+        std::sort(indexes.rbegin(), indexes.rend());
+        if(indexes.size() > 0) {
+          for(auto index : indexes) {
+            auto inv = extras[index];
+            extras.remove(index);
+            base.add_invariant(inv);
+          }
           continue;
         } else {
           DEBUG_FIXPOINT(cout << "[oc-fixpoint] remaining invariants won't help -- returning false." << endl;)
@@ -549,8 +554,6 @@ bool ObligationChecker::check(
       return false;
     }
   }
-
-
 }
 
 bool ObligationChecker::check_race(

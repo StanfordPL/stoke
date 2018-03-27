@@ -109,6 +109,7 @@ private:
       bv->set_bound(bound_arg.value());
       bv->set_nacl(verify_nacl_arg);
       bv->set_no_bailout(no_bailout_arg.value());
+      bv->set_fixpoint_up(fixpoint_up_arg);
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_, sandbox, inv);
@@ -116,6 +117,7 @@ private:
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_nacl(verify_nacl_arg);
       ddec->set_thread_count(ddec_thread_count);
+      ddec->set_fixpoint_up(fixpoint_up_arg);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

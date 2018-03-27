@@ -24,9 +24,10 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Solver>, 2> pts {{
+array<pair<string, Solver>, 3> pts {{
     {"cvc4", Solver::CVC4},
-    {"z3",   Solver::Z3 }
+    {"z3",   Solver::Z3 },
+    {"race", Solver::RACE }
   }
 };
 

@@ -44,6 +44,11 @@ cpputil::FlagArg& verify_nacl_arg =
   cpputil::FlagArg::create("verify_nacl")
   .description("add constraints to bound index registers away from 32-bit boundary");
 
+cpputil::FlagArg& fixpoint_up_arg =
+  cpputil::FlagArg::create("fixpoint_up")
+  .description("Instead of directly proving obligation, use a fixpoint");
+
+
 
 } // namespace stoke
 

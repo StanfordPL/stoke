@@ -19,6 +19,8 @@
 #ifndef NOCVC4
 #include "src/solver/cvc4solver.h"
 #endif
+#include "src/solver/parallel.h"
+#include "src/solver/process_isolated.h"
 #include "src/solver/z3solver.h"
 #include "tools/args/solver.inc"
 
@@ -29,13 +31,27 @@ public:
   SolverGadget() : SMTSolver() {
 
     switch (solver_arg) {
-    case Solver::Z3:
+    case Solver::Z3: {
       solver_ = new Z3Solver();
       break;
+    }
 #ifndef NOCVC4
-    case Solver::CVC4:
+    case Solver::CVC4: {
       solver_ = new Cvc4Solver();
       break;
+    }
+    case Solver::RACE: {
+      auto cvc4 = new Cvc4Solver();
+      auto cvc4_proc = new ProcessIsolatedSolver(cvc4);
+      auto cvc4_2 = new Cvc4Solver();
+      auto cvc4_proc_2 = new ProcessIsolatedSolver(cvc4_2);
+
+      auto z3 = new Z3Solver();
+      auto z3_proc = new ProcessIsolatedSolver(z3);
+      std::vector<SMTSolver*> solvers = {z3_proc->clone(), z3_proc->clone(), z3_proc->clone(), z3_proc->clone()};
+      solver_ = new ParallelSolver(solvers);
+      break;
+    }
 #endif
     default:
       assert(false);

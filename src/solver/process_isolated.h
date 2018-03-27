@@ -33,7 +33,7 @@ class ProcessIsolatedSolver : public SMTSolver {
 public:
 
   /* Resets the state common to SMT solvers */
-  ProcessIsolatedSolver(SMTSolver& child) : child_(child){
+  ProcessIsolatedSolver(SMTSolver* child) : child_(child){
     has_error_ = true;
   }
 
@@ -41,7 +41,7 @@ public:
   }
 
   ProcessIsolatedSolver* clone() const {
-    return new ProcessIsolatedSolver(*child_.clone());
+    return new ProcessIsolatedSolver(child_->clone());
   }
 
   /** Check if a query is satisfiable given constraints */
@@ -60,20 +60,20 @@ public:
     if(pid == 0) {
       // child
       close(pipefd[0]);
-      bool result = child_.is_sat(constraints); 
+      bool result = child_->is_sat(constraints); 
       int n;
-      if (child_.has_error()) {
-        std::cout << "[pi_solver] sending err" << std::endl;
+      if (child_->has_error()) {
+        //std::cout << "[pi_solver] sending err" << std::endl;
         n = write(pipefd[1], "err", 3);
       } else if(result) {
-        std::cout << "[pi_solver] sending sat" << std::endl;
+        //std::cout << "[pi_solver] sending sat" << std::endl;
         n = write(pipefd[1], "sat", 3);
       } else {
-        std::cout << "[pi_solver] sending unsat" << std::endl;
+        //std::cout << "[pi_solver] sending unsat" << std::endl;
         n = write(pipefd[1], "uns", 3);
       }
       if(n < 3) {
-        std::cout << "[pi_solver] error! child only sent " << n << " bytes!" << std::endl;
+        //std::cout << "[pi_solver] error! child only sent " << n << " bytes!" << std::endl;
       }
       close(pipefd[1]);
       exit(0);
@@ -87,7 +87,7 @@ public:
       char buffer[4];
       ssize_t count = read(pipefd[0], buffer, 4);
       buffer[3] = '\0';
-      std::cout << "[pi_solver] READ FROM CHILD: " << buffer << std::endl;
+      //std::cout << "[pi_solver] READ FROM CHILD: " << buffer << std::endl;
       close(pipefd[0]);
       if(count == (ssize_t)(-1) || count == 0 || !strcmp(buffer, "err")) {
         has_error_ = true;
@@ -142,7 +142,7 @@ public:
 private:
 
   bool has_error_;
-  SMTSolver& child_;
+  SMTSolver* child_;
   pid_t pid_;
 
 };
