@@ -43,7 +43,6 @@ cpputil::ValueArg<int>& ddec_thread_count =
   .description("How many threads to use for DDEC.")
   .default_val(1);
 
-
 } // namespace stoke
 
 #endif

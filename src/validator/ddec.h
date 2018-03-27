@@ -118,12 +118,6 @@ private:
   /** Start threads to discharge edges. */
   void discharge_thread_run(DualAutomata&, DischargeState&);
 
-  /** Discharge exhaustive for all states.  Ensures that the dual automata has all the
-   paths it needs to be complete. Also updates the automata with extra edges from counterexamples
-   if it fails (and can do so). */
-  bool discharge_exhaustive(DualAutomata& dual);
-  /** Discharge exhaustive for a particular state */
-  bool discharge_exhaustive(DualAutomata& dual, DualAutomata::State);
   /** Check a POD to see if it's obviously wrong. */
   bool sanity_check(DualAutomata& dual);
 

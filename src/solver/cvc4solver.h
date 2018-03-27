@@ -28,7 +28,7 @@ namespace stoke {
 class Cvc4Solver : public SMTSolver {
 
 public:
-  Cvc4Solver() : SMTSolver(), smt_(NULL), uninterpreted_(false) {
+  Cvc4Solver() : SMTSolver(), smt_(NULL), em_(), uninterpreted_(false) {
     smt_ = new CVC4::SmtEngine(&em_);
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
@@ -37,7 +37,7 @@ public:
     smt_->push();
   }
 
-  Cvc4Solver(const Cvc4Solver& s) : SMTSolver(), smt_(NULL), uninterpreted_(false) {
+  Cvc4Solver(const Cvc4Solver& s) : SMTSolver(), smt_(NULL), em_(), uninterpreted_(false) {
     smt_ = new CVC4::SmtEngine(&em_);
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);

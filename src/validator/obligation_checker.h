@@ -78,6 +78,7 @@ public:
     set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
+    set_fixpoint_up(false);
     filter_ = new BoundAwayFilter(handler_, 0x100, 0xffffffffffffff00);
     delete_filter_ = true;
     stop_now_ = false;
@@ -93,6 +94,7 @@ public:
     basic_block_ghosts_ = oc.basic_block_ghosts_;
     delete_filter_ = false;
     nacl_ = oc.nacl_;
+    fixpoint_up_ = oc.fixpoint_up_;
     alias_strategy_ = oc.alias_strategy_;
     stop_now_ = false;
     oc1_ = NULL;
@@ -112,6 +114,11 @@ public:
 
   AliasStrategy get_alias_strategy() {
     return alias_strategy_;
+  }
+
+  ObligationChecker& set_fixpoint_up(bool b) {
+    fixpoint_up_ = b;
+    return *this;
   }
 
   ObligationChecker& set_filter(Filter* filter) {
@@ -334,8 +341,7 @@ private:
 
   /** Do we have a counterexample? */
   bool have_ceg_;
-
-
+  bool fixpoint_up_;
 
   /** How to handle aliasing */
   AliasStrategy alias_strategy_;
