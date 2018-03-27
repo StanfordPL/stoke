@@ -68,6 +68,10 @@ public:
     we're asking about whole executions. */
   bool pair_feasible(CfgPath tp, CfgPath rp, bool inductive=true);
 
+  /** Given two paths, return a vector representing the "state" that each linear equation is
+    left in that determines what following paths are feasible. */
+  IntVector pair_vector(CfgPath tp, CfgPath rp);
+  IntVector goal_vector();
 
   /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. Returns true if the callback managed to return true. */
   bool update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);

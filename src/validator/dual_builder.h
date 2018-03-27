@@ -29,6 +29,7 @@ public:
     target_(template_.get_target()),
     rewrite_(template_.get_rewrite())
   {
+    init();
   }
 
   /** Set the bound. */
@@ -45,8 +46,6 @@ public:
   DualAutomata next();
 
 private:
-
-  typedef std::pair<std::map<Cfg::id_type, uint64_t>, std::map<Cfg::id_type, uint64_t>> PathCounts;
 
   /** Data Structures */
   struct EquivalenceClass {
@@ -98,7 +97,7 @@ private:
 
   /** Does this edge from the current frontier to the exit work? */
   /** for exit, there's essentially two classes: good and bad. */
-  bool exit_works(DualAutomata::Edge& e);
+  bool exit_works(DualAutomata::Edge& e, const std::set<IntVector>& start_vectors);
 
   /** Run after constructor; find first POD. */
   void init();
@@ -119,6 +118,9 @@ private:
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;
+  /** The set of 'state'(?) vectors that correspond to a given state
+    for the purposes of figuring out which paths are exits. */
+  std::map<DualAutomata::State, std::set<IntVector>> state_exit_data_map_;
 
   /** bound */
   size_t target_bound_;

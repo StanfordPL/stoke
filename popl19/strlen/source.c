@@ -199,7 +199,6 @@ The 0-bits provide holes for carries to fall into.  */
           if (cp[7] == 0)
             return cp - str + 7;
         }
-        break;
       }
     }
   }

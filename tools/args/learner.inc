@@ -30,6 +30,11 @@ cpputil::FlagArg& no_learn_memory_arg =
   cpputil::FlagArg::create("only_non_memory")
   .description("Only learn invariants without memory");
 
+cpputil::FlagArg& vector_invariants_arg =
+  cpputil::FlagArg::create("vector_invariants")
+  .description("Learn invariants over sub-registers");
+
+
 } // namespace stoke
 
 #endif

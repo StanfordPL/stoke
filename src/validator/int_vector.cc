@@ -40,4 +40,15 @@ IntVector IntVector::remove_entry(size_t index) {
   return result;
 }
 
+namespace std {
 
+ostream& operator<<(ostream& os, const stoke::IntVector& path) {
+  for (size_t i = 0; i < path.size(); ++i) {
+    os << path[i];
+    if (i < path.size() - 1)
+      os << " ";
+  }
+  return os;
+}
+
+}

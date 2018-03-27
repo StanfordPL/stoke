@@ -275,10 +275,13 @@ void ControlLearner::callback(const StateCallbackData& data, void* arg) {
   args.trace->push_back(tp);
 }
 
+IntVector ControlLearner::goal_vector() {
+  IntVector test(total_block_indexes());
+  test[0] = 1;
+  return kernel_generators_*test;
+}
 
-
-
-bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
+IntVector ControlLearner::pair_vector(CfgPath tp, CfgPath rp) {
   IntVector test(total_block_indexes());
   for (auto it : tp) {
     if (target_.get_exit() == it)
@@ -290,6 +293,27 @@ bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
       continue;
     test[rewrite_block_to_index(it)]++;
   }
+  test[0] = 0;
+
+  return kernel_generators_*test;
+
+}
+
+
+bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
+
+  IntVector test(total_block_indexes());
+  for (auto it : tp) {
+    if (target_.get_exit() == it)
+      continue;
+    test[target_block_to_index(it)]++;
+  }
+  for (auto it : rp) {
+    if (rewrite_.get_exit() == it)
+      continue;
+    test[rewrite_block_to_index(it)]++;
+  }
+
   if (inductive) {
     test[0] = 0;
   } else {

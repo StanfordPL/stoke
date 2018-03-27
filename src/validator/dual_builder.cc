@@ -9,6 +9,9 @@ using namespace std;
 
 void DualBuilder::init() {
   first_ = true;
+
+  auto zero_vector = control_learner_.pair_vector({0}, {0});
+  state_exit_data_map_[template_.start_state()].insert(zero_vector);
 }
 
 /** Is there a next POD available? */
@@ -86,8 +89,26 @@ DualAutomata DualBuilder::generate_current_pod() {
   return copy;
 }
 
-bool DualBuilder::exit_works(DualAutomata::Edge& e) {
+bool DualBuilder::exit_works(DualAutomata::Edge& e, const set<IntVector>& start_vectors) {
   /** get counts from frontier. */
+  auto edge_vector = control_learner_.pair_vector(e.te, e.re);
+  auto goal_vector = control_learner_.goal_vector();
+  cout << "[exit_works] for " << e << "  vector=" << edge_vector << endl;
+  cout << "             goal is " << goal_vector << endl;
+
+  for(auto sv : start_vectors) {
+    cout << "[exit_works] start vector=" << sv << endl;
+    auto test = sv + edge_vector;
+    cout << "             test        =" << test << endl;
+    bool works = (test == goal_vector*(-1));
+    cout << "      - does it work? " << works << endl;
+    if(works)
+      return true;
+  }
+
+  return false;
+
+    /*
   map<size_t, size_t> target_block_counts;
   map<size_t, size_t> rewrite_block_counts;
   if (frontiers_.size()) {
@@ -103,9 +124,11 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
   for(auto it : rewrite_block_counts) {
     cout << "   " << it.first << " -> " << it.second << endl;
   }
+  */
 
 
   /** add counts for this edge. */
+    /*
   for (auto blk : e.te) {
     target_block_counts[blk]++;
   }
@@ -122,10 +145,12 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
   for(auto it : rewrite_block_counts) {
     cout << "   " << it.first << " -> " << it.second << endl;
   }
+  */
 
 
 
   /** generate some fake paths... */
+    /*
   CfgPath tp;
   CfgPath rp;
   for (auto it : target_block_counts) {
@@ -136,9 +161,9 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e) {
     for (size_t i = 0; i < it.second; ++i)
       rp.push_back(it.first);
   }
+  */
 
   /** add up all the relevant variables. */
-  return control_learner_.pair_feasible(tp, rp, false);
 }
 
 uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
@@ -213,6 +238,11 @@ void DualBuilder::next_frontier() {
 
   /** Get the next node in the topological sort. */
   f.head = topo_sort[f.frontier_index];
+  auto my_exit_data = state_exit_data_map_[f.head];
+  cout << "   [my_exit_data] at " << f.head << endl;
+  for(auto it : my_exit_data) {
+    cout << "     - " << it << endl;
+  }
 
   /** Copy the equivalence class from the previous frontier. */
   if (frontiers_.size() > 1) {
@@ -293,7 +323,7 @@ void DualBuilder::next_frontier() {
         cout << "Processing pair " << tp << " / " << rp << endl;
 
         if (current == template_.exit_state()) {
-          if (exit_works(e)) {
+          if (exit_works(e, my_exit_data)) {
             cout << "   - this exit edge looks okay" << endl;
             f.all_classes[0].edges.push_back(e);
           } else {
@@ -321,6 +351,12 @@ void DualBuilder::next_frontier() {
               // OK, add this edge in
               cout << "   - this edge looks okay" << endl;
               f.all_classes[0].edges.push_back(e);
+
+              /** Update state_exit_data_map */
+              auto exit_vector_incr = control_learner_.pair_vector(e.te, e.re);
+              for(auto exit_vector : my_exit_data) {
+                state_exit_data_map_[e.to].insert(exit_vector + exit_vector_incr);
+              }
             }  else {
               cout << "   - this edge won't work; skipping" << endl;
               cout << "   - expected classification: " << f.all_classes[0].invariant_values[current] << endl;
@@ -344,6 +380,13 @@ void DualBuilder::next_frontier() {
               // add this option to a new map used for classes
               cout << "   - this edge works" << endl;
               possible_edges[current].push_back(e);
+
+              /** Update state_exit_data_map */
+              auto exit_vector_incr = control_learner_.pair_vector(e.te, e.re);
+              for(auto exit_vector : my_exit_data) {
+                state_exit_data_map_[e.to].insert(exit_vector + exit_vector_incr);
+              }
+
             } else {
               cout << "   - skipping this edge (handhold)" << endl;
             }

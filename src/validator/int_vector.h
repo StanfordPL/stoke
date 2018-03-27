@@ -15,9 +15,11 @@
 #ifndef STOKE_SRC_VALIDATOR_INT_VECTOR_H
 #define STOKE_SRC_VALIDATOR_INT_VECTOR_H
 
-#include <vector>
-#include <map>
 #include "src/validator/int_matrix.h"
+
+#include <cassert>
+#include <map>
+#include <vector>
 
 namespace stoke {
 
@@ -34,6 +36,16 @@ public:
   /** Copy a 1d vector into us */
   IntVector(std::vector<int64_t>& m) : std::vector<int64_t>(m) { }
 
+  /** Add two int vectors together */
+  IntVector operator+(const IntVector& other) {
+    assert(size() == other.size());
+    auto sz = size();
+    IntVector result(sz);
+    for(size_t i = 0; i < sz; ++i)
+      result[i] = (*this)[i] + other[i];
+    return result;
+  }
+
   /** Muliply by constant */
   IntVector operator*(int64_t value) {
     IntVector result;
@@ -49,5 +61,11 @@ public:
 };
 
 } // namespace stoke
+
+namespace std {
+
+ostream& operator<<(ostream& os, const stoke::IntVector& path);
+
+}
 
 #endif
