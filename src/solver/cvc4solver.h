@@ -80,6 +80,16 @@ public:
     uninterpreted_ = false;
   }
 
+  virtual void interrupt() {
+    stop_now_.store(true);
+    try {
+      smt_->interrupt();
+      //std::cout << "CVC4 interrupted" << std::endl;
+    } catch (std::exception e) {
+
+    }
+  }
+
   SMTSolver* clone() const {
     return new Cvc4Solver(*this);
   }

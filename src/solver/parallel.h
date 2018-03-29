@@ -23,6 +23,7 @@
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
+#define DEBUG_PARALLEL(X) { X }
 namespace stoke {
 
 class ParallelSolver : public SMTSolver {
@@ -56,24 +57,24 @@ public:
     error_ = "no threads finished successfully";
 
     auto thread_body = [&](size_t index) {
-      //std::cout << "Starting solver index=" << index << std::endl;
+      DEBUG_PARALLEL(std::cout << "Starting solver index=" << index << std::endl;)
       auto& solver = *solvers_[index];
       bool my_result = solver.is_sat(constraints);
       bool has_error = solver.has_error();
-      //std::cout << "Solver index=" << index << " has my_result = " << my_result << " and error=" << has_error << std::endl;
+      DEBUG_PARALLEL(std::cout << "Solver index=" << index << " has my_result = " << my_result << " and error=" << has_error << std::endl;)
 
       if(!has_error) {
         size_t swap_zero = 0;
         bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
         if(i_was_first) {
-          //std::cout << "Solver index=" << index << " was first" << std::endl;
+          DEBUG_PARALLEL(std::cout << "Solver index=" << index << " was first" << std::endl;)
           // tell all the solvers to stop what they're doing
           interrupt();
           has_error_ = false;
           the_result.store(my_result);
           // TODO: do something for access to counterexamples here
         } else {
-          //std::cout << "Solver index=" << index << " too slow!" << std::endl;
+          DEBUG_PARALLEL(std::cout << "Solver index=" << index << " too slow!" << std::endl;)
         }
       }
     };

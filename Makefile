@@ -78,7 +78,7 @@ ifdef NOCVC4
 CXX_FLAGS += -DNOCVC4=1
 endif
 
-WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
+WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -Wno-ignored-qualifiers -fdiagnostics-color=always
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
 
 INC_FOLDERS=\
@@ -88,7 +88,7 @@ INC_FOLDERS=\
 						src/ext/gtest-1.7.0/include \
 						src/ext/z3/src/api
 ifndef NOCVC4
-INC_FOLDERS += src/ext/cvc4-1.4-build/include
+INC_FOLDERS += src/ext/cvc4-1.5-build/include
 endif
 
 INC=$(addprefix -I./, $(INC_FOLDERS))
@@ -104,11 +104,11 @@ LIB=\
 	-liml -lgmp \
 	-L src/ext/z3/build -lz3
 ifndef NOCVC4
-LIB += -L src/ext/cvc4-1.4-build/lib -lcvc4
+LIB += -L src/ext/cvc4-1.5-build/lib -lcvc4
 endif
 
 ifndef NOCVC4
-LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
+LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.5-build/lib,--enable-new-dtags
 else
 LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build,--enable-new-dtags
 endif
@@ -411,9 +411,9 @@ src/sandbox/%.o: src/sandbox/%.cc $(DEPS)
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc $(DEPS)
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
-src/solver/%.o: src/solver/%.cc $(DEPS)
-	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/solver/cvc4solver.o: src/solver/cvc4solver.cc $(DEPS)
+	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
+src/solver/%.o: src/solver/%.cc $(DEPS)
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc $(DEPS)
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@

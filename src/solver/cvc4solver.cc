@@ -248,7 +248,7 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBoolBinop * const binop) {
   case SymBool::AND:
     return em_.mkExpr(kind::AND, left, right);
   case SymBool::IFF:
-    return em_.mkExpr(kind::IFF, left, right);
+    return em_.mkExpr(kind::EQUAL, left, right);
   case SymBool::IMPLIES:
     return em_.mkExpr(kind::IMPLIES, left, right);
   case SymBool::OR:
