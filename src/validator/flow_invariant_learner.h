@@ -42,8 +42,6 @@ public:
   /** Get the set of shadow variables for a CFG (i.e. n1, n2, ...) */
   static std::vector<Variable> get_shadow_vars(const Cfg& cfg, bool is_rewrite);
 
-
-
 private:
   typedef std::vector<std::pair<CpuState, CpuState>> TCPairs;
   typedef std::map<std::pair<Cfg::id_type, Cfg::id_type>, TCPairs> TCPairMap;

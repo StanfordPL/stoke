@@ -824,7 +824,7 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
   Cfg::id_type rewrite_block
 ) {
 
-  auto& fil = flow_invariant_learner_;
+  auto& fil = *flow_invariant_learner_;
   cout << "===== INVARIANT AFTER BLOCKS " << target_block << " / " << rewrite_block << " =====" << endl;
   auto inv = fil.get_invariant(target_block,rewrite_block);
   inv->write_pretty(cout);
@@ -897,9 +897,14 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   rewrite_ = init_rewrite;
 
   /** STEP 1: Find inductive paths and initial invariants in a template */
-  flow_invariant_learner_.initialize(target_, rewrite_);
+  flow_invariant_learner_ = new FlowInvariantLearner(data_collector_, invariant_learner_);
+  flow_invariant_learner_->initialize(target_, rewrite_);
   control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
   DualAutomata template_pod = learn_inductive_paths();
+
+  // free all that memory :)
+  delete flow_invariant_learner_;
+  flow_invariant_learner_ = NULL;
 
   /** Populate the POD with the initial invariants. */
   //DualAutomata::State start_state = template_pod.start_state();

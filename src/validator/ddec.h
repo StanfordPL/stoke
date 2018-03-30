@@ -38,7 +38,7 @@ public:
     target_({}), rewrite_({}),
           data_collector_(sandbox),
           invariant_learner_(inv),
-          flow_invariant_learner_(data_collector_, invariant_learner_),
+          flow_invariant_learner_(NULL),
           control_learner_(NULL)
   {
     set_thread_count(1);
@@ -50,7 +50,7 @@ public:
     rewrite_(rhs.rewrite_),
     data_collector_(sandbox_),
     invariant_learner_(rhs.invariant_learner_),
-    flow_invariant_learner_(data_collector_, invariant_learner_),
+    flow_invariant_learner_(NULL),
     control_learner_(NULL) {
 
     target_bound_ = rhs.target_bound_;
@@ -83,7 +83,7 @@ private:
 
   DataCollector data_collector_;
   InvariantLearner invariant_learner_;
-  FlowInvariantLearner flow_invariant_learner_;
+  FlowInvariantLearner* flow_invariant_learner_;
   ControlLearner* control_learner_;
 
   /** Generate a warning for the user about a possible failure reason. */
