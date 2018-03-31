@@ -78,7 +78,7 @@ ifdef NOCVC4
 CXX_FLAGS += -DNOCVC4=1
 endif
 
-WARNING_FLAGS=-Wall -Werror=switch -Wextra -Wfatal-errors -Wdeprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wignored-qualifiers
+WARNING_FLAGS=-Wall -Werror=switch -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
 CVC4_SRCDIR=src/ext/cvc4-1.5
 CVC4_OUTDIR=$(CVC4_SRCDIR)-build
