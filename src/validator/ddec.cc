@@ -172,7 +172,7 @@ size_t DdecValidator::learn_inductive_paths_at_block(
 
   size_t found_pair = 0;
 
-  for (size_t k = 0; k < 4; ++k) {
+  for (size_t k = 0; k < 7; ++k) {
     size_t bound = (1 << k);
     auto target_paths = CfgPaths::enumerate_paths(target_, bound, target_block, target_block);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite_, bound, rewrite_block, rewrite_block);
