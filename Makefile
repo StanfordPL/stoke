@@ -497,3 +497,5 @@ dist_clean: clean
 	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
 	rm -rf src/ext/z3/build
+	rm -rf $(CVC4_OUTDIR)
+	cd $(CVC4_SRCDIR) && make clean
