@@ -18,6 +18,11 @@
 #ifndef __CVC4__CVC4_H
 #define __CVC4__CVC4_H
 
+// added to CVC4 source tree due to gcc compatibility bug
+// see https://gcc.gnu.org/gcc-4.9/porting_to.html
+// under heading "Header <cstddef> changes"
+#include <cstddef>
+
 #include <cvc4/base/configuration.h>
 #include <cvc4/base/exception.h>
 #include <cvc4/expr/datatype.h>
