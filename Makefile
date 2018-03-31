@@ -341,13 +341,16 @@ cpputil:
 	./scripts/make/submodule-init.sh src/ext/cpputil
 
 .PHONY: x64asm
-x64asm:
+x64asm: src/ext/x64asm/lib/libx64asm.a
+
+
+src/ext/x64asm/lib/libx64asm.a:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" CXX="${CXX}" CC="${CC}"
+	$(MAKE) -j$(NTHREADS) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" CXX="${CXX}" CC="${CC}"
 
 .PHONY: pintool
 pintool:
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
+	$(MAKE) -j$(NTHREADS) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
 					CXX="${CXX}" CC="${CC}"
 
 src/ext/gtest-1.7.0/libgtest.a:
@@ -365,7 +368,7 @@ $(CVC4_OUTDIR)/lib/libcvc4.so:
 
 .PHONY: z3
 z3: z3init src/ext/z3/build/Makefile
-	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make
+	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
 
 z3init:
 	./scripts/make/submodule-init.sh src/ext/z3
