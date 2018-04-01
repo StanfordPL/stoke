@@ -369,7 +369,7 @@ $(CVC4_OUTDIR)/lib/libcvc4.so: $(CVC4_SRCDIR)/configure
 $(CVC4_SRCDIR)/configure:
 	# unpacking via tar to avoid problems with autoconf timestamps
 	cd src/ext && tar -xf cvc4-1.5.tar.gz  
-	cd src/ext patch -p0 < cvc4.patch
+	cd src/ext && patch -p0 < cvc4.patch
 
 .PHONY: z3
 z3: z3init src/ext/z3/build/Makefile
@@ -502,5 +502,4 @@ dist_clean: clean
 	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
 	rm -rf src/ext/z3/build
-	rm -rf $(CVC4_OUTDIR)
-	cd $(CVC4_SRCDIR) && make clean
+	rm -rf $(CVC4_OUTDIR) $(CVC4_SRCDIR)
