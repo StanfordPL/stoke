@@ -362,6 +362,7 @@ cvc4: $(CVC4_OUTDIR)/lib/libcvc4.so
 .PHONY: cvc4
 
 $(CVC4_OUTDIR)/lib/libcvc4.so:
+	touch $(CVC4_SRCDIR)/aclocal.m4 $(CVC4_SRCDIR)/configure $(CVC4_SRCDIR)/Makefile.am $(CVC4_SRCDIR)/Makefile.in
 	cd $(CVC4_SRCDIR) && ./configure --prefix=$(CVC4_OUTDIR_ABS) CVC4_BSD_LICENSED_CODE_ONLY=0 --with-cln
 	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
 	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make install
