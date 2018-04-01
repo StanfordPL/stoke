@@ -361,11 +361,15 @@ src/ext/gtest-1.7.0/libgtest.a:
 cvc4: $(CVC4_OUTDIR)/lib/libcvc4.so
 .PHONY: cvc4
 
-$(CVC4_OUTDIR)/lib/libcvc4.so:
-	cd $(CVC4_SRCDIR) && autoreconf -f -i
+$(CVC4_OUTDIR)/lib/libcvc4.so: $(CVC4_SRCDIR)/configure
 	cd $(CVC4_SRCDIR) && ./configure --prefix=$(CVC4_OUTDIR_ABS) CVC4_BSD_LICENSED_CODE_ONLY=0 --with-cln
 	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
 	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make install
+
+$(CVC4_SRCDIR)/configure:
+	# unpacking via tar to avoid problems with autoconf timestamps
+	cd src/ext && tar -xf cvc4-1.5.tar.gz  
+	cd src/ext patch -p0 < cvc4.patch
 
 .PHONY: z3
 z3: z3init src/ext/z3/build/Makefile
