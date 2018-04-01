@@ -27,7 +27,7 @@ using namespace z3;
 using namespace std;
 using namespace std::chrono;
 
-#define DEBUG_Z3(X) { X }
+#define DEBUG_Z3(X) { }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
@@ -223,7 +223,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
 
   auto kind = Z3_get_decl_kind(context_, ast);
 
-  while(kind == Z3_OP_STORE) {
+  while (kind == Z3_OP_STORE) {
     z3::expr k = e.arg(1);
     z3::expr v = e.arg(2);
     uint64_t addr;
@@ -243,7 +243,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
 
   }
 
-  if(kind == Z3_OP_CONST_ARRAY) {
+  if (kind == Z3_OP_CONST_ARRAY) {
 
     z3::expr arg = e.arg(0);
     uint64_t value;
@@ -255,7 +255,7 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
     result.second = value;
     return result;
 
-  } else if(kind == Z3_OP_AS_ARRAY) {
+  } else if (kind == Z3_OP_AS_ARRAY) {
     auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, ast, 0);
     auto model_fd = func_decl(context_, z3_model_fd);
     func_interp fun_interp = model_->get_func_interp(model_fd);
