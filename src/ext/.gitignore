@@ -3,4 +3,4 @@ astyle
 gtest-1.7.0/CMakeCache.txt
 gtest-1.7.0/libgtest.a
 gtest-1.7.0/libgtest_main.a
-cvc4-1.5-build
+cvc4-*/

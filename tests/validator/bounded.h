@@ -17,6 +17,7 @@
 #include "src/sandbox/sandbox.h"
 #include "src/solver/solver.h"
 #include "src/validator/bounded.h"
+#include "src/validator/filters/forbidden_dereference.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/no_signals.h"
@@ -33,10 +34,16 @@ public:
   BoundedValidatorBaseTest() {
     auto param = ::testing::TestWithParam<std::tr1::tuple<ObligationChecker::AliasStrategy, Solver>>::GetParam();
     auto solver_type = std::tr1::get<1>(GetParam());
-    if (solver_type == Solver::Z3)
+    if (solver_type == Solver::Z3) {
+      std::cout << "Using Z3" << std::endl;
       solver = new Z3Solver();
-    else if (solver_type == Solver::CVC4)
+    }
+    else if (solver_type == Solver::CVC4) {
+      std::cout << "Using CVC4" << std::endl;
       solver = new Cvc4Solver();
+    }
+
+    std::cout << "Alias Strategy " << std::tr1::get<0>(param) << std::endl;
 
     sandbox = new Sandbox();
     sandbox->set_max_jumps(4096);
@@ -44,8 +51,16 @@ public:
     sg_sandbox = new Sandbox();
     sg_sandbox->set_max_jumps(4096);
     sg_sandbox->set_abi_check(false);
-    validator = new BoundedValidator(*solver, *sandbox);
+
+    handler = new ComboHandler();
+    vector<uint64_t> low_addrs = {0, (uint64_t)(-0x100)};
+    vector<uint64_t> high_addrs = {0x100, (uint64_t)(-1)};
+    filter = new ForbiddenDereferenceFilter(*handler, low_addrs, high_addrs);
+
+    validator = new BoundedValidator(*solver);
     validator->set_bound(2);
+    validator->set_filter(filter);
+    validator->set_sandbox(sandbox);
     validator->set_alias_strategy(std::tr1::get<0>(param));
     validator->set_heap_out(true);
     validator->set_stack_out(true);
@@ -56,6 +71,7 @@ public:
     delete sandbox;
     delete sg_sandbox;
     delete solver;
+    delete handler;
   }
 
 protected:
@@ -133,6 +149,8 @@ protected:
   BoundedValidator* validator;
   Sandbox* sandbox;
   Sandbox* sg_sandbox;
+  Handler* handler;
+  Filter* filter;
 
 };
 

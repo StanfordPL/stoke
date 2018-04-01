@@ -74,7 +74,7 @@ auto& begin_line = ValueArg<size_t>::create("begin_line")
 auto& end_lines = ValueArg<vector<size_t>>::create("end_lines")
                   .usage("{ 0 1 ... 9 }")
                   .description("Line number to end recording on; recording always stops on returns")
-                  .default_val( {});
+.default_val( {});
 auto& max_stack = ValueArg<uint64_t>::create("max_stack")
                   .usage("<bytes>")
                   .description("The maximum number of bytes to assume could be stack")
