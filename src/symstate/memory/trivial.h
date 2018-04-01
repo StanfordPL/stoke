@@ -29,7 +29,7 @@ class TrivialMemory : public SymMemory {
 public:
 
   struct SymbolicAccess {
-    size_t line;          // line number?
+    DereferenceInfo info;          // line number?
     size_t size;          // how many bytes are we accessing?
     SymBitVector address; // symbolic address
     SymBitVector value;   // symbolic value
@@ -39,10 +39,10 @@ public:
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
-  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
+  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo info) {
 
     SymbolicAccess sa;
-    sa.line = line_no;
+    sa.info = info;
     sa.size = size/8;
     sa.address = address;
     sa.value = value;
@@ -54,12 +54,12 @@ public:
   }
 
   /** Reads from the memory.  Returns value and segv condition. */
-  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) {
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo info) {
 
     auto value = SymBitVector::tmp_var(size);
 
     SymbolicAccess sa;
-    sa.line = line_no;
+    sa.info = info;
     sa.size = size/8;
     sa.address = address;
     sa.value = value;

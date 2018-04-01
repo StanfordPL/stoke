@@ -57,10 +57,9 @@ public:
     vector<uint64_t> high_addrs = {0x100, (uint64_t)(-1)};
     filter = new ForbiddenDereferenceFilter(*handler, low_addrs, high_addrs);
 
-    validator = new BoundedValidator(*solver);
+    validator = new BoundedValidator(*solver, *sandbox);
     validator->set_bound(2);
     validator->set_filter(filter);
-    validator->set_sandbox(sandbox);
     validator->set_alias_strategy(std::tr1::get<0>(param));
     validator->set_heap_out(true);
     validator->set_stack_out(true);

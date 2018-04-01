@@ -42,7 +42,7 @@ ifeq ($(BUILD_TYPE), release)
 	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
 endif
 ifeq ($(BUILD_TYPE), debug)
-	OPT=-O2 -g $(MISC_OPTIONS)
+	OPT=-O0 -g $(MISC_OPTIONS)
 endif
 ifeq ($(BUILD_TYPE), profile)
 	OPT=-O3 -DNDEBUG -pg $(MISC_OPTIONS)
@@ -177,13 +177,20 @@ SRC_OBJ=\
 	src/tunit/tunit.o \
 	\
 	src/validator/bounded.o \
-	src/validator/cutpoints.o \
+	src/validator/control_learner.o \
+	src/validator/data_collector.o \
 	src/validator/ddec.o \
+	src/validator/dual.o \
+	src/validator/dual_builder.o \
+	src/validator/flow_invariant_learner.o \
 	src/validator/handler.o \
+	src/validator/int_matrix.o \
+	src/validator/int_vector.o \
 	src/validator/invariant.o \
   src/validator/learner.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
+	src/validator/sage.o \
 	src/validator/strata_support.o \
 	src/validator/validator.o \
   src/validator/variable.o \
@@ -242,31 +249,32 @@ OBJS=$(wildcard tools/apps/*.cc) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ)
 
 BIN=\
 	bin/stoke_extract \
-	bin/stoke_replace \
-	bin/stoke_search \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
-	bin/stoke_rename \
-	\
 	bin/stoke_debug_cfg \
-	bin/stoke_debug_formula \
-	bin/stoke_debug_cost \
-	bin/stoke_debug_diff \
-	bin/stoke_debug_effect \
 	bin/stoke_debug_invariant \
 	bin/stoke_debug_sandbox \
-	bin/stoke_debug_search \
-	bin/stoke_debug_simplify \
-	bin/stoke_debug_state \
-	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
-	\
-	bin/stoke_benchmark_cfg \
-	bin/stoke_benchmark_cost \
-	bin/stoke_benchmark_sandbox \
-	bin/stoke_benchmark_search \
-	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify
+
+#bin/stoke_replace \
+#bin/stoke_search \
+#bin/stoke_rename \
+#	\
+#	bin/stoke_debug_formula \
+#	bin/stoke_debug_cost \
+#	bin/stoke_debug_diff \
+#	bin/stoke_debug_effect \
+#	bin/stoke_debug_search \
+#	bin/stoke_debug_simplify \
+#	bin/stoke_debug_state \
+#	bin/stoke_debug_tunit \
+#	\
+#	bin/stoke_benchmark_cfg \
+#	bin/stoke_benchmark_cost \
+#	bin/stoke_benchmark_sandbox \
+#	bin/stoke_benchmark_search \
+#	bin/stoke_benchmark_state \
+#	bin/stoke_benchmark_verify
 
 # used to force a target to rebuild
 .PHONY: .FORCE
@@ -293,6 +301,8 @@ tests: debug
 test: tests
 	bin/stoke_test
 	echo -e "\a"
+ddec_test:
+	./popl19/test.sh
 fast_tests: debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug" MISC_OPTIONS="-DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
 	bin/stoke_test
