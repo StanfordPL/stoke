@@ -1,0 +1,15 @@
+diff -Naur cvc4-1.5/src/include/cvc4.h cvc4-1.5-patch/src/include/cvc4.h
+--- cvc4-1.5/src/include/cvc4.h	2017-07-07 15:15:02.000000000 -0700
++++ cvc4-1.5-patch/src/include/cvc4.h	2018-04-01 00:27:21.755225343 -0700
+@@ -18,6 +18,11 @@
+ #ifndef __CVC4__CVC4_H
+ #define __CVC4__CVC4_H
+ 
++// added to CVC4 source tree due to gcc compatibility bug
++// see https://gcc.gnu.org/gcc-4.9/porting_to.html
++// under heading "Header <cstddef> changes"
++#include <cstddef>
++
+ #include <cvc4/base/configuration.h>
+ #include <cvc4/base/exception.h>
+ #include <cvc4/expr/datatype.h>

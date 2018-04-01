@@ -78,8 +78,11 @@ ifdef NOCVC4
 CXX_FLAGS += -DNOCVC4=1
 endif
 
-WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
+WARNING_FLAGS=-Wall -Werror=switch -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
+CVC4_SRCDIR=src/ext/cvc4-1.5
+CVC4_OUTDIR=$(CVC4_SRCDIR)-build
+CVC4_OUTDIR_ABS=$(shell pwd)/$(CVC4_OUTDIR)
 
 INC_FOLDERS=\
 						./ \
@@ -88,7 +91,7 @@ INC_FOLDERS=\
 						src/ext/gtest-1.7.0/include \
 						src/ext/z3/src/api
 ifndef NOCVC4
-INC_FOLDERS += src/ext/cvc4-1.4-build/include
+INC_FOLDERS += $(CVC4_OUTDIR)/include
 endif
 
 INC=$(addprefix -I./, $(INC_FOLDERS))
@@ -104,11 +107,11 @@ LIB=\
 	-liml -lgmp \
 	-L src/ext/z3/build -lz3
 ifndef NOCVC4
-LIB += -L src/ext/cvc4-1.4-build/lib -lcvc4
+LIB += -L $(CVC4_OUTDIR)/lib -lcvc4
 endif
 
 ifndef NOCVC4
-LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
+LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../$(CVC4_OUTDIR)/lib,--enable-new-dtags
 else
 LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build,--enable-new-dtags
 endif
@@ -324,7 +327,7 @@ depend:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/astyle cpputil x64asm z3 pintool src/ext/gtest-1.7.0/libgtest.a
+external: src/ext/astyle cpputil x64asm z3 cvc4 pintool src/ext/gtest-1.7.0/libgtest.a
 	if [ ! -f .depend ]; then \
 		$(MAKE) -C . depend; \
 	fi
@@ -338,13 +341,16 @@ cpputil:
 	./scripts/make/submodule-init.sh src/ext/cpputil
 
 .PHONY: x64asm
-x64asm:
+x64asm: src/ext/x64asm/lib/libx64asm.a
+
+
+src/ext/x64asm/lib/libx64asm.a:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" CXX="${CXX}" CC="${CC}"
+	$(MAKE) -j$(NTHREADS) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" CXX="${CXX}" CC="${CC}"
 
 .PHONY: pintool
 pintool:
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
+	$(MAKE) -j$(NTHREADS) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)" \
 					CXX="${CXX}" CC="${CC}"
 
 src/ext/gtest-1.7.0/libgtest.a:
@@ -352,15 +358,30 @@ src/ext/gtest-1.7.0/libgtest.a:
 	CXX="${CXX}" CC="${CC}" cmake src/ext/gtest-1.7.0/CMakeLists.txt
 	VERBOSE="1" $(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
 
+cvc4: $(CVC4_OUTDIR)/lib/libcvc4.so
+.PHONY: cvc4
+
+$(CVC4_OUTDIR)/lib/libcvc4.so: $(CVC4_SRCDIR)/configure
+	cd $(CVC4_SRCDIR) && ./configure --prefix=$(CVC4_OUTDIR_ABS) CVC4_BSD_LICENSED_CODE_ONLY=0 --with-cln
+	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
+	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make install
+
+$(CVC4_SRCDIR)/configure:
+	# unpacking via tar to avoid problems with autoconf timestamps
+	cd src/ext && tar -xf cvc4-1.5.tar.gz  
+	cd src/ext && patch -p0 < cvc4.patch
+
 .PHONY: z3
-z3: z3init src/ext/z3/build/Makefile
-	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make
+z3: src/ext/z3/build/libz3.so
+
+src/ext/z3/build/libz3.so: z3init src/ext/z3/build/Makefile
+	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
 
 z3init:
 	./scripts/make/submodule-init.sh src/ext/z3
 
 src/ext/z3/build/Makefile:
-	cd src/ext/z3 && python scripts/mk_make.py
+	cd src/ext/z3 && CC="${CC}" CXX="${CXX}" python scripts/mk_make.py
 
 ##### VALIDATOR AUTOGEN
 
@@ -483,3 +504,4 @@ dist_clean: clean
 	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
 	rm -rf src/ext/z3/build
+	rm -rf $(CVC4_OUTDIR) $(CVC4_SRCDIR)

@@ -211,67 +211,90 @@ pair<map<uint64_t, cpputil::BitVector>, uint8_t> Z3Solver::get_model_array(
   auto type = Z3_mk_array_sort(context_, context_.bv_sort(key_bits), context_.bv_sort(value_bits));
   auto v = z3::expr(context_, Z3_mk_const(context_, get_symbol(var), type));
   expr e = model_->eval(v, true);
-  auto array_eval_func_decl = e.decl();
+  auto ast = e.decl();
 
   DEBUG_Z3(cout << "Expression for array model: " << e << endl;)
   //cout << *model_ << endl;
 
   // CREDIT: this was written with A LOT of help from
   // https://stackoverflow.com/questions/22885457/read-func-interp-of-a-z3-array-from-the-z3-model
+  // AND
+  // https://stackoverflow.com/questions/40903505/extract-value-from-const-array-in-z3
 
-  bool ok = true;
-  ok &= Z3_get_decl_kind(context_, array_eval_func_decl) == Z3_OP_AS_ARRAY;
-  /* These checks don't seem to work right
-    cout << "check1: ok=" << ok << endl;
-    ok &= Z3_is_app(context_, array_eval_func_decl);
-    cout << "check2: ok=" << ok << endl;
-    ok &= (Z3_get_decl_num_parameters(context_, array_eval_func_decl) == 1);
-    cout << "check3: ok=" << ok << endl;
-    ok &= (Z3_get_decl_parameter_kind(context_, array_eval_func_decl, 0) ==
-           Z3_PARAMETER_FUNC_DECL);
-    cout << "check4: ok=" << ok << endl;
-  */
+  auto kind = Z3_get_decl_kind(context_, ast);
 
-  if (!ok) {
-    // The counterexample could be spurious, but we'll figure that out later.
-    // On the other hand, there might be no memory at all or the memory
-    // does not matter
-    DEBUG_Z3(cout << "Couldn't parse Z3's AST for array model; may have spurious CEG. " << endl;)
-    pair<map<uint64_t, cpputil::BitVector>, uint8_t> result(addr_val_map, 0);
-    return result;
-  }
-
-  auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
-  auto model_fd = func_decl(context_, z3_model_fd);
-  func_interp fun_interp = model_->get_func_interp(model_fd);
-
-
-  unsigned num_entries = fun_interp.num_entries();
-  for (unsigned i = 0; i < num_entries; i++)
-  {
-    z3::func_entry entry = fun_interp.entry(i);
-    z3::expr k = entry.arg(0);
-    z3::expr v = entry.value();
-
+  while (kind == Z3_OP_STORE) {
+    z3::expr k = e.arg(1);
+    z3::expr v = e.arg(2);
     uint64_t addr;
     uint64_t value;
     Z3_get_numeral_uint64(context_, k, (long long unsigned int*)&addr);
     Z3_get_numeral_uint64(context_, v, (long long unsigned int*)&value);
 
     assert(value <= 0xff);
-
-    // TODO: generalize this if ever needed
     cpputil::BitVector bv_v(8);
     bv_v.get_fixed_byte(0) = value;
     addr_val_map[addr] = bv_v;
     DEBUG_Z3(cout << hex << "adding " << addr << "->" << value << endl;)
+
+    e = e.arg(0);
+    ast = e.decl();
+    kind = Z3_get_decl_kind(context_, ast);
+
   }
 
-  z3::expr default_value = fun_interp.else_value();
-  pair<map<uint64_t, cpputil::BitVector>, uint8_t> result;
-  result.first = addr_val_map;
-  result.second = default_value;
+  if (kind == Z3_OP_CONST_ARRAY) {
 
+    z3::expr arg = e.arg(0);
+    uint64_t value;
+    Z3_get_numeral_uint64(context_, arg, (long long unsigned int*)&value);
+    assert(value <= 0xff);
+
+    pair<map<uint64_t, cpputil::BitVector>, uint8_t> result;
+    result.first = addr_val_map;
+    result.second = value;
+    return result;
+
+  } else if (kind == Z3_OP_AS_ARRAY) {
+    auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, ast, 0);
+    auto model_fd = func_decl(context_, z3_model_fd);
+    func_interp fun_interp = model_->get_func_interp(model_fd);
+
+
+    unsigned num_entries = fun_interp.num_entries();
+    for (unsigned i = 0; i < num_entries; i++)
+    {
+      z3::func_entry entry = fun_interp.entry(i);
+      z3::expr k = entry.arg(0);
+      z3::expr v = entry.value();
+
+      uint64_t addr;
+      uint64_t value;
+      Z3_get_numeral_uint64(context_, k, (long long unsigned int*)&addr);
+      Z3_get_numeral_uint64(context_, v, (long long unsigned int*)&value);
+
+      assert(value <= 0xff);
+
+      cpputil::BitVector bv_v(8);
+      bv_v.get_fixed_byte(0) = value;
+      addr_val_map[addr] = bv_v;
+      DEBUG_Z3(cout << hex << "adding " << addr << "->" << value << endl;)
+    }
+
+    z3::expr default_value = fun_interp.else_value();
+    pair<map<uint64_t, cpputil::BitVector>, uint8_t> result;
+    result.first = addr_val_map;
+    result.second = default_value;
+    return result;
+  } else if (kind == Z3_OP_ARRAY_MAP) {
+    cout << "[z3] Don't know how to handle Z3_OP_ARRAY_MAP" << endl;
+  }
+
+  // The counterexample could be spurious, but we'll figure that out later.
+  // On the other hand, there might be no memory at all or the memory
+  // does not matter
+  cout << "[z3] Couldn't parse Z3's AST for array model; may have spurious CEG. " << endl;
+  pair<map<uint64_t, cpputil::BitVector>, uint8_t> result(addr_val_map, 0);
   return result;
 }
 
