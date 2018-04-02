@@ -31,9 +31,9 @@
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
+#define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
-#define ALIAS_STRING_DEBUG(X) {  }
 //#define DEBUG_ARMS_RACE(X)  X
 #define DEBUG_ARMS_RACE(X)  { }
 #define DEBUG_FIXPOINT(X) { X } 
@@ -317,13 +317,13 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
       }
 
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
-      auto constraints = (*filter_)(instr, state);
+      auto constraints = (filter_)(instr, state);
       for (auto constraint : constraints) {
         state.constraints.push_back(constraint);
       }
 
-      if (filter_->has_error()) {
-        throw VALIDATOR_ERROR(filter_->error());
+      if (filter_.has_error()) {
+        error_ = filter_.error();
       }
     }
   }
@@ -538,11 +538,11 @@ bool ObligationChecker::check_race(
 
           // set output data
           result = my_result;
-          have_ceg_ = oc.checker_has_ceg();
-          ceg_t_ = oc.checker_get_target_ceg();
-          ceg_r_ = oc.checker_get_rewrite_ceg();
-          ceg_tf_ = oc.checker_get_target_ceg_end();
-          ceg_rf_ = oc.checker_get_rewrite_ceg_end();
+          have_ceg_ = oc.has_ceg();
+          ceg_t_ = oc.get_target_ceg();
+          ceg_r_ = oc.get_rewrite_ceg();
+          ceg_tf_ = oc.get_target_ceg_end();
+          ceg_rf_ = oc.get_rewrite_ceg_end();
         }
       }
       DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
@@ -559,16 +559,18 @@ bool ObligationChecker::check_race(
     t2.join();
 
     /** compose error messages. */
-    has_error_ = (finished.load() == 0);
     DEBUG_ARMS_RACE(cout << "has_error_ = " << has_error_ << endl;)
     stringstream err_msg;
-    if(has_error[0]) {
-      err_msg << error[0];
+    if(finished.load() == 0) {
+      err_msg << "Neither ARM/Flat finished ; ";
+      if(has_error[0]) {
+        err_msg << error[0];
+        if(has_error[1])
+          err_msg << " ; ";
+      }
       if(has_error[1])
-        err_msg << " ; ";
+        err_msg << error[1];
     }
-    if(has_error[1])
-      err_msg << error[1];
     error_ = err_msg.str();
     DEBUG_ARMS_RACE(cout << "have_ceg_ = " << have_ceg_ << endl;)
     DEBUG_ARMS_RACE(cout << "error_ = " << error_ << endl;)
@@ -881,7 +883,9 @@ bool ObligationChecker::check_core(
   if (check_abort()) return false;
   bool is_sat = solver_.is_sat(constraints);
   if (solver_.has_error()) {
-    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+    stringstream err;
+    err << "solver: " << solver_.get_error();
+    error_ = err.str();
   }
   if (check_abort()) return false;
 
@@ -892,10 +896,10 @@ bool ObligationChecker::check_core(
 
   if (is_sat) {
     if (check_abort()) return false;
-    ceg_t_ = Validator::state_from_model(solver_, "_1_INIT", target_ghost_names);
-    ceg_r_ = Validator::state_from_model(solver_, "_2_INIT", rewrite_ghost_names);
-    ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL", target_ghost_names);
-    ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL", rewrite_ghost_names);
+    ceg_t_ = state_from_model("_1_INIT", target_ghost_names);
+    ceg_r_ = state_from_model("_2_INIT", rewrite_ghost_names);
+    ceg_tf_ = state_from_model("_1_FINAL", target_ghost_names);
+    ceg_rf_ = state_from_model("_2_FINAL", rewrite_ghost_names);
 
     if (check_abort()) return false;
     bool ok = true;
@@ -1032,4 +1036,52 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 
 }
 
+CpuState ObligationChecker::state_from_model(const string& name_suffix,
+                                    vector<string> shadow_vars) {
+  CpuState cs;
 
+  // 64-bit GP registers
+  for (size_t i = 0; i < r64s.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << name_suffix;
+    cs.gp[r64s[i]] = solver_.get_model_bv(name.str(), 64);
+    //cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
+  }
+
+  // XMMs/YMMs
+  for (size_t i = 0; i < ymms.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << name_suffix;
+    cs.sse[ymms[i]] = solver_.get_model_bv(name.str(), 256);
+  }
+
+  // flags
+  for (size_t i = 0; i < eflags.size(); ++i) {
+    if (!cs.rf.is_status(eflags[i].index()))
+      continue;
+
+    stringstream name;
+    name << eflags[i] << name_suffix;
+    cs.rf.set(eflags[i].index(), solver_.get_model_bool(name.str()));
+  }
+
+  // shadow variables
+  for(auto var : shadow_vars) {
+    stringstream name;
+    name << var << name_suffix;
+    cs.shadow[var] = solver_.get_model_bv(name.str(), 64).get_fixed_quad(0);
+  }
+
+  // Figure out error code
+  if (solver_.get_model_bool("sigbus" + name_suffix)) {
+    cs.code = ErrorCode::SIGBUS_;
+  } else if (solver_.get_model_bool("sigfpe" + name_suffix)) {
+    cs.code = ErrorCode::SIGFPE_;
+  } else if (solver_.get_model_bool("sigsegv" + name_suffix)) {
+    cs.code = ErrorCode::SIGSEGV_;
+  } else {
+    cs.code = ErrorCode::NORMAL;
+  }
+
+  return cs;
+}

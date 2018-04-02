@@ -22,8 +22,7 @@
 #include "src/ext/cpputil/include/container/bit_vector.h"
 #include "src/solver/smtsolver.h"
 #include "src/validator/error.h"
-#include "src/validator/handler.h"
-#include "src/validator/handlers.h"
+#include "src/validator/obligation_checker.h"
 #include "src/verifier/verifier.h"
 
 
@@ -33,18 +32,8 @@ class Validator : public Verifier {
 
 public:
 
-  Validator(SMTSolver& solver) :
-    solver_(solver),
-    handler_(*(new ComboHandler())),
-    free_handler_(true) {
-    has_error_ = false;
-    setup_support_table();
-  }
-
-  Validator(SMTSolver& solver, Handler& h) :
-    solver_(solver),
-    handler_(h),
-    free_handler_(false)
+  Validator(ObligationChecker& checker) :
+    checker_(checker) 
   {
     has_error_ = false;
     setup_support_table();
@@ -53,26 +42,18 @@ public:
   /** Copy constructor: the goal is to create a new Validator
     that shares any configuration of the original one, but can safely be used
     in a different thread.  They can share pointers to memory, but only if that
-    memory is only read. 
-    it's safe to copy handler_ also. */
+    memory is only read.  */
   Validator(const Validator& rhs) : 
     Verifier(),
-    memory_manager_(),
-    solver_(*rhs.solver_.clone()),
-    handler_(rhs.handler_),
-    free_handler_(false),
+    checker_(rhs.checker_),
     support_table_(rhs.support_table_),
     error_file_(""),
     error_line_(0)
    {
-     std::cout << "[CCDEBUG] calling Validator's copy constructor.";
-     std::cout << " this=" << this << " solver=" << &solver_ << std::endl;
      has_error_ = false;
   }
 
   virtual ~Validator() {
-    if (free_handler_)
-      delete &handler_;
   }
 
   /** Evalue if the target and rewrite are the same */
@@ -106,46 +87,8 @@ protected:
    * instructions are supported.  Throws exception on error.*/
   void sanity_checks(const Cfg&, const Cfg&) const;
 
-  /** Push a new memory manager onto the stack. */
-  void init_mm() {
-    auto manager = new SymMemoryManager();
-    SymBitVector::set_memory_manager(manager);
-    SymBool::set_memory_manager(manager);
-    memory_manager_.push(manager);
-  }
-  /** Pop a memory manager off the stack */
-  void stop_mm() {
-    assert(memory_manager_.size());
-    auto manager = memory_manager_.top();
-    manager->collect();
-    delete manager;
-
-    memory_manager_.pop();
-
-    if (memory_manager_.size()) {
-      auto manager = memory_manager_.top();
-      SymBitVector::set_memory_manager(manager);
-      SymBool::set_memory_manager(manager);
-    } else {
-      SymBitVector::set_memory_manager(NULL);
-      SymBool::set_memory_manager(NULL);
-    }
-
-  }
-  /** Discard and reset all memory managers. */
-  void reset_mm() {
-    while (memory_manager_.size())
-      stop_mm();
-  }
-  /** The memory manager */
-  std::stack<SymMemoryManager*> memory_manager_;
-
   /** SMT Solver to use */
-  SMTSolver& solver_;
-  /** The handler */
-  Handler& handler_;
-  /** Do we need to free the handler? */
-  bool free_handler_;
+  ObligationChecker& checker_;
 
   /** What opcodes do we fully support? */
   std::array<bool, X64ASM_NUM_OPCODES> support_table_;

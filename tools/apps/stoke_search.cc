@@ -47,7 +47,6 @@
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/transform_pools.h"
-#include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
 #include "tools/gadgets/weighted_transform.h"
 #include "tools/io/postprocessing.h"

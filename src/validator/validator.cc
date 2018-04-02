@@ -30,8 +30,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_MAP_TC(X) {}
-
 
 bool Validator::is_supported(Instruction& i) const {
 
@@ -46,7 +44,9 @@ void Validator::setup_support_table() {
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     support_table_[i] = false;
   }
-  for (auto& op : handler_.full_support_opcodes()) {
+
+  auto opcodes = checker_.get_filter().get_handler().full_support_opcodes();
+  for (auto& op : opcodes) {
     support_table_[(int)op] = true;
   }
 }
@@ -60,10 +60,11 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
     throw VALIDATOR_ERROR("Live-outs of target/rewrite CFGs differ");
   }
   // Check that the regsets are supported, throw an error otherwise
-  if (!handler_.regset_is_supported(target.def_ins())) {
+  auto& handler = checker_.get_filter().get_handler();
+  if (!handler.regset_is_supported(target.def_ins())) {
     throw VALIDATOR_ERROR("Target def-in not supported.");
   }
-  if (!handler_.regset_is_supported(target.live_outs())) {
+  if (!handler.regset_is_supported(target.live_outs())) {
     throw VALIDATOR_ERROR("Target live-out not supported.");
   }
 
@@ -83,63 +84,4 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
   }
 
 }
-
-
-
-
-CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
-                                    vector<string> shadow_vars) {
-  CpuState cs;
-
-  // 64-bit GP registers
-  for (size_t i = 0; i < r64s.size(); ++i) {
-    stringstream name;
-    name << r64s[i] << name_suffix;
-    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
-    //cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
-  }
-
-  // XMMs/YMMs
-  for (size_t i = 0; i < ymms.size(); ++i) {
-    stringstream name;
-    name << ymms[i] << name_suffix;
-    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
-  }
-
-  // flags
-  for (size_t i = 0; i < eflags.size(); ++i) {
-    if (!cs.rf.is_status(eflags[i].index()))
-      continue;
-
-    stringstream name;
-    name << eflags[i] << name_suffix;
-    cs.rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
-  }
-
-  // shadow variables
-  for(auto var : shadow_vars) {
-    stringstream name;
-    name << var << name_suffix;
-    cs.shadow[var] = smt.get_model_bv(name.str(), 64).get_fixed_quad(0);
-  }
-
-  // Figure out error code
-  if (smt.get_model_bool("sigbus" + name_suffix)) {
-    cs.code = ErrorCode::SIGBUS_;
-  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
-    cs.code = ErrorCode::SIGFPE_;
-  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
-    cs.code = ErrorCode::SIGSEGV_;
-  } else {
-    cs.code = ErrorCode::NORMAL;
-  }
-
-  return cs;
-}
-
-
-
-
-
-
 

@@ -33,16 +33,14 @@
 
 namespace stoke {
 
-class BoundedValidator : public ObligationChecker {
+class BoundedValidator : public Validator {
 
 public:
 
-  BoundedValidator(SMTSolver& solver) :
-    ObligationChecker(solver), target_final_state_(), rewrite_final_state_()
+  BoundedValidator(ObligationChecker& checker) :
+    Validator(checker), target_final_state_(), rewrite_final_state_()
   {
     set_bound(2);
-    set_alias_strategy(AliasStrategy::FLAT);
-    set_nacl(false);
     set_no_bailout(false);
   }
 
@@ -81,7 +79,6 @@ public:
   virtual std::vector<CpuState> get_counter_examples() {
     return counterexamples_;
   }
-
 
   /** Get the expected final state of the target after running counterexample.
     (This is only for the fuzz tester, basically).  It is only valid if we just

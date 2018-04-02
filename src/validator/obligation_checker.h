@@ -27,14 +27,12 @@
 #include "src/cfg/paths.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
-#include "src/solver/z3solver.h"
 #include "src/symstate/dereference_info.h"
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
-#include "src/validator/validator.h"
 #include "src/validator/filters/default.h"
 #include "src/validator/filters/bound_away.h"
 
@@ -46,7 +44,7 @@
 
 namespace stoke {
 
-class ObligationChecker : public Validator {
+class ObligationChecker {
   friend class ObligationCheckerBaseTest;
   FRIEND_TEST(ObligationCheckerBaseTest, WcpcpyA);
   FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligation);
@@ -64,23 +62,18 @@ public:
   enum AliasStrategy {
     BASIC,             // enumerate all cases, attempt to bound it (SOUND)
     FLAT,              // model memory as an array in the SMT solver (SOUND)
-    STRING,            // look for continugous memory accesses and combine them (SOUND BUT BUGGY)
-    STRING_NO_ALIAS,   // assume strings don't overlap (UNSOUND AND BUGGY)
     ARM,               // improved implementation of "STRING" (SOUND)
     ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
   };
 
-  ObligationChecker(SMTSolver& solver) : 
-    Validator(solver)
+  ObligationChecker(SMTSolver& solver, Filter& filter) : 
+    solver_(solver),
+    filter_(filter)
   {
-
-
     set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
     set_fixpoint_up(false);
-    filter_ = new BoundAwayFilter(handler_, 0x100, 0xffffffffffffff00);
-    delete_filter_ = true;
     stop_now_ = false;
 
     oc1_ = NULL;
@@ -88,11 +81,11 @@ public:
   }
 
   ObligationChecker(const ObligationChecker& oc) :
-    Validator(oc),
-    filter_(oc.filter_)
+    solver_(oc.solver_),
+    filter_(oc.filter_),
+    memory_manager_()
   {
     basic_block_ghosts_ = oc.basic_block_ghosts_;
-    delete_filter_ = false;
     nacl_ = oc.nacl_;
     fixpoint_up_ = oc.fixpoint_up_;
     alias_strategy_ = oc.alias_strategy_;
@@ -102,8 +95,6 @@ public:
   }
 
   ~ObligationChecker() {
-    if (delete_filter_)
-      delete filter_;
   }
 
   /** Set strategy for aliasing */
@@ -116,16 +107,12 @@ public:
     return alias_strategy_;
   }
 
-  ObligationChecker& set_fixpoint_up(bool b) {
-    fixpoint_up_ = b;
-    return *this;
+  SMTSolver& get_solver() {
+    return solver_;
   }
 
-  ObligationChecker& set_filter(Filter* filter) {
-    if (delete_filter_)
-      delete filter_;
-    delete_filter_ = false;
-    filter_ = filter;
+  ObligationChecker& set_fixpoint_up(bool b) {
+    fixpoint_up_ = b;
     return *this;
   }
 
@@ -165,24 +152,31 @@ public:
              Invariant& assume, Invariant& prove,
              const std::vector<std::pair<CpuState, CpuState>>& testcases);
 
+  bool has_error() {
+    return error_.size() > 0;
+  }
 
-  bool checker_has_ceg() {
+  std::string get_error() {
+    return error_;
+  }
+
+  bool has_ceg() {
     return have_ceg_;
   }
 
-  CpuState checker_get_target_ceg() {
+  CpuState get_target_ceg() {
     return ceg_t_;
   }
 
-  CpuState checker_get_rewrite_ceg() {
+  CpuState get_rewrite_ceg() {
     return ceg_r_;
   }
 
-  CpuState checker_get_target_ceg_end() {
+  CpuState get_target_ceg_end() {
     return ceg_tf_;
   }
 
-  CpuState checker_get_rewrite_ceg_end() {
+  CpuState get_rewrite_ceg_end() {
     return ceg_rf_;
   }
 
@@ -201,7 +195,13 @@ public:
     return arm_won_;
   }
 
+  Filter& get_filter() {
+    return filter_;
+  }
+
 private:
+
+  SMTSolver& solver_;
 
   bool arm_won_;
 
@@ -237,6 +237,9 @@ private:
 
   typedef std::map<size_t,LineInfo> LineMap;
 
+  /** Extract a CPU state from SMT solver */
+  CpuState state_from_model(const std::string& name_suffix,
+                            std::vector<std::string> shadow_vars);
 
 
   bool build_testcase_flat_memory(CpuState&, SymArray variable,
@@ -302,8 +305,7 @@ private:
   /////////////// Bookkeeping //////////////////
 
   /** Rules to transform instructions for a custom purpose */
-  Filter* filter_;
-  bool delete_filter_;
+  Filter& filter_;
 
   /** Target counterexample and end state */
   CpuState ceg_t_;
@@ -350,6 +352,41 @@ private:
   }
 #endif
 
+  /** Push a new memory manager onto the stack. */
+  void init_mm() {
+    auto manager = new SymMemoryManager();
+    SymBitVector::set_memory_manager(manager);
+    SymBool::set_memory_manager(manager);
+    memory_manager_.push(manager);
+  }
+  /** Pop a memory manager off the stack */
+  void stop_mm() {
+    assert(memory_manager_.size());
+    auto manager = memory_manager_.top();
+    manager->collect();
+    delete manager;
+
+    memory_manager_.pop();
+
+    if (memory_manager_.size()) {
+      auto manager = memory_manager_.top();
+      SymBitVector::set_memory_manager(manager);
+      SymBool::set_memory_manager(manager);
+    } else {
+      SymBitVector::set_memory_manager(NULL);
+      SymBool::set_memory_manager(NULL);
+    }
+
+  }
+  /** Discard and reset all memory managers. */
+  void reset_mm() {
+    while (memory_manager_.size())
+      stop_mm();
+  }
+  /** The memory manager */
+  std::stack<SymMemoryManager*> memory_manager_;
+
+  std::string error_;
 
 };
 

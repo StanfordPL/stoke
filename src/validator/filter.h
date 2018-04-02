@@ -45,6 +45,10 @@ public:
     return error_;
   }
 
+  Handler& get_handler() {
+    return handler_;
+  }
+
 protected:
 
   std::string error_;

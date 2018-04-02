@@ -193,13 +193,14 @@ void make_tc_different_memory(
         high.push_back(segment->upper_bound());
     }
 
-    checker.set_filter(new ForbiddenDereferenceFilter(handler, low, high));
+    ForbiddenDereferenceFilter filter(handler, low, high);
+    ObligationChecker oc(checker.get_solver(), filter);
 
     vector<pair<CpuState, CpuState>> testcases;
-    checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
+    oc.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
 
-    if (checker.checker_has_ceg()) {
-      auto tc2 = checker.checker_get_target_ceg();
+    if (oc.has_ceg()) {
+      auto tc2 = oc.get_target_ceg();
 
       if (!check_testcase(tc2, sb)) {
         cerr << "Warning: skipping over invalid testcase." << endl;
@@ -237,7 +238,9 @@ int main(int argc, char** argv) {
   gen.seed((default_random_engine::result_type)seed);
 
   SolverGadget solver;
-  ObligationChecker checker(solver);
+  ComboHandler handler;
+  DefaultFilter filter(handler);
+  ObligationChecker checker(solver, filter);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
 
   // Step 1: enumerate paths up to a certain bound
@@ -264,7 +267,6 @@ int main(int argc, char** argv) {
   Cfg rewrite(rewrite_code, x64asm::RegSet::all_gps(), x64asm::RegSet::empty());
   auto rewrite_path = CfgPaths::enumerate_paths(rewrite, 1)[0];
 
-  ComboHandler handler;
 
   FalseInvariant _false;
   TrueInvariant _true;
@@ -287,12 +289,11 @@ int main(int argc, char** argv) {
       cerr << "Looking for testcase on path " << p << endl;
     }
 
-    checker.set_filter(new DefaultFilter(handler));
     vector<pair<CpuState, CpuState>> testcases;
     checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
 
-    if (checker.checker_has_ceg()) {
-      auto tc = checker.checker_get_target_ceg();
+    if (checker.has_ceg()) {
+      auto tc = checker.get_target_ceg();
 
       if (!check_testcase(tc, sb)) {
         cerr << "Warning: skipping over invalid (original) testcase" << endl;

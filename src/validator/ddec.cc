@@ -499,15 +499,10 @@ bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata:
   }
 
   // Run the obligation check
-  try {
-    valid = check(target_, rewrite_, edge.from.ts, edge.from.rs,
-                  edge.te, edge.re, *start_inv, *partial_inv, testcases);
-    if(has_error_) {
-      ss << "     " << error_ << endl;
-    }
-  } catch (validator_error e) {
-    valid = false;
-    ss << "     encountered " << e.what() << "; assuming false." << endl;
+  valid = checker_.check(target_, rewrite_, edge.from.ts, edge.from.rs,
+                edge.te, edge.re, *start_inv, *partial_inv, testcases);
+  if(checker_.has_error()) {
+    ss << "     " << error_ << endl;
   }
 
   return valid;
@@ -589,21 +584,22 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
     milliseconds end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     auto diff = (end - start).count();
     ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
-    if(ddec.get_alias_strategy() == AliasStrategy::ARMS_RACE) {
-      if(!ddec.has_error_ && ddec.arm_won()) {
+    auto& checker = ddec.checker_;
+    if(checker.get_alias_strategy() == ObligationChecker::AliasStrategy::ARMS_RACE) {
+      if(!checker.has_error() && checker.arm_won()) {
         ss << "    (arm won)" << endl;
-      } else if (!ddec.has_error_) {
+      } else if (!checker.has_error()) {
         ss << "    (flat won)" << endl;
       } else {
         ss << "    (both failed)" << endl;
       }
     }
     CEG_DEBUG(
-      if(!success && ddec.checker_has_ceg()) {
-        auto ceg_t = ddec.checker_get_target_ceg();
-        auto ceg_r = ddec.checker_get_rewrite_ceg();
-        auto ceg_t_end = ddec.checker_get_target_ceg_end();
-        auto ceg_r_end = ddec.checker_get_rewrite_ceg_end();
+      if(!success && checker.has_ceg()) {
+        auto ceg_t = checker.get_target_ceg();
+        auto ceg_r = checker.get_rewrite_ceg();
+        auto ceg_t_end = checker.get_target_ceg_end();
+        auto ceg_r_end = checker.get_rewrite_ceg_end();
 
         ss << "    (counterexample)" << endl << endl;
         ss << "TARGET COUNTEREXAMPLE" << endl << endl << ceg_t << endl << endl;
@@ -746,12 +742,10 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   auto expected_final = get_final_invariant();
   vector<pair<CpuState, CpuState>> testcases;
   bool final_ok = false;
-  try {
-    final_ok = check(target_, rewrite_, end_state.ts, end_state.rs,
-                        {}, {}, *actual_final, *expected_final, testcases);
-  } catch (validator_error e) {
-    final_ok = false;
-    cout << "     encountered " << e.what() << "; assuming false." << endl;
+  final_ok = checker_.check(target_, rewrite_, end_state.ts, end_state.rs,
+                      {}, {}, *actual_final, *expected_final, testcases);
+  if(checker_.has_error()) {
+    cout << "[verify_dual] Checker encountered error: " << checker_.get_error() << endl;
   }
 
   if (!final_ok) {
@@ -891,8 +885,6 @@ bool DdecValidator::sanity_check(DualAutomata& pod) {
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
-  init_mm();
-
   target_ = init_target;
   rewrite_ = init_rewrite;
 
@@ -938,37 +930,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
 
   delete control_learner_;
-  reset_mm();
   return false;
-
-
-  /*
-  try {
-
-    sanity_checks(target_, rewrite_);
-
-    DDEC_TC_DEBUG(
-      cout << "DDEC sandbox at " << sandbox_ << endl;
-    for (size_t i = 0; i < sandbox_->size(); ++i) {
-    cout << "DDEC sees this TC: " << endl;
-    cout << *sandbox_->get_input(i) << endl;
-    }
-    )
-
-    return false;
-
-  } catch (validator_error e) {
-
-    has_error_ = true;
-    error_ = e.get_message();
-    error_file_ = e.get_file();
-    error_line_ = e.get_line();
-    delete control_learner_;
-    reset_mm();
-    return false;
-  }
-  */
-
 
 }
 

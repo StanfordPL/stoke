@@ -29,12 +29,12 @@
 
 namespace stoke {
 
-class DdecValidator : public ObligationChecker {
+class DdecValidator : public Validator {
 
 public:
 
-  DdecValidator(SMTSolver& solver, Sandbox& sandbox, InvariantLearner& inv) :
-    ObligationChecker(solver),
+  DdecValidator(ObligationChecker& checker, Sandbox& sandbox, InvariantLearner& inv) :
+    Validator(checker),
     target_({}), rewrite_({}),
           sandbox_(sandbox),
           data_collector_(sandbox),
@@ -46,7 +46,7 @@ public:
   }
 
   DdecValidator(const DdecValidator& rhs) :
-    ObligationChecker(rhs),
+    Validator(rhs),
     target_(rhs.target_),
     rewrite_(rhs.rewrite_),
     sandbox_(rhs.sandbox_),
@@ -58,8 +58,6 @@ public:
     target_bound_ = rhs.target_bound_;
     rewrite_bound_ = rhs.rewrite_bound_;
     thread_count_ = rhs.thread_count_;
-    std::cout << "[CCDEBUG] Calling DdecValidator's copy constructor: ";
-    std::cout << " this=" << this << " solver=" << &solver_ << std::endl;
   }
 
   /** Set the bound for bounded validator */

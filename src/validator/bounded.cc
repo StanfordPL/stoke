@@ -53,16 +53,16 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   bool equiv;
   vector<pair<CpuState, CpuState>> testcases;
   if (heap_out_ || stack_out_) {
-    equiv = check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases);
+    equiv = checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases);
   } else {
-    equiv = check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases);
+    equiv = checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases);
   }
 
-  if (checker_has_ceg()) {
+  if (checker_.has_ceg()) {
     assert(!equiv);
-    counterexamples_.push_back(checker_get_target_ceg());
-    target_final_state_ = checker_get_target_ceg_end();
-    rewrite_final_state_ = checker_get_rewrite_ceg_end();
+    counterexamples_.push_back(checker_.get_target_ceg());
+    target_final_state_ = checker_.get_target_ceg_end();
+    rewrite_final_state_ = checker_.get_rewrite_ceg_end();
   }
 
   return equiv;
@@ -82,74 +82,52 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   vector<CfgPath> target_paths;
   vector<CfgPath> rewrite_paths;
 
-  has_error_ = false;
-  init_mm();
+  // Step 0: Background checks
+  sanity_checks(target, rewrite);
 
-  try {
+  // Step 1: get all the paths from the enumerator
+  for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
+    //cout << "adding TP: " << path << endl;
+    target_paths.push_back(path);
+  }
+  //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
+  for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
+    //cout << "adding RP: " << path << endl;
+    rewrite_paths.push_back(path);
+  }
 
-    // Step 0: Background checks
-    sanity_checks(target, rewrite);
+  // Handle the shorter paths first, please
+  // [helps find counterexamples sooner]
+  auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
+    return lhs.size() < rhs.size();
+  };
+  sort(target_paths.begin(), target_paths.end(), by_length);
+  sort(rewrite_paths.begin(), rewrite_paths.end(), by_length);
 
-    // Step 1: get all the paths from the enumerator
-    for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
-      //cout << "adding TP: " << path << endl;
-      target_paths.push_back(path);
-    }
-    //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
-    for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
-      //cout << "adding RP: " << path << endl;
-      rewrite_paths.push_back(path);
-    }
+  // Step 2: check each pair of paths
+  bool ok = true;
+  size_t total = target_paths.size() * rewrite_paths.size();
+  size_t count = 0;
+  for (auto target_path : target_paths) {
+    for (auto rewrite_path : rewrite_paths) {
 
-    // Handle the shorter paths first, please
-    // [helps find counterexamples sooner]
-    auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
-      return lhs.size() < rhs.size();
-    };
-    sort(target_paths.begin(), target_paths.end(), by_length);
-    sort(rewrite_paths.begin(), rewrite_paths.end(), by_length);
+      BOUNDED_DEBUG(cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;)
 
-    // Step 2: check each pair of paths
-    bool ok = true;
-    size_t total = target_paths.size() * rewrite_paths.size();
-    size_t count = 0;
-    for (auto target_path : target_paths) {
-      for (auto rewrite_path : rewrite_paths) {
+      count++;
+      ok &= verify_pair(target, rewrite, target_path, rewrite_path);
 
-        BOUNDED_DEBUG(cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;)
+      // Case 1: verify failed and we have ceg; return false
+      // Case 2: verify failed and no counterexampe: keep going
+      // Case 3: verify worked: keep going
 
-        count++;
-        ok &= verify_pair(target, rewrite, target_path, rewrite_path);
-
-        // Case 1: verify failed and we have ceg; return false
-        // Case 2: verify failed and no counterexampe: keep going
-        // Case 3: verify worked: keep going
-
-        if (bailout_ && !ok && counterexamples_.size() > 0)
-          break;
-      }
       if (bailout_ && !ok && counterexamples_.size() > 0)
         break;
     }
-
-    reset_mm();
-    return ok;
-
-  } catch (validator_error e) {
-    has_error_ = true;
-    error_ = e.get_message();
-    error_file_ = e.get_file();
-    error_line_ = e.get_line();
-
-    reset_mm();
-    return false;
+    if (bailout_ && !ok && counterexamples_.size() > 0)
+      break;
   }
 
-  reset_mm();
-
-  has_error_ = true;
-  error_ = "Internal error!  Unexpected control flow.";
-  return false;
+  return ok;
 
 }
 

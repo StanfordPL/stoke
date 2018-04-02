@@ -20,12 +20,14 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/cost/cost_function.h"
+#include "src/validator/bounded.h"
+#include "src/validator/ddec.h"
+#include "src/validator/handler.h"
+#include "src/validator/handlers/combo_handler.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
 #include "src/verifier/verifier.h"
-#include "src/validator/bounded.h"
-#include "src/validator/ddec.h"
 
 #include "tools/args/bounded_validator.inc"
 #include "tools/args/ddec_validator.inc"
@@ -81,15 +83,20 @@ public:
 
 private:
 
+  void make_oc() {
+    handler_ = new ComboHandler();
+    filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
+    oc_ = new ObligationChecker(*solver_, *filter_);
+    oc_->set_alias_strategy(parse_alias());
+    oc_->set_nacl(verify_nacl_arg);
+    oc_->set_fixpoint_up(fixpoint_up_arg);
+  }
+
   ObligationChecker::AliasStrategy parse_alias() {
     std::string alias = alias_strategy_arg.value();
 
     if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
       return ObligationChecker::AliasStrategy::BASIC;
-    } else if (alias == "string") {
-      return ObligationChecker::AliasStrategy::STRING;
-    } else if (alias == "string_antialias") {
-      return ObligationChecker::AliasStrategy::STRING_NO_ALIAS;
     } else if (alias == "flat" || alias == "array") {
       return ObligationChecker::AliasStrategy::FLAT;
     } else if (alias == "arm") {
@@ -104,20 +111,16 @@ private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
-      auto bv = new BoundedValidator(*solver_);
-      bv->set_alias_strategy(parse_alias());
+      make_oc();
+      auto bv = new BoundedValidator(*oc_);
       bv->set_bound(bound_arg.value());
-      bv->set_nacl(verify_nacl_arg);
       bv->set_no_bailout(no_bailout_arg.value());
-      bv->set_fixpoint_up(fixpoint_up_arg);
       return bv;
     } else if (s == "ddec") {
-      auto ddec = new DdecValidator(*solver_, sandbox, inv);
-      ddec->set_alias_strategy(parse_alias());
+      make_oc();
+      auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
-      ddec->set_nacl(verify_nacl_arg);
       ddec->set_thread_count(ddec_thread_count);
-      ddec->set_fixpoint_up(fixpoint_up_arg);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);
@@ -137,6 +140,9 @@ private:
     return{first, last};
   }
 
+  Handler* handler_;
+  Filter* filter_;
+  ObligationChecker* oc_;
   Verifier* verifier_;
   SMTSolver* solver_;
 };
