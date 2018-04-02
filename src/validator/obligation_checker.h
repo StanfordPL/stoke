@@ -186,14 +186,6 @@ public:
     return ceg_rf_;
   }
 
-  DataCollector::Trace checker_get_target_exhaustive_ceg() {
-    return exhaustive_ceg_trace_target_;
-  }
-
-  DataCollector::Trace checker_get_rewrite_exhaustive_ceg() {
-    return exhaustive_ceg_trace_rewrite_;
-  }
-
   /** Can be called from another thread.  Try to stop what you're doing ASAP and cleanup. */
   void interrupt() {
     stop_now_.store(true);
@@ -319,9 +311,6 @@ private:
   /** Rewrite counterexample and end state */
   CpuState ceg_r_;
   CpuState ceg_rf_;
-  /** Counterexample of traces */
-  DataCollector::Trace exhaustive_ceg_trace_target_;
-  DataCollector::Trace exhaustive_ceg_trace_rewrite_;
 
   /** Do we have a counterexample? */
   bool have_ceg_;
