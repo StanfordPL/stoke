@@ -70,7 +70,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
 
 
-bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
 
 #ifdef DEBUG_VALIDATOR
@@ -84,9 +84,6 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   has_error_ = false;
   init_mm();
-
-  auto target = inline_functions(init_target);
-  auto rewrite = inline_functions(init_rewrite);
 
   try {
 

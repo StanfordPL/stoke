@@ -47,10 +47,13 @@ public:
 
 private:
 
+  typedef std::vector<uint64_t> NodeClass;
+  typedef std::map<DualAutomata::State, NodeClass> NodeClassMap;
+
   /** Data Structures */
   struct EquivalenceClass {
     /** for each node, for each invariant, what's its constant? */
-    std::map<DualAutomata::State, std::vector<uint64_t>> invariant_values;
+    NodeClassMap invariant_values;
     /** what are the edges in this class? */
     std::vector<DualAutomata::Edge> edges;
 

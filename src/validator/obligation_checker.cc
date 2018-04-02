@@ -153,15 +153,8 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
 
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
-  Sandbox sb(sandbox_);
-  sb.reset(); // if we ever want to call helper functions, this will break.
-
-  sb.insert_input(state);
-  sb.insert_function(cfg);
-  sb.set_entrypoint(cfg.get_function().get_leading_label());
-  sb.run();
-
-  CpuState output = *(sb.get_output(0));
+  // TODO: fixme
+  CpuState output;
   return output;
 
 }
