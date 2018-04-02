@@ -70,8 +70,8 @@ public:
     ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
   };
 
-  ObligationChecker(SMTSolver& solver, Sandbox& sandbox) : 
-    Validator(solver, sandbox)
+  ObligationChecker(SMTSolver& solver) : 
+    Validator(solver)
   {
 
 
@@ -165,12 +165,6 @@ public:
              Invariant& assume, Invariant& prove,
              const std::vector<std::pair<CpuState, CpuState>>& testcases);
 
-  /** Verify a set of paths from a location are exhausive */
-  /*
-  bool verify_exhaustive(const Cfg& target, const Cfg& rewrite,
-                         Cfg::id_type target_block, Cfg::id_type rewrite_block,
-                         const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                         Invariant& assume); */
 
   bool checker_has_ceg() {
     return have_ceg_;
@@ -296,16 +290,6 @@ private:
                             Invariant& prove, 
                             const CpuState& ceg, const CpuState& ceg2,
                             const CpuState& ceg_expected, const CpuState& ceg_expected2);
-
-  /** Check if a counterexample actually works for path exhaustion. */
-  DataCollector::Trace check_ceg_path(const Cfg& cfg, Cfg::id_type block, const CpuState& state);
-
-  bool exhaustive_check_counterexample(const Cfg& target, const Cfg& rewrite,
-                                       Cfg::id_type target_start, Cfg::id_type rewrite_start,
-                                       const std::vector<std::pair<CfgPath, CfgPath>>& path_pairs,
-                                       Invariant& assume,
-                                       const CpuState& ceg, const CpuState& ceg2);
-
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);

@@ -34,8 +34,9 @@ class DdecValidator : public ObligationChecker {
 public:
 
   DdecValidator(SMTSolver& solver, Sandbox& sandbox, InvariantLearner& inv) :
-    ObligationChecker(solver, sandbox),
+    ObligationChecker(solver),
     target_({}), rewrite_({}),
+          sandbox_(sandbox),
           data_collector_(sandbox),
           invariant_learner_(inv),
           flow_invariant_learner_(NULL),
@@ -48,6 +49,7 @@ public:
     ObligationChecker(rhs),
     target_(rhs.target_),
     rewrite_(rhs.rewrite_),
+    sandbox_(rhs.sandbox_),
     data_collector_(sandbox_),
     invariant_learner_(rhs.invariant_learner_),
     flow_invariant_learner_(NULL),
@@ -81,6 +83,7 @@ private:
   Cfg target_;
   Cfg rewrite_;
 
+  Sandbox& sandbox_;
   DataCollector data_collector_;
   InvariantLearner invariant_learner_;
   FlowInvariantLearner* flow_invariant_learner_;

@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
   gen.seed((default_random_engine::result_type)seed);
 
   SolverGadget solver;
-  ObligationChecker checker(solver, sb);
+  ObligationChecker checker(solver);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
 
   // Step 1: enumerate paths up to a certain bound

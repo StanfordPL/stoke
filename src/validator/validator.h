@@ -33,8 +33,7 @@ class Validator : public Verifier {
 
 public:
 
-  Validator(SMTSolver& solver, Sandbox& sandbox) :
-    sandbox_(sandbox),
+  Validator(SMTSolver& solver) :
     solver_(solver),
     handler_(*(new ComboHandler())),
     free_handler_(true) {
@@ -42,8 +41,7 @@ public:
     setup_support_table();
   }
 
-  Validator(SMTSolver& solver, Sandbox& sandbox, Handler& h) :
-    sandbox_(sandbox),
+  Validator(SMTSolver& solver, Handler& h) :
     solver_(solver),
     handler_(h),
     free_handler_(false)
@@ -55,11 +53,10 @@ public:
   /** Copy constructor: the goal is to create a new Validator
     that shares any configuration of the original one, but can safely be used
     in a different thread.  They can share pointers to memory, but only if that
-    memory is only read.  Using copy constructor on sandbox is safe, and I think
+    memory is only read. 
     it's safe to copy handler_ also. */
   Validator(const Validator& rhs) : 
     Verifier(),
-    sandbox_(rhs.sandbox_),
     memory_manager_(),
     solver_(*rhs.solver_.clone()),
     handler_(rhs.handler_),
@@ -104,8 +101,6 @@ public:
                                    std::vector<std::string> shadow_vars = {});
 
 protected:
-
-  Sandbox& sandbox_;
 
   /** Check that def-ins, live-outs match, and that non-control flow
    * instructions are supported.  Throws exception on error.*/

@@ -104,7 +104,7 @@ private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
-      auto bv = new BoundedValidator(*solver_, sandbox);
+      auto bv = new BoundedValidator(*solver_);
       bv->set_alias_strategy(parse_alias());
       bv->set_bound(bound_arg.value());
       bv->set_nacl(verify_nacl_arg);
