@@ -14,40 +14,12 @@
 
 namespace stoke {
 
-class ValidatorPsllTest : public StraightLineValidatorTest { };
+class ValidatorPsrlTest : public StraightLineValidatorTest { };
 
-
-TEST_F(ValidatorPsllTest, DISABLED_Identity) {
-
-  target_ << ".foo:" << std::endl;
-  target_ << "pslld %xmm0, %xmm0" << std::endl;
-  target_ << "retq" << std::endl;
-
-  rewrite_ << ".foo:" << std::endl;
-  rewrite_ << "pslld %xmm0, %xmm0" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  assert_equiv();
-}
-
-
-
-TEST_F(ValidatorPsllTest, DISABLED_NotANop) {
+TEST_F(ValidatorPsrlTest, Issue983_1) {
 
   target_ << ".foo:" << std::endl;
-  target_ << "pslld %xmm0, %xmm0" << std::endl;
-  target_ << "retq" << std::endl;
-
-  rewrite_ << ".foo:" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  assert_ceg();
-}
-
-TEST_F(ValidatorPsllTest, Issue983_1) {
-
-  target_ << ".foo:" << std::endl;
-  target_ << "pslld %xmm2, %xmm1" << std::endl;
+  target_ << "psrld %xmm2, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
   CpuState cs;
@@ -64,10 +36,10 @@ TEST_F(ValidatorPsllTest, Issue983_1) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorPsllTest, Issue983_2) {
+TEST_F(ValidatorPsrlTest, Issue983_2) {
 
   target_ << ".foo:" << std::endl;
-  target_ << "psllw %xmm2, %xmm1" << std::endl;
+  target_ << "psrlw %xmm2, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
   CpuState cs;
@@ -84,10 +56,10 @@ TEST_F(ValidatorPsllTest, Issue983_2) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorPsllTest, Issue983_3) {
+TEST_F(ValidatorPsrlTest, Issue983_3) {
 
   target_ << ".foo:" << std::endl;
-  target_ << "psllq %xmm2, %xmm1" << std::endl;
+  target_ << "psrlq %xmm2, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
   CpuState cs;
