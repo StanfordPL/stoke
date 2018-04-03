@@ -1669,6 +1669,59 @@ void SimpleHandler::add_all() {
 
   });
 
+  add_opcode_str({"cvtsi2ssl", "cvtsi2ssq"},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_single", 32, {32});
+      ss.set(dst, a[127][32] ||  f(b));
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_single", 32, {64});
+      ss.set(dst, a[127][32] ||  f(b));
+    }
+  });
+
+  add_opcode_str({"vcvtsi2ssl", "vcvtsi2ssq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_single", 32, {32});
+      ss.set(dst, a[127][32] ||  f(b), true);
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_single", 32, {64});
+      ss.set(dst, a[127][32] ||  f(b), true);
+    }
+  });
+
+  add_opcode_str({"cvtsi2sdl", "cvtsi2sdq"},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_double", 64, {32});
+      ss.set(dst, a[127][64] ||  f(b));
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_double", 64, {64});
+      ss.set(dst, a[127][64] ||  f(b));
+    }
+  });
+
+  add_opcode_str({"vcvtsi2sdl", "vcvtsi2sdq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_double", 64, {32});
+      ss.set(dst, a[127][64] ||  f(b), true);
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_double", 64, {64});
+      ss.set(dst, a[127][64] ||  f(b), true);
+    }
+  });
 }
 
 Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& instr) {
