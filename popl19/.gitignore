@@ -2,3 +2,6 @@
 state*.txt
 *.tmp
 sage_*
+*/*time*
+*/*.pdf 
+*/opt*
