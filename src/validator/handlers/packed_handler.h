@@ -54,13 +54,13 @@ public:
     add_opcode("addsubpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("add_double", 64, {64, 64});
       SymFunction g("sub_double", 64, {64, 64});
-      return g(a[63][0], b[63][0]) || f(a[127][64], b[127][64]);
+      return f(a[127][64], b[127][64]) || g(a[63][0], b[63][0]);
     }, 128, 128, true);
 
     add_opcode("addsubps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("add_single", 32, {32, 32});
       SymFunction g("sub_single", 32, {32, 32});
-      return g(a[31][0], b[31][0]) || f(a[63][32], b[63][32]);
+      return f(a[63][32], b[63][32]) || g(a[31][0], b[31][0]);
     }, 64, 64, true);
 
     add_opcode("andpd", [] (SymBitVector a, SymBitVector b) {
@@ -136,26 +136,6 @@ public:
 
     add_opcode("cvtsd2ss", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("cvt_double_to_single", 32, {64});
-      return f(b);
-    }, 64, 32, true, true);
-
-    add_opcode("cvtsi2sdl", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("cvt_int32_to_double", 64, {32});
-      return f(b);
-    }, 32, 64, true, true);
-
-    add_opcode("cvtsi2sdq", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("cvt_int64_to_double", 64, {64});
-      return f(b);
-    }, 64, 64, true, true);
-
-    add_opcode("cvtsi2ssl", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("cvt_int32_to_single", 32, {32});
-      return f(b);
-    }, 32, 32, true, true);
-
-    add_opcode("cvtsi2ssq", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("cvt_int64_to_single", 32, {64});
       return f(b);
     }, 64, 32, true, true);
 
@@ -774,44 +754,6 @@ public:
     add_opcode("xorps", [] (SymBitVector a, SymBitVector b) {
       return a ^ b;
     }, 0);
-
-    add_opcode("psrlw", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a >> amt;
-    }, 16);
-    add_opcode("psrld", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a >> amt;
-    }, 32);
-    add_opcode("psrlq", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a >> amt;
-    }, 64);
-
-    add_opcode("psllw", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a << amt;
-    }, 16);
-    add_opcode("pslld", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a << amt;
-    }, 32);
-    add_opcode("psllq", [] (SymBitVector a, SymBitVector b) {
-      auto amt = b;
-      if (b.width() != a.width())
-        amt = SymBitVector::constant(a.width() - b.width(), 0) || b;
-      return a << amt;
-    }, 64);
 
     add_opcode("vpsllvd", [] (SymBitVector a, SymBitVector b) {
       auto amt = b;

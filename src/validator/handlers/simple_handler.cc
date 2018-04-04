@@ -1314,6 +1314,414 @@ void SimpleHandler::add_all() {
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
   });
 
+  add_opcode_str({"psllw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 16;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpsllw"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 16;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+  add_opcode_str({"pslld"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 32;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpslld"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 32;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+  add_opcode_str({"psllq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 64;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpsllq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 64;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] << amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] << amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+
+  add_opcode_str({"psrlw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 16;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpsrlw"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 16;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i]  >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+  add_opcode_str({"psrld"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 32;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0]  >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpsrld"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 32;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+  add_opcode_str({"psrlq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 64;
+    auto dest_width = a.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult);
+  });
+
+  add_opcode_str({"vpsrlq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+    short unsigned int vec_len = 64;
+    auto dest_width = d.width();
+
+    auto amt = b;
+    auto cmp_amt = SymBool::_false();
+
+    if (b.width() <  64) {
+      cmp_amt = ((SymBitVector::constant(64 - b.width(), 0) || b) > SymBitVector::constant(64, vec_len-1));
+    } else {
+      cmp_amt = b[63][0] > SymBitVector::constant(64, vec_len-1);
+    }
+
+    if (b.width() <  vec_len) {
+      amt = SymBitVector::constant(vec_len - b.width(), 0) || b;
+    } else {
+      amt = b[vec_len-1][0];
+    }
+
+    auto result =  a[vec_len-1][0] >> amt;
+    for (size_t i = 1 ; i < dest_width/vec_len; i++) {
+      result =   a[vec_len-1 + vec_len*i][vec_len*i] >> amt || result;
+    }
+
+    auto fresult = (cmp_amt).ite(SymBitVector::constant(dest_width, 0x0), result);
+    ss.set(dst, fresult, true);
+
+  });
+
+  add_opcode_str({"cvtsi2ssl", "cvtsi2ssq"},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_single", 32, {32});
+      ss.set(dst, a[127][32] ||  f(b));
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_single", 32, {64});
+      ss.set(dst, a[127][32] ||  f(b));
+    }
+  });
+
+  add_opcode_str({"vcvtsi2ssl", "vcvtsi2ssq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_single", 32, {32});
+      ss.set(dst, a[127][32] ||  f(b), true);
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_single", 32, {64});
+      ss.set(dst, a[127][32] ||  f(b), true);
+    }
+  });
+
+  add_opcode_str({"cvtsi2sdl", "cvtsi2sdq"},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_double", 64, {32});
+      ss.set(dst, a[127][64] ||  f(b));
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_double", 64, {64});
+      ss.set(dst, a[127][64] ||  f(b));
+    }
+  });
+
+  add_opcode_str({"vcvtsi2sdl", "vcvtsi2sdq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector d, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto src_width = b.width();
+    if (32 == src_width) {
+      SymFunction f("cvt_int32_to_double", 64, {32});
+      ss.set(dst, a[127][64] ||  f(b), true);
+    }
+    if (64 == src_width) {
+      SymFunction f("cvt_int64_to_double", 64, {64});
+      ss.set(dst, a[127][64] ||  f(b), true);
+    }
+  });
 }
 
 Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& instr) {
