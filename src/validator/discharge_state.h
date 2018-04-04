@@ -17,6 +17,15 @@ class DischargeState {
     dual_(dual), edges_(es), next_edge_(0), next_conjunct_(0), done_(false) {
   }
 
+  /** Thread safe: is there any problem left? */
+  bool has_next() {
+    bool done;
+    m.lock();
+    done = done_;
+    m.unlock();
+    return done;
+  }
+
   /** Thread safe: get the next state/conjunct problem. */
   std::pair<DualAutomata::Edge, size_t> next_problem() {
     m.lock();
@@ -47,7 +56,7 @@ class DischargeState {
   }
 
   /** Thread safe: mark a conjunct as bad. */
-  void report_outcome(DualAutomata::Edge edge, size_t conjunct, bool success, std::string& s) {
+  void report_outcome(DualAutomata::Edge& edge, size_t conjunct, bool success, std::string& s) {
 
     auto start_inv = dual_.get_invariant(edge.from);
     auto end_inv = (*dual_.get_invariant(edge.to))[conjunct];

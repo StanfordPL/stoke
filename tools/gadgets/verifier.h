@@ -24,6 +24,7 @@
 #include "src/validator/ddec.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/smt_obligation_checker.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
@@ -86,7 +87,7 @@ private:
   void make_oc() {
     handler_ = new ComboHandler();
     filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
-    oc_ = new ObligationChecker(*solver_, *filter_);
+    oc_ = new SmtObligationChecker(*solver_, *filter_);
     oc_->set_alias_strategy(parse_alias());
     oc_->set_nacl(verify_nacl_arg);
     oc_->set_fixpoint_up(fixpoint_up_arg);

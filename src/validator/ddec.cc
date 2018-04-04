@@ -480,14 +480,14 @@ vector<CfgPath> paths_to_branch_bound(const Cfg& cfg, Cfg::id_type start, size_t
 
 
 /** returns true if everything was successful. */
-bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata::Edge& edge, size_t conjunct, stringstream& ss) {
+void DdecValidator::discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, stringstream* ss) {
 
   auto start_inv = dual.get_invariant(edge.from);
   auto end_inv = dual.get_invariant(edge.to);
   auto partial_inv = (*end_inv)[conjunct];
-  ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
-  ss << "    Edge " << edge << endl;
-  ss << "    Proving " << *partial_inv << endl;
+  *ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
+  *ss << "    Edge " << edge << endl;
+  *ss << "    Proving " << *partial_inv << endl;
   bool valid = false;
 
   // Get test cases from dual
@@ -498,72 +498,52 @@ bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata:
     testcases.push_back(pair<CpuState, CpuState>(target_testcases[i], rewrite_testcases[i]));
   }
 
+  CheckerCallbackInfo* info = new CheckerCallbackInfo(ds, edge, conjunct, ss);
+
+  ObligationChecker::Callback callback = [this] (ObligationChecker::Result& r, void* opt) {
+    cout << "Received callback" << std::endl;
+    this->checker_callback(r, opt);
+  };
+
   // Run the obligation check
-  valid = checker_.check(target_, rewrite_, edge.from.ts, edge.from.rs,
-                edge.te, edge.re, *start_inv, *partial_inv, testcases);
-  if(checker_.has_error()) {
-    ss << "     " << error_ << endl;
-  }
+  checker_.check(target_, rewrite_, edge.from.ts, edge.from.rs,
+                 edge.te, edge.re, *start_inv, *partial_inv, testcases, callback, (void*)info);
 
-  return valid;
-}
-
-/** returns true if everything was successful. */
-bool DdecValidator::discharge_edge(const DualAutomata& dual, const DualAutomata::Edge& edge) {
-  // check this edge
-  bool ok = true;
-  auto start_inv = dual.get_invariant(edge.from);
-  auto end_inv = dual.get_invariant(edge.to);
-
-  cout << "_____________________________" << endl;
-  cout << "Edge: " << edge.from << " -> " << edge.to << endl;
-  cout << "target: ";
-  for (auto it : edge.te) {
-    cout << it << " ";
-  }
-  cout << endl;
-  cout << "rewrite: ";
-  for (auto it : edge.re) {
-    cout << it << " ";
-  }
-  cout << endl;
-  cout << "Assuming: ";
-  start_inv->write_pretty(cout);
-  cout << endl << endl;
-
-  // check the invariants in the conjunction one at a time
-  for (size_t i = 0; i < end_inv->size(); ++i) {
-    stringstream ss;
-    ok &= discharge_edge(dual, edge, i, ss);
-    cout << ss.str();
-  }
-
-  return ok;
 }
 
 void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& state) {
 
+  /*
   if(thread_copies_.size() == 0) {
-    for(size_t i = 0; i < thread_count_; ++i) {
+    for(size_t i = 0; i < thread_count_; ++i) { */
       /** should invoke DdecValidator's copy constructor, which in turn makes
         a new Validator with new solver.  Hopefully thread safe enough... */
+  /*
       thread_copies_.push_back(*this);
     }
   }
+  */
 
-  vector<thread> threads;
+  discharge_thread(*this, dual, state, 0);
+
+  // TODO: do something smarter here 
+  while(state.has_next()) {
+    sleep(1);
+  }
+
+  /*vector<thread> threads;
   auto function = [&] (size_t i) -> void {
     DdecValidator::discharge_thread(thread_copies_[i], dual, state, i);
   };
   for(size_t i = 0; i < thread_count_; ++i) {
     threads.push_back(thread(function, i));
-  }
+  }*/
 
-  size_t count = 0;
+  /*size_t count = 0;
   for(auto& thread : threads) {
     thread.join();
     cout << "[discharge_thread_run] joined thread " << count++ << endl;
-  }
+  }*/
 }
 
 void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, DischargeState& discharge_state, size_t i) {
@@ -577,43 +557,9 @@ void DdecValidator::discharge_thread(DdecValidator& ddec, DualAutomata& dual, Di
       cout << "[discharge_thread " << i << "] all done!" << endl;
       return;
     }
-    stringstream ss;
-    ss << "[discharge_thread " << i << "]" ;
-    milliseconds start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    bool success = ddec.discharge_edge(dual, edge, conjunct, ss);
-    milliseconds end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    auto diff = (end - start).count();
-    ss << "    " << (success ? "true" : "false") << "     " << diff << "ms" << endl;
-    auto& checker = ddec.checker_;
-    if(checker.get_alias_strategy() == ObligationChecker::AliasStrategy::ARMS_RACE) {
-      if(!checker.has_error() && checker.arm_won()) {
-        ss << "    (arm won)" << endl;
-      } else if (!checker.has_error()) {
-        ss << "    (flat won)" << endl;
-      } else {
-        ss << "    (both failed)" << endl;
-      }
-    }
-    CEG_DEBUG(
-      if(!success && checker.has_ceg()) {
-        auto ceg_t = checker.get_target_ceg();
-        auto ceg_r = checker.get_rewrite_ceg();
-        auto ceg_t_end = checker.get_target_ceg_end();
-        auto ceg_r_end = checker.get_rewrite_ceg_end();
-
-        ss << "    (counterexample)" << endl << endl;
-        ss << "TARGET COUNTEREXAMPLE" << endl << endl << ceg_t << endl << endl;
-        ss << "REWRITE COUNTEREXAMPLE" << endl << endl << ceg_r << endl << endl;
-        ss << "TARGET COUNTEREXAMPLE - END" << endl << endl << ceg_t_end << endl << endl;
-        ss << "REWRITE COUNTEREXAMPLE - END" << endl << endl << ceg_r_end << endl << endl;
-      } else if (!success) {
-        ss << "    (could not generate counterexample)" << endl;
-      } else {
-        ss << "    (verified!)" << endl;
-      }
-    )
-    auto str = ss.str();
-    discharge_state.report_outcome(edge, conjunct, success, str);
+    stringstream* ss = new stringstream();
+    *ss << "[discharge_thread " << i << "]" ;
+    ddec.discharge_edge(dual, discharge_state, edge, conjunct, ss);
   }
 }
 
@@ -741,14 +687,13 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   auto actual_final = dual.get_invariant(end_state);
   auto expected_final = get_final_invariant();
   vector<pair<CpuState, CpuState>> testcases;
-  bool final_ok = false;
-  final_ok = checker_.check(target_, rewrite_, end_state.ts, end_state.rs,
-                      {}, {}, *actual_final, *expected_final, testcases);
-  if(checker_.has_error()) {
-    cout << "[verify_dual] Checker encountered error: " << checker_.get_error() << endl;
+  auto result = checker_.check_wait(target_, rewrite_, end_state.ts, end_state.rs,
+                                    {}, {}, *actual_final, *expected_final, testcases);
+  if(result.has_error) {
+    cout << "[verify_dual] Checker encountered error: " << result.error_message << endl;
   }
 
-  if (!final_ok) {
+  if (!result.verified) {
     cout << "[verify_dual] Could not complete final proof step." << endl;
     cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
     return false;
@@ -880,6 +825,43 @@ bool DdecValidator::sanity_check(DualAutomata& pod) {
     }
   }
   return true;
+
+}
+
+void DdecValidator::checker_callback(ObligationChecker::Result& result, void* info) {
+  CheckerCallbackInfo* cci = static_cast<CheckerCallbackInfo*>(info);
+  DischargeState& state = cci->state;
+  string s = "";
+  auto& ss = *(cci->ss);
+
+  ss << "    " << (result.verified ? "true" : "false") << endl;
+  if(result.has_error) {
+    ss << "    error: " << result.error_message << endl;
+  } 
+  CEG_DEBUG(
+    if(result.has_ceg) {
+      auto ceg_t = result.target_ceg;
+      auto ceg_r = result.rewrite_ceg;
+      auto ceg_t_end = result.target_final_ceg;
+      auto ceg_r_end = result.rewrite_final_ceg;
+
+      ss << "    (counterexample)" << endl << endl;
+      ss << "TARGET COUNTEREXAMPLE" << endl << endl << ceg_t << endl << endl;
+      ss << "REWRITE COUNTEREXAMPLE" << endl << endl << ceg_r << endl << endl;
+      ss << "TARGET COUNTEREXAMPLE - END" << endl << endl << ceg_t_end << endl << endl;
+      ss << "REWRITE COUNTEREXAMPLE - END" << endl << endl << ceg_r_end << endl << endl;
+    } else if (!result.verified) {
+      ss << "    (could not generate counterexample)" << endl;
+    } else {
+      ss << "    (verified!)" << endl;
+    }
+  )
+  auto str = ss.str();
+  state.report_outcome(cci->edge, cci->conjunct, result.verified, s);
+  std::cout << "[checker_callback] State has next? " << state.has_next() << std::endl;
+
+  delete cci->ss;
+  delete cci;
 
 }
 

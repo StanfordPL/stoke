@@ -103,11 +103,26 @@ private:
   /** Should we bailout early? */
   bool bailout_;
 
-  /** Verify a pair of paths. */
-  bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
+  /** Callback */
+  struct CallbackData {
+    CfgPath P;
+    CfgPath Q;
+  };
+
+  void callback(ObligationChecker::Result& result, CallbackData& info);
+
+  /** Dispatch a pair of paths to obligation checker. */
+  void verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;
+
+  /** Are we done? */
+  std::atomic<bool> correct_;
+  std::atomic<bool> found_ceg_;
+  std::atomic<size_t> count_;
+  std::mutex print_m;
+  std::mutex ceg_m;
 
 };
 

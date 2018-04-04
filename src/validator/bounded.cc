@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sstream>
+
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/trivial.h"
@@ -32,8 +34,44 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+void BoundedValidator::callback(ObligationChecker::Result& result, CallbackData& info) {
 
-bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+  auto& P = info.P;
+  auto& Q = info.Q;
+
+  // if it didn't verify, take note
+  if(!result.verified) {
+    correct_.store(false); 
+
+    if(result.has_ceg) {
+      found_ceg_.store(true);
+      lock_guard<mutex> guard(ceg_m);
+      counterexamples_.push_back(result.target_ceg);
+    }
+  }
+
+  // count the response
+  count_++;
+
+  BOUNDED_DEBUG(
+  // prepare result string.
+  stringstream ss;
+  ss << "[bv] Paths " << P << " / " << Q << endl;
+  ss << "     verified: " << (result.verified ? "true" : "false") << endl;
+  if(result.has_error) {
+    ss << "    error: " << result.error_message << endl;
+  }
+  auto output = ss.str();
+
+  // print results.
+  {
+    lock_guard<mutex> guard(print_m);
+    cout << output;
+  })
+
+}
+
+void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
   StateEqualityInvariant assume_state(target.def_ins());
   StateEqualityInvariant prove_state(target.live_outs());
   NoSignalsInvariant no_sig;
@@ -49,23 +87,22 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   prove.add_invariant(&prove_state);
   prove.add_invariant(&memory_equal);
 
-  //BOUNDED_DEBUG(cout << "[bv] heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
+  CallbackData* cd = new CallbackData();
+  cd->P = P;
+  cd->Q = Q;
+
+  ObligationChecker::Callback callback = [this] (ObligationChecker::Result& result, void* info) {
+    this->callback(result, *static_cast<CallbackData*>(info)); 
+  };
+
   bool equiv;
   vector<pair<CpuState, CpuState>> testcases;
   if (heap_out_ || stack_out_) {
-    equiv = checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases);
+    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases, callback, (void*)cd);
   } else {
-    equiv = checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases);
+    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases, callback, (void*)cd);
   }
 
-  if (checker_.has_ceg()) {
-    assert(!equiv);
-    counterexamples_.push_back(checker_.get_target_ceg());
-    target_final_state_ = checker_.get_target_ceg_end();
-    rewrite_final_state_ = checker_.get_rewrite_ceg_end();
-  }
-
-  return equiv;
 }
 
 
@@ -74,10 +111,13 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
 
 #ifdef DEBUG_VALIDATOR
-  std::cout << "Enter the dragon!" << std::endl;
+  cout << "Enter the dragon!" << endl;
 #endif
   // State
   counterexamples_.clear();
+  count_.store(0);
+  found_ceg_.store(false);
+  correct_.store(true);
 
   vector<CfgPath> target_paths;
   vector<CfgPath> rewrite_paths;
@@ -105,30 +145,41 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   sort(rewrite_paths.begin(), rewrite_paths.end(), by_length);
 
   // Step 2: check each pair of paths
-  bool ok = true;
   size_t total = target_paths.size() * rewrite_paths.size();
   size_t count = 0;
   for (auto target_path : target_paths) {
     for (auto rewrite_path : rewrite_paths) {
 
-      BOUNDED_DEBUG(cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;)
+      BOUNDED_DEBUG(
+          lock_guard<mutex> guard(print_m)
+          cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;
+      )
 
       count++;
-      ok &= verify_pair(target, rewrite, target_path, rewrite_path);
+      verify_pair(target, rewrite, target_path, rewrite_path);
 
       // Case 1: verify failed and we have ceg; return false
       // Case 2: verify failed and no counterexampe: keep going
       // Case 3: verify worked: keep going
 
-      if (bailout_ && !ok && counterexamples_.size() > 0)
-        break;
+      if(bailout_ && found_ceg_.load()) {
+        // TODO: tell obligation checker to stop.
+        return false;
+      }
     }
-    if (bailout_ && !ok && counterexamples_.size() > 0)
-      break;
   }
 
-  return ok;
+  // Wait for everything to finish and/or to get a "no" answer.
+  while(count_.load() < count) {
+    sleep(1);
 
+    if(bailout_ && found_ceg_.load()) {
+      // TODO: tell obligation checker to stop.
+      return false;
+    }
+  }
+
+  return correct_.load();
 }
 
 

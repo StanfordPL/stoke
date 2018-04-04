@@ -20,6 +20,7 @@
 #include "src/validator/filters/default.h"
 #include "src/validator/filters/forbidden_dereference.h"
 #include "src/validator/obligation_checker.h"
+#include "src/validator/smt_obligation_checker.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/true.h"
 
@@ -164,7 +165,7 @@ CpuState mutate(CpuState cs, size_t iterations,
 }
 
 void make_tc_different_memory(
-    ObligationChecker& checker,
+    SmtObligationChecker& checker,
     const Cfg& target,
     const Cfg& rewrite,
     vector<CpuState>& outputs, CpuState tc,
@@ -194,13 +195,13 @@ void make_tc_different_memory(
     }
 
     ForbiddenDereferenceFilter filter(handler, low, high);
-    ObligationChecker oc(checker.get_solver(), filter);
+    SmtObligationChecker oc(checker.get_solver(), filter);
 
     vector<pair<CpuState, CpuState>> testcases;
-    oc.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
+    auto result = oc.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
 
-    if (oc.has_ceg()) {
-      auto tc2 = oc.get_target_ceg();
+    if (result.has_ceg) {
+      auto tc2 = result.target_ceg;
 
       if (!check_testcase(tc2, sb)) {
         cerr << "Warning: skipping over invalid testcase." << endl;
@@ -240,7 +241,7 @@ int main(int argc, char** argv) {
   SolverGadget solver;
   ComboHandler handler;
   DefaultFilter filter(handler);
-  ObligationChecker checker(solver, filter);
+  SmtObligationChecker checker(solver, filter);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
 
   // Step 1: enumerate paths up to a certain bound
@@ -290,10 +291,10 @@ int main(int argc, char** argv) {
     }
 
     vector<pair<CpuState, CpuState>> testcases;
-    checker.check(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
+    auto result = checker.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
 
-    if (checker.has_ceg()) {
-      auto tc = checker.get_target_ceg();
+    if (result.has_ceg) {
+      auto tc = result.target_ceg;
 
       if (!check_testcase(tc, sb)) {
         cerr << "Warning: skipping over invalid (original) testcase" << endl;

@@ -191,6 +191,7 @@ SRC_OBJ=\
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/sage.o \
+	src/validator/smt_obligation_checker.o \
 	src/validator/strata_support.o \
 	src/validator/validator.o \
   src/validator/variable.o \

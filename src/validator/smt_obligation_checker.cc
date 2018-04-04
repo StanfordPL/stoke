@@ -23,7 +23,7 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
-#include "src/validator/obligation_checker.h"
+#include "src/validator/smt_obligation_checker.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/memory_manager.h"
 
@@ -55,12 +55,12 @@ using namespace x64asm;
 using namespace std::chrono;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
-uint64_t ObligationChecker::number_queries_ = 0;
-uint64_t ObligationChecker::number_cases_ = 0;
-uint64_t ObligationChecker::constraint_gen_time_ = 0;
-uint64_t ObligationChecker::solver_time_ = 0;
-uint64_t ObligationChecker::aliasing_time_ = 0;
-uint64_t ObligationChecker::ceg_time_ = 0;
+uint64_t SmtObligationChecker::number_queries_ = 0;
+uint64_t SmtObligationChecker::number_cases_ = 0;
+uint64_t SmtObligationChecker::constraint_gen_time_ = 0;
+uint64_t SmtObligationChecker::solver_time_ = 0;
+uint64_t SmtObligationChecker::aliasing_time_ = 0;
+uint64_t SmtObligationChecker::ceg_time_ = 0;
 #endif
 
 template <typename K, typename V>
@@ -78,12 +78,12 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 }
 
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
-Invariant* ObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
+Invariant* SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
   auto jump_type = ObligationChecker::is_jump(cfg, start_b, {p[0]}, 0);
 
   //cout << "get_jump_inv: jump type " << jump_type << endl;
 
-  if (jump_type == ObligationChecker::JumpType::NONE) {
+  if (jump_type == SmtObligationChecker::JumpType::NONE) {
     return new TrueInvariant();
   }
 
@@ -97,14 +97,14 @@ Invariant* ObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b,
     return new TrueInvariant();
   }
 
-  bool is_fallthrough = jump_type == ObligationChecker::JumpType::FALL_THROUGH;
+  bool is_fallthrough = jump_type == SmtObligationChecker::JumpType::FALL_THROUGH;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
   //cout << "   get_jump_inv: got " << *jump_inv << endl;
   return jump_inv;
 }
 
 
-bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
+bool SmtObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
   auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
   assert(symvar != NULL);
   auto str = symvar->name_;
@@ -151,7 +151,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, 
 }
 
 
-CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
+CpuState SmtObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
   // TODO: fixme
   CpuState output;
@@ -159,7 +159,7 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 
 }
 
-bool ObligationChecker::check_counterexample(
+bool SmtObligationChecker::check_counterexample(
     const Cfg& target, 
     const Cfg& rewrite, 
     const CfgPath& P, 
@@ -210,7 +210,7 @@ bool ObligationChecker::check_counterexample(
 
 
 
-SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
+SymBool SmtObligationChecker::get_path_constraint(const Cfg& cfg,
     SymState& state_orig,
     Cfg::id_type cfg_start,
     const CfgPath& P,
@@ -243,7 +243,7 @@ SymBool ObligationChecker::get_path_constraint(const Cfg& cfg,
 }
 
 
-void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
+void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
                                       SymState& state, size_t& line_no, const LineMap& line_info, bool ignore_last_line) {
 
   if (cfg.num_instrs(bb) == 0)
@@ -329,261 +329,10 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   }
 }
 
-ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
-
-  auto P = P_copy;
-
-  if (i == 0 && P.size() == 1) {
-    P.insert(P.begin(), start_block);
-  }
-
-  if (i == P.size() - 1)
-    return JumpType::NONE;
-
-  auto block = P[i];
-
-  auto itr = cfg.succ_begin(block);
-  if (itr == cfg.succ_end(block)) {
-    // there are no successors
-    //cout << "is_jump " << block << " NONE" << endl;
-    return JumpType::NONE;
-  }
-
-  itr++;
-  if (itr == cfg.succ_end(block)) {
-    // there is only only successor
-    //cout << "is_jump " << block << " NONE" << endl;
-    return JumpType::NONE;
-  }
-
-  // ok, there are at least 2 successors
-  auto next_block = P[i+1];
-  if (next_block == block + 1) {
-    //cout << "is_jump " << block << " FALL" << endl;
-    return JumpType::FALL_THROUGH;
-  }
-  else {
-    //cout << "is_jump " << block << " JUMP" << endl;
-    return JumpType::JUMP;
-  }
-}
-
-void ObligationChecker::split_invariant(const ConjunctionInvariant& assume,
-                                   ConjunctionInvariant& memory,
-                                   ConjunctionInvariant& nonmemory) {
-
-  for(size_t i = 0; i < assume.size(); ++i) {
-    auto inv = assume[i];
-    bool is_memory = false;
-    /*
-    auto vars = inv->get_variables();
-    for(auto var : vars) {
-      if(var.is_dereference()) {
-        is_memory = true;
-        break;
-      }
-    }
-    */
-
-    is_memory = (dynamic_cast<MemoryEqualityInvariant*>(inv) != NULL);
-    if(is_memory)
-      memory.add_invariant(inv);
-    else
-      nonmemory.add_invariant(inv);
-  }
-
-}
-
-bool ObligationChecker::check(
-    const Cfg& target, 
-    const Cfg& rewrite, 
-    Cfg::id_type target_block, 
-    Cfg::id_type rewrite_block, 
-    const CfgPath& P, 
-    const CfgPath& Q, 
-    Invariant& assume, 
-    Invariant& prove, 
-    const vector<pair<CpuState, CpuState>>& testcases) {
-
-  if(!fixpoint_up_)
-    return check_race(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
-
-  // The goal is to remove as many memory invariants possible from
-  // 'assume' before doing the proof.  Once we get a counterexample,
-  // we can add the needed memory invariants back in.
-
-  // Step 1: split 'assume' into memory and non-memory invariants.
-  auto assume_conj = static_cast<ConjunctionInvariant&>(assume);
-  ConjunctionInvariant extras; 
-  ConjunctionInvariant base;
-  split_invariant(assume_conj, base, extras);
-  DEBUG_FIXPOINT(cout << "[oc-fixpoint] assume_conj=" << assume_conj << endl;)
-  while(true) {
-
-    DEBUG_FIXPOINT(cout << "[oc-fixpoint] base=" << base << endl;)
-    DEBUG_FIXPOINT(cout << "[oc-fixpoint] extras=" << extras << endl;)
-
-    // Step 2: call check_race on the smallest 'assume' invariant that we can.
-    bool result = check_race(target, rewrite, target_block, rewrite_block, P, Q, base, prove, testcases);
-    if(result) {
-      // it worked!  we're done!
-      DEBUG_FIXPOINT(cout << "[oc-fixpoint] it verified!" << endl;)
-      return true;
-    } else {
-
-      // Step 3: if we have a counterexample, see if any of the memory invariants will fix it
-        // if so: repeat step 2;
-        // if not: return the counterexample
-      if(have_ceg_) {
-        vector<size_t> indexes;
-        for(size_t i = 0; i < extras.size(); ++i) {
-          auto inv = extras[i];
-          if(!inv->check(ceg_t_, ceg_r_)) {
-            indexes.push_back(i);
-            DEBUG_FIXPOINT(cout << "[oc-fixpoint] invariant " << i << " might help! " << *inv << endl;)
-          }
-        }
-        std::sort(indexes.rbegin(), indexes.rend());
-        if(indexes.size() > 0) {
-          for(auto index : indexes) {
-            auto inv = extras[index];
-            extras.remove(index);
-            base.add_invariant(inv);
-          }
-          continue;
-        } else {
-          DEBUG_FIXPOINT(cout << "[oc-fixpoint] remaining invariants won't help -- returning false." << endl;)
-        }
-      } else {
-        DEBUG_FIXPOINT(cout << "[oc-fixpoint] no ceg -- returning false." << endl;)
-      }
-      return false;
-    }
-  }
-}
-
-bool ObligationChecker::check_race(
-    const Cfg& target, 
-    const Cfg& rewrite, 
-    Cfg::id_type target_block, 
-    Cfg::id_type rewrite_block, 
-    const CfgPath& P, 
-    const CfgPath& Q, 
-    Invariant& assume, 
-    Invariant& prove, 
-    const vector<pair<CpuState, CpuState>>& testcases) {
-  stop_now_.store(false);
-
-  arm_won_ = false;
-  if (alias_strategy_ == AliasStrategy::ARMS_RACE) {
-    DEBUG_ARMS_RACE(cout << "===================================" << endl;)
-
-    DEBUG_ARMS_RACE(auto start_time = high_resolution_clock::now();)
-    atomic<size_t> finished; // 0 -> nobody; 1 -> FLAT; 2 -> ARM
-    finished.store(0);
-
-    if (oc1_ == NULL) {
-      assert(oc2_ == NULL);
-      oc1_ = new ObligationChecker(*this);
-      oc1_->set_alias_strategy(AliasStrategy::FLAT);
-
-      oc2_ = new ObligationChecker(*this);
-      oc2_->set_alias_strategy(AliasStrategy::ARM);
-    }
-
-    bool result = false;
-    have_ceg_ = false;
-    bool has_error[2];
-    string error[2];
-
-    // for debug purposes
-
-    auto run_oc = [&] (size_t index) {
-      DEBUG_ARMS_RACE(cout << "Thread " << std::dec << index << " starting at "
-                      << duration_cast<microseconds>(
-                        high_resolution_clock::now() - start_time).count() << endl;) 
-
-      auto& oc = index == 0 ? *oc1_ : *oc2_;
-
-      string name = index == 0 ? "flat" : "arm";
-      has_error[index] = false;
-      error[index] = "";
-      bool success = false;
-      bool my_result = false;
-
-      try {
-        DEBUG_ARMS_RACE(auto t0 = high_resolution_clock::now();)
-          my_result = oc.check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
-        DEBUG_ARMS_RACE(auto t1 = high_resolution_clock::now();)
-        DEBUG_ARMS_RACE(cout << name << " took " <<
-                        duration_cast<microseconds>(t1-t0).count() << endl;)
-        success = true;
-      } catch (std::exception e) {
-        stringstream ss;
-        ss << name << " got exception: " << e.what();
-        has_error[index] = true;
-        error[index] = ss.str();
-        DEBUG_ARMS_RACE(cout << ss.str() << endl);
-      }
-
-      size_t swap_zero = 0;
-      if(success) {
-        bool i_was_first = finished.compare_exchange_strong(swap_zero, index+1);
-        if (i_was_first) {
-          DEBUG_ARMS_RACE(cout << name << " was first!" << endl;)
-          if(index == 1)
-            arm_won_ = true;
-          auto& other_oc = index == 0 ? *oc2_ : *oc1_;
-          other_oc.interrupt();
-
-          // set output data
-          result = my_result;
-          have_ceg_ = oc.has_ceg();
-          ceg_t_ = oc.get_target_ceg();
-          ceg_r_ = oc.get_rewrite_ceg();
-          ceg_tf_ = oc.get_target_ceg_end();
-          ceg_rf_ = oc.get_rewrite_ceg_end();
-        }
-      }
-      DEBUG_ARMS_RACE(cout << "Thread " << index << " exiting at "
-                      << duration_cast<microseconds>(
-                        high_resolution_clock::now() - start_time).count() << endl;)
 
 
-    };
 
-    auto t1 = thread(run_oc, 0);
-    auto t2 = thread(run_oc, 1);
-
-    t1.join();
-    t2.join();
-
-    /** compose error messages. */
-    DEBUG_ARMS_RACE(cout << "has_error_ = " << has_error_ << endl;)
-    stringstream err_msg;
-    if(finished.load() == 0) {
-      err_msg << "Neither ARM/Flat finished ; ";
-      if(has_error[0]) {
-        err_msg << error[0];
-        if(has_error[1])
-          err_msg << " ; ";
-      }
-      if(has_error[1])
-        err_msg << error[1];
-    }
-    error_ = err_msg.str();
-    DEBUG_ARMS_RACE(cout << "have_ceg_ = " << have_ceg_ << endl;)
-    DEBUG_ARMS_RACE(cout << "error_ = " << error_ << endl;)
-
-
-    return result;
-
-  } else {
-    return check_core(target, rewrite, target_block, rewrite_block, P, Q, assume, prove, testcases);
-  }
-}
-
-vector<string> ObligationChecker::get_ghost_names(const Cfg& cfg) {
+vector<string> SmtObligationChecker::get_ghost_names(const Cfg& cfg) {
   vector<string> outputs;
   if(basic_block_ghosts_) {
     for(size_t blk = cfg.get_entry(); blk < cfg.get_exit(); blk++) {
@@ -594,7 +343,7 @@ vector<string> ObligationChecker::get_ghost_names(const Cfg& cfg) {
   return outputs;
 }
 
-void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, string suffix) {
+void SmtObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, string suffix) {
 
   if(basic_block_ghosts_) {
     auto names = get_ghost_names(cfg);
@@ -607,8 +356,16 @@ void ObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, str
 
 }
 
+void SmtObligationChecker::return_error(Callback& callback, string& s, void* optional) const {
+  ObligationChecker::Result result;
+  result.verified = false;
+  result.has_ceg = false;
+  result.has_error = true;
+  result.error_message = s;
+  callback(result, optional);
+}
 
-bool ObligationChecker::check_core(
+void SmtObligationChecker::check(
 	const Cfg& target, 
   const Cfg& rewrite, 
   Cfg::id_type target_block, 
@@ -617,10 +374,9 @@ bool ObligationChecker::check_core(
   const CfgPath& Q, 
   Invariant& assume, 
   Invariant& prove, 
-  const vector<pair<CpuState, CpuState>>& testcases) {
-
-  stop_now_.store(false);
-
+  const vector<pair<CpuState, CpuState>>& testcases,
+  Callback& callback,
+  void* optional) {
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -636,7 +392,6 @@ bool ObligationChecker::check_core(
   OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)
   OBLIG_DEBUG(print_m.unlock();)
-  have_ceg_ = false;
 
   // Get a list of all aliasing cases.
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
@@ -673,15 +428,6 @@ bool ObligationChecker::check_core(
     state_t.memory = new ArmMemory(solver_);
     state_r.memory = new ArmMemory(solver_);
   }
-
-  auto check_abort = [&]() -> bool {
-    if (stop_now_) {
-      delete state_t.memory;
-      delete state_r.memory;
-      return true;
-    }
-    return false;
-  };
 
   // Build dereference map
   DereferenceMaps deref_maps;
@@ -721,8 +467,6 @@ bool ObligationChecker::check_core(
     }
   }
 
-
-  if (check_abort()) return false;
 
   // Generate line maps
   LineMap target_line_map;
@@ -798,11 +542,6 @@ bool ObligationChecker::check_core(
     }
   }
 
-
-
-  if (check_abort()) return false;
-
-  
   if (arm_model) {
     /** When we read out the constraint for the proof, we want to get the ending
       state of the heap, not the initial state. */
@@ -831,8 +570,6 @@ bool ObligationChecker::check_core(
   for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe(), rewrite_ghost_names))
     constraints.push_back(it);
 
-  if (check_abort()) return false;
-
   // Add any extra memory constraints that are needed
   if (flat_model) {
     auto target_flat = static_cast<FlatMemory*>(state_t.memory);
@@ -849,11 +586,8 @@ bool ObligationChecker::check_core(
     auto target_arm = static_cast<ArmMemory*>(state_t.memory);
     auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
 
-    target_arm->set_interrupt_var(&stop_now_);
-    if (check_abort()) return false;
     target_arm->generate_constraints(rewrite_arm, constraints, deref_maps);
 
-    if (check_abort()) return false;
     auto target_con = target_arm->get_constraints();
     auto rewrite_con = rewrite_arm->get_constraints();
     constraints.insert(constraints.end(),
@@ -880,14 +614,14 @@ bool ObligationChecker::check_core(
 #endif
 
 
-  if (check_abort()) return false;
   bool is_sat = solver_.is_sat(constraints);
   if (solver_.has_error()) {
     stringstream err;
     err << "solver: " << solver_.get_error();
-    error_ = err.str();
+    auto str = err.str();
+    return_error(callback, str, optional);
+    return;
   }
-  if (check_abort()) return false;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_solve = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -895,13 +629,12 @@ bool ObligationChecker::check_core(
 #endif
 
   if (is_sat) {
-    if (check_abort()) return false;
-    ceg_t_ = state_from_model("_1_INIT", target_ghost_names);
-    ceg_r_ = state_from_model("_2_INIT", rewrite_ghost_names);
-    ceg_tf_ = state_from_model("_1_FINAL", target_ghost_names);
-    ceg_rf_ = state_from_model("_2_FINAL", rewrite_ghost_names);
+    bool have_ceg;
+    CpuState ceg_t = state_from_model("_1_INIT", target_ghost_names);
+    CpuState ceg_r = state_from_model("_2_INIT", rewrite_ghost_names);
+    CpuState ceg_tf = state_from_model("_1_FINAL", target_ghost_names);
+    CpuState ceg_rf = state_from_model("_2_FINAL", rewrite_ghost_names);
 
-    if (check_abort()) return false;
     bool ok = true;
     if (flat_model) {
       auto target_flat = static_cast<FlatMemory*>(state_t.memory);
@@ -912,10 +645,10 @@ bool ObligationChecker::check_core(
       other_maps.push_back(rewrite_flat->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_flat_memory(ceg_t_, target_flat->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_r_, rewrite_flat->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_tf_, target_flat->get_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_rf_, rewrite_flat->get_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_t, target_flat->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_r, rewrite_flat->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_tf, target_flat->get_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_rf, rewrite_flat->get_variable(), other_map);
     } else if (arm_model) {
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
@@ -925,41 +658,37 @@ bool ObligationChecker::check_core(
       other_maps.push_back(rewrite_arm->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_flat_memory(ceg_t_, target_arm->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_r_, rewrite_arm->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_tf_, target_arm->get_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_rf_, rewrite_arm->get_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_t, target_arm->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_r, rewrite_arm->get_start_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_tf, target_arm->get_variable(), other_map);
+      ok &= build_testcase_flat_memory(ceg_rf, rewrite_arm->get_variable(), other_map);
     }
 
     if (!ok) {
       // We don't have memory accurate in our counterexample.  Just leave.
-      have_ceg_ = false;
       CEG_DEBUG(cout << "[counterexample-debug] for P: " << P << " Q: " << Q << endl;)
       CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
-
     }
 
     CEG_DEBUG(print_m.lock();)
     CEG_DEBUG(cout << "[counterexample-debug] for P: " << P << " Q: " << Q << endl;)
     CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
     CEG_DEBUG(cout << "TARGET START STATE" << endl;)
-    CEG_DEBUG(cout << ceg_t_ << endl;)
+    CEG_DEBUG(cout << ceg_t << endl;)
     CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
-    CEG_DEBUG(cout << ceg_r_ << endl;)
+    CEG_DEBUG(cout << ceg_r << endl;)
     CEG_DEBUG(cout << "TARGET (expected) END STATE" << endl;)
-    CEG_DEBUG(cout << ceg_tf_ << endl;)
+    CEG_DEBUG(cout << ceg_tf << endl;)
     CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
-    CEG_DEBUG(cout << ceg_rf_ << endl;)
+    CEG_DEBUG(cout << ceg_rf << endl;)
     CEG_DEBUG(print_m.unlock();)
 
-    if (check_abort()) return false;
 
-    have_ceg_ = true;
     // TODO FIXME
     // doesn't work right now because 
     // (1) it doesn't get ghost variables in ceg
     // (2) it doesn't run code on correct path */
-    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_, ceg_tf_, ceg_rf_)) {
+    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf)) {
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
     } else {
       CEG_DEBUG(cout << "  (Spurious counterexample detected) P=" << P << " Q=" << Q << endl;)
@@ -974,8 +703,18 @@ bool ObligationChecker::check_core(
     print_performance();
 #endif
 
+    ObligationChecker::Result result;
+    result.verified = false;
+    result.has_ceg = ok;
+    result.has_error = false;
+    result.error_message = "";
+    result.target_ceg = ceg_t;
+    result.rewrite_ceg = ceg_r;
+    result.target_final_ceg = ceg_tf;
+    result.rewrite_final_ceg = ceg_rf;
 
-    return false;
+    callback(result, optional);
+
   } else {
 
     delete state_t.memory;
@@ -987,17 +726,20 @@ bool ObligationChecker::check_core(
     microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
     ceg_time_ += (perf_ceg - perf_solve).count();
 #endif
+
+    ObligationChecker::Result result;
+    result.verified = true;
+    result.has_ceg = false;
+    result.has_error = false;
+    result.error_message = "";
+    callback(result, optional);
+
   }
 
-#ifdef DEBUG_CHECKER_PERFORMANCE
-  print_performance();
-#endif
-
-  return true;
 
 }
 
-void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
+void SmtObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
   auto& function = cfg.get_function();
   auto& code = cfg.get_code();
 
@@ -1036,7 +778,7 @@ void ObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineM
 
 }
 
-CpuState ObligationChecker::state_from_model(const string& name_suffix,
+CpuState SmtObligationChecker::state_from_model(const string& name_suffix,
                                     vector<string> shadow_vars) {
   CpuState cs;
 

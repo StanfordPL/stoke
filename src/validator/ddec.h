@@ -76,7 +76,20 @@ public:
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
+
 private:
+
+  void checker_callback(ObligationChecker::Result& result, void* reference);
+
+  struct CheckerCallbackInfo {
+    DischargeState& state; 
+    DualAutomata::Edge edge;
+    size_t conjunct;
+    std::stringstream* ss;
+
+    CheckerCallbackInfo(DischargeState& ds, const DualAutomata::Edge& e, size_t num, std::stringstream* strs) : state(ds), edge(e), conjunct(num), ss(strs) {
+    }
+  };
 
   Cfg target_;
   Cfg rewrite_;
@@ -111,9 +124,7 @@ private:
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&);
   /** Helper for discharge invariants that works on just one edge. */
-  bool discharge_edge(const DualAutomata& d, const DualAutomata::Edge& edge); 
-  /** Helper that works on one conjunct. */
-  bool discharge_edge(const DualAutomata& d, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream& ss);  
+  void discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream* ss);
   /** For running discharge_edge in a thread. */
   static void discharge_thread(DdecValidator&, DualAutomata&, DischargeState&, size_t);
   /** Start threads to discharge edges. */
