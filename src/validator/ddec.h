@@ -57,7 +57,6 @@ public:
 
     target_bound_ = rhs.target_bound_;
     rewrite_bound_ = rhs.rewrite_bound_;
-    thread_count_ = rhs.thread_count_;
   }
 
   /** Set the bound for bounded validator */
@@ -67,9 +66,7 @@ public:
     return *this;
   }
 
-  /** Set the number of threads. */
   DdecValidator& set_thread_count(size_t n) {
-    thread_count_ = n;
     return *this;
   }
 
@@ -162,11 +159,8 @@ private:
   /** Try to sign extend values? */
   bool try_sign_extend_;
 
-  /** How many threads to use? */
-  size_t thread_count_;
-
-  /** Per-thread copies of this class. */
-  std::vector<DdecValidator> thread_copies_;
+  size_t callbacks_expected_;
+  std::atomic<size_t> callbacks_count_;
 
 };
 

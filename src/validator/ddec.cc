@@ -506,6 +506,7 @@ void DdecValidator::discharge_edge(const DualAutomata& dual, DischargeState& ds,
   };
 
   // Run the obligation check
+  callbacks_expected_++;
   checker_.check(target_, rewrite_, edge.from.ts, edge.from.rs,
                  edge.te, edge.re, *start_inv, *partial_inv, testcases, callback, (void*)info);
 
@@ -524,10 +525,13 @@ void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& sta
   }
   */
 
+  callbacks_expected_ = 0;
+  callbacks_count_.store(0);
+
   discharge_thread(*this, dual, state, 0);
 
   // TODO: do something smarter here 
-  while(state.has_next()) {
+  while(callbacks_count_.load() < callbacks_expected_) {
     sleep(1);
   }
 
@@ -831,7 +835,6 @@ bool DdecValidator::sanity_check(DualAutomata& pod) {
 void DdecValidator::checker_callback(ObligationChecker::Result& result, void* info) {
   CheckerCallbackInfo* cci = static_cast<CheckerCallbackInfo*>(info);
   DischargeState& state = cci->state;
-  string s = "";
   auto& ss = *(cci->ss);
 
   ss << "    " << (result.verified ? "true" : "false") << endl;
@@ -857,8 +860,8 @@ void DdecValidator::checker_callback(ObligationChecker::Result& result, void* in
     }
   )
   auto str = ss.str();
-  state.report_outcome(cci->edge, cci->conjunct, result.verified, s);
-  std::cout << "[checker_callback] State has next? " << state.has_next() << std::endl;
+  state.report_outcome(cci->edge, cci->conjunct, result.verified, str);
+  callbacks_count_++;
 
   delete cci->ss;
   delete cci;

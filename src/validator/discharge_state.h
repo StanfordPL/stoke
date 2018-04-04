@@ -17,15 +17,6 @@ class DischargeState {
     dual_(dual), edges_(es), next_edge_(0), next_conjunct_(0), done_(false) {
   }
 
-  /** Thread safe: is there any problem left? */
-  bool has_next() {
-    bool done;
-    m.lock();
-    done = done_;
-    m.unlock();
-    return done;
-  }
-
   /** Thread safe: get the next state/conjunct problem. */
   std::pair<DualAutomata::Edge, size_t> next_problem() {
     m.lock();
