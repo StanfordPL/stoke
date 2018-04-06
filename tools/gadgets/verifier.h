@@ -24,6 +24,7 @@
 #include "src/validator/ddec.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/forking_obligation_checker.h"
 #include "src/validator/smt_obligation_checker.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
@@ -87,10 +88,12 @@ private:
   void make_oc() {
     handler_ = new ComboHandler();
     filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
-    oc_ = new SmtObligationChecker(*solver_, *filter_);
-    oc_->set_alias_strategy(parse_alias());
-    oc_->set_nacl(verify_nacl_arg);
-    oc_->set_fixpoint_up(fixpoint_up_arg);
+    auto smt = new SmtObligationChecker(*solver_, *filter_);
+    smt->set_alias_strategy(parse_alias());
+    smt->set_nacl(verify_nacl_arg);
+    smt->set_fixpoint_up(fixpoint_up_arg);
+    std::vector<ObligationChecker*> checkers = {smt};
+    oc_ = new ForkingObligationChecker(checkers, ddec_thread_count.value());
   }
 
   ObligationChecker::AliasStrategy parse_alias() {
@@ -121,7 +124,7 @@ private:
       make_oc();
       auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
-      ddec->set_thread_count(ddec_thread_count);
+      ddec->set_thread_count(1);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

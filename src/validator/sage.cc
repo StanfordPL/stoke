@@ -54,16 +54,17 @@ void Sage::initialize() {
   harness.close();
 
   if(fork()) {
+    // parent
+    pipe_to_sage.open(stoke_sage_in);    
+    pipe_from_sage.open(stoke_sage_out);
+    sleep(3);
+  } else {
+    // child
     prctl(PR_SET_PDEATHSIG, SIGTERM);
     stringstream cmd;
     cmd << "sage " << harness_file << " <" << stoke_sage_in << " >" << stoke_sage_out << " 2>" << sage_err;
     int v = system(cmd.str().c_str());
     exit(0);
-  } else {
-    pipe_to_sage.open(stoke_sage_in);    
-    pipe_from_sage.open(stoke_sage_out);
-
-    sleep(3);
   }
 
 

@@ -529,11 +529,8 @@ void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& sta
   callbacks_count_.store(0);
 
   discharge_thread(*this, dual, state, 0);
+  checker_.block_until_complete();
 
-  // TODO: do something smarter here 
-  while(callbacks_count_.load() < callbacks_expected_) {
-    sleep(1);
-  }
 
   /*vector<thread> threads;
   auto function = [&] (size_t i) -> void {

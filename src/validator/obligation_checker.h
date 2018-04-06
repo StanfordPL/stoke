@@ -17,6 +17,8 @@
 
 #include <functional>
 #include <iostream>
+#include <ostream>
+#include <istream>
 #include <vector>
 #include <string>
 #include <thread>
@@ -70,7 +72,6 @@ public:
   struct Result {
     bool verified;
     bool has_ceg;
-
     bool has_error;
     std::string error_message;
 
@@ -79,8 +80,14 @@ public:
     CpuState target_final_ceg;
     CpuState rewrite_final_ceg;
 
+    std::istream& read_text(std::istream& is);
+    std::ostream& write_text(std::ostream& os) const;
+
     Result() { }
   };
+
+  friend std::ostream& operator<<(std::ostream&, const Result&);
+  friend std::istream& operator>>(std::istream&, Result&);
 
   typedef std::function<void (Result&, void*)> Callback;
 
@@ -156,9 +163,7 @@ public:
     check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases,
           callback, NULL);
 
-    while(!await_complete.load(std::memory_order_acquire)) {
-      std::this_thread::yield();
-    }
+    block_until_complete();
     
     return await_result;
   }
@@ -175,6 +180,11 @@ public:
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      void* optional = NULL) = 0;
+
+  /** Blocks until all the checking has done and the callbacks have been called. */
+  virtual void block_until_complete() {
+    return;
+  }
 
   /** Below are hacks due to legacy non-existence of a type hierarchy for obligation checkers. */
   enum JumpType {
@@ -199,8 +209,6 @@ protected:
 
 };
 
-
-
-} // namespace stoke
+} //namespace stoke
 
 #endif

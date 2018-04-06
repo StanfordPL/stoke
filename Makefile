@@ -102,7 +102,7 @@ DEPS=\
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a \
 	-pthread \
-	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread \
+	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread -lboost_iostreams \
 	-lcln \
 	-liml -lgmp \
 	-L src/ext/z3/build -lz3
@@ -183,6 +183,7 @@ SRC_OBJ=\
 	src/validator/dual.o \
 	src/validator/dual_builder.o \
 	src/validator/flow_invariant_learner.o \
+	src/validator/forking_obligation_checker.o \
 	src/validator/handler.o \
 	src/validator/int_matrix.o \
 	src/validator/int_vector.o \

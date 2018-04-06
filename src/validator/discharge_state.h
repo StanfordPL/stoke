@@ -19,8 +19,6 @@ class DischargeState {
 
   /** Thread safe: get the next state/conjunct problem. */
   std::pair<DualAutomata::Edge, size_t> next_problem() {
-    m.lock();
-
     while(!done_ && !current_problem_ok()) {
       DEBUG_DISCHARGE_STATE(std::cout << "[next_problem] advancing." << std::endl;)
       advance_problem();
@@ -29,7 +27,6 @@ class DischargeState {
     DEBUG_DISCHARGE_STATE(std::cout << "[next_problem] done=" << done_ << std::endl;)
 
     if(done_) {
-      m.unlock();
       DEBUG_DISCHARGE_STATE(std::cout << "[next_problem] returning default value." << std::endl;)
       std::pair<DualAutomata::Edge, size_t> val(edges_[0], (size_t)(-1));
       return val;
@@ -42,7 +39,6 @@ class DischargeState {
 
     advance_problem();
     
-    m.unlock();
     return val;
   }
 
@@ -51,15 +47,11 @@ class DischargeState {
 
     auto start_inv = dual_.get_invariant(edge.from);
     auto end_inv = (*dual_.get_invariant(edge.to))[conjunct];
-    print_m.lock();
     std::cout << s;
-    print_m.unlock();
 
     if(!success) {
       auto state = edge.to;
-      m.lock();
       bad_conjuncts[state][conjunct] = true;
-      m.unlock();
     }
   }
 
@@ -141,8 +133,6 @@ private:
   size_t next_conjunct_;
   bool done_;
   std::map<DualAutomata::State, std::map<size_t, bool>> bad_conjuncts;
-  std::mutex m;
-  std::mutex print_m;
 
 };
 }
