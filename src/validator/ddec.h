@@ -162,6 +162,8 @@ private:
   size_t callbacks_expected_;
   std::atomic<size_t> callbacks_count_;
 
+  ObligationChecker::Callback callback_;
+
 };
 
 } // namespace stoke
