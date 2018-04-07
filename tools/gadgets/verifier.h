@@ -93,7 +93,7 @@ private:
     smt->set_nacl(verify_nacl_arg);
     smt->set_fixpoint_up(fixpoint_up_arg);
     std::vector<ObligationChecker*> checkers = {smt};
-    oc_ = new ForkingObligationChecker(checkers, ddec_thread_count.value());
+    oc_ = new ForkingObligationChecker(checkers, process_count_arg.value());
   }
 
   ObligationChecker::AliasStrategy parse_alias() {

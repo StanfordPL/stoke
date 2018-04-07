@@ -84,12 +84,6 @@ void ForkingObligationChecker::check(
              p, q, assume, prove, testcases, callback, optional);
     oc.block_until_complete();
     close(pipefd[1]);
-
-    while(true) {
-      //TODO: replace with something better
-      sleep(1);
-    }
-
     exit(0);
   } else {
     // parent
@@ -111,6 +105,23 @@ void ForkingObligationChecker::check(
 
 }
 
+void ForkingObligationChecker::print_table() const {
+
+  size_t num_procs = process_info_.size();
+  cout << "++++++++++++ DEBUG TABLE +++++++++++++" << endl;
+  cout << "    " << num_procs << " processes running." << endl;
+  for(size_t i = 0; i < num_procs; ++i) {
+    auto pi = process_info_[i];
+    auto pollfd = pollfds_[i];
+    cout << "PROCESS " << i << endl;
+    cout << "   pid      " << pi.pid << endl;
+    cout << "   fd       " << pi.fd << endl;
+    cout << "   callback " << pi.callback << endl;
+    cout << "   optional " << pi.optional << endl;
+    cout << "   poll fd  " << pollfd.fd << endl;
+  }
+}
+
 void ForkingObligationChecker::poll_and_read() {
 
   static char buffer[1024];
@@ -129,7 +140,7 @@ void ForkingObligationChecker::poll_and_read() {
 
   cout << "[poll_and_read] " << num_rdy << " processes ready." << endl;
   /** go through the processes and read as needed. */
-  for(size_t i = 0; i < num_procs; ++i) {
+  for(int i = num_procs-1; i >= 0; --i) {
     auto curr_pollfd = pollfds_[i]; 
     auto& pi = process_info_[i];
     auto revents = curr_pollfd.revents;
@@ -176,6 +187,8 @@ void ForkingObligationChecker::poll_and_read() {
     }
   }
 
+  print_table();
+
   /** cleanup data structures for processes that no longer exist. */
   cout << "[poll_and_read] removing " << to_remove.size() << " processes" << endl;
   for(auto i : to_remove) {
@@ -184,6 +197,8 @@ void ForkingObligationChecker::poll_and_read() {
     }
     process_info_.erase(process_info_.begin() + i);
   }
+
+  print_table();
 }
 
 void ForkingObligationChecker::finish_process(ProcessInfo& pi) const{

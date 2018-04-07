@@ -501,7 +501,7 @@ void DdecValidator::discharge_edge(const DualAutomata& dual, DischargeState& ds,
   CheckerCallbackInfo* info = new CheckerCallbackInfo(ds, edge, conjunct, ss);
 
   callback_ = [this] (ObligationChecker::Result& r, void* opt) {
-    cout << "Received callback" << std::endl;
+    cout << "Received callback opt=" << (uint64_t)opt << std::endl;
     this->checker_callback(r, opt);
   };
 

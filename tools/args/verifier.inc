@@ -40,6 +40,12 @@ cpputil::ValueArg<std::string>& alias_strategy_arg =
   .description("How to handle aliasing")
   .default_val("flat");
 
+cpputil::ValueArg<size_t>& process_count_arg =
+  cpputil::ValueArg<size_t>::create("process_count")
+  .usage("<int>")
+  .description("Number of processes for verification")
+  .default_val(1);
+
 cpputil::FlagArg& verify_nacl_arg =
   cpputil::FlagArg::create("verify_nacl")
   .description("add constraints to bound index registers away from 32-bit boundary");
