@@ -82,12 +82,15 @@ private:
     // buffer with what we've read so far
     std::string data;
 
+    // indexes of 'friend' processes
+    std::vector<pid_t> friends;
+
     ProcessInfo(Callback& cb, void* opt) : callback(&cb), optional(opt) { }
   };
 
 
   /** Tries to read from one of the processes */
-  void poll_and_read();
+  void poll_and_read(bool fast);
   /** Block until free thread. */
   void block_until_free();
   /** Call the callback and cleanup process. */

@@ -88,11 +88,23 @@ private:
   void make_oc() {
     handler_ = new ComboHandler();
     filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
-    auto smt = new SmtObligationChecker(*solver_, *filter_);
-    smt->set_alias_strategy(parse_alias());
-    smt->set_nacl(verify_nacl_arg);
-    smt->set_fixpoint_up(fixpoint_up_arg);
-    std::vector<ObligationChecker*> checkers = {smt};
+    auto z3 = new Z3Solver();
+    auto cvc4 = new Cvc4Solver();
+
+    auto smt1 = new SmtObligationChecker(*z3, *filter_);
+    smt1->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+
+    auto smt2 = new SmtObligationChecker(*cvc4, *filter_);
+    smt2->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+
+    auto smt3 = new SmtObligationChecker(*z3, *filter_);
+    smt3->set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
+
+    auto smt4 = new SmtObligationChecker(*cvc4, *filter_);
+    smt4->set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
+
+    //std::vector<ObligationChecker*> checkers = {smt1, smt2, smt3, smt4};
+    std::vector<ObligationChecker*> checkers = { smt2 };
     oc_ = new ForkingObligationChecker(checkers, process_count_arg.value());
   }
 
