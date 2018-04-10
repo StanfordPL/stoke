@@ -38,6 +38,8 @@ public:
   virtual void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number);
 
   virtual std::ostream& write(std::ostream& out) const = 0;
+  virtual std::ostream& serialize(std::ostream& out) const = 0;
+  //virtual std::istream& deserialize(std::istream& in) const;
 
   virtual bool operator==(const Invariant& other) const {
     std::stringstream ss;

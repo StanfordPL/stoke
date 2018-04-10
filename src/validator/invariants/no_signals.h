@@ -47,6 +47,12 @@ public:
     return target.code == ErrorCode::NORMAL && rewrite.code == ErrorCode::NORMAL;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "NoSignalsInvariant" << std::endl;
+    return out;
+  }
+
+
 
 private:
 

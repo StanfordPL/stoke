@@ -77,6 +77,12 @@ public:
            target.data == rewrite.data;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "MemoryEqualityInvariant" << std::endl;
+    return out;
+  }
+
+
 private:
 
 };

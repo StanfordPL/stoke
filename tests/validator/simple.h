@@ -319,15 +319,16 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code d(code);
 
   Z3Solver s;
-  Sandbox sb;
-  BoundedValidator v(s, sb);
+  ComboHandler handler;
+  DefaultFilter filter(handler);
+  SmtObligationChecker oc(s, filter);
+  BoundedValidator v(oc);
   CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
 
   Cfg cfg_t(c, rs, rs);
   Cfg cfg_r(d, rs, rs);
-
 
   EXPECT_TRUE(v.verify(cfg_t, cfg_r));
   EXPECT_FALSE(v.has_error()) << v.error() << std::endl;

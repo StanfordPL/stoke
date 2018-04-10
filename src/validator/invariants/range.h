@@ -63,6 +63,13 @@ public:
     return result;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "RangeInvariant" << std::endl;
+    variable_.serialize(out);
+    out << min_ << " " << max_ << std::endl;
+    return out;
+  }
+
 private:
 
   Variable variable_;

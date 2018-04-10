@@ -60,6 +60,13 @@ public:
     return os;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "NonzeroInvariant" << std::endl;
+    variable_.serialize(out);
+    out << negate_ << std::endl;
+    return out;
+  }
+
 private:
 
   Variable variable_;

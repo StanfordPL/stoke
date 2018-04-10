@@ -93,7 +93,9 @@ TEST_F(ValidatorFuzzTest, XchgInstructionsRandomState) {
 
   // Setup transforms pool
   Sandbox sb;
-  Validator v(z3_, sb, ch_);
+  DefaultFilter filter(ch_);
+  SmtObligationChecker oc(z3_, filter);
+  Validator v(oc);
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
 
@@ -169,7 +171,9 @@ TEST_F(ValidatorFuzzTest, ShiftInstructionsRandomState) {
 
   // Setup transforms pool
   Sandbox sb;
-  Validator v(z3_, sb, ch_);
+  DefaultFilter filter(ch_);
+  SmtObligationChecker oc(z3_, filter);
+  Validator v(oc);
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
 
@@ -467,7 +471,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   // Setup transforms pool
   Sandbox sb;
-  Validator v(z3_, sb, ch_);
+  DefaultFilter filter(ch_);
+  SmtObligationChecker oc(z3_, filter);
+  Validator v(oc);
 
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);

@@ -139,6 +139,14 @@ public:
     return result;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "InequalityInvariant" << std::endl;
+    variable1_.serialize(out);
+    variable2_.serialize(out);
+    out << is_strict_ << " " << is_signed_ << std::endl;
+    return out;
+  }
+
 
 
 private:

@@ -70,6 +70,13 @@ public:
     return result;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "ImplicationInvariant" << std::endl;
+    a_->serialize(out);
+    b_->serialize(out);
+    return out;
+  }
+
 
 private:
 

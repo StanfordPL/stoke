@@ -170,14 +170,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   }
 
   // Wait for everything to finish and/or to get a "no" answer.
-  while(count_.load() < count) {
-    sleep(1);
-
-    if(bailout_ && found_ceg_.load()) {
-      // TODO: tell obligation checker to stop.
-      return false;
-    }
-  }
+  checker_.block_until_complete();
 
   return correct_.load();
 }

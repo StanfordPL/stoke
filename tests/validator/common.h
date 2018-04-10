@@ -21,6 +21,8 @@
 #include "src/sandbox/sandbox.h"
 #include "src/validator/bounded.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/smt_obligation_checker.h"
+#include "src/validator/filters/bound_away.h"
 #include "src/symstate/simplify.h"
 #include "tests/solver/test_solver.h"
 #include "tests/fuzzer.h"
@@ -31,7 +33,12 @@ class StraightLineValidatorTest : public ::testing::Test {
 
 public:
 
-  StraightLineValidatorTest() : v_(make_validator()) {
+  StraightLineValidatorTest() : 
+    handler_(), 
+    filter_(handler_, 0x100, (uint64_t)(-0x100)),
+    oc_(s_, filter_), 
+    v_(make_validator()) 
+  {
     cfg_t_ = 0;
     cfg_r_ = 0;
   }
@@ -674,7 +681,7 @@ private:
 
   /* Used to build a validator */
   BoundedValidator make_validator() {
-    BoundedValidator v(s_, sb_);
+    BoundedValidator v(oc_);
     // historically these tests have not been used to check
     // equivalence of final heap states
     v.set_heap_out(false);
@@ -686,15 +693,20 @@ private:
   bool codes_shown_;
   bool ceg_shown_;
 
-  /* The validator we're using */
-  Sandbox sb_;
-  BoundedValidator v_;
+
   /* The solver we're using */
 #ifndef NOCVC4
   Cvc4Solver s_;
 #else
   Z3Solver s_;
 #endif
+
+  /* The validator we're using */
+  ComboHandler handler_;
+  BoundAwayFilter filter_;
+  Sandbox sb_;
+  SmtObligationChecker oc_;
+  BoundedValidator v_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;

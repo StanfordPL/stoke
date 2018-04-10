@@ -56,6 +56,12 @@ public:
     return result;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "NotInvariant" << std::endl;
+    a_->serialize(out);
+    return out;
+  }
+
 private:
 
   Invariant* a_;

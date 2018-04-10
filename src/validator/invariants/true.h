@@ -40,6 +40,11 @@ public:
     return true;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "TrueInvariant" << std::endl;
+    return out;
+  }
+
 };
 
 } // namespace stoke

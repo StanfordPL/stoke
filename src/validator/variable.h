@@ -85,6 +85,7 @@ struct Variable {
     return false;
   }
 
+  std::ostream& serialize(std::ostream& out) const;
 };
 
 }

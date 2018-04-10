@@ -94,6 +94,12 @@ public:
     return os;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "FlagInvariant" << std::endl;
+    out << predicate_ << " " << fallthrough_ << " " << is_rewrite_ << std::endl;
+    return out;
+  }
+
 
 
 private:

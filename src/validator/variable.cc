@@ -108,6 +108,19 @@ size_t Variable::get_ghost_bb() {
 }
 
 
+ostream& Variable::serialize(ostream& out) const {
+  out << is_rewrite << " " 
+      << size << " "
+      << offset << " "
+      << coefficient << " "
+      << is_ghost << endl;
+  if(is_ghost) {
+    out << name << endl;
+  } else {
+    out << operand << endl;
+  }
+  return out;
+}
 
 
 namespace std {

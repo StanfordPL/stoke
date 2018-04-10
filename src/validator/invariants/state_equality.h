@@ -76,6 +76,15 @@ public:
     return ghost_variables_;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "StateEqualityInvariant" << std::endl;
+    out << rs_ << std::endl;
+    out << ghost_variables_.size() << std::endl;
+    for(auto v : ghost_variables_)
+      v.serialize(out);
+    return out;
+  }
+
 private:
   x64asm::RegSet rs_;
 

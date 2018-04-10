@@ -53,6 +53,12 @@ public:
     return os;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "TopZeroInvariant" << std::endl;
+    out << reg_ << " " << is_rewrite_ << std::endl;
+    return out;
+  }
+
 private:
 
   x64asm::R64 reg_;

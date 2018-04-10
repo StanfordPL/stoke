@@ -40,6 +40,13 @@ public:
     return false;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "FalseInvariant" << std::endl;
+    return out;
+  }
+
+
+
 };
 
 } // namespace stoke

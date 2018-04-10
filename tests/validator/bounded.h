@@ -56,17 +56,17 @@ public:
     vector<uint64_t> low_addrs = {0, (uint64_t)(-0x100)};
     vector<uint64_t> high_addrs = {0x100, (uint64_t)(-1)};
     filter = new ForbiddenDereferenceFilter(*handler, low_addrs, high_addrs);
-
-    validator = new BoundedValidator(*solver, *sandbox);
+    oc = new SmtObligationChecker(*solver, *filter);
+    oc->set_alias_strategy(std::tr1::get<0>(param));
+    validator = new BoundedValidator(*oc);
     validator->set_bound(2);
-    validator->set_filter(filter);
-    validator->set_alias_strategy(std::tr1::get<0>(param));
     validator->set_heap_out(true);
     validator->set_stack_out(true);
   }
 
   ~BoundedValidatorBaseTest() {
     delete validator;
+    delete oc;
     delete sandbox;
     delete sg_sandbox;
     delete solver;
@@ -145,6 +145,7 @@ protected:
   }
 
   SMTSolver* solver;
+  ObligationChecker* oc;
   BoundedValidator* validator;
   Sandbox* sandbox;
   Sandbox* sg_sandbox;
@@ -1038,53 +1039,6 @@ TEST_P(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
 
 
 /** NOTE: ignores aliasing parameter! */
-TEST_P(BoundedValidatorBaseTest, MemcpyVectorizedCorrectWithoutAliasing) {
-
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
-  auto live_outs = x64asm::RegSet::empty();
-
-  std::stringstream sst;
-  sst << ".foo:" << std::endl;
-  sst << "xorl %ecx, %ecx" << std::endl;
-  sst << "testl %edx, %edx" << std::endl;
-  sst << "je .exit" << std::endl;
-  sst << ".top:" << std::endl;
-  sst << "movl (%rdi, %rcx, 4), %eax" << std::endl;
-  sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
-  sst << "incl %ecx" << std::endl;
-  sst << "cmpl %ecx, %edx" << std::endl;
-  sst << "jne .top" << std::endl;
-  sst << ".exit:" << std::endl;
-  sst << "retq" << std::endl;
-  auto target = make_cfg(sst, def_ins, live_outs);
-
-  std::stringstream ssr;
-  ssr << ".foo:" << std::endl;
-  ssr << "xorl %ecx, %ecx" << std::endl;
-  ssr << "jmpq .enter" << std::endl;
-  ssr << ".double:" << std::endl;
-  ssr << "movq (%rdi, %rcx, 4), %rax" << std::endl;
-  ssr << "movq %rax, (%rsi, %rcx, 4)" << std::endl;
-  ssr << "addl $0x2, %ecx" << std::endl;
-  ssr << "subl $0x2, %edx" << std::endl;
-  ssr << ".enter:" << std::endl;
-  ssr << "cmpl $0x1, %edx" << std::endl;
-  ssr << "je .one_more" << std::endl;
-  ssr << "cmpl $0x0, %edx" << std::endl;
-  ssr << "je .exit" << std::endl;
-  ssr << "jmpq .double" << std::endl;
-  ssr << ".one_more:" << std::endl;
-  ssr << "movl (%rdi, %rcx, 4), %eax" << std::endl;
-  ssr << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
-  ssr << ".exit:" << std::endl;
-  ssr << "retq" << std::endl;
-  auto rewrite = make_cfg(ssr, def_ins, live_outs);
-
-  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-  EXPECT_TRUE(validator->verify(target, rewrite));
-  EXPECT_FALSE(validator->has_error()) << validator->error();
-
-}
 
 TEST_P(BoundedValidatorBaseTest, MemcpyMissingBranch) {
 
@@ -1283,7 +1237,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1415,7 +1369,7 @@ TEST_P(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
-  validator->set_nacl(true);
+  oc->set_nacl(true);
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
   sst << "leal (%rdi), %ecx" << std::endl;
@@ -1470,7 +1424,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1531,7 +1485,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenWrong2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1594,7 +1548,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenCorrect3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1661,7 +1615,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1729,7 +1683,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenWrong4) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1796,7 +1750,7 @@ TEST_P(BoundedValidatorBaseTest, WcslenWrong5) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
@@ -1863,7 +1817,7 @@ TEST_P(BoundedValidatorBaseTest, WcscpyWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::rsi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
-  validator->set_nacl(true);
+  oc->set_nacl(true);
 
   std::stringstream sst;
   sst << ".wcscpy:" << std::endl;

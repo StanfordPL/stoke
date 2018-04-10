@@ -105,6 +105,16 @@ public:
     return result;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "DisjunctionInvariant" << std::endl;
+    out << invariants_.size() << std::endl;
+    for(auto it : invariants_) {
+      it->serialize(out);
+    }
+    return out;
+  }
+
+
 private:
 
   std::vector<Invariant*> invariants_;

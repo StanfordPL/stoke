@@ -84,8 +84,6 @@ public:
     return result;
   }
 
-
-
   std::ostream& write(std::ostream& os) const {
     os << m_;
     if (is_rewrite_)
@@ -96,6 +94,12 @@ public:
       os << " != 0";
 
     return os;
+  }
+
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "NullMemoryInvariant" << std::endl;
+    out << m_ << " " << is_rewrite_ << " " << is_null_ << std::endl;
+    return out;
   }
 
 private:

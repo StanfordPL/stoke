@@ -63,6 +63,13 @@ public:
     return os;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "FlagSetInvariant" << std::endl;
+    out << flag_ << " " << is_rewrite_ << " " << invert_ << std::endl;
+    return out;
+  }
+
+
 private:
 
   x64asm::Eflags flag_;

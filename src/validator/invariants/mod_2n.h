@@ -61,6 +61,15 @@ public:
     return os;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "Mod2NInvariant" << std::endl;
+    variable_.serialize(out);
+    out << zero_bits_ << std::endl;
+    return out;
+  }
+
+
+
 private:
 
   Variable variable_;

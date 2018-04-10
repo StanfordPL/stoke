@@ -122,6 +122,16 @@ public:
     return terms_;
   }
 
+  virtual std::ostream& serialize(std::ostream& out) const {
+    out << "EqualityInvariant" << std::endl;
+    out << constant_ << " " << modulus_ << std::endl;
+    out << terms_.size() << std::endl;
+    for(auto it : terms_) {
+      it.serialize(out);
+    }
+    return out;
+  }
+
 
 private:
 

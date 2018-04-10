@@ -44,6 +44,13 @@ public:
     set_no_bailout(false);
   }
 
+  BoundedValidator(const BoundedValidator& other) :
+    Validator(other), target_final_state_(), rewrite_final_state_() 
+  {
+    set_bound(other.bound_);
+    set_no_bailout(other.bailout_);
+  }
+
   ~BoundedValidator() {}
 
   /** Set bound. */

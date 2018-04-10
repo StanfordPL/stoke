@@ -13,9 +13,10 @@
 // limitations under the License.
 
 
-namespace stoke {
 #include "src/symstate/bitvector.h"
 #include "src/validator/handlers/move_handler.h"
+
+namespace stoke {
 
 #define EXPECT_BV_EQ(X, Y) EXPECT_TRUE((X).equals(Y)) \
                            << "Expected: " << (X) << std::endl \
