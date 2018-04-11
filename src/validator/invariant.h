@@ -39,7 +39,7 @@ public:
 
   virtual std::ostream& write(std::ostream& out) const = 0;
   virtual std::ostream& serialize(std::ostream& out) const = 0;
-  //virtual std::istream& deserialize(std::istream& in) const;
+  static Invariant* deserialize(std::istream& in);
 
   virtual bool operator==(const Invariant& other) const {
     std::stringstream ss;

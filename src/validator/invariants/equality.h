@@ -132,6 +132,15 @@ public:
     return out;
   }
 
+  EqualityInvariant(std::istream& is) {
+    size_t count;
+    is >> constant_ >> modulus_ >> count;
+    for(size_t i = 0; i < count; ++i) {
+      Variable v(is);
+      terms_.push_back(v);
+    }
+  }
+
 
 private:
 

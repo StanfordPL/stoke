@@ -45,6 +45,8 @@ public:
     return out;
   }
 
+  TrueInvariant(std::istream& is) {}
+
 };
 
 } // namespace stoke

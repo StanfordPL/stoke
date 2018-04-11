@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "src/validator/invariant.h"
-#include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants.h"
 
 namespace std {
 
@@ -62,6 +62,58 @@ void Invariant::get_dereference_map(DereferenceMap& deref_map,
   }
 
 };
+
+
+Invariant* Invariant::deserialize(istream& in) {
+  string class_name;
+  in >> class_name;
+
+  if(class_name == "ConjunctionInvariant") {
+    return new ConjunctionInvariant(in);    
+  } else if (class_name == "DisjunctionInvariant") {
+    return new DisjunctionInvariant(in);
+  } else if (class_name == "EqualityInvariant") {
+    return new EqualityInvariant(in);
+  } else if (class_name == "FalseInvariant") {
+    return new FalseInvariant(in);
+  } else if (class_name == "FlagInvariant") {
+    return new FlagInvariant(in);
+  } else if (class_name == "FlagSetInvariant") {
+    return new FlagSetInvariant(in);
+  } else if (class_name == "ImplicationInvariant") {
+    return new ImplicationInvariant(in);
+  } else if (class_name == "InequalityInvariant") {
+    return new InequalityInvariant(in);
+  } else if (class_name == "MemoryEqualityInvariant") {
+    return new MemoryEqualityInvariant(in);
+  } else if (class_name == "MemoryNullInvariant") {
+    return new MemoryNullInvariant(in);
+  } else if (class_name == "Mod2NInvariant") {
+    return new Mod2NInvariant(in);
+  } else if (class_name == "NonzeroInvariant") {
+    return new NonzeroInvariant(in);
+  } else if (class_name == "NoSignalsInvariant") {
+    return new NoSignalsInvariant(in);
+  } else if (class_name == "NotInvariant") {
+    return new NotInvariant(in);
+  } else if (class_name == "PointerNullInvariant") {
+    return new PointerNullInvariant(in);
+  } else if (class_name == "RangeInvariant") {
+    return new RangeInvariant(in);
+  } else if (class_name == "SignInvariant") {
+    return new SignInvariant(in);
+  } else if (class_name == "StateEqualityInvariant") {
+    return new StateEqualityInvariant(in);
+  } else if (class_name == "TopZeroInvariant") {
+    return new TopZeroInvariant(in);
+  } else if (class_name == "TrueInvariant") {
+    return new TrueInvariant(in);
+  } else {
+    cerr << "Got bad invariant class: " << class_name << endl;
+    exit(1);
+    assert(false);
+  }
+}
 
 
 ConjunctionInvariant* Invariant::AND(Invariant* other) {

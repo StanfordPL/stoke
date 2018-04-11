@@ -147,6 +147,9 @@ public:
     return out;
   }
 
+  InequalityInvariant(std::istream& is) : variable1_(is), variable2_(is) {
+    is >> is_strict_ >> is_signed_;
+  }
 
 
 private:

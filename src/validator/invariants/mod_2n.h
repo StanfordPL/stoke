@@ -68,7 +68,9 @@ public:
     return out;
   }
 
-
+  Mod2NInvariant(std::istream& is) : variable_(is) {
+    is >> zero_bits_;
+  }
 
 private:
 

@@ -85,6 +85,16 @@ public:
     return out;
   }
 
+  StateEqualityInvariant(std::istream& is) {
+    size_t count;
+    is >> rs_ >> count;
+    for(size_t i = 0; i < count; ++i) {
+      Variable v(is);
+      ghost_names_.push_back(v.name);
+      ghost_variables_.push_back(v);
+    }
+  }
+
 private:
   x64asm::RegSet rs_;
 

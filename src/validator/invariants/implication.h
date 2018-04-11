@@ -77,6 +77,10 @@ public:
     return out;
   }
 
+  ImplicationInvariant(std::istream& is) {
+    a_ = Invariant::deserialize(is);
+    b_ = Invariant::deserialize(is);
+  }
 
 private:
 

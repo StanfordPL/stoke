@@ -81,6 +81,11 @@ public:
     return out;
   }
 
+  PointerNullInvariant(std::istream& is) : variable_(is) {
+    is >> size_;
+  }
+
+
 private:
 
   Variable variable_;

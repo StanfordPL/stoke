@@ -69,6 +69,10 @@ public:
     return out;
   }
 
+  FlagSetInvariant(std::istream& is) : flag_(x64asm::eflags_cf) {
+    is >> flag_ >> std::ws >> is_rewrite_ >> std::ws >> invert_ >> std::ws;
+  }
+
 
 private:
 

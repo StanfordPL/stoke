@@ -100,6 +100,9 @@ public:
     return out;
   }
 
+  FlagInvariant(std::istream& is) {
+    is >> predicate_ >> fallthrough_ >> is_rewrite_;
+  }
 
 
 private:

@@ -62,6 +62,10 @@ public:
     return out;
   }
 
+  NotInvariant(std::istream& is) {
+    a_ = Invariant::deserialize(is);
+  }
+
 private:
 
   Invariant* a_;

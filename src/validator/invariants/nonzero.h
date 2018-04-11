@@ -67,6 +67,11 @@ public:
     return out;
   }
 
+  NonzeroInvariant(std::istream& is) : variable_(is) {
+    is >> negate_;
+  }
+
+
 private:
 
   Variable variable_;

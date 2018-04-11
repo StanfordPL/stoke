@@ -6,3 +6,4 @@ switch.h
 switch.cc
 supported.switch
 handlers.h
+invariants.h

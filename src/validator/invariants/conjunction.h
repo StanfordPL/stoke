@@ -135,6 +135,13 @@ public:
     return out;
   }
 
+  ConjunctionInvariant(std::istream& is) {
+    size_t count;
+    is >> count;
+    for(size_t i = 0; i < count; ++i) {
+      invariants_.push_back(Invariant::deserialize(is));
+    }
+  }
 
 private:
 

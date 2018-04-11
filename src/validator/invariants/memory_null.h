@@ -25,7 +25,7 @@ public:
   using Invariant::check;
 
   // TODO: rewrite to use Variable class
-  MemoryNullInvariant(const x64asm::Mem m, bool is_rewrite, bool is_null)
+  MemoryNullInvariant(x64asm::Mem m, bool is_rewrite, bool is_null)
     : m_(m), is_rewrite_(is_rewrite), is_null_(is_null) {
     is_rewrite_ = is_rewrite;
   }
@@ -97,14 +97,21 @@ public:
   }
 
   virtual std::ostream& serialize(std::ostream& out) const {
-    out << "NullMemoryInvariant" << std::endl;
-    out << m_ << " " << is_rewrite_ << " " << is_null_ << std::endl;
+    out << "MemoryNullInvariant" << std::endl;
+    const x64asm::Operand* op = static_cast<const x64asm::Operand*>(&m_);
+    out << *op << " " << is_rewrite_ << " " << is_null_ << std::endl;
     return out;
+  }
+
+  MemoryNullInvariant(std::istream& is) : m_(x64asm::M8(x64asm::Imm32(0))) {
+    x64asm::M8 m8(x64asm::Imm32(0));
+    is >> std::ws >> m8 >> is_rewrite_ >> is_null_;
+    m_ = *static_cast<x64asm::Mem*>(&m8);
   }
 
 private:
 
-  const x64asm::Mem m_;
+  x64asm::Mem m_;
   bool is_rewrite_;
   bool is_null_;
 

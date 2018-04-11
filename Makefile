@@ -402,6 +402,11 @@ src/validator/handlers.h: .FORCE
 	cmp -s $@ src/validator/handlers-tmp || mv src/validator/handlers-tmp $@;
 	rm -f src/validator/handlers-tmp
 
+src/validator/invariants.h: .FORCE
+	src/validator/generate_invariants_h.sh src/validator invariants-tmp; \
+	cmp -s $@ src/validator/invariants-tmp || mv src/validator/invariants-tmp $@;
+	rm -f src/validator/invariants-tmp
+
 ##### BUILD TARGETS
 
 src/cfg/%.o: src/cfg/%.cc $(DEPS)

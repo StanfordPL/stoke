@@ -82,6 +82,8 @@ public:
     return out;
   }
 
+  MemoryEqualityInvariant(std::istream& is) { }
+
 
 private:
 

@@ -70,6 +70,11 @@ public:
     return out;
   }
 
+  RangeInvariant(std::istream& is) : variable_(is) {
+    is >> min_ >> max_;
+  }
+
+
 private:
 
   Variable variable_;

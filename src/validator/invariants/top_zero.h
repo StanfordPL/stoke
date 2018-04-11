@@ -59,6 +59,11 @@ public:
     return out;
   }
 
+  TopZeroInvariant(std::istream& is) : reg_(x64asm::rax) {
+    is >> reg_ >> is_rewrite_;
+  }
+
+
 private:
 
   x64asm::R64 reg_;

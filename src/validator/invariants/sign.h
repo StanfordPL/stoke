@@ -75,6 +75,12 @@ public:
     return out;
   }
 
+  SignInvariant(std::istream& is) : variable_(is) {
+    is >> positive_;
+  }
+
+
+
 private:
 
   Variable variable_;

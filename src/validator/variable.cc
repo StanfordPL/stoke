@@ -122,6 +122,20 @@ ostream& Variable::serialize(ostream& out) const {
   return out;
 }
 
+istream& Variable::deserialize(istream& in) {
+  in >> is_rewrite >> ws
+     >> size >> ws
+     >> offset >> ws
+     >> coefficient >> ws
+     >> is_ghost >> ws;
+  if(is_ghost) {
+    in >> name >> ws;
+  } else {
+    in >> operand >> ws;
+  }
+  return in;
+}
+
 
 namespace std {
 

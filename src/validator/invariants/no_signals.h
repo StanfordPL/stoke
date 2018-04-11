@@ -52,7 +52,7 @@ public:
     return out;
   }
 
-
+  NoSignalsInvariant(std::istream& is) { }
 
 private:
 

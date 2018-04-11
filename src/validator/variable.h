@@ -67,6 +67,10 @@ struct Variable {
   Variable(std::string var, bool rewrite, size_t sz=8) : is_rewrite(rewrite), size(sz),
     offset(0), coefficient(1), operand(x64asm::rax), is_ghost(true), name(var) { }
 
+  Variable(std::istream& is) : operand(x64asm::rax) {
+    deserialize(is);
+  }
+
   bool operator<(const Variable& other) const {
     if(is_rewrite != other.is_rewrite)
       return is_rewrite < other.is_rewrite;
@@ -85,7 +89,30 @@ struct Variable {
     return false;
   }
 
+  bool operator==(const Variable& other) const {
+    if(is_rewrite != other.is_rewrite)
+      return false;
+    if(size != other.size)
+      return false;
+    if(coefficient != other.coefficient)
+      return false;
+    if(operand != other.operand)
+      return false;
+    if(name != other.name)
+      return false;
+    if(is_ghost != other.is_ghost)
+      return false;
+    if(offset != other.offset)
+      return false;
+    return true;
+  }
+
+  bool operator!=(const Variable& other) const {
+    return !(*this == other);
+  }
+
   std::ostream& serialize(std::ostream& out) const;
+  std::istream& deserialize(std::istream& is);
 };
 
 }
