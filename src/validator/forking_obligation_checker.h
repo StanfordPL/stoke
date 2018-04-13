@@ -70,6 +70,17 @@ public:
 
 private:
 
+  // Operations:
+  // 1. check if there's a free process
+  // 2. get fd to free process
+  // 3. poll all running processes
+  // 4. stop a running process
+  // 5. make a free process running, and get a handle to its data
+  // 6. kill a running process
+
+
+
+
   struct ProcessInfo {
     // info on process
     int fd;

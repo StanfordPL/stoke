@@ -378,6 +378,20 @@ void SmtObligationChecker::check(
   Callback& callback,
   void* optional) {
 
+  cout << "== PROBLEM ==" << endl;
+  Obligation ob;
+  ob.target = target;
+  ob.rewrite = rewrite;
+  ob.target_block = target_block;
+  ob.rewrite_block = rewrite_block;
+  ob.P = P;
+  ob.Q = Q;
+  ob.assume = &assume;
+  ob.prove = &prove;
+  ob.testcases = testcases;
+  ob.write_text(cout);
+  cout << "END" << endl;
+
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
   microseconds perf_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());

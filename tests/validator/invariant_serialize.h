@@ -24,8 +24,8 @@ protected:
     stringstream ss;
     inv->serialize(ss);
     auto copy = ss.str();
-    cout << "Invariant: " << *inv << endl;
-    cout << "Serialized: " << endl << copy << endl;
+    //cout << "Invariant: " << *inv << endl;
+    //cout << "Serialized: " << endl << copy << endl;
 
     // check that deserialization results in an invariant with the same representation
     auto new_inv = Invariant::deserialize(ss);

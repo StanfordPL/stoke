@@ -89,10 +89,35 @@ public:
   friend std::ostream& operator<<(std::ostream&, const Result&);
   friend std::istream& operator>>(std::istream&, Result&);
 
+  struct Obligation {
+    Cfg target;
+    Cfg rewrite;
+    Cfg::id_type target_block;
+    Cfg::id_type rewrite_block;
+    CfgPath P;
+    CfgPath Q;
+    Invariant* assume;
+    Invariant* prove;
+    std::vector<std::pair<CpuState, CpuState>> testcases;
+
+    std::istream& read_text(std::istream& is);
+    std::ostream& write_text(std::ostream& os) const;
+
+    Obligation() : 
+      target(TUnit(), x64asm::RegSet::empty(), x64asm::RegSet::empty()),
+      rewrite(TUnit(), x64asm::RegSet::empty(), x64asm::RegSet::empty())
+    {
+
+    }
+  };
+
+  friend std::ostream& operator<<(std::ostream&, const Obligation&);
+  friend std::istream& operator>>(std::istream&, Obligation&);
+
   typedef std::function<void (Result&, void*)> Callback;
 
   ObligationChecker() 
-  {
+    {
     set_alias_strategy(AliasStrategy::FLAT);
     set_nacl(false);
     set_basic_block_ghosts(true);
@@ -180,6 +205,12 @@ public:
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      void* optional = NULL) = 0;
+
+  void check(const Obligation& problem, Callback& callback, void* optional = NULL) {
+    check(problem.target, problem.rewrite, problem.target_block, problem.rewrite_block,
+          problem.P, problem.Q, *problem.assume, *problem.prove, problem.testcases,
+          callback, optional);
+  }
 
   /** Blocks until all the checking has done and the callbacks have been called. */
   virtual void block_until_complete() {

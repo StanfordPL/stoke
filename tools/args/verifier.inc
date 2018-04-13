@@ -32,7 +32,13 @@ cpputil::ValueArg<std::string>& strategy_arg =
   .default_val("hold_out");
 
 cpputil::Heading& validator_heading =
-  cpputil::Heading::create("Common Formal Validation Options:");
+  cpputil::Heading::create("Obligation Checker Options:");
+
+cpputil::ValueArg<std::string>& obligation_checker_arg =
+  cpputil::ValueArg<std::string>::create("obligation_checker")
+  .usage("(smt|pubsub)")
+  .description("System technologies for discharging proof obligations (SMT vs cloud...)")
+  .default_val("smt");
 
 cpputil::ValueArg<std::string>& alias_strategy_arg =
   cpputil::ValueArg<std::string>::create("alias_strategy")

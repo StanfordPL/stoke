@@ -24,8 +24,6 @@
 #include "src/validator/ddec.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
-#include "src/validator/forking_obligation_checker.h"
-#include "src/validator/smt_obligation_checker.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
@@ -37,15 +35,14 @@
 #include "tools/args/testcases.inc"
 #include "tools/args/verifier.inc"
 #include "tools/gadgets/solver.h"
+#include "tools/gadgets/obligation_checker.h"
 
 namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
 
-  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : verifier_(NULL), solver_(NULL) {
-
-    solver_ = new SolverGadget();
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : verifier_(NULL) {
 
     std::vector<Verifier*> verifiers;
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
@@ -85,55 +82,15 @@ public:
 
 private:
 
-  void make_oc() {
-    handler_ = new ComboHandler();
-    filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
-    auto z3 = new Z3Solver();
-    auto cvc4 = new Cvc4Solver();
-
-    auto smt1 = new SmtObligationChecker(*z3, *filter_);
-    smt1->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-
-    auto smt2 = new SmtObligationChecker(*cvc4, *filter_);
-    smt2->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-
-    auto smt3 = new SmtObligationChecker(*z3, *filter_);
-    smt3->set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
-
-    auto smt4 = new SmtObligationChecker(*cvc4, *filter_);
-    smt4->set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
-
-    //std::vector<ObligationChecker*> checkers = {smt1, smt2, smt3, smt4};
-    std::vector<ObligationChecker*> checkers = { smt2 };
-    oc_ = new ForkingObligationChecker(checkers, process_count_arg.value());
-  }
-
-  ObligationChecker::AliasStrategy parse_alias() {
-    std::string alias = alias_strategy_arg.value();
-
-    if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
-      return ObligationChecker::AliasStrategy::BASIC;
-    } else if (alias == "flat" || alias == "array") {
-      return ObligationChecker::AliasStrategy::FLAT;
-    } else if (alias == "arm") {
-      return ObligationChecker::AliasStrategy::ARM;
-    } else if (alias == "arms_race") {
-      return ObligationChecker::AliasStrategy::ARMS_RACE;
-    } else {
-      std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
-      exit(1);
-    }
-  }
-
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
-      make_oc();
+      oc_ = new ObligationCheckerGadget();
       auto bv = new BoundedValidator(*oc_);
       bv->set_bound(bound_arg.value());
       bv->set_no_bailout(no_bailout_arg.value());
       return bv;
     } else if (s == "ddec") {
-      make_oc();
+      oc_ = new ObligationCheckerGadget();
       auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_thread_count(1);
@@ -160,7 +117,6 @@ private:
   Filter* filter_;
   ObligationChecker* oc_;
   Verifier* verifier_;
-  SMTSolver* solver_;
 };
 
 } // namespace stoke

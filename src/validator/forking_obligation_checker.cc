@@ -88,8 +88,6 @@ void ForkingObligationChecker::check(
       close(pipefd[0]);
       Callback callback = [&pipefd, child_checker] (Result& result, void* info) {
         // send data back to parent proccess
-        __gnu_cxx::stdio_filebuf<char> buf(pipefd[1], std::ios::in);
-
         stringstream ss;
         result.write_text(ss);
         ss << endl;
