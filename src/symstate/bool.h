@@ -447,7 +447,9 @@ public:
 
 } //namespace stoke
 
+namespace std {
+
 std::ostream& operator<< (std::ostream& out, const stoke::SymBool& bv);
 
-
+}
 #endif
