@@ -15,8 +15,6 @@
 #include "src/validator/pubsub_obligation_checker.h"
 #include <unistd.h>
 #include <cstdio>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 using namespace std;
 using namespace stoke;

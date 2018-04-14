@@ -22,6 +22,9 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 
 #include "src/validator/handlers/combo_handler.h"
 #include "src/validator/filters/default.h"
@@ -54,6 +57,13 @@ public:
 
     init_publisher();
     init_subscriber();
+  }
+
+  ~PubsubObligationChecker() {
+    kill(publisher_pid_, SIGTERM);
+    kill(subscriber_pid_, SIGTERM);
+    waitpid(publisher_pid_, NULL, 0);
+    waitpid(subscriber_pid_, NULL, 0);
   }
 
   PubsubObligationChecker& enable_z3(bool b) {

@@ -20,7 +20,6 @@
 #include "src/solver/cvc4solver.h"
 #endif
 #include "src/solver/parallel.h"
-#include "src/solver/process_isolated.h"
 #include "src/solver/z3solver.h"
 #include "tools/args/solver.inc"
 
