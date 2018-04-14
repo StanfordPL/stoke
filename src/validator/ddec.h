@@ -160,7 +160,7 @@ private:
   bool try_sign_extend_;
 
   size_t callbacks_expected_;
-  std::atomic<size_t> callbacks_count_;
+  size_t callbacks_count_;
 
   ObligationChecker::Callback callback_;
 

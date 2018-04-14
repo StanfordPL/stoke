@@ -29,6 +29,7 @@
 #include "src/solver/smtsolver.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/smt_obligation_checker.h"
+#include "src/validator/pubsub_obligation_checker.h"
 #include "src/validator/filters/bound_away.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -50,7 +51,8 @@ public:
       solver_ = new SolverGadget();
       child_ = new SmtObligationChecker(*solver_, *filter_);
     } else if (oc_type == "pubsub") {
-
+      child_ = new PubsubObligationChecker(
+          "/afs/cs.stanford.edu/u/berkeley/.rvm/rubies/ruby-2.5.1/bin/ruby");
     }
 
     set_alias_strategy(parse_alias());

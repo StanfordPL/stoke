@@ -177,17 +177,18 @@ public:
                     Invariant& assume, Invariant& prove,
                     const std::vector<std::pair<CpuState, CpuState>>& testcases) {
 
-    std::atomic<bool> await_complete(false);
     Result await_result;
     
     Callback callback = [&] (Result& result, void*) {
+      std::cout << "[check_wait] got callback" << std::endl;
       await_result = result;
-      await_complete.store(true, std::memory_order_release);
     };
 
+    std::cout << "[check_wait] calling check" << std::endl;
     check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases,
           callback, NULL);
 
+    std::cout << "[check_wait] blocking" << std::endl;
     block_until_complete();
     
     return await_result;

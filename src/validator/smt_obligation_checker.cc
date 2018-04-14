@@ -36,14 +36,14 @@
 #define ALIAS_CASE_DEBUG(X) {  }
 //#define DEBUG_ARMS_RACE(X)  X
 #define DEBUG_ARMS_RACE(X)  { }
-#define DEBUG_FIXPOINT(X) { X } 
+#define DEBUG_FIXPOINT(X) { } 
 
 //#ifdef STOKE_DEBUG_CEG
 //#define CEG_DEBUG(X) { X }
 //#else
 //#define CEG_DEBUG(X) { }
 //#endif
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -378,6 +378,7 @@ void SmtObligationChecker::check(
   Callback& callback,
   void* optional) {
 
+  /*
   cout << "== PROBLEM ==" << endl;
   Obligation ob;
   ob.target = target;
@@ -391,6 +392,7 @@ void SmtObligationChecker::check(
   ob.testcases = testcases;
   ob.write_text(cout);
   cout << "END" << endl;
+  */
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;

@@ -526,10 +526,16 @@ void DdecValidator::discharge_thread_run(DualAutomata& dual, DischargeState& sta
   */
 
   callbacks_expected_ = 0;
-  callbacks_count_.store(0);
+  callbacks_count_ = 0;
 
   discharge_thread(*this, dual, state, 0);
   checker_.block_until_complete();
+
+  if(callbacks_count_ < callbacks_expected_) {
+    cout << "Too few callbacks returned.  Expected " << callbacks_expected_
+         << " and got " << callbacks_count_ << endl;
+    exit(1);
+  }
 
 
   /*vector<thread> threads;
