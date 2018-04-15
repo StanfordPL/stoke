@@ -47,6 +47,10 @@ void BoundedValidator::callback(ObligationChecker::Result& result, CallbackData&
       found_ceg_.store(true);
       lock_guard<mutex> guard(ceg_m);
       counterexamples_.push_back(result.target_ceg);
+      if(counterexamples_.size() == 1) {
+        target_final_state_ = result.target_final_ceg;
+        rewrite_final_state_ = result.rewrite_final_ceg;
+      }
     }
   }
 
@@ -118,12 +122,20 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   count_.store(0);
   found_ceg_.store(false);
   correct_.store(true);
+  has_error_ = false;
+  error_ = "";
 
   vector<CfgPath> target_paths;
   vector<CfgPath> rewrite_paths;
 
   // Step 0: Background checks
-  sanity_checks(target, rewrite);
+  try {
+    sanity_checks(target, rewrite);
+  } catch (validator_error e) {
+    error_ = e.get_message();
+    has_error_ = true; 
+    return false;
+  }
 
   // Step 1: get all the paths from the enumerator
   for (auto path : CfgPaths::enumerate_paths(target, bound_)) {

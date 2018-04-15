@@ -18,6 +18,7 @@
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
+#include "src/validator/error.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/memory_equality.h"
@@ -206,43 +207,6 @@ bool SmtObligationChecker::check_counterexample(
 }
 
 
-
-
-
-
-SymBool SmtObligationChecker::get_path_constraint(const Cfg& cfg,
-    SymState& state_orig,
-    Cfg::id_type cfg_start,
-    const CfgPath& P,
-    size_t& invariant_number) {
-
-  cout << "get_path_constraint start=" << cfg_start << " P=" << P << endl;
-
-  // Initialize state copy
-  SymState state = state_orig;
-  state.constraints.clear();
-
-  // Generate line map
-  LineMap line_map;
-  Code c;
-  generate_linemap(cfg, P, line_map, false, c);
-
-  auto ji = get_jump_inv(cfg, cfg_start, P, true);
-  SymBool conjunction = (*ji)(state_orig, state_orig, invariant_number);
-  // Build the circuits
-  size_t line_no = 0;
-  for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(cfg, P[i], is_jump(cfg, cfg_start, P, i), state, line_no, line_map, i == P.size() - 1);
-
-  // Extract the conjunction
-  for (auto it : state.constraints) {
-    conjunction = conjunction & it;
-  }
-
-  return conjunction;
-}
-
-
 void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
                                       SymState& state, size_t& line_no, const LineMap& line_info, bool ignore_last_line) {
 
@@ -428,7 +392,6 @@ void SmtObligationChecker::check(
 #endif
 
   // Step 2: Build circuits
-
   vector<SymBool> constraints;
 
   SymState state_t("1_INIT");
@@ -506,12 +469,25 @@ void SmtObligationChecker::check(
     constraints.push_back(conj);
   }
 
+
   size_t line_no = 0;
-  for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, i == P.size() - 1);
-  line_no = 0;
-  for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, i == Q.size() - 1);
+  try {
+    for (size_t i = 0; i < P.size(); ++i)
+      build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, i == P.size() - 1);
+    line_no = 0;
+    for (size_t i = 0; i < Q.size(); ++i)
+      build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, i == Q.size() - 1);
+  } catch (validator_error e) {
+    stringstream message;
+    message << e.get_file() << ":" << e.get_line() << ": " << e.get_message();
+    auto str = message.str();
+    return_error(callback, str, optional);
+    delete state_t.memory;
+    delete state_r.memory;
+    return;
+  }
+
+
 
   constraints.insert(constraints.end(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.end(), state_r.constraints.begin(), state_r.constraints.end());

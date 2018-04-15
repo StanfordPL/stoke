@@ -87,13 +87,11 @@ public:
     return counterexamples_;
   }
 
-  /** Get the expected final state of the target after running counterexample.
-    (This is only for the fuzz tester, basically).  It is only valid if we just
-    returned a counterexample.  It also doesn't handle memory writes right. */
+  /** Get the expected final state of the target after running counterexample. */
   CpuState get_target_final_state() {
     return target_final_state_;
   }
-  /** Get the expected final state of the rewrite.  See caveats above. */
+  /** Get the expected final state of the rewrite. */
   CpuState get_rewrite_final_state() {
     return rewrite_final_state_;
   }

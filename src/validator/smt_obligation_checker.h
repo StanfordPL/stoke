@@ -132,9 +132,6 @@ private:
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map, bool ignore_last_line);
 
-  /** Get constraint expressing that a particular path is taken from some state. */
-  SymBool get_path_constraint(const Cfg& cfg, SymState& state_orig, Cfg::id_type cfg_start, const CfgPath& P, size_t& invariant_no);
-
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {
     std::stringstream os;
