@@ -79,16 +79,17 @@ def process_smt(message, attrs)
   # create temporary file for output
   outfile = Tempfile.new('ocoutput')
   outfile.close
-  puts "Temp paths #{infile.path} and #{outfile.path}"
-  puts "Infile exits? #{File.file?(infile.path)}"
-  puts "Outfile exits? #{File.file?(outfile.path)}"
+  ocerr = Tempfile.new('ocerr')
+  ocerr.close
+
+  puts "Temp paths #{infile.path}, #{outfile.path} #{ocerr.path}"
 
   puts "Running OC"
   # run obligation checker
 
   pid = Process.fork()
   if pid.nil? then
-    exec("stoke_obligation_check --solver #{solver} --alias_strategy #{model} < #{infile.path} > #{outfile.path}")
+    exec("/usr/bin/timeout 1h stoke_obligation_check --solver #{solver} --alias_strategy #{model} < #{infile.path} > #{outfile.path} 2>#{ocerr.path}")
   end
   puts "Waiting on #{pid}"
   Process.waitpid(pid)
@@ -99,7 +100,13 @@ def process_smt(message, attrs)
   data = File.read(outfile.path)
   infile.unlink
   outfile.unlink
+  ocerr.unlink
   puts "Deleting temporary files"
+
+  if data.size == 0 then
+    data = generate_error("stoke_obligation_check failed")
+    puts "Encountered error for #{attrs["job"]} with solver #{solver} strategy #{model}"
+  end
 
   # publish response to output topic
   output_topic_name = attrs["output-topic"];
@@ -107,6 +114,10 @@ def process_smt(message, attrs)
   output_topic.publish_async data, attrs
   puts "Finished #{attrs["job"]} with solver #{solver} strategy #{model}"
 
+end
+
+def generate_error(m)
+  "0 0 1\n#{m}\n"
 end
 
 def process_message(message)
@@ -129,6 +140,7 @@ def work(options, sub)
       message.acknowledge!
       count = count+1
       puts "COUNT = " + count.to_s
+      STDOUT.flush
     else
       puts "Can't handle this!"
       exit
@@ -152,6 +164,7 @@ puts options
 topic = get_topic(options[:topic])
 subscription = get_subscription(topic, options[:topic])
 puts subscription
+STDOUT.flush
 
 work(options, subscription)
 

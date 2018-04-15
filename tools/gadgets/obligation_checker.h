@@ -66,6 +66,17 @@ public:
       set_fixpoint_up(true);
   }
 
+  ~ObligationCheckerGadget() {
+    if(child_)
+      delete child_;
+    if(handler_)
+      delete handler_;
+    if(filter_)
+      delete filter_;
+    if(solver_)
+      delete solver_;
+  }
+
   /** Set strategy for aliasing */
   ObligationChecker& set_alias_strategy(AliasStrategy as) {
     child_->set_alias_strategy(as);

@@ -86,9 +86,6 @@ public:
     Result() { }
   };
 
-  friend std::ostream& operator<<(std::ostream&, const Result&);
-  friend std::istream& operator>>(std::istream&, Result&);
-
   struct Obligation {
     Cfg target;
     Cfg rewrite;
@@ -111,9 +108,7 @@ public:
     }
   };
 
-  friend std::ostream& operator<<(std::ostream&, const Obligation&);
-  friend std::istream& operator>>(std::istream&, Obligation&);
-
+  
   typedef std::function<void (Result&, void*)> Callback;
 
   ObligationChecker() 
@@ -242,5 +237,15 @@ protected:
 };
 
 } //namespace stoke
+
+namespace std{
+
+std::ostream& operator<<(std::ostream&, const stoke::ObligationChecker::Result&);
+std::istream& operator>>(std::istream&, stoke::ObligationChecker::Result&);
+std::ostream& operator<<(std::ostream&, const stoke::ObligationChecker::Obligation&);
+std::istream& operator>>(std::istream&, stoke::ObligationChecker::Obligation&);
+
+}
+
 
 #endif

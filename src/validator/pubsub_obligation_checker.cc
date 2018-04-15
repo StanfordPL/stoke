@@ -81,7 +81,7 @@ void PubsubObligationChecker::check(const Cfg& target, const Cfg& rewrite,
         *os_ << pair.first << " " << pair.second << endl;
       }
       *os_ << "== DATA ==" << endl;
-      oblig.write_text(*os_);
+      *os_ << oblig;
       *os_ << "== END ==" << endl;
     }
   }
@@ -107,25 +107,28 @@ void PubsubObligationChecker::block_until_complete() {
     *is_ >> job_id; 
     if(is_->fail()) {
       cout << "looks like parsing failed for job_id" << endl;
-      break;
+      exit(1);
     }
 
-    cout << "job_id: " << job_id << endl;
+    //cout << "job_id: " << job_id << endl;
 
     string line;
     Result r;
+    stringstream data;
     while(true) {
-      stringstream data;
-      cout << "getting line" << endl;
+      //cout << "getting line" << endl;
       getline(*is_, line);
       if(is_->fail()) {
         cout << "looks like parsing failed after getline" << endl;
+        exit(1);
         break;
       }
-      cout << line << endl;
+      //cout << line << endl;
       if(line == "== END ==") {
-        cout << "reading result" << endl;
-        r.read_text(data);
+        //cout << "reading result" << endl;
+        //cout << "data is " << endl << data.str() << endl;
+        data >> r;
+        //cout << "result is " << endl << r << endl;
         break;
       } else {
         data << line << endl;
@@ -155,7 +158,6 @@ void PubsubObligationChecker::init_publisher() {
 
     publisher_buffer_ = new __gnu_cxx::stdio_filebuf<char>(publisher_fd_, std::ios::out);
     os_ = new ostream(publisher_buffer_);
-    //os_ = &cout;
 
   } else {
     // child
@@ -205,7 +207,6 @@ void PubsubObligationChecker::init_subscriber() {
 
     subscriber_buffer_ = new __gnu_cxx::stdio_filebuf<char>(subscriber_fd_, std::ios::in);
     is_ = new istream(subscriber_buffer_);
-    //os_ = &cout;
     first_read_ = true;
 
   } else {

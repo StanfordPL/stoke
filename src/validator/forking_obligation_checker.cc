@@ -309,7 +309,7 @@ void ForkingObligationChecker::poll_and_read(bool fast) {
 void ForkingObligationChecker::finish_process(ProcessInfo& pi) const{
   ObligationChecker::Result result;
   stringstream ss(pi.data);
-  result.read_text(ss);
+  ss >> result;
   DEBUG_FORKING_CHECKER(cout << "[finish_process] got result: " << endl;
   result.write_text(cout);
   cout << endl;

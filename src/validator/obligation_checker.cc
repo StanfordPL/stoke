@@ -22,15 +22,15 @@ using namespace std;
 using namespace x64asm;
 using namespace cpputil;
 
-ostream& operator<<(ostream& strm, const stoke::ObligationChecker::Result& result) {
+ostream& std::operator<<(ostream& strm, const stoke::ObligationChecker::Result& result) {
   return result.write_text(strm);
 }
 
-istream& operator>>(std::istream& strm, stoke::ObligationChecker::Result& result) {
+istream& std::operator>>(istream& strm, stoke::ObligationChecker::Result& result) {
   return result.read_text(strm);
 }
 
-std::istream& ObligationChecker::Result::read_text(std::istream& is) {
+istream& ObligationChecker::Result::read_text(istream& is) {
   is >> verified >> has_ceg >> has_error >> ws;
   if(has_error)
     is >> error_message >> ws; 
@@ -43,7 +43,7 @@ std::istream& ObligationChecker::Result::read_text(std::istream& is) {
   return is;
 }
 
-std::ostream& ObligationChecker::Result::write_text(std::ostream& os) const {
+ostream& ObligationChecker::Result::write_text(ostream& os) const {
   os << verified << " " << has_ceg << " " << has_error << endl;
   if(has_error)
     os << error_message << endl;
@@ -57,15 +57,15 @@ std::ostream& ObligationChecker::Result::write_text(std::ostream& os) const {
 }
 
 
-ostream& operator<<(ostream& strm, const stoke::ObligationChecker::Obligation& result) {
+ostream& std::operator<<(ostream& strm, const stoke::ObligationChecker::Obligation& result) {
   return result.write_text(strm);
 }
 
-istream& operator>>(std::istream& strm, stoke::ObligationChecker::Obligation& result) {
+istream& std::operator>>(istream& strm, stoke::ObligationChecker::Obligation& result) {
   return result.read_text(strm);
 }
 
-std::istream& ObligationChecker::Obligation::read_text(std::istream& is) {
+istream& ObligationChecker::Obligation::read_text(istream& is) {
   size_t p_count, q_count, tc_count;
   Code target_code, rewrite_code;
 
@@ -119,7 +119,7 @@ std::istream& ObligationChecker::Obligation::read_text(std::istream& is) {
   return is;
 }
 
-std::ostream& ObligationChecker::Obligation::write_text(std::ostream& os) const {
+ostream& ObligationChecker::Obligation::write_text(ostream& os) const {
   os << target.get_function().get_code() << endl << endl;
   os << "CODEEND" << endl;
   os << rewrite.get_function().get_code() << endl << endl;

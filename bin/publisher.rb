@@ -26,6 +26,7 @@ end
 
 def publish(topic, attributes, data)
   puts "Publishing " + attributes["job"].to_s + " with solver/strategy " + attributes["solver"] + " / " + attributes["model"]
+  STDOUT.flush
   topic.publish_async data, attributes
 end
 
@@ -82,6 +83,7 @@ options = parse_options
 puts options
 topic = get_topic(options[:id], options[:topic])
 puts "Got topic #{topic}"
+STDOUT.flush
 publish_loop(topic)
 
 

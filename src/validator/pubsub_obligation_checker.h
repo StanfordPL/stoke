@@ -60,8 +60,8 @@ public:
   }
 
   ~PubsubObligationChecker() {
-    kill(publisher_pid_, SIGTERM);
-    kill(subscriber_pid_, SIGTERM);
+    kill(publisher_pid_, SIGKILL);
+    kill(subscriber_pid_, SIGKILL);
     waitpid(publisher_pid_, NULL, 0);
     waitpid(subscriber_pid_, NULL, 0);
   }

@@ -44,20 +44,23 @@ public:
 
   VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : verifier_(NULL) {
 
-    std::vector<Verifier*> verifiers;
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
     for (auto it : splits) {
       if (it == "hold_out" && (test_set_arg.value().size() == 0 || testcases_arg.value().size() == 0)) {
         cpputil::Console::error() << "No test-cases given for hold_out verification." << std::endl;
       }
-      verifiers.push_back(make_by_name(it, sandbox, fxn, inv));
+      verifiers_.push_back(make_by_name(it, sandbox, fxn, inv));
     }
 
-    verifier_ = new SequenceVerifier(verifiers);
+    verifier_ = new SequenceVerifier(verifiers_);
     verifier_->set_heap_out(heap_out_arg.value());
     verifier_->set_stack_out(stack_out_arg.value());
+  }
 
-
+  ~VerifierGadget() {
+    for(auto it : verifiers_)
+      delete it;
+    delete verifier_;
   }
 
   inline bool verify(const Cfg& target, const Cfg& rewrite) {
@@ -113,6 +116,7 @@ private:
     return{first, last};
   }
 
+  std::vector<Verifier*> verifiers_;
   Handler* handler_;
   Filter* filter_;
   ObligationChecker* oc_;

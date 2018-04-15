@@ -29,6 +29,10 @@ public:
     has_error_ = false;
   }
 
+  virtual ~Verifier() {
+
+  }
+
   /** Set if the heap is live out */
   virtual Verifier& set_heap_out(bool b) {
     heap_out_ = b;
