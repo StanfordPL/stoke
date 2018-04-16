@@ -127,7 +127,7 @@ def monitor_kill(id, exclude_pid, job)
   s.delete?(exclude_pid)
   s.each do |pid|
     begin
-      Process.kill "KILL", pid
+      Process.kill "TERM", pid
     rescue
       # process.kill throws an exception if pid isn't found, not what we want
     end
@@ -301,7 +301,14 @@ def work(options, sub)
   subscriber = sub.listen :threads => { :callback => options[:jobs] },
                           :inventory => options[:jobs] do |message|
     puts "Got message"
+    @working_mutex.synchronize do
+      @working = @working + 1
+      puts "WORKING: #{@working}"
+    end
     outcome = process_message(message, options)
+    @working_mutex.synchronize do
+      @working = @working - 1
+    end
     if outcome then
       puts "...ack"
       message.acknowledge!
@@ -325,6 +332,8 @@ options = parse_options
 puts options
 
 ## global variables
+@working_mutex = Mutex.new
+@working = 0
 @exception_mutex = Mutex.new
 @topic_cache = { }
 @pubsub = Google::Cloud::Pubsub.new :project => options[:id]
