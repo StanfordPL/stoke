@@ -298,7 +298,8 @@ def work(options, sub)
 
   count = 0
 
-  subscriber = sub.listen :threads => { :callback => options[:jobs] } do |message|
+  subscriber = sub.listen :threads => { :callback => options[:jobs] },
+                          :inventory => options[:jobs] do |message|
     puts "Got message"
     outcome = process_message(message, options)
     if outcome then
