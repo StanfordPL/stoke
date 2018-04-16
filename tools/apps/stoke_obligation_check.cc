@@ -27,14 +27,32 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+auto& io_opt = Heading::create("I/O options:");
+
+auto& filename_arg = ValueArg<string>::create("o")
+            .alternate("out")
+            .usage("<path/to/file.tc>")
+            .description("File to write testcases to (defaults to console if unspecified)");
+
+
+
 int main(int argc, char** argv) {
+
+  /** Parse command line arguments. */
+  CommandLineConfig::strict_with_convenience(argc, argv);
 
   ObligationChecker& obligation_checker = *(new ObligationCheckerGadget());
 
   /** Prepare the callback */
   ObligationChecker::Callback callback = [] (ObligationChecker::Result& result, void* optional) {
     /** On standard output, write the solution. */
-    result.write_text(cout);
+    if(filename_arg.value().size() > 0) {
+      ofstream of(filename_arg.value());
+      of << result;
+      of.close();
+    } else {
+      cout << result;
+    }
     exit(0);
   };
 

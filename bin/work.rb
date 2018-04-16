@@ -36,6 +36,7 @@ def has_entries(ids)
   # ids not found in cache
   noncached_ids = ids - cached_ids
   noncached_keys = noncached_ids.map { |x| @datastore.key "QueueJobInvalidation", x }
+  return cached_ids if noncached_keys.size == 0
 
   # database lookup of everything not found in cache
   result = @datastore.find_all *noncached_keys.to_a, :consistency => :eventual
