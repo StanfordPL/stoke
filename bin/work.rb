@@ -223,8 +223,6 @@ def process_smt(message, attrs, options)
   # create temporary file for output
   outfile = Tempfile.new('ocoutput')
   outfile.close
-  ocerr = Tempfile.new('ocerr')
-  ocerr.close
 
   #puts "Exists? #{File.exist?(infile.path)} #{File.exist?(outfile.path)} #{File.exist?(ocerr.path)}"
   #puts "Temp paths #{infile.path}, #{outfile.path} #{ocerr.path}"
@@ -233,7 +231,7 @@ def process_smt(message, attrs, options)
   # run obligation checker
   pid = Process.fork()
   if pid.nil? then
-    exec("/usr/bin/timeout #{options[:timeout]} stoke_obligation_check --solver #{solver} --alias_strategy #{model} <#{infile.path} >#{outfile.path} 2>#{ocerr.path}")
+    exec("/usr/bin/timeout #{options[:timeout]} stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}")
   end
   monitor_add(job, pid)
   puts "Waiting on #{pid} (job #{job})"
@@ -252,7 +250,6 @@ def process_smt(message, attrs, options)
   data = File.read(outfile.path)
   infile.unlink
   outfile.unlink
-  ocerr.unlink
 
   if data.size == 0 then
     data = generate_error("stoke_obligation_check failed")
