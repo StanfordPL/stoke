@@ -62,6 +62,14 @@ def has_cached_entry(id)
   in_cache
 end
 
+def has_queue_entry(id)
+  key = @datastore.key "QueueInvalidation", id
+  x = @datastore.find key, :consistency => :eventual
+  result = !x.nil?
+  return result
+end
+
+
 def has_entry(id)
   if has_cached_entry id
     return true
@@ -127,8 +135,12 @@ def monitor_kill(id, exclude_pid, job)
   s.delete?(exclude_pid)
   s.each do |pid|
     begin
-      Process.kill "TERM", pid
-    rescue
+      pgid = Process.getpgid(pid)
+      puts "Killing pid #{pid} with pgid #{pgid}"
+      Process.kill "TERM", -pgid
+    rescue Exception => e
+      puts "Got exception killing #{pid}"
+      puts e
       # process.kill throws an exception if pid isn't found, not what we want
     end
   end
@@ -149,6 +161,28 @@ def monitor_loop
     # kill all processes associated with these jobs
     to_kill.each do |job| 
       monitor_kill(job, 0, 0)
+    end
+
+    # check to make sure we have no bad queues
+    queue_check_list = Set.new
+    @queues_seen_mutex.synchronize do
+      queue_check_list.merge(@queues_seen)
+    end
+    @bad_queues_mutex.synchronize do
+      queue_check_list -= @bad_queues
+    end
+#puts "Checking for bad queues #{queue_check_list}"
+    new_bad_queues = Set.new
+    queue_check_list.each do |queue_name|
+      if has_queue_entry queue_name then
+        new_bad_queues.add(queue_name)
+        puts "Got bad queue #{queue_name}"
+      end
+    end
+    if new_bad_queues.size > 0 then
+      @bad_queues_mutex.synchronize do
+        @bad_queues.merge(new_bad_queues)
+      end
     end
   end
 end
@@ -197,6 +231,14 @@ def whitelist(var, list)
   end
 end
 
+def queue_is_bad(name)
+  okay = nil
+  @bad_queues_mutex.synchronize do
+    okay = @bad_queues.include?(name)
+  end
+  return okay
+end
+
 def process_smt(message, attrs, options)
 
   # get attributes
@@ -204,9 +246,17 @@ def process_smt(message, attrs, options)
   model = attrs["model"]
   job = attrs["job"]
   output_topic_name = attrs["output-topic"]
+  @queues_seen_mutex.synchronize do
+    @queues_seen.add(output_topic_name)
+  end
+  if queue_is_bad output_topic_name then
+    puts "Discarding #{job} on invalid queue #{output_topic_name}"
+    return
+  end
+
   whitelist(solver, ["z3", "cvc4"])
   whitelist(model, ["flat", "arm"])
-  puts "Handling #{job} with solver #{solver} strategy #{model}"
+  puts "Handling #{job} with solver #{solver} strategy #{model} queue #{output_topic_name}"
 
   # check if we can skip this
   datastore_key = "#{output_topic_name}-#{job}"
@@ -229,12 +279,12 @@ def process_smt(message, attrs, options)
   #puts "Running OC"
 
   # run obligation checker
-  pid = Process.fork()
-  if pid.nil? then
-    exec("/usr/bin/timeout #{options[:timeout]} stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}")
-  end
+  tmoutstring = "/usr/bin/timeout #{options[:timeout]}"
+  cmdstring = "stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}"
+  pid = spawn(cmdstring, :pgroup => 0)
   monitor_add(job, pid)
   puts "Waiting on #{pid} (job #{job})"
+  STDOUT.flush
   Process.waitpid(pid)
   monitor_remove(job, pid)
   puts "#{pid} Done (job #{job})"
@@ -242,6 +292,7 @@ def process_smt(message, attrs, options)
   # check if we were killed early
   if has_cached_entry datastore_key then
     puts "Looks like #{pid} (job #{job}) was killed early; not generating output" 
+    STDOUT.flush
     return
   end
 
@@ -254,6 +305,7 @@ def process_smt(message, attrs, options)
   if data.size == 0 then
     data = generate_error("stoke_obligation_check failed")
     puts "Encountered error for job #{job} pid #{pid} with solver #{solver} strategy #{model}"
+    STDOUT.flush
   end
 
   # publish response to output topic
@@ -266,6 +318,7 @@ def process_smt(message, attrs, options)
   monitor_kill(job, pid, job)
 
   puts "Finished #{job} with solver #{solver} strategy #{model}"
+  STDOUT.flush
 
 end
 
@@ -299,7 +352,7 @@ def work(options, sub)
   count = 0
 
   subscriber = sub.listen :threads => { :callback => options[:jobs] },
-                          :inventory => options[:jobs] do |message|
+                          :inventory => options[:jobs]*10 do |message|
     puts "Got message"
     @working_mutex.synchronize do
       @working = @working + 1
@@ -342,6 +395,10 @@ puts options
 @datastore = Google::Cloud::Datastore.new :project => options[:id]
 @monitor_map = { }
 @monitor_mutex = Mutex.new
+@queues_seen_mutex = Mutex.new
+@queues_seen = Set.new
+@bad_queues_mutex = Mutex.new
+@bad_queues = Set.new
 
 topic = get_topic(options[:topic])
 subscription = get_subscription(topic, options[:topic])
