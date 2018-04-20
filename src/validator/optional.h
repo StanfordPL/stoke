@@ -15,20 +15,37 @@ public:
     has_value_ = true;
   }
 
-  bool has_value() {
+  bool has_value() const {
     return has_value_;
   }
 
-  T operator*() {
+  T operator*() const {
     return x;
   }
 
-  T operator->() {
+  T operator->() const {
     return x;
   }
 
-  T value() {
+  T value() const {
     return x;
+  }
+
+  // no value < value(x)
+  bool operator<(const optional<T>& other) const {
+    // if other has no value, we're not less than it
+    if(!other.has_value())
+      return false;
+
+    // now, assume other has value
+    if(has_value())
+      return value() < other.value();
+    else
+      return true;
+  }
+
+  bool operator==(const optional<T>& other) const {
+    return other.has_value() == has_value() && other.x == x;
   }
 
 private:

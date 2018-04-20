@@ -174,6 +174,22 @@ public:
     return edges;
   }
 
+  /** Get the list of states with an inductive edge. */
+  std::vector<State> get_inductive_states() {
+    std::vector<State> outputs;
+    for(auto pair : next_edges_) {
+      auto start_state = pair.first;
+      for(auto edge : pair.second) {
+        assert(start_state == edge.from);
+        if(edge.to == edge.from) {
+          outputs.push_back(start_state); 
+          break;
+        }
+      }
+    }
+    return outputs;
+  }
+
   /** Get the list of edges from this state to this state. */
   std::vector<Edge> get_inductive_edges(State s) {
     std::vector<Edge> result;

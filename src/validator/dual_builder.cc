@@ -14,66 +14,14 @@ void DualBuilder::init() {
   state_exit_data_map_[template_.start_state()].insert(zero_vector);
 }
 
-/** Is there a next POD available? */
-bool DualBuilder::has_next() const {
-  if (first_)
-    return true;
-
-  // go through the frontiers; do any of them have a next class?
-  for (auto& frontier : frontiers_) {
-    if (frontier.current_class_index < frontier.all_classes.size() - 1) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /** Build the next possible automata. */
-DualAutomata DualBuilder::next() {
-  assert(has_next());
-
+DualAutomata DualBuilder::generate_pod(EquivalenceClassMap& ecm) {
   /** if it's the first call to next, just generate what we have. */
-  if (first_) {
-    cout << "[next] generating initial POD" << endl;
-    while (!frontiers_complete()) {
-      next_frontier();
-    }
-    first_ = false;
-    return generate_current_pod();
-  }
-
-  /** if there's another equivalence class in this frontier, go for it. */
-  if (frontier_has_next_class()) {
-    next_class();
-    cout << "[next] frontier has next class:" << endl;
-    auto frontier = frontiers_.back();
-    frontier.all_classes[frontier.current_class_index].debug();
-
-    return generate_current_pod();
-  }
-
-  /** remove frontiers until we get to one that has a next equivalence class,
-    then increment its class.  Then, rebuild future frontiers until we're
-    in business. */
-  cout << "[next] frontier exhausted; backtracking" << endl;
-  while (frontiers_.size() && !frontier_has_next_class()) {
-    remove_frontier();
-  }
-
-  if (frontiers_.size() == 0) {
-    // oops, has_next() should have returned false!
-    throw "next() called with has_next() == false or bug";
-    return template_;
-  } else {
-    next_class();
-    cout << "[next] frontier has next class:" << endl;
-    auto frontier = frontiers_.back();
-    frontier.all_classes[frontier.current_class_index].debug();
-  }
-
+  cout << "[next] generating initial POD" << endl;
   while (!frontiers_complete()) {
-    next_frontier();
+    next_frontier(ecm);
   }
+  first_ = false;
   return generate_current_pod();
 }
 
@@ -218,48 +166,8 @@ std::vector<uint64_t> DualBuilder::get_invariant_class(DualAutomata::State& s, D
   return get_invariant_class(conj, e);
 }
 
-
-/** Find the next frontier and all the possible equivalence classes. */
-void DualBuilder::next_frontier() {
-  assert(!frontiers_complete());
-
-  cout << "==== Next Frontier ==== " << frontiers_.size() << endl;
-
-  const auto& topo_sort = template_.get_topological_sort();
-  size_t frontier_count = topo_sort.size();
-
-  /** Add a new frontier to the list and get a reference to it. */
-  Frontier new_f;
-  new_f.frontier_index = frontiers_.size();;
-  frontiers_.push_back(new_f);
-  Frontier& f = frontiers_.back();
-
-  f.parent = this;
-
-  /** Get the next node in the topological sort. */
-  f.head = topo_sort[f.frontier_index];
-  auto my_exit_data = state_exit_data_map_[f.head];
-  cout << "   [my_exit_data] at " << f.head << endl;
-  for(auto it : my_exit_data) {
-    cout << "     - " << it << endl;
-  }
-
-  /** Copy the equivalence class from the previous frontier. */
-  if (frontiers_.size() > 1) {
-    auto previous = frontiers_[f.frontier_index-1];
-    f.all_classes.push_back(previous.all_classes[previous.current_class_index]);
-    f.all_classes[0].edges.clear();
-  } else {
-    // for start node
-    EquivalenceClass c;
-    f.all_classes.push_back(c);
-  }
-  f.current_class_index = 0;
-
-  map<DualAutomata::State, vector<DualAutomata::Edge>> possible_edges;
-  // state -> classification -> possible edges
-
-  std::map<DualAutomata::State, vector<optional<uint64_t>>> handhold_class;
+DualBuilder::EquivalenceClassMap DualBuilder::get_handhold_class() {
+  DualBuilder::EquivalenceClassMap handhold_class;
   ifstream handhold("handhold.txt");
   string handhold_line;
   while(getline(handhold, handhold_line)) {
@@ -292,6 +200,49 @@ void DualBuilder::next_frontier() {
         cout << " *";
     cout << endl;
   }
+  return handhold_class;
+}
+
+/** Find the next frontier and all the possible equivalence classes. */
+void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
+  assert(!frontiers_complete());
+
+  cout << "==== Next Frontier ==== " << frontiers_.size() << endl;
+
+  const auto& topo_sort = template_.get_topological_sort();
+  size_t frontier_count = topo_sort.size();
+
+  /** Add a new frontier to the list and get a reference to it. */
+  Frontier new_f;
+  new_f.frontier_index = frontiers_.size();;
+  frontiers_.push_back(new_f);
+  Frontier& f = frontiers_.back();
+
+  f.parent = this;
+
+  /** Get the next node in the topological sort. */
+  f.head = topo_sort[f.frontier_index];
+  auto my_exit_data = state_exit_data_map_[f.head];
+  cout << "   [my_exit_data] at " << f.head << endl;
+  for(auto it : my_exit_data) {
+    cout << "     - " << it << endl;
+  }
+
+  /** Copy the equivalence class from the previous frontier. */
+  if (frontiers_.size() > 1) {
+    auto previous = frontiers_[f.frontier_index-1];
+    f.all_classes.push_back(previous.all_classes[previous.current_class_index]);
+    f.all_classes[0].edges.clear();
+  } else {
+    // for start node
+    ClassData c;
+    f.all_classes.push_back(c);
+  }
+  f.current_class_index = 0;
+
+  map<DualAutomata::State, vector<DualAutomata::Edge>> possible_edges;
+  // state -> classification -> possible edges
+
 
   /** Find all paths up to bound from current node to all others. */
   for (size_t i = f.frontier_index+1; i < frontier_count; ++i) {
@@ -365,8 +316,7 @@ void DualBuilder::next_frontier() {
             }
           } else {
 
-            // TODO: remove this handhold
-            auto handhold_classification = handhold_class[current];
+            auto handhold_classification = handhold_class.at(current);
             assert(handhold_classification.size() == classification.size());
             bool matches = true;
             for(size_t i = 0; i < handhold_classification.size(); ++i) {

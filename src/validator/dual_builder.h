@@ -11,6 +11,7 @@
 #include "src/validator/dual.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/equality.h"
+#include "src/validator/optional.h"
 
 namespace stoke {
 
@@ -39,11 +40,16 @@ public:
     return *this;
   }
 
-  /** Is there a next automata or are we out for this bound? */
-  bool has_next() const;
+  /** Type of equivalence class of a node. */
+  typedef std::vector<optional<uint64_t>> EquivalenceClass;
+  typedef std::map<DualAutomata::State, EquivalenceClass> EquivalenceClassMap;
 
-  /** Build the next possible automata. */
-  DualAutomata next();
+  /** Get handhold equivalence class (from a file) */
+  EquivalenceClassMap get_handhold_class();
+
+  /** Get POD from equivalence class */
+  DualAutomata generate_pod(EquivalenceClassMap& mp);
+
 
 private:
 
@@ -51,7 +57,7 @@ private:
   typedef std::map<DualAutomata::State, NodeClass> NodeClassMap;
 
   /** Data Structures */
-  struct EquivalenceClass {
+  struct ClassData {
     /** for each node, for each invariant, what's its constant? */
     NodeClassMap invariant_values;
     /** what are the edges in this class? */
@@ -75,7 +81,7 @@ private:
   struct Frontier {
     DualAutomata::State head;
     std::vector<DualAutomata::State> nodes;
-    std::vector<EquivalenceClass> all_classes;
+    std::vector<ClassData> all_classes;
     size_t current_class_index;
     size_t frontier_index;
     DualBuilder* parent;
@@ -84,6 +90,7 @@ private:
 
     void debug() {
       std::cout << "###### FRONTIER" << std::endl;
+
       std::cout << "head = " << head << std::endl;
       for (auto it : nodes)
         std::cout << it;
@@ -105,7 +112,7 @@ private:
   /** Run after constructor; find first POD. */
   void init();
   /** Find the next frontier and all the possible equivalence classes. */
-  void next_frontier();
+  void next_frontier(const EquivalenceClassMap&);
   /** Remove the last frontier -- nothing left to try. */
   void remove_frontier();
 

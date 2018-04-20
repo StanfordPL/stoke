@@ -895,31 +895,46 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   template_pod.print_all();
   cout << endl;
 
-  /** Get complete PODs */
-    {
-      DualBuilder builder(data_collector_, template_pod, *control_learner_);
-      builder.set_bound(target_bound_, rewrite_bound_);
-      while (builder.has_next()) {
-        cout << "[verify] next POD" << endl;
-        auto current = builder.next();
-        current.print_all();
-        bool sane = sanity_check(current);
-        if (!sane) {
-          cout << "[verify] this candidate is insane!! skipping." << endl;
-          continue;
-        }
-        cout << "[verify] found a sane POD. " << endl;
-        bool correct = verify_dual(current);
-        if (correct) {
-          return true;
-        }
-      }
-    }
+  cout << "[DdecValidator::verify()] debugging equivalence classes to try" << endl;
+  auto states = template_pod.get_inductive_states();
+  for(auto state : states) {
+    if(state == template_pod.start_state())
+      continue;
 
+    cout << "STATE " << state << endl;
+    auto classes = get_classes_for_state(template_pod, state);
+    for(auto cls : classes) {
+      cout << "   ";
+      for(auto it : cls) {
+        if(it.has_value())
+          cout << setw(3) << *it << " ";
+        else
+          cout << "  * ";
+      }
+      cout << endl;
+    }
+  }
+
+  DualBuilder builder(data_collector_, template_pod, *control_learner_);
+  builder.set_bound(target_bound_, rewrite_bound_);
+  auto classification = builder.get_handhold_class();
+  auto pod = builder.generate_pod(classification);
+  delete control_learner_;
+
+  cout << "[verify] Here's the POD!" << endl;
+  pod.print_all();
+
+  bool sane = sanity_check(pod);
+  if (!sane) {
+    cout << "[verify] this candidate is insane!!" << endl;
+    return false;
+  }
+  cout << "[verify] found a sane POD. " << endl;
+  bool correct = verify_dual(pod);
+  return correct;
 
   delete control_learner_;
   return false;
-
 }
 
 
@@ -981,4 +996,117 @@ ConjunctionInvariant* DdecValidator::get_fail_invariant() const {
   fail_invariant->add_invariant(new FalseInvariant());
 
   return fail_invariant;
+}
+
+set<DualBuilder::EquivalenceClass> DdecValidator::make_wildcard_classes(const set<DualBuilder::EquivalenceClass>& done, const vector<uint64_t>& remaining) {
+  if(remaining.size() == 0)
+    return done;
+
+  auto elem = remaining[0];
+  auto new_remaining = remaining;
+  new_remaining.erase(new_remaining.begin());
+  set<DualBuilder::EquivalenceClass> new_done;
+
+  if(done.size() == 0) {
+    new_done.insert({optional<uint64_t>()});
+    new_done.insert({optional<uint64_t>(elem)});
+  } else {
+    for(auto old_class : done) {
+      DualBuilder::EquivalenceClass new_class1 = old_class;
+      DualBuilder::EquivalenceClass new_class2 = old_class;
+      new_class1.push_back(optional<uint64_t>());
+      new_class2.push_back(optional<uint64_t>(elem));
+      new_done.insert(new_class1);
+      new_done.insert(new_class2);
+    }
+  }
+
+  /*cout << "[make_wildcard_classes] "
+       << "elem=" << elem 
+       << " done=" << done.size() 
+       << " new_done=" << new_done.size() 
+       << " remaining=" << remaining.size() 
+       << " new_remaining=" << new_remaining.size() << endl;*/
+
+  return make_wildcard_classes(new_done, new_remaining);
+}
+
+vector<DualBuilder::EquivalenceClass> DdecValidator::get_classes_for_state(DualAutomata& templ, DualAutomata::State state) {
+  
+  set<DualBuilder::EquivalenceClass> classes;
+  auto start = templ.start_state();
+  auto tps = CfgPaths::enumerate_paths(target_, target_bound_, start.ts, state.ts);
+  auto rps = CfgPaths::enumerate_paths(rewrite_, rewrite_bound_, start.rs, state.rs);
+
+  for(auto tp : tps) {
+    tp.erase(tp.begin());
+
+    for(auto rp : rps) {
+      rp.erase(rp.begin());
+      DualAutomata::Edge e(start, tp, rp);
+      cout << "[get_class_for_state] pair " << tp << " / " << rp << endl;
+      auto classification = get_invariant_class(templ, state, e);
+      /*cout << "classification = ";
+      for(auto it : classification)
+        cout << it << "  ";
+      cout << endl;*/
+
+      // each classification turns into 2^N equivalence classes where N is the length of the vector
+      set<DualBuilder::EquivalenceClass> starting_set;
+      auto wildcards = make_wildcard_classes(starting_set, classification);
+      classes.insert(wildcards.begin(), wildcards.end());
+    }
+  }
+
+  vector<DualBuilder::EquivalenceClass> result;
+  result.insert(result.begin(), classes.begin(), classes.end());
+  return result;
+
+}
+
+uint64_t DdecValidator::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
+  /** get counts from frontier. */
+  map<size_t, size_t> target_block_counts;
+  map<size_t, size_t> rewrite_block_counts;
+
+  /** add counts for this edge. */
+  for (auto blk : e.te) {
+    target_block_counts[blk]++;
+  }
+  for (auto blk : e.re) {
+    rewrite_block_counts[blk]++;
+  }
+
+  /** add up all the relevant variables. */
+  uint64_t sum = 0;
+
+  auto variables = equ->get_variables();
+  for (auto var : variables) {
+    if (var.is_ghost) {
+      auto name = var.name.c_str();
+      if (name[0] != 'n')
+        continue;
+      name++;
+      size_t number = strtoul(name, NULL, 10);
+      size_t count = var.is_rewrite ? rewrite_block_counts[number] : target_block_counts[number];
+      sum += count*var.coefficient;
+    }
+  }
+
+  return sum;
+}
+
+std::vector<uint64_t> DdecValidator::get_invariant_class(ConjunctionInvariant* conj, DualAutomata::Edge& e) {
+  std::vector<uint64_t> equiv_class;
+  for (size_t i = 0; i < conj->size(); ++i) {
+    auto equ = static_cast<EqualityInvariant*>((*conj)[i]);
+    auto value = get_invariant_class(equ, e);
+    equiv_class.push_back(value);
+  }
+  return equiv_class;
+}
+
+std::vector<uint64_t> DdecValidator::get_invariant_class(DualAutomata& templ, DualAutomata::State& s, DualAutomata::Edge& e) {
+  auto conj = templ.get_invariant(s);
+  return get_invariant_class(conj, e);
 }

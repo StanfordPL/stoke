@@ -25,7 +25,9 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/learner.h"
 #include "src/validator/obligation_checker.h"
+#include "src/validator/optional.h"
 #include "src/validator/validator.h"
+
 
 namespace stoke {
 
@@ -75,6 +77,13 @@ public:
 
 
 private:
+
+
+  std::vector<DualBuilder::EquivalenceClass> get_classes_for_state(DualAutomata& templ, DualAutomata::State state);
+  uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(DualAutomata&, DualAutomata::State&, DualAutomata::Edge&);
+  std::set<DualBuilder::EquivalenceClass> make_wildcard_classes(const std::set<DualBuilder::EquivalenceClass>&, const std::vector<uint64_t>&);
 
   void checker_callback(ObligationChecker::Result& result, void* reference);
 
