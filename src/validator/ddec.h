@@ -81,12 +81,23 @@ private:
 
   void class_checker_callback(const ClassChecker::Result& result, void* optional);
 
+  // Enumerating equivalence classes
+  bool init_class_enumeration(DualAutomata& pod);
+  bool has_next_class();
+  DualBuilder::EquivalenceClassMap next_class(DualAutomata& pod);
+  DualBuilder::EquivalenceClassMap build_classmap_from_descriptor();
+
+  std::map<DualAutomata::State, size_t> current_class_descriptor_;
+  std::map<DualAutomata::State, std::vector<DualBuilder::EquivalenceClass>> state_class_table_;
+  bool has_next_class_;
+  
   std::vector<DualBuilder::EquivalenceClass> get_classes_for_state(DualAutomata& templ, DualAutomata::State state);
   uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata&, DualAutomata::State&, DualAutomata::Edge&);
   std::set<DualBuilder::EquivalenceClass> make_wildcard_classes(const std::set<DualBuilder::EquivalenceClass>&, const std::vector<uint64_t>&);
 
+  // Dependencies
   Cfg target_;
   Cfg rewrite_;
 
@@ -120,7 +131,7 @@ private:
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
 
-  /** Add a loop to a node in a POD. */
+  /** Add loop(s) to a node in a POD corresponding to inductive paths. */
   void add_loop_to_node(
     DualAutomata& pod,
     const std::vector<CfgPath>& target_inductive_paths,

@@ -421,19 +421,26 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
   }
 
-  DualBuilder builder(data_collector_, template_pod, *control_learner_);
-  builder.set_bound(target_bound_, rewrite_bound_);
-  DualBuilder::EquivalenceClassMap handhold_class = builder.get_handhold_class();
+  bool have_classes = init_class_enumeration(template_pod);
+  if(!have_classes)
+    return false;
 
+  /** Setup class checker */
   ClassChecker::Callback callback = [&] (const ClassChecker::Result& r, void* optional) {
     return class_checker_callback(r, optional);
   };
-
-  verified_ = 0;
   LocalClassChecker local_checker(data_collector_, *control_learner_, 
                     target_bound_, rewrite_bound_,
                     checker_, invariant_learner_);
-  local_checker.check(template_pod, handhold_class, callback, (void*)NULL);
+
+  /** Run all the checks */
+  verified_ = 0;
+  while(has_next_class()) {
+    auto cls = next_class(template_pod);
+    local_checker.check(template_pod, cls, callback, (void*)NULL);
+  }
+
+  /** Finish it off. */
   local_checker.block_until_complete();
 
   if(verified_ > 0)
@@ -554,3 +561,75 @@ std::vector<uint64_t> DdecValidator::get_invariant_class(DualAutomata& templ, Du
   auto conj = templ.get_invariant(s);
   return get_invariant_class(conj, e);
 }
+
+bool DdecValidator::init_class_enumeration(DualAutomata& dual) {
+
+  // populate the state-class table
+  auto states = dual.get_inductive_states();
+  for(auto state : states) {
+    auto classes = get_classes_for_state(dual, state);
+    if(classes.size() == 0) {
+      cout << "State " << state << " has no classes based on reachable edges." << endl;
+      has_next_class_ = false;
+      return false;
+    }  
+    state_class_table_[state] = classes; 
+  }
+
+  has_next_class_ = true;
+  return true;
+}
+
+bool DdecValidator::has_next_class() {
+  return has_next_class_;
+}
+
+DualBuilder::EquivalenceClassMap DdecValidator::next_class(DualAutomata& pod) {
+  
+  has_next_class_ = false;
+
+  // first state
+  if(current_class_descriptor_.size() == 0) {
+    auto states = pod.get_inductive_states();
+    for(auto& state : states) {
+      current_class_descriptor_[state] = 0;
+      if(state_class_table_[state].size() > 1)
+        has_next_class_ = true;
+    }
+    return build_classmap_from_descriptor();
+  }
+
+  // subsequent states
+  bool made_change = false;
+  for(auto& pair : current_class_descriptor_) {
+    auto& state = pair.first;  
+    auto& options = state_class_table_[state];
+    if(options.size() > pair.second + 1) {
+      if(!made_change) {
+        pair.second++;
+        made_change = true;
+        if(options.size() > pair.second+1) { //still!
+          has_next_class_ = true;
+          break;
+        }
+      } else {
+        has_next_class_ = true;
+      }
+    }
+  }
+  return build_classmap_from_descriptor();
+
+}
+
+DualBuilder::EquivalenceClassMap DdecValidator::build_classmap_from_descriptor() {
+  DualBuilder::EquivalenceClassMap output;
+  for(auto& pair : current_class_descriptor_) {
+    auto state = pair.first;
+    auto& options = state_class_table_[state];
+    auto& classification = options[pair.second];
+    output[state] = classification;
+  }
+  return output;
+}
+
+

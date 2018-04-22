@@ -352,7 +352,7 @@ def work(options, sub)
   count = 0
 
   subscriber = sub.listen :threads => { :callback => options[:jobs] },
-                          :inventory => options[:jobs]*10 do |message|
+                          :inventory => options[:jobs]*100 do |message|
     puts "Got message"
     @working_mutex.synchronize do
       @working = @working + 1
