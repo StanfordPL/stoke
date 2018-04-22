@@ -48,7 +48,7 @@ public:
   EquivalenceClassMap get_handhold_class();
 
   /** Get POD from equivalence class */
-  DualAutomata generate_pod(EquivalenceClassMap& mp);
+  DualAutomata generate_pod(const EquivalenceClassMap& mp);
 
 
 private:

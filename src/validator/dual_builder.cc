@@ -15,7 +15,7 @@ void DualBuilder::init() {
 }
 
 /** Build the next possible automata. */
-DualAutomata DualBuilder::generate_pod(EquivalenceClassMap& ecm) {
+DualAutomata DualBuilder::generate_pod(const EquivalenceClassMap& ecm) {
   /** if it's the first call to next, just generate what we have. */
   cout << "[next] generating initial POD" << endl;
   while (!frontiers_complete()) {

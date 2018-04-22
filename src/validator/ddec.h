@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_VALIDATOR_DDEC_H
 #define STOKE_SRC_VALIDATOR_DDEC_H
 
+#include "src/validator/class_checker.h"
 #include "src/validator/control_learner.h"
 #include "src/validator/dual.h"
 #include "src/validator/dual_builder.h"
@@ -78,24 +79,13 @@ public:
 
 private:
 
+  void class_checker_callback(const ClassChecker::Result& result, void* optional);
 
   std::vector<DualBuilder::EquivalenceClass> get_classes_for_state(DualAutomata& templ, DualAutomata::State state);
   uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata&, DualAutomata::State&, DualAutomata::Edge&);
   std::set<DualBuilder::EquivalenceClass> make_wildcard_classes(const std::set<DualBuilder::EquivalenceClass>&, const std::vector<uint64_t>&);
-
-  void checker_callback(ObligationChecker::Result& result, void* reference);
-
-  struct CheckerCallbackInfo {
-    DischargeState& state; 
-    DualAutomata::Edge edge;
-    size_t conjunct;
-    std::stringstream* ss;
-
-    CheckerCallbackInfo(DischargeState& ds, const DualAutomata::Edge& e, size_t num, std::stringstream* strs) : state(ds), edge(e), conjunct(num), ss(strs) {
-    }
-  };
 
   Cfg target_;
   Cfg rewrite_;
@@ -124,26 +114,6 @@ private:
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
 
-  /** Verify that a dual automata is correct */
-  bool verify_dual(DualAutomata& dual);
-
-  /** Try and prove all the invariants we can, starting from the initial one. */
-  void discharge_invariants(DualAutomata&);
-  /** Helper for discharge invariants that works on just one edge. */
-  void discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream* ss);
-  /** For running discharge_edge in a thread. */
-  static void discharge_thread(DdecValidator&, DualAutomata&, DischargeState&, size_t);
-  /** Start threads to discharge edges. */
-  void discharge_thread_run(DualAutomata&, DischargeState&);
-
-  /** Check a POD to see if it's obviously wrong. */
-  bool sanity_check(DualAutomata& dual);
-
-  /** Compute the initial invariant */
-  ConjunctionInvariant* get_initial_invariant() const;
-  ConjunctionInvariant* get_final_invariant() const;
-  ConjunctionInvariant* get_fail_invariant() const;
-
   /** Is the invariant at a pair of basic blocks useful? */
   double invariant_quality(
     ConjunctionInvariant* conj,
@@ -170,8 +140,8 @@ private:
 
   size_t callbacks_expected_;
   size_t callbacks_count_;
+  size_t verified_;
 
-  ObligationChecker::Callback callback_;
 
 };
 

@@ -322,21 +322,21 @@ private:
   /** Remove an edge prefix from a trace. */
   void remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2);
 
-  Cfg& target_;
-  Cfg& rewrite_;
+  Cfg& target_; //serialize
+  Cfg& rewrite_; //serialize
 
   std::set<State> data_reachable_states_;
-  std::map<State, std::vector<Edge>> next_edges_;
-  std::map<State, std::vector<Edge>> prev_edges_;
+  std::map<State, std::vector<Edge>> next_edges_; //serialize
+  std::map<State, std::vector<Edge>> prev_edges_; //serialize
 
-  std::map<State, ConjunctionInvariant*> invariants_;
+  std::map<State, ConjunctionInvariant*> invariants_; //serialize
   std::map<State, std::vector<CpuState>> target_state_data_;
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
   std::map<Edge, std::vector<CpuState>> target_edge_data_;
   std::map<Edge, std::vector<CpuState>> rewrite_edge_data_;
 
   DataCollector data_collector_;
-  std::vector<DualAutomata::State> topological_sort_;
+  std::vector<DualAutomata::State> topological_sort_; //serialize
 };
 
 }
