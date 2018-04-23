@@ -41,6 +41,7 @@ using namespace x64asm;
 #include "tests/trivial.h"
 #include "tests/sandbox/sandbox.h"
 #include "tests/search/search.h"
+#include "tests/serialize/serialize.h"
 #include "tests/x64asm/r.h"
 #include "tests/x64asm/reg_set.h"
 #include "tests/x64asm/opc_set.h"

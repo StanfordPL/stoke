@@ -15,6 +15,7 @@
 #include <chrono>
 
 #include "src/cfg/paths.h"
+#include "src/serialize/serialize.h"
 #include "src/validator/obligation_checker.h"
 
 using namespace stoke;
@@ -65,80 +66,30 @@ istream& std::operator>>(istream& strm, stoke::ObligationChecker::Obligation& re
   return result.read_text(strm);
 }
 
+ostream& ObligationChecker::Obligation::write_text(ostream& os) const {
+  serialize<Cfg>(os, target);
+  serialize<Cfg>(os, rewrite);
+  os << target_block << " " << rewrite_block << endl;
+  serialize<CfgPath>(os, P);
+  serialize<CfgPath>(os, Q);
+  assume->serialize(os);
+  prove->serialize(os);
+  serialize<vector<pair<CpuState, CpuState>>>(os, testcases);
+  return os;
+}
+
 istream& ObligationChecker::Obligation::read_text(istream& is) {
-  size_t p_count, q_count, tc_count;
-  Code target_code, rewrite_code;
-
-  stringstream target_ss, rewrite_ss;
-
-  int ends = 0;
-  while(ends < 2) {
-    string line;
-    getline(is, line);
-    if(line == "CODEEND") {
-      ends++;
-    } else {
-      if(ends == 0) {
-        target_ss << line << endl;
-      } else {
-        rewrite_ss << line << endl;
-      }
-    }
-  }
-
-  target_ss >> target_code; 
-  rewrite_ss >> rewrite_code;
-
-  // todo should handle Code offset too
-  target = Cfg(TUnit(target_code), RegSet::empty(), RegSet::empty());
-  rewrite = Cfg(TUnit(rewrite_code), RegSet::empty(), RegSet::empty());
-
+  target = deserialize<Cfg>(is);
+  rewrite = deserialize<Cfg>(is);
   is >> target_block >> rewrite_block;
-  is >> p_count >> q_count;
-  for(size_t i = 0; i < p_count; ++i) {
-    int x;
-    is >> x;
-    P.push_back(x);
-  }
-  for(size_t i = 0; i < q_count; ++i) {
-    int x;
-    is >> x;
-    Q.push_back(x);
-  }
-
-  //cout << "Got P=" << P << " and Q=" << Q << endl;
-
+  P = deserialize<CfgPath>(is);
+  Q = deserialize<CfgPath>(is);
   assume = Invariant::deserialize(is);
   prove = Invariant::deserialize(is);
-  is >> tc_count;
-  for(size_t i = 0; i < tc_count; ++i) {
-    CpuState a, b;
-    is >> a >> b;
-    testcases.push_back(pair<CpuState, CpuState>(a,b));
-  }
+  testcases = deserialize<vector<pair<CpuState, CpuState>>>(is);
   return is;
 }
 
-ostream& ObligationChecker::Obligation::write_text(ostream& os) const {
-  os << target.get_function().get_code() << endl << endl;
-  os << "CODEEND" << endl;
-  os << rewrite.get_function().get_code() << endl << endl;
-  os << "CODEEND" << endl;
-  os << target_block << " " << rewrite_block << endl;
-  os << P.size() << " " << Q.size() << endl;
-  for(auto p : P)
-    os << p << " ";
-  for(auto q : Q)
-    os << q << " ";
-  os << endl;
-  assume->serialize(os);
-  prove->serialize(os);
-  os << testcases.size() << endl;
-  for(auto tc : testcases) {
-    os << tc.first << endl << tc.second << endl;
-  }
-  return os;
-}
 
 ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
 

@@ -18,6 +18,8 @@
 #include <boost/optional.hpp>
 #include <cassert>
 #include <iostream>
+#include <istream>
+#include <ostream>
 #include <set>
 #include <string>
 #include <vector>
@@ -208,6 +210,10 @@ struct TUnit {
   /** Write to ostream. */
   std::ostream& write_text(std::ostream& os) const;
 
+  void serialize(std::ostream& os) const;
+  static TUnit deserialize(std::istream& is);
+
+
 private:
   /** The text of the code in this function. */
   x64asm::Code code_;
@@ -251,6 +257,7 @@ private:
   std::istream& read_formatted_text(std::istream& is);
   /** Read a code sequence and fill in missing information */
   std::istream& read_naked_text(std::istream& is);
+
 };
 
 } // namespace stoke

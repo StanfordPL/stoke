@@ -25,7 +25,11 @@ def parse_options
 end
 
 def publish(topic, attributes, data)
-  puts "Publishing " + attributes["job"].to_s + " with solver/strategy " + attributes["solver"] + " / " + attributes["model"]
+  if(attributes["type"] == "smt")
+    puts "Publishing " + attributes["job"].to_s + " with solver/strategy " + attributes["solver"] + " / " + attributes["model"]
+  elsif(attributes["type"] == "class")
+    puts "Publishing " + attributes["job"].to_s
+  end
   STDOUT.flush
   topic.publish_async data, attributes
 end

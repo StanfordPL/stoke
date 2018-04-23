@@ -239,6 +239,58 @@ def queue_is_bad(name)
   return okay
 end
 
+def process_class(message, attrs, options)
+  # get attributes
+  job = attrs["job"]
+  output_topic_name = attrs["output-topic"]
+  @queues_seen_mutex.synchronize do
+    @queues_seen.add(output_topic_name)
+  end
+  if queue_is_bad output_topic_name then
+    puts "Discarding #{job} on invalid queue #{output_topic_name}"
+    return
+  end
+
+  puts "Handling #{job} on queue #{output_topic_name}"
+
+  # copy input data into a file
+  infile = Tempfile.new('ocinput')
+  infile.write(message.data)
+  infile.close
+
+  # create temporary file for output
+  outfile = Tempfile.new('ocoutput')
+  outfile.close
+
+  # run checker
+  cmdstring = "stoke_class_check --obligation_checker pubsub -o #{outfile.path} <#{infile.path}"
+  pid = spawn(cmdstring, :pgroup => 0)
+  puts "Waiting on #{pid} (job #{job} queue #{output_topic_name})"
+  STDOUT.flush
+  Process.waitpid(pid)
+  puts "#{pid} Done (job #{job} queue #{output_topic_name})"
+
+  # delete temporary files
+  data = File.read(outfile.path)
+  infile.unlink
+  outfile.unlink
+  puts "#{pid} data (job #{job} queue #{output_topic_name}): #{data}"
+
+  if data.size == 0 then
+    data = generate_error("stoke_class_check failed")
+    puts "Encountered error for job #{job} pid #{pid} with solver #{solver} strategy #{model}"
+    STDOUT.flush
+  end
+
+  # publish response to output topic
+  output_topic = get_topic(output_topic_name)
+  output_topic.publish data, attrs
+
+  # once published
+  puts "Finished #{job} on queue #{output_topic_name}"
+  STDOUT.flush
+end
+
 def process_smt(message, attrs, options)
 
   # get attributes
@@ -279,8 +331,8 @@ def process_smt(message, attrs, options)
   #puts "Running OC"
 
   # run obligation checker
-  tmoutstring = "/usr/bin/timeout #{options[:timeout]}"
-  cmdstring = "stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}"
+  tmoutstring = "/usr/bin/timeout --foreground #{options[:timeout]} "
+  cmdstring = "#{tmoutstring} stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}"
   pid = spawn(cmdstring, :pgroup => 0)
   monitor_add(job, pid)
   puts "Waiting on #{pid} (job #{job})"
@@ -288,14 +340,6 @@ def process_smt(message, attrs, options)
   Process.waitpid(pid)
   monitor_remove(job, pid)
   puts "#{pid} Done (job #{job})"
-
-  # check if we were killed early
-  if has_cached_entry datastore_key then
-    puts "Looks like #{pid} (job #{job}) was killed early; not generating output" 
-    STDOUT.flush
-    return
-  end
-
 
   # delete temporary files
   data = File.read(outfile.path)
@@ -331,6 +375,9 @@ def process_message(message, options)
     attrs = message.attributes
     if(attrs["type"] == "smt")
       process_smt(message, attrs, options)
+      return true
+    elsif(attrs["type"] == "class")
+      process_class(message, attrs, options)
       return true
     end
     return false

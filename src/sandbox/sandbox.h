@@ -250,6 +250,9 @@ public:
     run();
   }
 
+  void serialize(std::ostream& os) const;
+  static Sandbox deserialize(std::istream& is);
+
 private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;

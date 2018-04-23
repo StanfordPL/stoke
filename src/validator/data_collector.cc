@@ -11,6 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/serialize/serialize.h"
 #include "src/validator/data_collector.h"
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
@@ -145,37 +146,6 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
 
 }
 
-/* void DataCollector::mine_memory_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
-  size_t index;
-  auto label = cfg.get_function().get_leading_label();
-  sandbox_.clear_callbacks();
-  sandbox_.insert_function(cfg);
-  sandbox_.set_entrypoint(label);
-
-  std::vector<CallbackParam*> to_free;
-
-  const auto& code = cfg.get_code();
-  for(size_t i = 0; i < code.size(); ++i) {
-    auto instr = code[i];
-
-    CallbackParam* cp = new CallbackParam();
-    to_free.push_back(cp);
-
-    cp->block_id = cfg.get_loc(i).second;
-    cp->trace = &trace;
-    cp->line_number = i;
-
-    if(instr.is_memory_dereference())
-      sandbox_.insert_before(label, index, callback, cp);
-  }
-
-  sandbox_.run(testcase);
-
-  for (auto it : to_free)
-    delete it;
-} */
-
-
 bool DataCollector::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   size_t instrs = cfg.num_instrs(block);
   if (instrs == 0)
@@ -195,5 +165,15 @@ void DataCollector::callback(const StateCallbackData& data, void* arg) {
   tp.line_number = args->line_number;
 
   args->trace->push_back(tp);
+}
+
+DataCollector DataCollector::deserialize(std::istream& is) {
+  auto sb = stoke::deserialize<Sandbox>(is);
+  DataCollector dc(sb);
+  return dc;
+}
+
+void DataCollector::serialize(std::ostream& os) const {
+  stoke::serialize<Sandbox>(os, sandbox_);
 }
 

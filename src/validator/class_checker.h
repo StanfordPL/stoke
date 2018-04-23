@@ -47,20 +47,20 @@ public:
   };
 
   struct Problem {
-    DualAutomata& template_pod;
+    DualAutomata template_pod;
     DualBuilder::EquivalenceClassMap equivalence_class;
-    DataCollector& data_collector;
-    ControlLearner& control_learner;
+    DataCollector data_collector;
+    ControlLearner control_learner;
     size_t target_bound;
     size_t rewrite_bound;
 
-    std::istream& read_text(std::istream& is);
-    std::ostream& write_text(std::ostream& os) const;
+    static Problem deserialize(std::istream& is);
+    std::ostream& serialize(std::ostream& os) const;
 
-    Problem(DualAutomata& da, 
-            DualBuilder::EquivalenceClassMap& equ_class,
-            DataCollector& dc,
-            ControlLearner& cl,
+    Problem(const DualAutomata& da, 
+            const DualBuilder::EquivalenceClassMap& equ_class,
+            const DataCollector& dc,
+            const ControlLearner& cl,
             size_t tb, size_t rb) : 
       template_pod(da),
       equivalence_class(equ_class),
@@ -130,12 +130,10 @@ protected:
 
 namespace std{
 
-  /*
 std::ostream& operator<<(std::ostream&, const stoke::ClassChecker::Result&);
 std::istream& operator>>(std::istream&, stoke::ClassChecker::Result&);
 std::ostream& operator<<(std::ostream&, const stoke::ClassChecker::Problem&);
 std::istream& operator>>(std::istream&, stoke::ClassChecker::Problem&);
-*/
 
 }
 

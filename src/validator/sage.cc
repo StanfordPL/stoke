@@ -1,4 +1,4 @@
-// Copyright 2013-2016 Stanford University
+  // Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -21,50 +21,73 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "src/validator/pubsub_class_checker.h"
 
 using namespace stoke;
 using namespace std;
 
 bool Sage::initialized = false;
-std::ofstream Sage::pipe_to_sage;
-std::ifstream Sage::pipe_from_sage;
+ostream* Sage::stream_to_sage = NULL;
+istream* Sage::stream_from_sage = NULL;
+__gnu_cxx::stdio_filebuf<char>* Sage::to_filebuf = NULL;
+__gnu_cxx::stdio_filebuf<char>* Sage::from_filebuf = NULL;
+pid_t Sage::child_pid = 0;
+
 
 void Sage::initialize() {
 
-  auto harness_file = "sage_harness.sage";
-  auto stoke_sage_in = "stoke_sage_in";
-  auto stoke_sage_out = "stoke_sage_out";
-  auto sage_err = "sage_err";
+  int to_sage_pipe[2];
+  int from_sage_pipe[2];
+  pipe(to_sage_pipe);
+  pipe(from_sage_pipe);
 
   initialized = true;
-  unlink(stoke_sage_in);
-  unlink(stoke_sage_out);
-  mkfifo(stoke_sage_in, 0600);
-  mkfifo(stoke_sage_out, 0600);
 
-  unlink(harness_file);
-  ofstream harness(harness_file);
-  harness << "import fileinput" << endl;
-  harness << "import sys" << endl << endl;
+  pid_t pid = fork();
+  if(pid) {
+    /* parent */
+    close(to_sage_pipe[0]);
+    close(from_sage_pipe[1]);
 
-  harness << "for line in fileinput.input():" << endl;
-  harness << "\texecfile(line.strip())" << endl;
-  harness << "\tprint \"OK\"" << endl;
-  harness << "\tsys.stdout.flush()" << endl << endl;
-  harness.close();
+    to_filebuf = new __gnu_cxx::stdio_filebuf<char>(to_sage_pipe[1], std::ios::out);
+    stream_to_sage = new ostream(to_filebuf);
 
-  if(fork()) {
-    // parent
-    pipe_to_sage.open(stoke_sage_in);    
-    pipe_from_sage.open(stoke_sage_out);
+    from_filebuf = new __gnu_cxx::stdio_filebuf<char>(from_sage_pipe[0], std::ios::in);
+    stream_from_sage = new istream(from_filebuf);
+    child_pid = pid;
+
     sleep(3);
   } else {
-    // child
+    /* child */
+    // get path to this binary
+    char buffer[1024];
+    size_t ret = readlink("/proc/self/exe", buffer, 1024);
+    buffer[ret] = '\0';
+    char* end = strrchr(buffer, '/');
+    assert(end != NULL);
+    *end = '\0';
+
+    // path to sage harness
+    stringstream harness_location;
+    harness_location << buffer << "/sage_harness.sage";
+    auto harness_file = const_cast<char*>(harness_location.str().c_str());
+    cout << "harness_file = " << harness_file << endl;
+
+    // setup file descriptors
+    close(to_sage_pipe[1]);
+    close(from_sage_pipe[0]);
+    dup2(to_sage_pipe[0], STDIN_FILENO);
+    dup2(from_sage_pipe[1], STDOUT_FILENO);
+
+    //setup arguments
+    char* const argv[3] = {
+      (char*)"sage",
+      harness_file,
+      NULL
+    };
+
     prctl(PR_SET_PDEATHSIG, SIGTERM);
-    stringstream cmd;
-    cmd << "sage " << harness_file << " <" << stoke_sage_in << " >" << stoke_sage_out << " 2>" << sage_err;
-    int v = system(cmd.str().c_str());
-    exit(0);
+    execvpe("sage", argv, environ);
   }
 
 
@@ -88,20 +111,28 @@ void Sage::run() {
 
   /** Create sage file. */
   ofstream exec_file(tmp_in);
-  exec_file << stream_to_sage.str() << endl;
+  exec_file << buffer_to_sage.str() << endl;
   exec_file.close();
+  cout << "Temporary file at " << tmp_in << endl;
+
+  stringstream test;
+  test << "ps -e | grep " << child_pid;
+  system(test.str().c_str());
 
   /** Tell sage to execute it. */
-  pipe_to_sage << tmp_in << endl;
+  *stream_to_sage << tmp_in << endl;
+  cout << "Wrote to buffer" << endl;
 
   /** Wait for answer.*/
   string tst;
-  pipe_from_sage >> tst;
+  *stream_from_sage >> tst;
   if(tst != "OK") {
     cout << "Expected to receive 'OK' from sage." << endl;
     cout << "Instead got " << tst << endl;
     exit(1);
   }
+
+  buffer_to_sage.clear();
 
   /** Open output file and give it to client. */
   //pipe_from_sage.open(tmp_out);

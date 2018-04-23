@@ -62,7 +62,7 @@ void LocalClassChecker::check(
 
   bool valid = verify_dual(pod);
   Result r;
-  r.verified = true;
+  r.verified = valid;
   r.has_error = false;
   r.error_message = "";
   callback(r, optional);

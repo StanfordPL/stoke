@@ -341,4 +341,14 @@ bool ControlLearner::pair_feasible(CfgPath tp, CfgPath rp, bool inductive) {
   return kernel_generators_.in_nullspace(test);
 }
 
+void ControlLearner::serialize(std::ostream& os) const {
+  kernel_generators_.serialize(os); 
+}
+
+ControlLearner ControlLearner::deserialize(const Cfg& target, const Cfg& rewrite, std::istream& is) {
+  IntMatrix m = IntMatrix::deserialize(is);
+  ControlLearner cl(target, rewrite, m);
+  return cl;
+}
+
 

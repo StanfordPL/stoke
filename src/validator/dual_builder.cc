@@ -407,3 +407,4 @@ map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {
   return block_counts;
 }
 
+

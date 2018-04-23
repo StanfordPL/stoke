@@ -17,6 +17,9 @@
 
 #include <vector>
 #include <map>
+#include <iostream>
+#include <istream>
+#include <ostream>
 #include "src/validator/int_vector.h"
 
 namespace stoke {
@@ -41,8 +44,6 @@ public:
       for (int j = 0; j < cols; j++)
         (*this)[i][j] = arr[i*cols + j];
   }
-
-
 
   /** Copy a 2d vector into us */
   IntMatrix(std::vector<std::vector<int64_t>> m) : std::vector<std::vector<int64_t>>(m) {
@@ -90,6 +91,10 @@ public:
 
   /** Return a new matrix with the ith column removed. */
   IntMatrix remove_column(size_t i) const;
+
+  /** Serialize to ostream */
+  void serialize(std::ostream& os) const;
+  static IntMatrix deserialize(std::istream& is);
 
 private:
 

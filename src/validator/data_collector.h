@@ -70,6 +70,9 @@ public:
     return p;
   }
 
+  void serialize(std::ostream& os) const;
+  static DataCollector deserialize(std::istream& is);
+
 private:
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */

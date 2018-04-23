@@ -426,6 +426,9 @@ public:
     return check_invariants();
   }
 
+  void serialize(std::ostream& os) const;
+  static Cfg deserialize(std::istream& os);
+
 private:
   /** User-specified underlying function. */
   TUnit function_;

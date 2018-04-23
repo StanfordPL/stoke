@@ -78,7 +78,7 @@ ifdef NOCVC4
 CXX_FLAGS += -DNOCVC4=1
 endif
 
-WARNING_FLAGS=-Wall -Werror=switch -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
+WARNING_FLAGS=-Wall -Werror=all -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
 CVC4_SRCDIR=src/ext/cvc4-1.5
 CVC4_OUTDIR=$(CVC4_SRCDIR)-build
@@ -177,6 +177,7 @@ SRC_OBJ=\
 	src/tunit/tunit.o \
 	\
 	src/validator/bounded.o \
+	src/validator/class_checker.o \
 	src/validator/control_learner.o \
 	src/validator/data_collector.o \
 	src/validator/ddec.o \
@@ -192,6 +193,7 @@ SRC_OBJ=\
 	src/validator/local_class_checker.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
+	src/validator/pubsub_class_checker.o \
 	src/validator/pubsub_obligation_checker.o \
 	src/validator/sage.o \
 	src/validator/smt_obligation_checker.o \
@@ -255,11 +257,12 @@ BIN=\
 	bin/stoke_extract \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
+	bin/stoke_class_check \
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_invariant \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_verify \
-	bin/stoke_obligation_check
+	bin/stoke_obligation_check \
 
 #bin/stoke_replace \
 #bin/stoke_search \

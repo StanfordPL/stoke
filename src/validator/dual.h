@@ -43,6 +43,9 @@ public:
       ts = a_ts;
       rs = a_rs;
     }
+
+    void serialize(std::ostream&) const;
+    static State deserialize(std::istream&);
   };
 
   struct Edge {
@@ -74,6 +77,9 @@ public:
     CfgPath te;
     CfgPath re;
     bool empty_;
+
+    void serialize(std::ostream&) const;
+    static Edge deserialize(std::istream&);
   };
 
   DualAutomata(Cfg& target, Cfg& rewrite, DataCollector& dc) :
@@ -292,6 +298,12 @@ public:
     return rewrite_;
   }
 
+  void serialize(std::ostream& os) const;
+  static DualAutomata deserialize(std::istream& is);
+
+  const DataCollector& get_data_collector() const {
+    return data_collector_;
+  }
 
 private:
 

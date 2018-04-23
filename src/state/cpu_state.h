@@ -309,6 +309,9 @@ struct CpuState {
   /** The total latency of the last run of this testcase */
   uint64_t latency_seen;
 
+  void serialize(std::ostream& os) const;
+  static CpuState deserialize(std::istream& is);
+
 private:
   /** Update the general purpose register at index idx to value val. */
   void gp_update(size_t idx, size_t width, uint64_t val, size_t start) {

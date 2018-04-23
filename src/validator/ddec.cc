@@ -15,6 +15,7 @@
 #include "src/cfg/dominators.h"
 #include "src/cfg/paths.h"
 #include "src/cfg/sccs.h"
+#include "src/serialize/serialize.h"
 #include "src/validator/bounded.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/dual.h"
@@ -25,6 +26,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/local_class_checker.h"
+#include "src/validator/pubsub_class_checker.h"
 
 #include <chrono>
 #include <algorithm>
@@ -371,10 +373,16 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
 }
 
 void DdecValidator::class_checker_callback(const ClassChecker::Result& result, void* optional) {
-  cout << "[class_checker_callback] verified=" << result.verified << endl;
+  JobInfo* ji = static_cast<JobInfo*>(optional);
+  cout << "[class_checker_callback] number=" << ji->number << " verified=" << result.verified << endl;
+  cout << "Equivalence class: " << endl;
+  stoke::serialize<DualBuilder::EquivalenceClassMap>(cout, ji->m);
+  cout << endl;
+   
   if(result.verified) {
     verified_++;
   }
+  delete ji;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -429,19 +437,27 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   ClassChecker::Callback callback = [&] (const ClassChecker::Result& r, void* optional) {
     return class_checker_callback(r, optional);
   };
+  
+  /*
   LocalClassChecker local_checker(data_collector_, *control_learner_, 
                     target_bound_, rewrite_bound_,
-                    checker_, invariant_learner_);
+                    checker_, invariant_learner_); */
+  PubsubClassChecker checker(data_collector_, *control_learner_, target_bound_, rewrite_bound_);
+
 
   /** Run all the checks */
   verified_ = 0;
+  size_t k = 0;
   while(has_next_class()) {
     auto cls = next_class(template_pod);
-    local_checker.check(template_pod, cls, callback, (void*)NULL);
+    auto ji = new JobInfo();
+    ji->number = k++;
+    ji->m = cls;
+    checker.check(template_pod, cls, callback, (void*)ji);
   }
 
   /** Finish it off. */
-  local_checker.block_until_complete();
+  checker.block_until_complete();
 
   if(verified_ > 0)
     return true;

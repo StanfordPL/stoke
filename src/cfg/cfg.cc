@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/serialize/serialize.h"
 #include "src/cfg/cfg.h"
 
 using namespace cpputil;
@@ -450,5 +451,19 @@ void Cfg::recompute_liveness_use_kill() {
     }
   }
 }
+
+void Cfg::serialize(ostream& os) const {
+  stoke::serialize<x64asm::RegSet>(os, fxn_def_ins_);
+  stoke::serialize<x64asm::RegSet>(os, fxn_live_outs_);
+  stoke::serialize<TUnit>(os, function_);
+}
+
+Cfg Cfg::deserialize(istream& is) {
+  auto defins = stoke::deserialize<x64asm::RegSet>(is);
+  auto liveouts = stoke::deserialize<x64asm::RegSet>(is);
+  auto tunit = stoke::deserialize<TUnit>(is);
+  return Cfg(tunit, defins, liveouts);
+}
+
 
 } // namespace x64

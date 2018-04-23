@@ -1,8 +1,10 @@
 
+#include <fstream>
+
+#include "src/serialize/serialize.h"
 #include "src/state/cpu_states.h"
 #include "src/validator/dual.h"
 #include "src/validator/flow_invariant_learner.h"
-#include <fstream>
 
 using namespace stoke;
 using namespace std;
@@ -594,6 +596,57 @@ std::vector<DualAutomata::Edge> DualAutomata::compute_failure_edges(const Cfg& t
 
   return outputs;
 }
+
+void DualAutomata::State::serialize(std::ostream& os) const {
+  os << ts << " " << rs << endl;
+}
+
+DualAutomata::State DualAutomata::State::deserialize(std::istream& is) {
+  Cfg::id_type a, b;
+  is >> a >> ws >> b >> ws;
+  return DualAutomata::State(a, b);
+}
+
+void DualAutomata::Edge::serialize(std::ostream& os) const {
+  from.serialize(os);
+  to.serialize(os);
+  stoke::serialize<CfgPath>(os, te);
+  stoke::serialize<CfgPath>(os, re);
+}
+
+DualAutomata::Edge DualAutomata::Edge::deserialize(std::istream& is) {
+  DualAutomata::Edge e;
+  e.from = DualAutomata::State::deserialize(is);
+  e.to = DualAutomata::State::deserialize(is);
+  e.te = stoke::deserialize<CfgPath>(is);
+  e.re = stoke::deserialize<CfgPath>(is);
+  return e;
+}
+
+void DualAutomata::serialize(std::ostream& os) const {
+  stoke::serialize<Cfg>(os, target_);  
+  stoke::serialize<Cfg>(os, rewrite_);
+  stoke::serialize<DataCollector>(os, data_collector_);
+  stoke::serialize<map<State, vector<Edge>>>(os, next_edges_);
+  stoke::serialize<map<State, vector<Edge>>>(os, prev_edges_);
+  stoke::serialize<map<State, ConjunctionInvariant*>>(os, invariants_);
+  stoke::serialize<vector<State>>(os, topological_sort_);
+}
+
+DualAutomata DualAutomata::deserialize(std::istream& is) {
+  auto* target = stoke::deserialize<Cfg*>(is);
+  auto* rewrite = stoke::deserialize<Cfg*>(is);
+  auto dc = stoke::deserialize<DataCollector>(is);
+
+  DualAutomata pod(*target, *rewrite, dc);
+  pod.next_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
+  pod.prev_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
+  pod.invariants_ = stoke::deserialize<map<State, ConjunctionInvariant*>>(is);
+  pod.topological_sort_ = stoke::deserialize<vector<State>>(is);
+  return pod;
+}
+
+
 
 namespace std {
 

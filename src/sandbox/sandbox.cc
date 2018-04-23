@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/sandbox/sandbox.h"
-
 #include <cassert>
 #include <set>
 #include <setjmp.h>
 #include <signal.h>
 
 #include "src/sandbox/dispatch_table.h"
+#include "src/sandbox/sandbox.h"
+#include "src/serialize/serialize.h"
 
 using namespace std;
 using namespace stoke;
@@ -1620,6 +1620,23 @@ void Sandbox::emit_load_stoke_rsp() {
   assm_.mov(rax, Moffs64(&stoke_rsp_));
   assm_.mov(rsp, rax);
   assm_.mov(rax, Moffs64(&scratch_[rax]));
+}
+
+void Sandbox::serialize(ostream& os) const {
+  // for now, we just serialize/deserialize inputs to the function
+  vector<CpuState> states;
+  for(auto it : io_pairs_) {
+    states.push_back(it->in_);
+  }
+  stoke::serialize<vector<CpuState>>(os, states);
+}
+
+Sandbox Sandbox::deserialize(istream& is) {
+  Sandbox sb;
+  auto states = stoke::deserialize<vector<CpuState>>(is);
+  for(auto it : states)
+    sb.insert_input(it);
+  return sb;
 }
 
 } // namespace stoke

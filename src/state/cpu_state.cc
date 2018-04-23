@@ -451,6 +451,32 @@ istream& CpuState::read_text(istream& is) {
   return is;
 }
 
+void CpuState::serialize(ostream& os) const {
+  os << "==CPU START==" << endl;
+  write_text(os);
+  os << "==CPU END==" << endl;
+}
+
+CpuState CpuState::deserialize(istream& is) {
+  stringstream ss;
+  bool started = false;
+  while(is.good()) {
+    string line;
+    getline(is, line);
+    if(line == "==CPU START==") {
+      started = true;
+    } else if(line == "==CPU END==") {
+      started = false;
+      break;
+    } else if(started) {
+      ss << line << endl;
+    }
+  }
+  CpuState cs;
+  ss >> cs;
+  return cs;
+}
+
 
 } // namespace stoke
 

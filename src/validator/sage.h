@@ -4,6 +4,7 @@
 #include <istream>
 #include <ostream>
 #include <fstream>
+#include "ext/stdio_filebuf.h"
 
 #ifndef STOKE_VALIDATOR_SAGE
 #define STOKE_VALIDATOR_SAGE
@@ -14,7 +15,7 @@ class Sage {
 
 public:
   std::ostream& get_stream() {
-    return stream_to_sage;
+    return buffer_to_sage;
   }
 
   std::string get_tmp_filename() {
@@ -27,14 +28,19 @@ public:
   void run();
 
 private:
-  std::string tmp_name;
-  std::stringstream stream_to_sage;
-  std::ifstream sage_output;
 
-  static std::ofstream pipe_to_sage;
-  static std::ifstream pipe_from_sage;
+  std::stringstream buffer_to_sage;
+
+  static std::ostream* stream_to_sage;
+  static std::istream* stream_from_sage;
+  static __gnu_cxx::stdio_filebuf<char>* to_filebuf;
+  static __gnu_cxx::stdio_filebuf<char>* from_filebuf;
+
+  std::string tmp_name;
+
   static bool initialized;
   static void initialize();
+  static pid_t child_pid;
 
 };
 }

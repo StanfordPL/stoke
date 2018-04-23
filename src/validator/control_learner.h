@@ -76,7 +76,16 @@ public:
   /** Updates dual automata so that all the paths are feasible.  Calls the callback for each one found. Returns true if the callback managed to return true. */
   bool update_dual(DualAutomata& dual, std::function<bool (DualAutomata&)>& callback);
 
+  void serialize(std::ostream& os) const;
+  static ControlLearner deserialize(const Cfg& target, const Cfg& rewrite, std::istream& is);
+
 private:
+
+  /** For deserialization from previously learned data. */
+  ControlLearner(const Cfg& target, const Cfg& rewrite, IntMatrix& kernel_generators) : 
+    target_(target), rewrite_(rewrite), kernel_generators_(kernel_generators) {
+
+  }
 
   struct EdgeVariable {
     DualAutomata::Edge edge;

@@ -153,6 +153,12 @@ private:
   size_t callbacks_count_;
   size_t verified_;
 
+  struct JobInfo {
+    DualBuilder::EquivalenceClassMap m;
+    size_t number;
+  };
+
+  std::map<size_t, JobInfo> jobs_;
 
 };
 

@@ -649,4 +649,27 @@ istream& TUnit::read_naked_text(istream& is) {
   return is;
 }
 
+void TUnit::serialize(ostream& os) const {
+  write_text(os);  
+  os << "==END TUNIT==" << endl;
+}
+
+TUnit TUnit::deserialize(istream& is) {
+  TUnit tu;
+  stringstream ss;
+  while(is.good()) {
+    string line;
+    getline(is, line);
+    if(line == "==END TUNIT==")
+      break;
+    else
+      ss << line << endl;
+  }
+
+  tu.read_formatted_text(ss);
+  return tu;
+}
+
+
+
 } // namespace stoke
