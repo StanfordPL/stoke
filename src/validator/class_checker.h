@@ -100,9 +100,9 @@ public:
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or
-      (2) start an asynchronous job (which will later invoke the callback) and return; or
-      (3) block, then start an asyncrhonous job (which will call the callback) and return. */
-  virtual void check(const DualAutomata& template_pod,
+      (2) return, and then invoke the callback on a future invocation to this same function 
+          or to 'block_until_complete' */
+  virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      void* optional = NULL) = 0;

@@ -20,6 +20,7 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/console.h"
 
+#include "src/serialize/serialize.h"
 #include "src/validator/local_class_checker.h"
 
 #include "tools/gadgets/learner.h"
@@ -74,6 +75,9 @@ int main(int argc, char** argv) {
                                   obligation_checker, invariant_learner);
                                   
   ClassChecker& checker = *static_cast<ClassChecker*>(&class_checker);
+  cout << "Equivalence Class" << endl;
+  serialize<DualBuilder::EquivalenceClassMap>(cout, problem.equivalence_class);
+  cout << endl;
 
   /** Solve the problem and output. */
   checker.check(problem, callback, NULL);

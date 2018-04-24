@@ -400,10 +400,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   delete flow_invariant_learner_;
   flow_invariant_learner_ = NULL;
 
-  /** Populate the POD with the initial invariants. */
-  //DualAutomata::State start_state = template_pod.start_state();
-  //template_pod.set_invariant(start_state, get_initial_invariant());
-
   /** Debug POD */
   cout << endl;
   template_pod.print_all();
@@ -444,16 +440,24 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                     checker_, invariant_learner_); */
   PubsubClassChecker checker(data_collector_, *control_learner_, target_bound_, rewrite_bound_);
 
+  // Run handhold check
+  /*
+  auto handhold_class = DualBuilder::get_handhold_class();
+  auto ji = new JobInfo();
+  ji->number = 10;
+  ji->m = handhold_class;
+  checker.check(template_pod, handhold_class, callback, (void*)ji);
+  */
 
   /** Run all the checks */
   verified_ = 0;
-  size_t k = 0;
   while(has_next_class()) {
     auto cls = next_class(template_pod);
     auto ji = new JobInfo();
-    ji->number = k++;
     ji->m = cls;
-    checker.check(template_pod, cls, callback, (void*)ji);
+    ji->number = (size_t)-1;
+    int jobid = checker.check(template_pod, cls, callback, (void*)ji);
+    ji->number= (size_t)jobid;
   }
 
   /** Finish it off. */

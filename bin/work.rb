@@ -1,15 +1,18 @@
+#!/usr/bin/env ruby 
 
 require "google/cloud/pubsub"
 require "google/cloud/datastore"
 require 'optparse'
 require 'tempfile'
+require 'fileutils'
 
 def parse_options
   options = {
     :id      => ENV['GOOGLE_CLOUD_PROJECT'],
     :topic   => "worklist",
     :jobs    => 1,
-    :timeout => "1h"
+    :timeout => "1h",
+    :logging => false
   }
 
   OptionParser.new do |opts|
@@ -19,6 +22,7 @@ def parse_options
     opts.on('-t', '--topic TOPIC', 'Topic') { |v| options[:topic] = v }
     opts.on('-j', '--jobs N', 'Number of Jobs') { |v| options[:jobs] = v.to_i }
     opts.on('-m', '--timeout DURATION', 'Timeout for Obligation Checker') { |v| options[:timeout] = v }
+    opts.on('-l', '--log', 'Turn on logging') { |v| options[:logging] = true }
   end.parse!
 
   options
@@ -262,8 +266,15 @@ def process_class(message, attrs, options)
   outfile = Tempfile.new('ocoutput')
   outfile.close
 
+  logstr = ""
+  if options[:logging]
+    FileUtils.mkdir_p("logs/#{output_topic_name}")
+    logfile = "logs/#{output_topic_name}/#{job}"
+    logstr = ">#{logfile}"
+  end
+
   # run checker
-  cmdstring = "stoke_class_check --obligation_checker pubsub -o #{outfile.path} <#{infile.path}"
+  cmdstring = "stoke_class_check --obligation_checker pubsub -o #{outfile.path} <#{infile.path} #{logstr}"
   pid = spawn(cmdstring, :pgroup => 0)
   puts "Waiting on #{pid} (job #{job} queue #{output_topic_name})"
   STDOUT.flush
@@ -330,15 +341,22 @@ def process_smt(message, attrs, options)
   #puts "Temp paths #{infile.path}, #{outfile.path} #{ocerr.path}"
   #puts "Running OC"
 
+  logstr = ""
+#if options[:logging]
+#    FileUtils.mkdir_p("logs/#{output_topic_name}")
+#    logfile = "logs/#{output_topic_name}/#{job}"
+#    logstr = ">#{logfile}"
+#  end
+
   # run obligation checker
   tmoutstring = "/usr/bin/timeout --foreground #{options[:timeout]} "
-  cmdstring = "#{tmoutstring} stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path}"
+  cmdstring = "#{tmoutstring} stoke_obligation_check --solver #{solver} --alias_strategy #{model} -o #{outfile.path} <#{infile.path} #{logstr}"
   pid = spawn(cmdstring, :pgroup => 0)
-  monitor_add(job, pid)
+  monitor_add(datastore_key, pid)
   puts "Waiting on #{pid} (job #{job})"
   STDOUT.flush
   Process.waitpid(pid)
-  monitor_remove(job, pid)
+  monitor_remove(datastore_key, pid)
   puts "#{pid} Done (job #{job})"
 
   # delete temporary files

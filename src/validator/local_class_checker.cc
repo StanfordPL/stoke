@@ -41,7 +41,7 @@ using namespace stoke;
 using namespace std;
 
 /** Check this template with equivalence class. */
-void LocalClassChecker::check(
+int LocalClassChecker::check(
     const DualAutomata& template_pod,
     const DualBuilder::EquivalenceClassMap& equivalence_class,
     Callback& callback,
@@ -57,7 +57,7 @@ void LocalClassChecker::check(
     r.has_error = false;
     r.error_message = "POD not sane";
     callback(r, optional);
-    return;
+    return 0;
   }
 
   bool valid = verify_dual(pod);
@@ -66,7 +66,7 @@ void LocalClassChecker::check(
   r.has_error = false;
   r.error_message = "";
   callback(r, optional);
-  return;
+  return 0;
 
 }
 

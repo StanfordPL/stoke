@@ -45,7 +45,7 @@ public:
   typedef std::map<DualAutomata::State, EquivalenceClass> EquivalenceClassMap;
 
   /** Get handhold equivalence class (from a file) */
-  EquivalenceClassMap get_handhold_class();
+  static EquivalenceClassMap get_handhold_class();
 
   /** Get POD from equivalence class */
   DualAutomata generate_pod(const EquivalenceClassMap& mp);

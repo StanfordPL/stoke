@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-void PubsubClassChecker::check(
+int PubsubClassChecker::check(
     const DualAutomata& template_pod,
     const DualBuilder::EquivalenceClassMap& equivalence_class,
     Callback& callback,
@@ -60,6 +60,7 @@ void PubsubClassChecker::check(
   *os_ << "== DATA ==" << endl;
   prob.serialize(*os_);
   *os_ << "== END ==" << endl;
+  return (int)job_id;
 
 }
 

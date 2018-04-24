@@ -56,7 +56,7 @@ public:
   }
 
   /** Check this template with equivalence class. */
-  virtual void check(const DualAutomata& template_pod,
+  virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      void* optional = NULL);
