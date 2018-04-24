@@ -86,7 +86,7 @@ private:
   void discharge_thread_run(DualAutomata&, DischargeState&);
 
   /** Verify that a dual automata is correct */
-  bool verify_dual(DualAutomata& dual);
+  ClassChecker::Result verify_dual(DualAutomata& dual);
 
 
   ObligationChecker::Callback callback_;

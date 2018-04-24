@@ -67,7 +67,7 @@ int LocalClassChecker::check(
 }
 
 
-Result LocalClassChecker::verify_dual(DualAutomata& dual) {
+ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
   Result r;
   r.verified = false;
   r.has_error = false;
