@@ -60,25 +60,28 @@ int LocalClassChecker::check(
     return 0;
   }
 
-  bool valid = verify_dual(pod);
-  Result r;
-  r.verified = valid;
-  r.has_error = false;
-  r.error_message = "";
+  Result r = verify_dual(pod);
   callback(r, optional);
   return 0;
 
 }
 
 
-bool LocalClassChecker::verify_dual(DualAutomata& dual) {
+Result LocalClassChecker::verify_dual(DualAutomata& dual) {
+  Result r;
+  r.verified = false;
+  r.has_error = false;
+  r.error_message = "";
+
+
   dual.remove_prefixes();
   dual.print_all();
 
   bool learning_successful = dual.learn_invariants(invariant_learner_);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
-    return false;
+    r.error_message = "Learning state data/invariants failed";
+    return r;
   }
 
   auto edge_reachable = dual.get_edge_reachable_states();
@@ -89,7 +92,8 @@ bool LocalClassChecker::verify_dual(DualAutomata& dual) {
     if (inv->size() < 2) {
       cout << "[verify_dual] Could not learn invariant at state " << state << endl;
       cout << "[verify_dual] Aboring." << endl;
-      return false;
+      r.error_message = "Could not learn invariant at state.";
+      return r;
     }
   }
 
@@ -128,7 +132,8 @@ bool LocalClassChecker::verify_dual(DualAutomata& dual) {
   auto fail_invariant = dual.get_invariant(fail_state);
   if(fail_invariant->size() == 0) {
     cout << "[verify_dual] There's a feasible path to a fail state.  Proof failed." << endl;
-    return false;
+    r.error_message = "Feasible path to fail state.";
+    return r;
   }
 
   /** Perform the final check. */
@@ -139,18 +144,23 @@ bool LocalClassChecker::verify_dual(DualAutomata& dual) {
                                     {}, {}, *actual_final, *expected_final, testcases);
   if(result.has_error) {
     cout << "[verify_dual] Checker encountered error: " << result.error_message << endl;
+    r.has_error = true;
+    r.error_message = "Solver encountered error on final obligation";
+    return r;
   }
 
   if (!result.verified) {
     cout << "[verify_dual] Could not complete final proof step." << endl;
     cout << "[verify_dual] Maybe DDEC missed an important invariant?" << endl;
-    return false;
+    r.error_message = "Final proof obligation failed.";
+    return r;
   }
 
   /** All done :) */
   cout << " ===== PROOF COMPLETE ===== " << endl;
   dual.print_all();
-  return true;
+  r.verified = true;
+  return r;
 };
 
 

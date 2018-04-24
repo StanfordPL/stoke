@@ -51,8 +51,7 @@ public:
       solver_ = new SolverGadget();
       child_ = new SmtObligationChecker(*solver_, *filter_);
     } else if (oc_type == "pubsub") {
-      child_ = new PubsubObligationChecker(
-          "/afs/cs.stanford.edu/u/berkeley/.rvm/rubies/ruby-2.5.1/bin/ruby");
+      child_ = new PubsubObligationChecker("ruby");
     }
 
     set_alias_strategy(parse_alias());
