@@ -374,7 +374,10 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
 
 void DdecValidator::class_checker_callback(const ClassChecker::Result& result, void* optional) {
   JobInfo* ji = static_cast<JobInfo*>(optional);
-  cout << "[class_checker_callback] number=" << ji->number << " verified=" << result.verified << endl;
+  cout << "[class_checker_callback] number=" << ji->number << endl 
+       << "  verified=" << result.verified << endl
+       << "  error=" << result.has_error << endl
+       << "  message=" << result.error_message << endl;
   cout << "Equivalence class: " << endl;
   stoke::serialize<DualBuilder::EquivalenceClassMap>(cout, ji->m);
   cout << endl;
