@@ -1,5 +1,6 @@
 
 require "google/cloud/pubsub"
+require "google/cloud/datastore"
 require 'optparse'
 
 # inputs
@@ -25,14 +26,15 @@ def parse_options
 end
 
 def publish(topic, attributes, data)
+  topic.publish_async data, attributes
   if(attributes["type"] == "smt")
-    puts "Publishing " + attributes["job"].to_s + " with solver/strategy " + attributes["solver"] + " / " + attributes["model"]
+    puts "Published " + attributes["job"].to_s + " with solver/strategy " + attributes["solver"] + " / " + attributes["model"]
   elsif(attributes["type"] == "class")
-    puts "Publishing " + attributes["job"].to_s
+    puts "Published " + attributes["job"].to_s
   end
   STDOUT.flush
-  topic.publish_async data, attributes
 end
+
 
 def get_topic(project_id, topic_name)
   pubsub = Google::Cloud::Pubsub.new :project => project_id
@@ -50,32 +52,48 @@ def get_topic(project_id, topic_name)
   topic
 end
 
+def push_blob(attrs, current_string)
+  query = datastore.query("Blob").
+    where("name", "=", attrs["name"])
+  existing = datastore.run query
+  return if not existing.nil? and existing.size > 0
+
+  blob = @datastore.entity "Blob" do |t|
+    t["name"] = attrs["name"]
+    t["content"] = current_string
+  end
+  blob.save
+end
+
 def publish_loop(topic)
 
   current_string = ""
   attrs = {} 
-  working_on_data = false
-  working_on_attrs = false
+  working_on = :none
 
   STDIN.each_line do |line|
     if line.strip == "== DONE ==" then
       exit 0
-    elsif line.strip == "== END ==" then
+    elsif line.strip == "== END ==" and working_on == :data then
       publish(topic, attrs, current_string)
       current_string = ""
       attrs = {}
-      working_on_data = false
-      working_on_attrs = false
+      working_on = :none
+    elsif line.strip == "== END ==" and working_on == :blob then
+      push_blob(attrs, current_string)
+      current_string = ""
+      attrs = {}
+      working_on = :none
+    elsif line.strip == "== BLOB ==" then
+      working_on = :blob
     elsif line.strip == "== ATTRIBUTES ==" then
-      working_on_attrs = true
-      working_on_data = false
+      working_on = :attrs
     elsif line.strip == "== DATA ==" then
-      working_on_attrs = false
-      working_on_data = true
-    elsif working_on_attrs == true then
+      working_on = :data
+    elsif working_on == :attrs then
       pieces = line.split(" ")
       attrs[pieces[0]] = pieces[1]
-    elsif working_on_data == true then
+    elsif working_on == :data or working_on == :blob then
       current_string += line
     end
   end
@@ -84,6 +102,7 @@ end
 
 options = parse_options
 puts options
+@datastore = Google::Cloud::Datastore.new :project => options[:id]
 topic = get_topic(options[:id], options[:topic])
 puts "Got topic #{topic}"
 STDOUT.flush
