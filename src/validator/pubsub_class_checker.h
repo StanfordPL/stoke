@@ -37,7 +37,7 @@ public:
                     ControlLearner& control_learner,
                     size_t target_bound,
                     size_t rewrite_bound,
-                    std::string ruby_path = "/afs/cs.stanford.edu/u/berkeley/.rvm/rubies/ruby-2.5.1/bin/ruby") :
+                    std::string ruby_path = "ruby") :
     ClassChecker(data_collector, control_learner, target_bound, rewrite_bound),
     ruby_path_(ruby_path)
   {

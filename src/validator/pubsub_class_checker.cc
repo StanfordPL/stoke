@@ -165,7 +165,7 @@ void PubsubClassChecker::init_publisher() {
     };
 
     // invoke execve
-    execve(ruby_path, argv, environ);
+    execvpe(ruby_path, argv, environ);
   }
 }
 
