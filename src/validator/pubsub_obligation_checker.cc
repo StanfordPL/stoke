@@ -147,7 +147,11 @@ void PubsubObligationChecker::block_until_complete() {
 void PubsubObligationChecker::init_publisher() {
 
   int pipefd[2];
-  pipe(pipefd);
+  int ok = pipe(pipefd);
+  if(ok) {
+    perror("pubsub obligation checker, publisher pipe");
+    exit(1);
+  }
 
   pid_t pid = fork();
   if(pid != 0) {
@@ -190,13 +194,20 @@ void PubsubObligationChecker::init_publisher() {
 
     // invoke execve
     execvpe(ruby_path, argv, environ);
+    perror("execvpe for obligation checker ruby");
   }
 }
 
 void PubsubObligationChecker::init_subscriber() {
 
   int pipefd[2];
-  pipe(pipefd);
+  int ok = pipe(pipefd);
+  if(ok) {
+    perror("pubsub obligation checker, subscriber pipe");
+    exit(1);
+  }
+
+
 
   pid_t pid = fork();
   if(pid != 0) {
@@ -240,7 +251,7 @@ void PubsubObligationChecker::init_subscriber() {
     };
 
     // invoke execve
-    execve(ruby_path, argv, environ);
+    execvpe(ruby_path, argv, environ);
   }
 }
 

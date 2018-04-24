@@ -82,7 +82,6 @@ def publish_loop(topic)
 
 end
 
-ENV.each { |k,v| puts "#{k}=#{v}" }
 options = parse_options
 puts options
 topic = get_topic(options[:id], options[:topic])

@@ -123,7 +123,12 @@ void PubsubClassChecker::block_until_complete() {
 void PubsubClassChecker::init_publisher() {
 
   int pipefd[2];
-  pipe(pipefd);
+  int ok = pipe(pipefd);
+  if(ok) {
+    perror("pubsub class checker, publisher pipe");
+    exit(1);
+  }
+
 
   pid_t pid = fork();
   if(pid != 0) {
@@ -166,13 +171,19 @@ void PubsubClassChecker::init_publisher() {
 
     // invoke execve
     execvpe(ruby_path, argv, environ);
+    perror("execvpe for class checker ruby");
   }
 }
 
 void PubsubClassChecker::init_subscriber() {
 
   int pipefd[2];
-  pipe(pipefd);
+  int ok = pipe(pipefd);
+  if(ok) {
+    perror("pubsub class checker, subscriber pipe");
+    exit(1);
+  }
+
 
   pid_t pid = fork();
   if(pid != 0) {
@@ -216,7 +227,8 @@ void PubsubClassChecker::init_subscriber() {
     };
 
     // invoke execve
-    execve(ruby_path, argv, environ);
+    execvpe(ruby_path, argv, environ);
+    perror("execvpe for class checker ruby, subscriber");
   }
 }
 

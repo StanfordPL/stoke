@@ -38,8 +38,17 @@ void Sage::initialize() {
 
   int to_sage_pipe[2];
   int from_sage_pipe[2];
-  pipe(to_sage_pipe);
-  pipe(from_sage_pipe);
+  int ok = pipe(to_sage_pipe);
+  if(ok) {
+    perror("sage pipe1");
+    exit(1);
+  }
+
+  ok = pipe(from_sage_pipe);
+  if(ok) {
+    perror("sage pipe2");
+    exit(1);
+  }
 
   initialized = true;
 
@@ -88,6 +97,7 @@ void Sage::initialize() {
 
     prctl(PR_SET_PDEATHSIG, SIGTERM);
     execvpe("sage", argv, environ);
+    perror("execvpe for sage");
   }
 
 
@@ -114,10 +124,6 @@ void Sage::run() {
   exec_file << buffer_to_sage.str() << endl;
   exec_file.close();
   cout << "Temporary file at " << tmp_in << endl;
-
-  stringstream test;
-  test << "ps -e | grep " << child_pid;
-  system(test.str().c_str());
 
   /** Tell sage to execute it. */
   *stream_to_sage << tmp_in << endl;
