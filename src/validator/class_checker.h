@@ -49,23 +49,17 @@ public:
   struct Problem {
     DualAutomata template_pod;
     DualBuilder::EquivalenceClassMap equivalence_class;
-    DataCollector data_collector;
-    ControlLearner control_learner;
     size_t target_bound;
     size_t rewrite_bound;
 
-    static Problem deserialize(std::istream& is);
+    static Problem deserialize(std::istream& is, DataCollector& dc);
     std::ostream& serialize(std::ostream& os) const;
 
     Problem(const DualAutomata& da, 
             const DualBuilder::EquivalenceClassMap& equ_class,
-            const DataCollector& dc,
-            const ControlLearner& cl,
             size_t tb, size_t rb) : 
       template_pod(da),
       equivalence_class(equ_class),
-      data_collector(dc),
-      control_learner(cl),
       target_bound(tb),
       rewrite_bound(rb)
     {

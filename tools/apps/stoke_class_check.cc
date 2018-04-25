@@ -21,11 +21,14 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/serialize/serialize.h"
+#include "src/validator/data_collector.h"
 #include "src/validator/local_class_checker.h"
 
 #include "tools/gadgets/learner.h"
 #include "tools/gadgets/obligation_checker.h"
+#include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
+#include "tools/gadgets/testcases.h"
 
 using namespace cpputil;
 using namespace std;
@@ -61,16 +64,20 @@ int main(int argc, char** argv) {
   };
 
   /** On standard input, read in the problem. */
-  ClassChecker::Problem problem = ClassChecker::Problem::deserialize(cin);
+  SeedGadget seed;
+  TestcasesGadget testcases(seed);
+  cout << "Found " << testcases.size() << " testcases" << endl;
+  SandboxGadget sandbox(testcases, {});
+  DataCollector data_collector(sandbox);
+
+  ClassChecker::Problem problem = ClassChecker::Problem::deserialize(cin, data_collector);
 
   auto& target = problem.template_pod.get_target();
   auto& rewrite = problem.template_pod.get_rewrite();
-  SeedGadget seed;
-  InvariantLearnerGadget invariant_learner(seed, target, rewrite);
 
-  auto data_collector = problem.data_collector;
-  auto control_learner = problem.control_learner;
-  LocalClassChecker class_checker(problem.data_collector, problem.control_learner,
+  InvariantLearnerGadget invariant_learner(seed, target, rewrite);
+  ControlLearner control_learner(target, rewrite, sandbox);
+  LocalClassChecker class_checker(data_collector, control_learner,
                                   problem.target_bound, problem.rewrite_bound,
                                   obligation_checker, invariant_learner);
                                   

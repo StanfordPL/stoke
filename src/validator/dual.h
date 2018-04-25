@@ -299,7 +299,7 @@ public:
   }
 
   void serialize(std::ostream& os) const;
-  static DualAutomata deserialize(std::istream& is);
+  static DualAutomata deserialize(std::istream& is, DataCollector& dc);
 
   const DataCollector& get_data_collector() const {
     return data_collector_;

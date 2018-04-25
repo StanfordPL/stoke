@@ -191,6 +191,7 @@ SRC_OBJ=\
 	src/validator/invariant.o \
   src/validator/learner.o \
 	src/validator/local_class_checker.o \
+	src/validator/md5.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/pubsub_class_checker.o \

@@ -51,20 +51,17 @@ ostream& std::operator<<(ostream& strm, const stoke::ClassChecker::Problem& resu
 ostream& ClassChecker::Problem::serialize(ostream& os) const {
   template_pod.serialize(os);
   stoke::serialize<DualBuilder::EquivalenceClassMap>(os, equivalence_class);
-  control_learner.serialize(os);
   os << target_bound << " " << rewrite_bound << endl;
   return os;
 }
 
 
-ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is) {
-  auto template_pod = DualAutomata::deserialize(is);
+ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is, DataCollector& dc) {
+  auto template_pod = DualAutomata::deserialize(is, dc);
   auto equiv_class_map = stoke::deserialize<DualBuilder::EquivalenceClassMap>(is);
-  auto cl = ControlLearner::deserialize(template_pod.get_target(), template_pod.get_rewrite(), is);
   size_t target_bound, rewrite_bound;
   is >> target_bound >> rewrite_bound;
-  const auto& dc = template_pod.get_data_collector();
-  ClassChecker::Problem problem(template_pod, equiv_class_map, dc, cl, target_bound, rewrite_bound);
+  ClassChecker::Problem problem(template_pod, equiv_class_map, target_bound, rewrite_bound);
   return problem;
 }
 

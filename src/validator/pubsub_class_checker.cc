@@ -16,6 +16,8 @@
 #include <cstdio>
 #include <string>
 
+#include "src/state/cpu_states.h"
+#include "src/validator/md5.h"
 #include "src/validator/pubsub_class_checker.h"
 
 using namespace std;
@@ -29,8 +31,6 @@ int PubsubClassChecker::check(
             
   Problem prob(template_pod, 
                equivalence_class, 
-               data_collector_, 
-               control_learner_, 
                target_bound_, 
                rewrite_bound_);
 
@@ -38,6 +38,7 @@ int PubsubClassChecker::check(
   map<string, string> attributes;
   attributes["type"] = "class";
   attributes["output-topic"] = our_topic_;
+  attributes["blob"] = blobname_;
 
   // get job id
   size_t job_id = ++job_count_;
@@ -232,3 +233,29 @@ void PubsubClassChecker::init_subscriber() {
   }
 }
 
+
+void PubsubClassChecker::send_testcase_blob() {
+
+  CpuStates inputs;
+  auto& sandbox = data_collector_.get_sandbox();
+  for(auto it = sandbox.input_begin(), ie=sandbox.input_end(); it != ie; ++it) {
+    inputs.push_back(*it);
+  }
+
+  stringstream hashit;
+  inputs.write_text(hashit);
+  hashit << endl;
+  auto hash = md5(hashit.str());
+
+  stringstream name;
+  name << hash << ".tc";
+  blobname_ = name.str();
+
+  cout << "WRITING MY BLOB" << endl;
+  *os_ << "== ATTRIBUTES ==" << endl;
+  *os_ << "name " << blobname_ << endl;
+  *os_ << "== BLOB ==" << endl;
+  *os_ << hashit.str() << endl;
+  *os_ << "== END ==" << endl;
+
+}

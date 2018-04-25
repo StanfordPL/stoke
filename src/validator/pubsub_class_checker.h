@@ -53,6 +53,8 @@ public:
 
     init_publisher();
     init_subscriber();
+    sleep(1);
+    send_testcase_blob();
   }
 
   /** Check this template with equivalence class. */
@@ -69,6 +71,10 @@ private:
   /** Setup child processes and pipes */
   void init_publisher();
   void init_subscriber();
+
+  /** Handle sending the testcases via datastore */
+  void send_testcase_blob();
+  std::string blobname_;
 
   /** Name of our topic for getting results back */
   std::string our_topic_;

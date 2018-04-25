@@ -437,11 +437,15 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     return class_checker_callback(r, optional);
   };
   
-  /*
-  LocalClassChecker local_checker(data_collector_, *control_learner_, 
-                    target_bound_, rewrite_bound_,
-                    checker_, invariant_learner_); */
-  PubsubClassChecker checker(data_collector_, *control_learner_, target_bound_, rewrite_bound_);
+  ClassChecker* checker = NULL;
+  if(use_pubsub_class_checker_) {
+    checker = new PubsubClassChecker(data_collector_, *control_learner_, 
+                      target_bound_, rewrite_bound_);
+  } else {
+    checker = new LocalClassChecker(data_collector_, *control_learner_, 
+                      target_bound_, rewrite_bound_,
+                      checker_, invariant_learner_); 
+  }
 
   // Run handhold check
   /*
@@ -459,12 +463,12 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto ji = new JobInfo();
     ji->m = cls;
     ji->number = (size_t)-1;
-    int jobid = checker.check(template_pod, cls, callback, (void*)ji);
+    int jobid = checker->check(template_pod, cls, callback, (void*)ji);
     ji->number= (size_t)jobid;
   }
 
   /** Finish it off. */
-  checker.block_until_complete();
+  checker->block_until_complete();
 
   if(verified_ > 0)
     return true;

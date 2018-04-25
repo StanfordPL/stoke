@@ -97,6 +97,7 @@ private:
       auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_thread_count(1);
+      ddec->use_pubsub_class_checker(pubsub_class_checker_arg.value());
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

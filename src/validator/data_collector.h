@@ -73,6 +73,10 @@ public:
   void serialize(std::ostream& os) const;
   static DataCollector deserialize(std::istream& is);
 
+  const Sandbox& get_sandbox() {
+    return sandbox_;
+  }
+
 private:
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */

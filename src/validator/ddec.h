@@ -46,6 +46,7 @@ public:
           control_learner_(NULL)
   {
     set_thread_count(1);
+    use_pubsub_class_checker(false);
   }
 
   DdecValidator(const DdecValidator& rhs) :
@@ -71,6 +72,11 @@ public:
 
   DdecValidator& set_thread_count(size_t n) {
     return *this;
+  }
+
+  DdecValidator& use_pubsub_class_checker(bool b) {
+    use_pubsub_class_checker_ = b;
+    return* this;
   }
 
   /** Verify if target and rewrite are equivalent. */
@@ -159,6 +165,7 @@ private:
   };
 
   std::map<size_t, JobInfo> jobs_;
+  bool use_pubsub_class_checker_;
 
 };
 

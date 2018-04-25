@@ -53,16 +53,21 @@ def get_topic(project_id, topic_name)
 end
 
 def push_blob(attrs, current_string)
-  query = datastore.query("Blob").
+  puts "PUSHING BLOB #{attrs["name"]}"
+
+  query = @datastore.query("Blob").
     where("name", "=", attrs["name"])
-  existing = datastore.run query
+  existing = @datastore.run query
   return if not existing.nil? and existing.size > 0
 
   blob = @datastore.entity "Blob" do |t|
     t["name"] = attrs["name"]
-    t["content"] = current_string
+    t["contents"] = current_string
+    t.exclude_from_indexes! "contents", true
   end
-  blob.save
+  @datastore.save blob
+  puts "... BLOB PUSHED"
+  STDOUT.flush
 end
 
 def publish_loop(topic)
@@ -91,9 +96,11 @@ def publish_loop(topic)
     elsif line.strip == "== DATA ==" then
       working_on = :data
     elsif working_on == :attrs then
+#puts "      got attr"
       pieces = line.split(" ")
       attrs[pieces[0]] = pieces[1]
     elsif working_on == :data or working_on == :blob then
+#puts "      got line"
       current_string += line
     end
   end

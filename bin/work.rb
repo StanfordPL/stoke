@@ -243,6 +243,33 @@ def queue_is_bad(name)
   return okay
 end
 
+def fetch_blobs(filenames)
+  list = filenames.split(",")
+  list.each do |filename|
+    fetch_blob(filename)
+  end
+end
+
+def fetch_blob(filename)
+  return if File.exist?("blobs/#{filename}")
+
+  query = @datastore.query("Blob").
+    where("name", "=", filename)
+  existing = @datastore.run query
+
+  # Throw an error if we couldn't find the blob.
+  if existing.nil? or existing.size == 0 then
+    raise "Blob not found #{filename}"
+  end
+
+  # if we find the blob, save it in a file
+  FileUtils.mkdir_p("blobs")
+  blob = existing[0]
+  File.open("blobs/#{filename}", 'w') do |f|
+    f.write blob["contents"]
+  end
+end
+
 def process_class(message, attrs, options)
   # get attributes
   job = attrs["job"]
@@ -266,16 +293,23 @@ def process_class(message, attrs, options)
   outfile = Tempfile.new('ocoutput')
   outfile.close
 
+  cmdstring = "stoke_class_check --testcases blobs/#{attrs["blob"]} --obligation_checker pubsub -o #{outfile.path} <#{infile.path}"
+
   logstr = ""
   if options[:logging]
     FileUtils.mkdir_p("logs/#{output_topic_name}")
     logfile = "logs/#{output_topic_name}/#{job}"
     logstr = ">#{logfile}"
+
+    FileUtils.cp infile.path, "logs/#{output_topic_name}/#{job}.input"
+    File.open("logs/#{output_topic_name}/#{job}.cmdline", 'w') do |f|
+      f.write(cmdstring)
+      f.write("\n")
+    end
   end
 
   # run checker
-  cmdstring = "stoke_class_check --obligation_checker pubsub -o #{outfile.path} <#{infile.path} #{logstr}"
-  pid = spawn(cmdstring, :pgroup => 0)
+  pid = spawn("#{cmdstring} #{logstr}", :pgroup => 0)
   puts "Waiting on #{pid} (job #{job} queue #{output_topic_name})"
   STDOUT.flush
   Process.waitpid(pid)
@@ -289,7 +323,7 @@ def process_class(message, attrs, options)
 
   if data.size == 0 then
     data = generate_error("stoke_class_check failed")
-    puts "Encountered error for job #{job} pid #{pid} with solver #{solver} strategy #{model}"
+    puts "Encountered error for job #{job} pid #{pid}"
     STDOUT.flush
   end
 
@@ -391,6 +425,11 @@ end
 def process_message(message, options)
   begin
     attrs = message.attributes
+    
+    if not attrs["blob"].nil? then
+      fetch_blobs attrs["blob"]
+    end
+
     if(attrs["type"] == "smt")
       process_smt(message, attrs, options)
       return true

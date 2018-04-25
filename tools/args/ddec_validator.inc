@@ -43,6 +43,9 @@ cpputil::ValueArg<int>& ddec_thread_count =
   .description("How many threads to use for DDEC.")
   .default_val(1);
 
+cpputil::FlagArg& pubsub_class_checker_arg =
+  cpputil::FlagArg::create("pubsub_class_checker")
+  .description("Use pubsub to discharge DDEC equivalence classes");
 } // namespace stoke
 
 #endif

@@ -51,6 +51,7 @@ istream& CpuStates::read_text(std::istream& is) {
     CpuState t;
     is >> ws;
     t.read_text(is);
+    is >> ws;
 
     this->emplace_back(t);
   }
