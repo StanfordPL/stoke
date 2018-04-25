@@ -262,11 +262,18 @@ def fetch_blob(filename)
     raise "Blob not found #{filename}"
   end
 
+  my_arr = []
+  existing.all do |blob|
+    my_arr.push(blob)
+  end
+  my_arr.sort! { |x,y| x["index"] <=> y["index"] }
+
   # if we find the blob, save it in a file
   FileUtils.mkdir_p("blobs")
-  blob = existing[0]
   File.open("blobs/#{filename}", 'w') do |f|
-    f.write blob["contents"]
+    my_arr.each do |blob|
+      f.write blob["contents"]
+    end
   end
 end
 
@@ -435,6 +442,9 @@ def process_message(message, options)
       return true
     elsif(attrs["type"] == "class")
       process_class(message, attrs, options)
+      return true
+    elsif(attrs["type"] == "echo")
+      puts message.data
       return true
     end
     return false
