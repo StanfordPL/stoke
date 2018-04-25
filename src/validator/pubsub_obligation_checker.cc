@@ -15,6 +15,7 @@
 #include "src/validator/pubsub_obligation_checker.h"
 #include <unistd.h>
 #include <cstdio>
+#include <sys/prctl.h>
 
 using namespace std;
 using namespace stoke;
@@ -165,6 +166,8 @@ void PubsubObligationChecker::init_publisher() {
 
   } else {
     // child
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+
     close(pipefd[1]);
     int fd = pipefd[0];
     dup2(fd, STDIN_FILENO);
@@ -222,6 +225,8 @@ void PubsubObligationChecker::init_subscriber() {
 
   } else {
     // child
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+
     close(pipefd[0]);
     int fd = pipefd[1];
     dup2(fd, STDOUT_FILENO);

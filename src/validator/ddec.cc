@@ -635,6 +635,14 @@ DualBuilder::EquivalenceClassMap DdecValidator::next_class(DualAutomata& pod) {
       if(!made_change) {
         pair.second++;
         made_change = true;
+        // go through and zero out the previous entries in the class descriptor
+        for(auto& pair2 : current_class_descriptor_) {
+          if(pair2.first == pair.first)
+            break;
+          if(pair.second != 0)
+            has_next_class_ = true;
+          pair.second = 0;
+        }
         if(options.size() > pair.second+1) { //still!
           has_next_class_ = true;
           break;

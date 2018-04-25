@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <cstdio>
 #include <string>
+#include <sys/prctl.h>
 
 #include "src/state/cpu_states.h"
 #include "src/validator/md5.h"
@@ -143,6 +144,7 @@ void PubsubClassChecker::init_publisher() {
 
   } else {
     // child
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
     close(pipefd[1]);
     int fd = pipefd[0];
     dup2(fd, STDIN_FILENO);
@@ -199,6 +201,7 @@ void PubsubClassChecker::init_subscriber() {
 
   } else {
     // child
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
     close(pipefd[0]);
     int fd = pipefd[1];
     dup2(fd, STDOUT_FILENO);

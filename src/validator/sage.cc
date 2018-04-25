@@ -68,6 +68,8 @@ void Sage::initialize() {
     sleep(3);
   } else {
     /* child */
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+
     // get path to this binary
     char buffer[1024];
     size_t ret = readlink("/proc/self/exe", buffer, 1024);
@@ -95,7 +97,6 @@ void Sage::initialize() {
       NULL
     };
 
-    prctl(PR_SET_PDEATHSIG, SIGTERM);
     execvpe("sage", argv, environ);
     perror("execvpe for sage");
   }
