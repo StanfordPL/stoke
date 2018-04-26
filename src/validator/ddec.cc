@@ -463,8 +463,11 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto ji = new JobInfo();
     ji->m = cls;
     ji->number = (size_t)-1;
-    int jobid = checker->check(template_pod, cls, callback, (void*)ji);
-    ji->number= (size_t)jobid;
+    size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
+    ji->number= jobid;
+    cout << "Class for " << jobid << endl;
+    stoke::serialize(cout, cls);
+    cout << endl;
   }
 
   /** Finish it off. */
@@ -639,9 +642,9 @@ DualBuilder::EquivalenceClassMap DdecValidator::next_class(DualAutomata& pod) {
         for(auto& pair2 : current_class_descriptor_) {
           if(pair2.first == pair.first)
             break;
-          if(pair.second != 0)
+          if(pair2.second != 0)
             has_next_class_ = true;
-          pair.second = 0;
+          pair2.second = 0;
         }
         if(options.size() > pair.second+1) { //still!
           has_next_class_ = true;

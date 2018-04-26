@@ -191,7 +191,7 @@ void PubsubObligationChecker::init_publisher() {
       ruby_path,
       publish_filename,
       (char*)"--topic",
-      (char*)"worklist",
+      (char*)"worklist-smt",
       NULL 
     };
 

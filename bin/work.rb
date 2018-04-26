@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby 
 
+require_relative 'prctl.rb'
 require "google/cloud/pubsub"
 require "google/cloud/datastore"
 require 'optparse'
@@ -466,16 +467,9 @@ def work(options, sub)
   count = 0
 
   subscriber = sub.listen :threads => { :callback => options[:jobs] },
-                          :inventory => options[:jobs]*100 do |message|
+                          :inventory => options[:jobs]*25 do |message|
     puts "Got message"
-    @working_mutex.synchronize do
-      @working = @working + 1
-      puts "WORKING: #{@working}"
-    end
     outcome = process_message(message, options)
-    @working_mutex.synchronize do
-      @working = @working - 1
-    end
     if outcome then
       puts "...ack"
       message.acknowledge!
@@ -495,12 +489,11 @@ def work(options, sub)
   end
 end
 
+Prctl.set_pdeathsig(15) #sigterm
 options = parse_options
 puts options
 
 ## global variables
-@working_mutex = Mutex.new
-@working = 0
 @exception_mutex = Mutex.new
 @topic_cache = { }
 @pubsub = Google::Cloud::Pubsub.new :project => options[:id]
