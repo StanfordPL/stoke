@@ -20,6 +20,7 @@
 #include <vector>
 #include <atomic>
 
+#include "src/solver/solver.h"
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
 namespace stoke {
@@ -74,6 +75,10 @@ public:
 
   virtual void interrupt() {
     stop_now_.store(true);
+  }
+
+  virtual Solver get_enum() {
+    return Solver::NONE;
   }
 
 protected:

@@ -41,6 +41,8 @@ istream& ObligationChecker::Result::read_text(istream& is) {
     is >> target_final_ceg >> ws;
     is >> rewrite_final_ceg >> ws;
   }
+  //is >> (uint64_t)time_microseconds >> (int)solver >> (int)strategy >> source_version;
+  is >> source_version;
   return is;
 }
 
@@ -54,6 +56,8 @@ ostream& ObligationChecker::Result::write_text(ostream& os) const {
     os << target_final_ceg << endl;
     os << rewrite_final_ceg << endl;
   }
+  os << source_version << endl;
+  //os << time_microseconds << " " << (int)solver << " " << (int)strategy << " " << source_version << endl;
   return os;
 }
 

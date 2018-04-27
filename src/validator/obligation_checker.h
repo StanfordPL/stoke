@@ -63,22 +63,32 @@ class ObligationChecker {
 public:
 
   enum AliasStrategy {
-    BASIC,             // enumerate all cases, attempt to bound it (SOUND)
-    FLAT,              // model memory as an array in the SMT solver (SOUND)
-    ARM,               // improved implementation of "STRING" (SOUND)
-    ARMS_RACE          // run ARM and FLAT in parallel (SOUND)
+    BASIC = 0,             // enumerate all cases, attempt to bound it (SOUND)
+    FLAT = 1,              // model memory as an array in the SMT solver (SOUND)
+    ARM = 2,               // improved implementation of "STRING" (SOUND)
+    ARMS_RACE = 3          // run ARM and FLAT in parallel (SOUND)
   };
 
   struct Result {
+    /** output of verification */
     bool verified;
     bool has_ceg;
+
+    /** error data */
     bool has_error;
     std::string error_message;
 
+    /** counterexample details */
     CpuState target_ceg;
     CpuState rewrite_ceg;
     CpuState target_final_ceg;
     CpuState rewrite_final_ceg;
+
+    /** metadata on solver */
+    uint64_t time_microseconds;
+    Solver solver;
+    AliasStrategy strategy;
+    std::string source_version;
 
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;

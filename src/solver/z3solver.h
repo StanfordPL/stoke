@@ -102,6 +102,10 @@ public:
     return new Z3Solver(*this);
   }
 
+  virtual Solver get_enum() {
+    return Solver::Z3;
+  }
+
 
 private:
 

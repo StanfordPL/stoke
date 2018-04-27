@@ -402,6 +402,9 @@ z3init:
 src/ext/z3/build/Makefile:
 	cd src/ext/z3 && CC="${CC}" CXX="${CXX}" python scripts/mk_make.py
 
+git-version.inc: .FORCE
+	./scripts/git/print_version.sh > $@
+
 ##### VALIDATOR AUTOGEN
 
 src/validator/handlers.h: .FORCE
@@ -454,7 +457,7 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 
 ##### BINARY TARGETS
 
-bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
+bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h git-version.inc
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 ##### TESTING
@@ -477,7 +480,7 @@ tests/validator/handlers.h: .FORCE
 tests/%.o: tests/%.cc tests/%.h
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
+bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h .git-version.inc
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
 
 ## MISC

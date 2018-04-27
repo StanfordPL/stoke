@@ -7,4 +7,5 @@ tags
 .stoke_config
 aliasing
 .DS_Store
-
+git-version.inc
+.git-version.inc

@@ -20,6 +20,7 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/console.h"
 
+#include "tools/common/version_info.h"
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/rewrite.h"
@@ -62,15 +63,11 @@ void print_machine_output(bool verified, string error, string counterexample, bo
 
 int main(int argc, char** argv) {
 
-  auto version_info = R"VERSIONINFO(
-#include "version_info"
-  )VERSIONINFO";
-  cout << version_info << endl;
-
-
+  cout << "VERSION: " << version_info << endl;
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
+
 
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);

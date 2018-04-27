@@ -342,6 +342,8 @@ void SmtObligationChecker::check(
   Callback& callback,
   void* optional) {
 
+  auto start_time = system_clock::now();
+
   /*
   cout << "== PROBLEM ==" << endl;
   Obligation ob;
@@ -620,6 +622,13 @@ void SmtObligationChecker::check(
   solver_time_ += (perf_solve - perf_constr_end).count();
 #endif
 
+  uint64_t duration = duration_cast<microseconds>(system_clock::now() - start_time).count();
+
+  ObligationChecker::Result result;
+  result.solver = solver_.get_enum();
+  result.strategy = alias_strategy_;
+  result.time_microseconds = duration;
+
   if (is_sat) {
     bool have_ceg;
     CpuState ceg_t = state_from_model("_1_INIT", target_ghost_names);
@@ -695,7 +704,6 @@ void SmtObligationChecker::check(
     print_performance();
 #endif
 
-    ObligationChecker::Result result;
     result.verified = false;
     result.has_ceg = ok;
     result.has_error = false;
@@ -719,7 +727,6 @@ void SmtObligationChecker::check(
     ceg_time_ += (perf_ceg - perf_solve).count();
 #endif
 
-    ObligationChecker::Result result;
     result.verified = true;
     result.has_ceg = false;
     result.has_error = false;

@@ -94,6 +94,10 @@ public:
     return new Cvc4Solver(*this);
   }
 
+  virtual Solver get_enum() {
+    return Solver::CVC4;
+  }
+
 private:
 
   CVC4::SmtEngine* smt_;

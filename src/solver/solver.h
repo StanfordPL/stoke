@@ -18,9 +18,10 @@
 namespace stoke {
 
 enum class Solver {
-  CVC4,
-  Z3,
-  RACE
+  NONE = 0,
+  CVC4 = 1,
+  Z3 = 2,
+  RACE = 3
 };
 
 } // namespace stoke
