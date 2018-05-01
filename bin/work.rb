@@ -412,6 +412,13 @@ def process_smt(message, attrs, options)
     STDOUT.flush
   end
 
+  lines = data.split("\n")
+  smt_time = lines[1].split(" ")[1]
+  @log_mutex.synchronize do
+    @log_file.write "#{solver} #{model} #{smt_time}\n"
+    @log_file.flush
+  end
+
   # publish response to output topic
   output_topic = get_topic(output_topic_name)
   output_topic.publish data, attrs
@@ -506,6 +513,10 @@ puts options
 @queues_seen = Set.new
 @bad_queues_mutex = Mutex.new
 @bad_queues = Set.new
+@log_mutex = Mutex.new
+if options[:topic] == "worklist-smt"
+  @log_file = File.open('log', 'w')
+end
 
 topic = get_topic(options[:topic])
 subscription = get_subscription(topic, options[:topic])

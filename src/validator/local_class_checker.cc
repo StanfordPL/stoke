@@ -28,6 +28,8 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
+#include "tools/common/version_info.h"
+
 #ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
 #else

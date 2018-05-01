@@ -1,5 +1,5 @@
 *.o
-bin/*
+bin/stoke_*
 src/tags
 *.swp
 tags

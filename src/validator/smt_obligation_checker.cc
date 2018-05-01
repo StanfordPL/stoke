@@ -28,6 +28,7 @@
 #include "src/solver/z3solver.h"
 #include "src/symstate/memory_manager.h"
 
+#include "tools/common/version_info.h"
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
@@ -326,6 +327,7 @@ void SmtObligationChecker::return_error(Callback& callback, string& s, void* opt
   result.has_ceg = false;
   result.has_error = true;
   result.error_message = s;
+  result.source_version = string(version_info);
   callback(result, optional);
 }
 
@@ -607,6 +609,7 @@ void SmtObligationChecker::check(
   constraint_gen_time_ += (perf_constr_end - perf_constr_start).count();
 #endif
 
+  auto sat_start = system_clock::now();
 
   bool is_sat = solver_.is_sat(constraints);
   if (solver_.has_error()) {
@@ -622,12 +625,16 @@ void SmtObligationChecker::check(
   solver_time_ += (perf_solve - perf_constr_end).count();
 #endif
 
-  uint64_t duration = duration_cast<microseconds>(system_clock::now() - start_time).count();
+  uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
+  uint64_t gen_duration = duration_cast<microseconds>(sat_start - start_time).count();
+  
 
   ObligationChecker::Result result;
   result.solver = solver_.get_enum();
   result.strategy = alias_strategy_;
-  result.time_microseconds = duration;
+  result.smt_time_microseconds = smt_duration;
+  result.gen_time_microseconds = gen_duration;
+  result.source_version = string(version_info);
 
   if (is_sat) {
     bool have_ceg;

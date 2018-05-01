@@ -85,7 +85,8 @@ public:
     CpuState rewrite_final_ceg;
 
     /** metadata on solver */
-    uint64_t time_microseconds;
+    uint64_t gen_time_microseconds;
+    uint64_t smt_time_microseconds;
     Solver solver;
     AliasStrategy strategy;
     std::string source_version;

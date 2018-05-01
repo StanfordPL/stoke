@@ -33,6 +33,12 @@ istream& std::operator>>(istream& strm, stoke::ObligationChecker::Result& result
 
 istream& ObligationChecker::Result::read_text(istream& is) {
   is >> verified >> has_ceg >> has_error >> ws;
+  is >> gen_time_microseconds >> smt_time_microseconds;;
+  int n_solver, n_strategy;
+  is >> n_solver >> n_strategy;
+  solver = (Solver)n_solver;
+  strategy = (AliasStrategy)n_strategy;
+  is >> source_version;
   if(has_error)
     is >> error_message >> ws; 
   if(has_ceg) {
@@ -41,13 +47,15 @@ istream& ObligationChecker::Result::read_text(istream& is) {
     is >> target_final_ceg >> ws;
     is >> rewrite_final_ceg >> ws;
   }
-  //is >> (uint64_t)time_microseconds >> (int)solver >> (int)strategy >> source_version;
-  is >> source_version;
+
   return is;
 }
 
 ostream& ObligationChecker::Result::write_text(ostream& os) const {
   os << verified << " " << has_ceg << " " << has_error << endl;
+  os << gen_time_microseconds << " " << smt_time_microseconds << endl;
+  os << (size_t)solver << " " << (size_t)strategy << endl;
+  os << source_version << endl;
   if(has_error)
     os << error_message << endl;
   if(has_ceg) {
@@ -56,8 +64,6 @@ ostream& ObligationChecker::Result::write_text(ostream& os) const {
     os << target_final_ceg << endl;
     os << rewrite_final_ceg << endl;
   }
-  os << source_version << endl;
-  //os << time_microseconds << " " << (int)solver << " " << (int)strategy << " " << source_version << endl;
   return os;
 }
 
