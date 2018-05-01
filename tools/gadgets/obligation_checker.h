@@ -54,7 +54,7 @@ public:
     } else if (oc_type == "pubsub") {
       child_ = new PubsubObligationChecker("ruby");
     } else if (oc_type == "postgres") {
-      child_ = new PostgresObligationChecker("");
+      child_ = new PostgresObligationChecker(postgres_arg.value());
     }
 
     set_alias_strategy(parse_alias());

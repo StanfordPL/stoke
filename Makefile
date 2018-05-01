@@ -105,7 +105,8 @@ LIB=\
 	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread -lboost_iostreams \
 	-lcln \
 	-liml -lgmp \
-	-L src/ext/z3/build -lz3
+	-L src/ext/z3/build -lz3 \
+	-lpqxx -lpq
 ifndef NOCVC4
 LIB += -L $(CVC4_OUTDIR)/lib -lcvc4
 endif
@@ -194,6 +195,7 @@ SRC_OBJ=\
 	src/validator/md5.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
+	src/validator/postgres_obligation_checker.o \
 	src/validator/pubsub_class_checker.o \
 	src/validator/pubsub_obligation_checker.o \
 	src/validator/sage.o \
@@ -264,6 +266,7 @@ BIN=\
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_verify \
 	bin/stoke_obligation_check \
+	bin/stoke_worker
 
 #bin/stoke_replace \
 #bin/stoke_search \

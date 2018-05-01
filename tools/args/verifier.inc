@@ -19,6 +19,7 @@
 
 #include "src/solver/solver.h"
 #include "tools/io/solver.h"
+#include "tools/io/connection_string.h"
 
 namespace stoke {
 
@@ -36,9 +37,15 @@ cpputil::Heading& validator_heading =
 
 cpputil::ValueArg<std::string>& obligation_checker_arg =
   cpputil::ValueArg<std::string>::create("obligation_checker")
-  .usage("(smt|pubsub)")
+  .usage("(smt|pubsub|postgres)")
   .description("System technologies for discharging proof obligations (SMT vs cloud...)")
   .default_val("smt");
+
+cpputil::FileArg<std::string, ConnectionStringReader, ConnectionStringWriter>& postgres_arg =
+  cpputil::FileArg<std::string, ConnectionStringReader, ConnectionStringWriter>::create("postgres")
+  .usage("<path>")
+  .description("Path of file with a connection string for postgres")
+  .default_val("");
 
 cpputil::ValueArg<std::string>& alias_strategy_arg =
   cpputil::ValueArg<std::string>::create("alias_strategy")
