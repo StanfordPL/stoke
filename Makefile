@@ -79,7 +79,7 @@ CXX_FLAGS += -DNOCVC4=1
 endif
 
 WARNING_FLAGS=-Wall -Werror=all -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
-STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
+STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -pthread -std=c++14 $(WARNING_FLAGS)
 CVC4_SRCDIR=src/ext/cvc4-1.5
 CVC4_OUTDIR=$(CVC4_SRCDIR)-build
 CVC4_OUTDIR_ABS=$(shell pwd)/$(CVC4_OUTDIR)
@@ -101,7 +101,6 @@ DEPS=\
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a \
-	-pthread \
 	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread -lboost_iostreams \
 	-lcln \
 	-liml -lgmp \
@@ -406,7 +405,7 @@ src/ext/z3/build/Makefile:
 	cd src/ext/z3 && CC="${CC}" CXX="${CXX}" python scripts/mk_make.py
 
 git-version.inc: .FORCE
-	./scripts/git/print_version.sh > $@
+	./scripts/git/print_version.sh $@
 
 ##### VALIDATOR AUTOGEN
 

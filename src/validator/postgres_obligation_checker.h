@@ -30,7 +30,7 @@ public:
 
   PostgresObligationChecker(std::string connection_string) : 
     handler_(), filter_(handler_), connection_string_(connection_string),
-    connection_(connection_string.c_str())
+    connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL)
   {
     enable_z3(true);
     enable_cvc4(true);
@@ -97,6 +97,8 @@ private:
   /** Database connection */
   std::string connection_string_;
   pqxx::connection connection_;
+  pqxx::pipeline* pipeline_;
+  pqxx::work* pipeline_tx_;
 
   /** Solver functionality */
   bool enable_z3_;
@@ -106,13 +108,20 @@ private:
 
   /** Make the tables we need, if they don't already exist. */
   void make_tables();
-  /** Add a problem to database (if needed) and add to the queue (if needed) */
+  /** Poll the database for callbacks */
+  void poll_database();
 
-  /** Add a problem to the queue (if needed) */
+  /** Info to track the jobs that should be running. */
+  struct Job {
+    std::string hash;
+    Callback& callback;
+    void* optional;
 
-  /** Add a problem to the database (if needed) */
+    Job(Callback& c) : callback(c) { }
+  };
 
-  /** Check for new results. */
+  /** A list of the jobs we don't have results for. */
+  std::map<std::string, Job> outstanding_jobs;
 
 };
 

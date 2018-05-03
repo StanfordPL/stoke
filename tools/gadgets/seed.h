@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <random>
+#include <fstream>
 
 #include "tools/args/seed.inc"
 
@@ -27,8 +28,20 @@ public:
   SeedGadget() {
     seed_ = seed_arg;
     if (seed_ == 0) {
-      const auto time = std::chrono::system_clock::now().time_since_epoch().count();
-      std::default_random_engine gen(time);
+      // Get a more random number.
+      // This is helpful in case we need different processes starting at the
+      // same time to use different random values.  It's not random enough for
+      // security though (only 64 bits of entropy).
+      char random_bytes[8];
+      std::ifstream dev_urandom("/dev/urandom");
+      dev_urandom.read(random_bytes, 8);
+      dev_urandom.close();
+      uint64_t random_int = 0;
+      for(size_t i = 0; i < 8; ++i) 
+        random_int = (random_int << 8) | (uint64_t)random_bytes[i];
+      std::cout << "Seeding with " << random_int << std::endl;
+
+      std::default_random_engine gen(random_int);
       seed_ = gen();
     }
   }

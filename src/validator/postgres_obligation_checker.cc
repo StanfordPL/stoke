@@ -51,7 +51,8 @@ void PostgresObligationChecker::make_tables() {
       "hash               VARCHAR(50),"                             \
       "solver             VARCHAR(8),"                              \
       "strategy           VARCHAR(8),"                              \
-      "expiration         TIMESTAMP WITH TIMEZONE"                  \
+      "locked_by          BIGINT,"                                  \
+      "expiration         TIMESTAMP WITH TIME ZONE"                 \
     ")";
 
   work tx(connection_);
@@ -87,43 +88,141 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.write_text(ss);
   auto hash = md5(ss.str());
 
-  work tx(connection_);
+  if(pipeline_ == NULL) {
+    pipeline_tx_ = new work(connection_);
+    pipeline_ = new pipeline(*pipeline_tx_);
+  }
+
+  auto hash_esc = pipeline_tx_->esc(hash);
+  auto prob_esc = pipeline_tx_->esc(ss.str());
+   
 
   /** Add to proof obligations */
   stringstream sql_add_po;
   sql_add_po << "INSERT INTO ProofObligation(hash, problem) "
-             << "SELECT '" << tx.esc(hash) << "', '" << tx.esc(ss.str()) << "' "
+             << "SELECT '" << hash_esc << "', '" << prob_esc << "' "
              << "WHERE"
-             << "   NOT EXISTS (SELECT hash FROM ProofObligation WHERE hash='" << tx.esc(hash) << "')";
-  tx.exec(sql_add_po.str().c_str());
+             << "   NOT EXISTS (SELECT hash FROM ProofObligation WHERE hash='" << hash_esc << "')";
+  pipeline_->insert(sql_add_po.str());
+  //tx.exec(sql_add_po.str().c_str());
 
   /** Add to queue, as needed */
   stringstream sql_add_poq;
   sql_add_poq << "INSERT INTO ProofObligationQueue(hash, solver, strategy) "
-              << "SELECT '" << tx.esc(hash) << "', tmp.solver, tmp.strategy FROM "
+              << "SELECT '" << hash_esc << "', tmp.solver, tmp.strategy FROM "
               << "  (VALUES ('z3','flat'), ('cvc4','flat'), ('z3','arm'), ('cvc4','arm'))"
               << "     as tmp (solver, strategy) "
               << "WHERE "
               << "   (NOT EXISTS (SELECT hash FROM ProofObligationResult "
-              << "    WHERE hash='" << tx.esc(hash) << "' "
+              << "    WHERE hash='" << hash_esc << "' "
               << "      AND solver=tmp.solver AND strategy=tmp.strategy)) "
               << "AND "
               << "   (NOT EXISTS (SELECT hash FROM ProofObligationQueue "
-              << "    WHERE hash='" << tx.esc(hash) << "'"
+              << "    WHERE hash='" << hash_esc << "'"
               << "      AND solver=tmp.solver AND strategy=tmp.strategy))";
+  pipeline_->insert(sql_add_poq.str());
+  //tx.exec(sql_add_poq.str().c_str());
 
-  tx.exec(sql_add_poq.str().c_str());
+  /** Add to job list */
+  Job j(callback);
+  j.hash = hash;
+  j.optional = optional;
+  outstanding_jobs.insert({j.hash, j});
 
-  tx.commit();
+}
 
-  /** Add to queue */
+
+void PostgresObligationChecker::poll_database() {
+
+  work tx(connection_);
+  stringstream sql;
+  sql << "SELECT *, smt_time+gen_time as total_time, "
+      << "  error IS NOT NULL as has_error, "
+      << "  ceg_target IS NOT NULL as has_ceg  "
+      << "FROM ProofObligationResult JOIN "
+      << "  (Values ";
+
+  bool first = true;
+  for(auto pair : outstanding_jobs) {
+    auto hash = pair.first; 
+    if(!first)
+      sql << ", ";
+    sql << "('" << tx.esc(hash) << "')";
+    first = false;
+  }
+
+  sql << ") AS outstanding (h) ON hash=h ORDER BY total_time ASC";
+  result r = tx.exec(sql.str().c_str());
+  //cout << "Polling with: " << sql.str() << endl;
+  //cout << "Got " << r.size() << " results" << endl;
+
+  map<string, size_t> error_counts;
+  map<string, string> error_message;
+  map<string, string> error_version;
+
+  for(auto row : r) {
+    auto hash = row["hash"].as<string>();
+    //cout << "Processing row with hash = " << hash << endl;
+
+    // check if job has already been processed
+    if(outstanding_jobs.count(hash) == 0) {
+      //cout << "  * skipping this row" << endl;
+      continue;
+    }
+
+    // check job status
+    auto job = outstanding_jobs.at(hash);
+    bool has_error = row["has_error"].as<bool>();
+    if(has_error) {
+      error_counts[hash]++;
+      error_message.insert({hash, row["error"].as<string>()});
+      error_version.insert({hash, row["version"].as<string>()});
+      //cout << "  * recording an error for this row" << endl;
+    } else {
+      // invoke callback
+      // TODO: add counterexample info
+      Result r;
+      r.verified = row["verified"].as<bool>();
+      r.has_ceg = false;
+      r.has_error = false;
+      r.smt_time_microseconds = row["smt_time"].as<uint64_t>();
+      r.gen_time_microseconds = row["gen_time"].as<uint64_t>();
+      r.source_version = row["version"].as<string>();
+      //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
+      job.callback(r, job.optional);
+      outstanding_jobs.erase(hash);
+    }
+  }
+
+  for(auto pair : error_counts) {
+    if(pair.second >= 4) {
+      auto hash = pair.first;
+      if(outstanding_jobs.count(hash) == 0)
+        continue;
+
+      auto job = outstanding_jobs.at(hash);
+      Result r;
+      r.verified = false;
+      r.has_ceg = false;
+      r.has_error = true;
+      r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
+      r.source_version = error_version.at(hash);
+      job.callback(r, job.optional);
+    }
+  }
 
 }
 
 /** Blocks until all the checking has done and the callbacks have been called. */
 void PostgresObligationChecker::block_until_complete() {
-  while(true) {
+  if(pipeline_) {
+    pipeline_->complete();
+    pipeline_tx_->commit();
+  }
+
+  while(outstanding_jobs.size() > 0) {
     sleep(1);
+    poll_database();
   }
 }
 
