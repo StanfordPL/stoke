@@ -127,6 +127,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   Job j(callback);
   j.hash = hash;
   j.optional = optional;
+  j.completed = false;
   outstanding_jobs.insert({j.hash, j});
 
 }
@@ -145,6 +146,9 @@ void PostgresObligationChecker::poll_database() {
   bool first = true;
   for(auto pair : outstanding_jobs) {
     auto hash = pair.first; 
+    auto data = pair.second;
+    if(data.completed)
+      continue;
     if(!first)
       sql << ", ";
     sql << "('" << tx.esc(hash) << "')";
@@ -171,7 +175,10 @@ void PostgresObligationChecker::poll_database() {
     }
 
     // check job status
-    auto job = outstanding_jobs.at(hash);
+    auto& job = outstanding_jobs.at(hash);
+    if(job.completed)
+      continue;
+
     bool has_error = row["has_error"].as<bool>();
     if(has_error) {
       error_counts[hash]++;
@@ -190,6 +197,7 @@ void PostgresObligationChecker::poll_database() {
       r.source_version = row["version"].as<string>();
       //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
       job.callback(r, job.optional);
+      job.completed = true;
       outstanding_jobs.erase(hash);
     }
   }
@@ -200,7 +208,9 @@ void PostgresObligationChecker::poll_database() {
       if(outstanding_jobs.count(hash) == 0)
         continue;
 
-      auto job = outstanding_jobs.at(hash);
+      auto& job = outstanding_jobs.at(hash);
+      if(job.completed)
+        continue;
       Result r;
       r.verified = false;
       r.has_ceg = false;
@@ -208,6 +218,8 @@ void PostgresObligationChecker::poll_database() {
       r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
       r.source_version = error_version.at(hash);
       job.callback(r, job.optional);
+      job.completed = true;
+      outstanding_jobs.erase(hash);
     }
   }
 

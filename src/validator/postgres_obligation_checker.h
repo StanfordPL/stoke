@@ -116,6 +116,7 @@ private:
     std::string hash;
     Callback& callback;
     void* optional;
+    bool completed;
 
     Job(Callback& c) : callback(c) { }
   };

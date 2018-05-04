@@ -283,9 +283,9 @@ void LocalClassChecker::block_until_complete() {
 
 void LocalClassChecker::discharge_thread(DualAutomata& dual, DischargeState& discharge_state, size_t i) {
   while(true) {
-    cout << "[discharge_thread " << i << "] getting another problem" << endl;
+    //cout << "[discharge_thread " << i << "] getting another problem" << endl;
     auto problem = discharge_state.next_problem();
-    cout << "[discharge_thread " << i << "] got problem" << endl;
+    //cout << "[discharge_thread " << i << "] got problem" << endl;
     auto& edge = problem.first;
     auto conjunct = problem.second;
     if(conjunct == (size_t)(-1)) { /* we're done. */
