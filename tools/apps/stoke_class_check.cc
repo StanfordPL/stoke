@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
 
   InvariantLearnerGadget invariant_learner(seed, target, rewrite);
   ControlLearner control_learner(target, rewrite, sandbox);
-  LocalClassChecker class_checker(data_collector, control_learner,
+  LocalClassChecker class_checker(control_learner,
                                   problem.target_bound, problem.rewrite_bound,
                                   obligation_checker, invariant_learner);
                                   

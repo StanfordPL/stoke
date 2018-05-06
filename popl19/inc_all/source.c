@@ -15,8 +15,27 @@ inc_all(int* arr, int count) {
 
 }
 
+void test(int i, int j) {
+  int* arr = malloc(sizeof(int)*(j+i));
+  for(size_t k = i; k < i+j; ++k) {
+    arr[k] = rand();
+  }
+  inc_all(&arr[i], j);
+  free(arr);
+}
+
 int main (int argc, char* argv[])
 {
+  // different starting offsets
+  for(size_t i = 0; i < 8; ++i) {
+    for(size_t j = 0; j < 8; ++j) {
+      for(size_t k = 0; k < 3; ++k) {
+        int new_j = j + 8*k;
+        test(i, new_j);
+      }
+    }
+  }
+
   srand(0);
 
   return 0;

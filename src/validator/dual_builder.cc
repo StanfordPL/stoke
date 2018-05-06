@@ -221,6 +221,7 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
   f.parent = this;
 
   /** Get the next node in the topological sort. */
+  assert(f.frontier_index < topo_sort.size());
   f.head = topo_sort[f.frontier_index];
   auto my_exit_data = state_exit_data_map_[f.head];
   cout << "   [my_exit_data] at " << f.head << endl;
@@ -230,8 +231,11 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
 
   /** Copy the equivalence class from the previous frontier. */
   if (frontiers_.size() > 1) {
+    assert(f.frontier_index-1 < frontiers_.size());
     auto previous = frontiers_[f.frontier_index-1];
+    assert(previous.current_class_index < previous.all_classes.size());
     f.all_classes.push_back(previous.all_classes[previous.current_class_index]);
+    assert(f.all_classes.size() > 0);
     f.all_classes[0].edges.clear();
   } else {
     // for start node
@@ -263,9 +267,11 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
     auto rps = CfgPaths::enumerate_paths(rewrite_, tmp_rewrite_bound, f.head.rs, rewrite_dest);
 
     for (auto tp : tps) {
+      assert(tp.size() > 0);
       tp.erase(tp.begin());
 
       for (auto rp : rps) {
+        assert(rp.size() > 0);
         rp.erase(rp.begin());
 
 
@@ -273,6 +279,7 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
 
         cout << "Processing pair " << tp << " / " << rp << endl;
 
+        assert(f.all_classes.size() > 0);
         if (current == template_.exit_state()) {
           if (exit_works(e, my_exit_data)) {
             cout << "   - this exit edge looks okay" << endl;
@@ -347,6 +354,7 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
   }
 
   /** Add classes into proper data-structure. */
+  assert(f.all_classes.size() > 0);
   auto& curr_class = f.all_classes[0];
   for (auto state_edges : possible_edges) {
     auto edges = state_edges.second;
@@ -380,7 +388,7 @@ void DualBuilder::next_class() {
 /** Are the frontiers complete? */
 bool DualBuilder::frontiers_complete() const {
   cout << "frontiers? " << frontiers_.size() << " and " << template_.get_topological_sort().size() << endl;
-  return template_.get_topological_sort().size() < frontiers_.size();
+  return template_.get_topological_sort().size() <= frontiers_.size();
 }
 
 map<size_t, size_t> DualBuilder::Frontier::get_block_counts(bool is_rewrite) {

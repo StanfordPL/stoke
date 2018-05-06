@@ -19,6 +19,8 @@
 #include <condition_variable>
 #include <time.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/prctl.h>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"

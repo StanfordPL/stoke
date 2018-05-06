@@ -49,7 +49,7 @@ int LocalClassChecker::check(
     Callback& callback,
     void* optional) {
 
-  DualBuilder builder(data_collector_, template_pod, control_learner_);
+  DualBuilder builder(template_pod, control_learner_);
   builder.set_bound(target_bound_, rewrite_bound_);
   auto pod = builder.generate_pod(equivalence_class);
   bool sane = sanity_check(pod);

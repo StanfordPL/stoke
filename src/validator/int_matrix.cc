@@ -85,6 +85,8 @@ bool IntMatrix::in_nullspace(IntVector& vect) const {
 
 IntMatrix IntMatrix::solve_diophantine() const {
   assert(check_rectangle());
+  assert(this->size() > 0);
+  assert((*this)[0].size() > 0);
 
   auto& matrix = *this;
   Sage sage;

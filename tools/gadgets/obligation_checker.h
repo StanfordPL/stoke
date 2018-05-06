@@ -29,7 +29,6 @@
 #include "src/solver/smtsolver.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/smt_obligation_checker.h"
-#include "src/validator/pubsub_obligation_checker.h"
 #include "src/validator/postgres_obligation_checker.h"
 #include "src/validator/filters/bound_away.h"
 #include "src/validator/handlers/combo_handler.h"
@@ -51,8 +50,6 @@ public:
       filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
       solver_ = new SolverGadget();
       child_ = new SmtObligationChecker(*solver_, *filter_);
-    } else if (oc_type == "pubsub") {
-      child_ = new PubsubObligationChecker("ruby");
     } else if (oc_type == "postgres") {
       child_ = new PostgresObligationChecker(postgres_arg.value());
     }

@@ -26,7 +26,6 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/local_class_checker.h"
-#include "src/validator/pubsub_class_checker.h"
 
 #include <chrono>
 #include <algorithm>
@@ -438,36 +437,31 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   };
   
   ClassChecker* checker = NULL;
-  if(use_pubsub_class_checker_) {
-    checker = new PubsubClassChecker(data_collector_, *control_learner_, 
-                      target_bound_, rewrite_bound_);
-  } else {
-    checker = new LocalClassChecker(data_collector_, *control_learner_, 
-                      target_bound_, rewrite_bound_,
-                      checker_, invariant_learner_); 
-  }
+  checker = new LocalClassChecker(*control_learner_, 
+                    target_bound_, rewrite_bound_,
+                    checker_, invariant_learner_); 
 
-  // Run handhold check
-  /*
-  auto handhold_class = DualBuilder::get_handhold_class();
-  auto ji = new JobInfo();
-  ji->number = 10;
-  ji->m = handhold_class;
-  checker.check(template_pod, handhold_class, callback, (void*)ji);
-  */
-
-  /** Run all the checks */
-  verified_ = 0;
-  while(has_next_class()) {
-    auto cls = next_class(template_pod);
+  if(use_handhold_) {
+    /** Run handhold check */
+    auto handhold_class = DualBuilder::get_handhold_class();
     auto ji = new JobInfo();
-    ji->m = cls;
-    ji->number = (size_t)-1;
-    size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
-    ji->number= jobid;
-    cout << "Class for " << jobid << endl;
-    stoke::serialize(cout, cls);
-    cout << endl;
+    ji->number = 10;
+    ji->m = handhold_class;
+    checker->check(template_pod, handhold_class, callback, (void*)ji);
+  } else {
+    /** Run all the checks */
+    verified_ = 0;
+    while(has_next_class()) {
+      auto cls = next_class(template_pod);
+      auto ji = new JobInfo();
+      ji->m = cls;
+      ji->number = (size_t)-1;
+      size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
+      ji->number= jobid;
+      cout << "Class for " << jobid << endl;
+      stoke::serialize(cout, cls);
+      cout << endl;
+    }
   }
 
   /** Finish it off. */

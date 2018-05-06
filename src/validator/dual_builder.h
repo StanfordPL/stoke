@@ -19,12 +19,10 @@ class DualBuilder {
 
 public:
   /** Create a new builder.  Requires:
-        - data from test cases
         - inductive paths for each node
         - linear equalities for equivalence classes  */
-  DualBuilder(DataCollector& collector, const DualAutomata& templ, ControlLearner& control_learner) :
+  DualBuilder(const DualAutomata& templ, ControlLearner& control_learner) :
     first_(true),
-    data_collector_(collector),
     control_learner_(control_learner),
     template_(templ),
     target_(template_.get_target()),
@@ -140,7 +138,6 @@ private:
   bool first_;
 
   /** Dependencies */
-  DataCollector& data_collector_;
   ControlLearner& control_learner_;
   const DualAutomata& template_;
   Cfg& target_;

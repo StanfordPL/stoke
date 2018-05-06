@@ -45,8 +45,7 @@ public:
           flow_invariant_learner_(NULL),
           control_learner_(NULL)
   {
-    set_thread_count(1);
-    use_pubsub_class_checker(false);
+    set_use_handhold(false);
   }
 
   DdecValidator(const DdecValidator& rhs) :
@@ -57,7 +56,8 @@ public:
     data_collector_(sandbox_),
     invariant_learner_(rhs.invariant_learner_),
     flow_invariant_learner_(NULL),
-    control_learner_(NULL) {
+    control_learner_(NULL),
+    use_handhold_(rhs.use_handhold_) {
 
     target_bound_ = rhs.target_bound_;
     rewrite_bound_ = rhs.rewrite_bound_;
@@ -70,13 +70,9 @@ public:
     return *this;
   }
 
-  DdecValidator& set_thread_count(size_t n) {
+  DdecValidator& set_use_handhold(bool b) {
+    use_handhold_ = b;
     return *this;
-  }
-
-  DdecValidator& use_pubsub_class_checker(bool b) {
-    use_pubsub_class_checker_ = b;
-    return* this;
   }
 
   /** Verify if target and rewrite are equivalent. */
@@ -165,7 +161,7 @@ private:
   };
 
   std::map<size_t, JobInfo> jobs_;
-  bool use_pubsub_class_checker_;
+  bool use_handhold_;
 
 };
 
