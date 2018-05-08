@@ -453,12 +453,16 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     verified_ = 0;
     while(has_next_class()) {
       auto cls = next_class(template_pod);
+      cout << "Next class to try " << endl;
+      stoke::serialize(cout, cls);
+      cout << endl;
+
       auto ji = new JobInfo();
       ji->m = cls;
       ji->number = (size_t)-1;
       size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
       ji->number= jobid;
-      cout << "Class for " << jobid << endl;
+      cout << "Class for checker job " << jobid << endl;
       stoke::serialize(cout, cls);
       cout << endl;
     }

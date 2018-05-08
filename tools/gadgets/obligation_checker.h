@@ -27,6 +27,7 @@
 #include "gtest/gtest_prod.h"
 
 #include "src/solver/smtsolver.h"
+#include "src/validator/demo_obligation_checker.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/smt_obligation_checker.h"
 #include "src/validator/postgres_obligation_checker.h"
@@ -52,6 +53,8 @@ public:
       child_ = new SmtObligationChecker(*solver_, *filter_);
     } else if (oc_type == "postgres") {
       child_ = new PostgresObligationChecker(postgres_arg.value());
+    } else if (oc_type == "demo") {
+      child_ = new DemoObligationChecker();
     }
 
     set_alias_strategy(parse_alias());

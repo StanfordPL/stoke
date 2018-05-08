@@ -14,13 +14,13 @@ using namespace std;
 #define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
-  if (this->ts < other.ts) {
-    return true;
-  } else if (this->ts == other.ts) {
-    return this->rs < other.rs;
-  } else {
-    return false;
-  }
+  if (ts != other.ts)
+    return ts < other.ts;
+  if (rs != other.rs)
+    return rs < other.rs;
+
+  assert(*this == other);
+  return false;
 }
 
 bool DualAutomata::State::operator==(const DualAutomata::State& other) const {
@@ -36,12 +36,18 @@ bool DualAutomata::Edge::operator<(const DualAutomata::Edge& other) const {
     return te.size() < other.te.size();
   if (re.size() != other.re.size())
     return re.size() < other.re.size();
+
+  assert(te.size() == other.te.size());
   for (size_t i = 0; i < te.size(); ++i)
     if (te[i] != other.te[i])
       return te[i] < other.te[i];
+
+  assert(re.size() == other.re.size());
   for (size_t i = 0; i < re.size(); ++i)
     if (re[i] != other.re[i])
       return re[i] < other.re[i];
+
+  assert(*this == other);
   return false;
 }
 
@@ -505,6 +511,7 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
     next_paths.clear();
     for(const auto& cp : current_paths) {
       DEBUG_CFG_FRINGE("   " << cp << endl)
+      assert(cp.size() > 0);
       auto last_block = cp[cp.size() - 1];
       for(auto it = cfg.succ_begin(last_block); it != cfg.succ_end(last_block); ++it) {
         auto new_path = cp;
@@ -517,7 +524,9 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
     // the solution set
     vector<size_t> to_remove;
     DEBUG_CFG_FRINGE("next paths" << endl)
+    assert(next_paths.size() > 0);
     for(int i = (int)next_paths.size()-1; i >= 0; --i) {
+      assert((size_t)i < next_paths.size() && (size_t)i >= 0);
       const auto& np = next_paths[i];
       bool in_answers = true;
       for(const auto& sp : safe_paths) {
@@ -568,6 +577,7 @@ std::vector<DualAutomata::Edge> DualAutomata::compute_failure_edges(const Cfg& t
         cout << "Considering target_path=" << target_path;
         cout << " rewrite_path=" << rewrite_path << endl;
         bool match = false;
+        
         for(auto edge : edges) {
           cout << "   Considering edge=" << edge << endl;
           if(CfgPaths::is_prefix(edge.te, target_path) && 

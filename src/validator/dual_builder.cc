@@ -130,8 +130,11 @@ DualBuilder::EquivalenceClassMap DualBuilder::get_handhold_class() {
       } else {
         uint64_t v;
         iss >> v;
+        if(!iss.good())
+          break;
         values.push_back(optional<uint64_t>(v));
       }
+      iss >> ws;
     }
     auto state = DualAutomata::State(target_state, rewrite_state);
     handhold_class[state] = values;
