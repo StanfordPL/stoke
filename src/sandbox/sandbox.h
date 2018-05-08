@@ -51,6 +51,7 @@ public:
     set_abi_check(sb.abi_check_);
     set_stack_check(sb.stack_check_);
     set_max_jumps(sb.max_jumps_);
+    set_use_child(sb.use_child_);
 
     // Inputs
     for (size_t i = 0; i < sb.size(); ++i) {
@@ -82,6 +83,11 @@ public:
   /** Sets whether the sandbox should report sigsegv for stack smashing violations. */
   Sandbox& set_stack_check(bool check) {
     stack_check_ = check;
+    return *this;
+  }
+  /** Sets whether the sandbox uses a child process for the heavy lifting. */
+  Sandbox& set_use_child(bool use) {
+    use_child_ = use;
     return *this;
   }
   /** Sets the maximum number of jumps taken before raising SIGINT. */
@@ -258,6 +264,8 @@ private:
   bool abi_check_;
   /** Should the sandbox report errors for stack smashing violations? */
   bool stack_check_;
+  /** Should we use a child process for running the sandbox?  This helps works with valgrind. */
+  bool use_child_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
 
@@ -453,6 +461,14 @@ private:
   void emit_load_user_rsp();
   /** Emit code that swaps user_rsp_ out of and stoke_rsp_ into %rsp */
   void emit_load_stoke_rsp();
+
+  /** Runs sandbox in a child process. */
+  void run_child(size_t index);
+  /** Updates the callbacks for the child */
+  void update_child_callback(std::pair<StateCallback, void*>& pair, std::ostream& os);
+  void update_child_callback(std::unordered_map<x64asm::Label, 
+                             std::unordered_map<size_t, std::pair<StateCallback, void*>>>& m, 
+                             std::ostream& os);
 };
 
 } // namespace stoke

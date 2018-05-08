@@ -113,10 +113,12 @@ public:
   /** Add a feastible edge.  Returns true if not already present. */
   bool add_edge(Edge path) {
 
-    for (const auto& e : next_edges_[path.from]) {
-      if (e == path) {
-        std::cout << "      > edge already exists -- skipping" << std::endl;
-        return false;
+    if(next_edges_.count(path.from)) {
+      for (const auto& e : next_edges_.at(path.from)) {
+        if (e == path) {
+          std::cout << "      > edge already exists -- skipping" << std::endl;
+          return false;
+        }
       }
     }
 
@@ -127,9 +129,9 @@ public:
 
   /** Remove an edge. */
   void remove_edge(Edge e) {
-    auto& vec = next_edges_[e.from];
+    auto& vec = next_edges_.at(e.from);
     vec.erase(std::remove(vec.begin(), vec.end(), e), vec.end());
-    auto& vec2 = prev_edges_[e.to];
+    auto& vec2 = prev_edges_.at(e.to);
     vec2.erase(std::remove(vec2.begin(), vec2.end(), e), vec2.end());
   }
 

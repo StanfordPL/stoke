@@ -51,7 +51,7 @@ int LocalClassChecker::check(
 
   DualBuilder builder(template_pod, control_learner_);
   builder.set_bound(target_bound_, rewrite_bound_);
-  auto pod = builder.generate_pod(equivalence_class);
+  DualAutomata* pod = builder.generate_pod(equivalence_class);
   bool sane = sanity_check(pod);
   if(!sane) {
     Result r;
@@ -62,8 +62,9 @@ int LocalClassChecker::check(
     return 0;
   }
 
-  Result r = verify_dual(pod);
+  Result r = verify_dual(*pod);
   callback(r, optional);
+  delete pod;
   return 0;
 
 }
@@ -106,7 +107,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
   auto failure_edges = dual.compute_failure_edges(target, rewrite);
   for(auto it : failure_edges) {
     dual.add_edge(it);
-  }
+  } 
 
   /** Configure invariants. */
   auto start_state = dual.start_state();
@@ -397,9 +398,9 @@ void LocalClassChecker::obligation_checker_callback(ObligationChecker::Result& r
 }
 
 
-bool LocalClassChecker::sanity_check(DualAutomata& pod) {
+bool LocalClassChecker::sanity_check(const DualAutomata* pod) const {
   /** get set of globally reachable states. */
-  set<DualAutomata::State> global_reachable = pod.get_edge_reachable_states();
+  set<DualAutomata::State> global_reachable = pod->get_edge_reachable_states();
   cout << "[sanity] global reachable: ";
   for (auto r : global_reachable)
     cout << r << "  ";
@@ -417,7 +418,7 @@ bool LocalClassChecker::sanity_check(DualAutomata& pod) {
       init_count = curr_count;
 
       for (auto r : reachable) {
-        for (auto p : pod.next_states(r)) {
+        for (auto p : pod->next_states(r)) {
           reachable.insert(p);
         }
       }
@@ -425,7 +426,7 @@ bool LocalClassChecker::sanity_check(DualAutomata& pod) {
       curr_count = reachable.size();
     }
 
-    if (reachable.count(pod.exit_state()) == 0) {
+    if (reachable.count(pod->exit_state()) == 0) {
       cout << "[sanity] exit state not reachable from " << state << endl;
       return false;
     } else {

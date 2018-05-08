@@ -461,7 +461,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       ji->m = cls;
       ji->number = (size_t)-1;
       size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
-      ji->number= jobid;
+      // WARNING: at this point, ji may already be deleted by the callback.
       cout << "Class for checker job " << jobid << endl;
       stoke::serialize(cout, cls);
       cout << endl;

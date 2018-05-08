@@ -522,30 +522,33 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
 
     // if any of the next paths are not covered by the safe edges, add it to
     // the solution set
-    vector<size_t> to_remove;
-    DEBUG_CFG_FRINGE("next paths" << endl)
-    assert(next_paths.size() > 0);
-    for(int i = (int)next_paths.size()-1; i >= 0; --i) {
-      assert((size_t)i < next_paths.size() && (size_t)i >= 0);
-      const auto& np = next_paths[i];
-      bool in_answers = true;
-      for(const auto& sp : safe_paths) {
-        if(CfgPaths::is_prefix(np, sp) && np != sp) {
-          in_answers = false;
-          break;
+    if(next_paths.size()) {
+      vector<size_t> to_remove;
+      DEBUG_CFG_FRINGE("next paths" << endl)
+      assert(next_paths.size() > 0);
+      for(int i = (int)next_paths.size()-1; i >= 0; --i) {
+        assert((size_t)i < next_paths.size() && (size_t)i >= 0);
+        const auto& np = next_paths[i];
+        bool in_answers = true;
+        for(const auto& sp : safe_paths) {
+          if(CfgPaths::is_prefix(np, sp) && np != sp) {
+            in_answers = false;
+            break;
+          }
+        }
+        if(in_answers) {
+          DEBUG_CFG_FRINGE("   " << np << "  (output)" << endl)
+          outputs.insert(np);
+          to_remove.push_back(i);
+        } else {
+          DEBUG_CFG_FRINGE("   " << np << "  (next round)" << endl)
         }
       }
-      if(in_answers) {
-        DEBUG_CFG_FRINGE("   " << np << "  (output)" << endl)
-        outputs.insert(np);
-        to_remove.push_back(i);
-      } else {
-        DEBUG_CFG_FRINGE("   " << np << "  (next round)" << endl)
-      }
-    }
 
-    for(auto item : to_remove) {
-      next_paths.erase(next_paths.begin() + item);
+      for(auto item : to_remove) {
+        assert(item < next_paths.size());
+        next_paths.erase(next_paths.begin() + item);
+      }
     }
     current_paths = next_paths;
   }

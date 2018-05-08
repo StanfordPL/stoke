@@ -46,7 +46,7 @@ public:
   static EquivalenceClassMap get_handhold_class();
 
   /** Get POD from equivalence class */
-  DualAutomata generate_pod(const EquivalenceClassMap& mp);
+  DualAutomata* generate_pod(const EquivalenceClassMap& mp);
 
 
 private:
@@ -92,7 +92,7 @@ private:
   bool frontiers_complete() const;
 
   /** Generate a dual automata from the edges currently in the frontiers. */
-  DualAutomata generate_current_pod();
+  DualAutomata* generate_current_pod();
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;
