@@ -188,7 +188,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   cout << "============================================================" << endl;
   cout << "Learning inductive paths and invariants" << endl;
 
-  DualAutomata pod(target_, rewrite_, data_collector_);
+  DualAutomata pod(target_, rewrite_);
 
   // Learn relations over basic blocks
   CfgSccs target_sccs(target_);
@@ -437,7 +437,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   };
   
   ClassChecker* checker = NULL;
-  checker = new LocalClassChecker(*control_learner_, 
+  checker = new LocalClassChecker(data_collector_, *control_learner_, 
                     target_bound_, rewrite_bound_,
                     checker_, invariant_learner_); 
 

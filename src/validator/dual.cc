@@ -243,7 +243,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 }
 
 
-bool DualAutomata::learn_invariants(InvariantLearner& learner) {
+bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner) {
 
 
   data_reachable_states_.clear();
@@ -251,8 +251,8 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
   target_state_data_.clear();
   rewrite_state_data_.clear();
 
-  auto target_traces = data_collector_.get_traces(target_);
-  auto rewrite_traces = data_collector_.get_traces(rewrite_);
+  auto target_traces = dc.get_traces(target_);
+  auto rewrite_traces = dc.get_traces(rewrite_);
 
   // Step 1: get data at each state.
   for (size_t i = 0; i < target_traces.size(); ++i) {
@@ -643,11 +643,11 @@ void DualAutomata::serialize(std::ostream& os) const {
   stoke::serialize<vector<State>>(os, topological_sort_);
 }
 
-DualAutomata DualAutomata::deserialize(std::istream& is, DataCollector& dc) {
+DualAutomata DualAutomata::deserialize(std::istream& is) {
   auto* target = stoke::deserialize<Cfg*>(is);
   auto* rewrite = stoke::deserialize<Cfg*>(is);
 
-  DualAutomata pod(*target, *rewrite, dc);
+  DualAutomata pod(*target, *rewrite);
   pod.next_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
   pod.prev_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
   pod.invariants_ = stoke::deserialize<map<State, ConjunctionInvariant*>>(is);

@@ -79,7 +79,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
 
-  bool learning_successful = dual.learn_invariants(invariant_learner_);
+  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     r.error_message = "Learning state data/invariants failed";

@@ -52,7 +52,7 @@ public:
     size_t target_bound;
     size_t rewrite_bound;
 
-    static Problem deserialize(std::istream& is, DataCollector& dc);
+    static Problem deserialize(std::istream& is);
     std::ostream& serialize(std::ostream& os) const;
 
     Problem(const DualAutomata& da, 
@@ -70,9 +70,11 @@ public:
   
   typedef std::function<void (Result&, void*)> Callback;
 
-  ClassChecker(ControlLearner& control_learner,
+  ClassChecker(DataCollector& data_collector,
+               ControlLearner& control_learner,
                size_t target_bound,
                size_t rewrite_bound) : 
+    data_collector_(data_collector),
     control_learner_(control_learner),
     target_bound_(target_bound),
     rewrite_bound_(rewrite_bound)
@@ -110,6 +112,7 @@ public:
 
 protected:
 
+  DataCollector& data_collector_;
   ControlLearner& control_learner_;
   size_t target_bound_;
   size_t rewrite_bound_;

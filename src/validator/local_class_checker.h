@@ -26,12 +26,13 @@ class LocalClassChecker : public ClassChecker {
 
 public:
 
-  LocalClassChecker(ControlLearner& control_learner,
+  LocalClassChecker(DataCollector& data_collector,
+                    ControlLearner& control_learner,
                     size_t target_bound,
                     size_t rewrite_bound,
                     ObligationChecker& obligation_checker,
                     InvariantLearner& invariant_learner) :
-    ClassChecker(control_learner, target_bound, rewrite_bound),
+    ClassChecker(data_collector, control_learner, target_bound, rewrite_bound),
     obligation_checker_(obligation_checker),
     invariant_learner_(invariant_learner)
   {
