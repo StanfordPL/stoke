@@ -112,13 +112,24 @@ private:
   void poll_database();
 
   /** Info to track the jobs that should be running. */
+  /** Sometimes two jobs with the same hash will be submitted, in which case we need to
+    be prepared to perform the callback multiple times. */
   struct Job {
     std::string hash;
-    Callback& callback;
-    void* optional;
+    std::vector<Callback*> callbacks;
+    std::vector<void*> optionals;
     bool completed;
 
-    Job(Callback& c) : callback(c) { }
+    void invoke_callbacks(ObligationChecker::Result r) {
+      for(size_t i = 0; i < callbacks.size(); ++i) {
+        (*callbacks[i])(r, optionals[i]);
+      }
+    }
+
+    Job() {
+      completed = false;
+      hash = "";
+    }
   };
 
   /** A list of the jobs we don't have results for. */

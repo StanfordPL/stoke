@@ -21,6 +21,7 @@ using namespace stoke;
 using namespace pqxx;
 
 void PostgresObligationChecker::make_tables() {
+
   
   const char* sql_proof_obligation = 
     "CREATE TABLE IF NOT EXISTS ProofObligation("                  \
@@ -45,6 +46,10 @@ void PostgresObligationChecker::make_tables() {
       "version            VARCHAR(128)"                             \
     ")";
 
+  // indexes needed:
+  // 1. hash
+  // 2. hash, solver, strategy
+
   const char* sql_proof_obligation_queue = 
     "CREATE TABLE IF NOT EXISTS ProofObligationQueue("              \
       "id                 SERIAL PRIMARY KEY,"                      \
@@ -54,6 +59,10 @@ void PostgresObligationChecker::make_tables() {
       "locked_by          BIGINT,"                                  \
       "expiration         TIMESTAMP WITH TIME ZONE"                 \
     ")";
+
+  // indexes needed:
+  // 1. hash
+  // 2. hash, solver, strategy
 
   work tx(connection_);
   tx.exec(sql_proof_obligation);
@@ -124,11 +133,11 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   //tx.exec(sql_add_poq.str().c_str());
 
   /** Add to job list */
-  Job j(callback);
-  j.hash = hash;
-  j.optional = optional;
-  j.completed = false;
-  outstanding_jobs.insert({j.hash, j});
+  Job& j = outstanding_jobs[hash]; //create new job or use existing one
+  j.callbacks.push_back(&callback);
+  j.optionals.push_back(optional);
+
+  cout << "Dispatching hash " << hash << endl;
 
 }
 
@@ -140,8 +149,8 @@ void PostgresObligationChecker::poll_database() {
   sql << "SELECT *, smt_time+gen_time as total_time, "
       << "  error IS NOT NULL as has_error, "
       << "  ceg_target IS NOT NULL as has_ceg  "
-      << "FROM ProofObligationResult JOIN "
-      << "  (Values ";
+      << "FROM ProofObligationResult "
+      << "WHERE hash in (";
 
   bool first = true;
   for(auto pair : outstanding_jobs) {
@@ -151,11 +160,11 @@ void PostgresObligationChecker::poll_database() {
       continue;
     if(!first)
       sql << ", ";
-    sql << "('" << tx.esc(hash) << "')";
+    sql << "'" << tx.esc(hash) << "'";
     first = false;
   }
+  sql << ") ORDER BY total_time ASC";
 
-  sql << ") AS outstanding (h) ON hash=h ORDER BY total_time ASC";
   result r = tx.exec(sql.str().c_str());
   //cout << "Polling with: " << sql.str() << endl;
   //cout << "Got " << r.size() << " results" << endl;
@@ -196,7 +205,7 @@ void PostgresObligationChecker::poll_database() {
       r.gen_time_microseconds = row["gen_time"].as<uint64_t>();
       r.source_version = row["version"].as<string>();
       //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
-      job.callback(r, job.optional);
+      job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);
     }
@@ -217,7 +226,7 @@ void PostgresObligationChecker::poll_database() {
       r.has_error = true;
       r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
       r.source_version = error_version.at(hash);
-      job.callback(r, job.optional);
+      job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);
     }
@@ -230,8 +239,10 @@ void PostgresObligationChecker::block_until_complete() {
   if(pipeline_) {
     pipeline_->complete();
     pipeline_tx_->commit();
+    cout << "Pipeline of inserts complete!" << endl;
   }
 
+  poll_database();
   while(outstanding_jobs.size() > 0) {
     sleep(1);
     poll_database();
