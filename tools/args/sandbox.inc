@@ -30,6 +30,10 @@ cpputil::FlagArg& stack_check_arg =
   cpputil::FlagArg::create("stack_check")
   .description("Report SIGSEGV for stack smashing violations");
 
+cpputil::FlagArg& sandbox_child_arg =
+  cpputil::FlagArg::create("use_child_process")
+  .description("Use a child process to run the sandbox; helps use valgrind with STOKE");
+
 cpputil::ValueArg<size_t>& max_jumps_arg =
   cpputil::ValueArg<size_t>::create("max_jumps")
   .usage("<int>")

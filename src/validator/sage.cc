@@ -15,13 +15,14 @@
 
 #include "src/validator/sage.h"
 #include "src/kerberos/kerberos.h"
+
+#include <cstring>
+#include <cassert>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/prctl.h>
 #include <unistd.h>
 #include <signal.h>
-
-#include "src/validator/pubsub_class_checker.h"
 
 using namespace stoke;
 using namespace std;

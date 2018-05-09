@@ -751,7 +751,7 @@ IntMatrix InvariantLearner::states_to_matrix(
   }
   IntMatrix matrix2(num_rows, num_cols, matrix);
 
-  delete matrix;
+  delete[] matrix;
   return matrix2;
 }
 

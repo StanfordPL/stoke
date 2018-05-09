@@ -25,6 +25,10 @@ struct StateCallbackData {
   const x64asm::Code& code;
   const size_t line;
   CpuState& state;
+
+  StateCallbackData(x64asm::Code& c, size_t l, CpuState& s) : 
+    code(c), line(l), state(s) {
+  }
 };
 
 /** Callback signature */

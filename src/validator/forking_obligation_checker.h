@@ -44,6 +44,10 @@ public:
     pollfds_ = new pollfd[max_processes_];
   }
 
+  ~ForkingObligationChecker() {
+    delete[] pollfds_;
+  }
+
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or

@@ -24,11 +24,11 @@
 
 namespace stoke {
 
-class PostgresObligationChecker : public ObligationChecker {
+class PostgresClassChecker : public ClassChecker {
 
 public:
 
-  PostgresObligationChecker(std::string connection_string) : 
+  PostgresClassChecker(std::string connection_string) : 
     handler_(), filter_(handler_), connection_string_(connection_string),
     connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL)
   {
@@ -46,27 +46,27 @@ public:
     make_tables();
   }
 
-  ~PostgresObligationChecker() {
+  ~PostgresClassChecker() {
     std::cout << "Closing database connection." << std::endl;
     connection_.disconnect();
   }
 
-  PostgresObligationChecker& enable_z3(bool b) {
+  PostgresClassChecker& enable_z3(bool b) {
     enable_z3_ = b;
     return *this;
   }
 
-  PostgresObligationChecker& enable_cvc4(bool b) {
+  PostgresClassChecker& enable_cvc4(bool b) {
     enable_cvc4_ = b;
     return *this;
   }
 
-  PostgresObligationChecker& enable_flat(bool b) {
+  PostgresClassChecker& enable_flat(bool b) {
     enable_flat_ = b;
     return *this;
   }
 
-  PostgresObligationChecker& enable_arm(bool b) {
+  PostgresClassChecker& enable_arm(bool b) {
     enable_arm_ = b;
     return *this;
   }
@@ -120,7 +120,7 @@ private:
     std::vector<void*> optionals;
     bool completed;
 
-    void invoke_callbacks(ObligationChecker::Result r) {
+    void invoke_callbacks(ClassChecker::Result r) {
       for(size_t i = 0; i < callbacks.size(); ++i) {
         (*callbacks[i])(r, optionals[i]);
       }

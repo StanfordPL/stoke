@@ -56,8 +56,8 @@ ostream& ClassChecker::Problem::serialize(ostream& os) const {
 }
 
 
-ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is, DataCollector& dc) {
-  auto template_pod = DualAutomata::deserialize(is, dc);
+ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is) {
+  auto template_pod = DualAutomata::deserialize(is);
   auto equiv_class_map = stoke::deserialize<DualBuilder::EquivalenceClassMap>(is);
   size_t target_bound, rewrite_bound;
   is >> target_bound >> rewrite_bound;

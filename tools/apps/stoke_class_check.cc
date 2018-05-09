@@ -70,14 +70,15 @@ int main(int argc, char** argv) {
   SandboxGadget sandbox(testcases, {});
   DataCollector data_collector(sandbox);
 
-  ClassChecker::Problem problem = ClassChecker::Problem::deserialize(cin, data_collector);
+  ClassChecker::Problem problem = ClassChecker::Problem::deserialize(cin);
 
   auto& target = problem.template_pod.get_target();
   auto& rewrite = problem.template_pod.get_rewrite();
 
   InvariantLearnerGadget invariant_learner(seed, target, rewrite);
   ControlLearner control_learner(target, rewrite, sandbox);
-  LocalClassChecker class_checker(data_collector, control_learner,
+  LocalClassChecker class_checker(data_collector,
+                                  control_learner,
                                   problem.target_bound, problem.rewrite_bound,
                                   obligation_checker, invariant_learner);
                                   

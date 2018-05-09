@@ -9,18 +9,18 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { X }
+#define DEBUG_LEARN_STATE_DATA(X) { }
 #define DEBUG_IS_PREFIX(X) { }
 #define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
-  if (this->ts < other.ts) {
-    return true;
-  } else if (this->ts == other.ts) {
-    return this->rs < other.rs;
-  } else {
-    return false;
-  }
+  if (ts != other.ts)
+    return ts < other.ts;
+  if (rs != other.rs)
+    return rs < other.rs;
+
+  assert(*this == other);
+  return false;
 }
 
 bool DualAutomata::State::operator==(const DualAutomata::State& other) const {
@@ -36,12 +36,18 @@ bool DualAutomata::Edge::operator<(const DualAutomata::Edge& other) const {
     return te.size() < other.te.size();
   if (re.size() != other.re.size())
     return re.size() < other.re.size();
+
+  assert(te.size() == other.te.size());
   for (size_t i = 0; i < te.size(); ++i)
     if (te[i] != other.te[i])
       return te[i] < other.te[i];
+
+  assert(re.size() == other.re.size());
   for (size_t i = 0; i < re.size(); ++i)
     if (re[i] != other.re[i])
       return re[i] < other.re[i];
+
+  assert(*this == other);
   return false;
 }
 
@@ -237,7 +243,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 }
 
 
-bool DualAutomata::learn_invariants(InvariantLearner& learner) {
+bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner) {
 
 
   data_reachable_states_.clear();
@@ -245,8 +251,8 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner) {
   target_state_data_.clear();
   rewrite_state_data_.clear();
 
-  auto target_traces = data_collector_.get_traces(target_);
-  auto rewrite_traces = data_collector_.get_traces(rewrite_);
+  auto target_traces = dc.get_traces(target_);
+  auto rewrite_traces = dc.get_traces(rewrite_);
 
   // Step 1: get data at each state.
   for (size_t i = 0; i < target_traces.size(); ++i) {
@@ -505,6 +511,7 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
     next_paths.clear();
     for(const auto& cp : current_paths) {
       DEBUG_CFG_FRINGE("   " << cp << endl)
+      assert(cp.size() > 0);
       auto last_block = cp[cp.size() - 1];
       for(auto it = cfg.succ_begin(last_block); it != cfg.succ_end(last_block); ++it) {
         auto new_path = cp;
@@ -515,28 +522,33 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
 
     // if any of the next paths are not covered by the safe edges, add it to
     // the solution set
-    vector<size_t> to_remove;
-    DEBUG_CFG_FRINGE("next paths" << endl)
-    for(int i = (int)next_paths.size()-1; i >= 0; --i) {
-      const auto& np = next_paths[i];
-      bool in_answers = true;
-      for(const auto& sp : safe_paths) {
-        if(CfgPaths::is_prefix(np, sp) && np != sp) {
-          in_answers = false;
-          break;
+    if(next_paths.size()) {
+      vector<size_t> to_remove;
+      DEBUG_CFG_FRINGE("next paths" << endl)
+      assert(next_paths.size() > 0);
+      for(int i = (int)next_paths.size()-1; i >= 0; --i) {
+        assert((size_t)i < next_paths.size() && (size_t)i >= 0);
+        const auto& np = next_paths[i];
+        bool in_answers = true;
+        for(const auto& sp : safe_paths) {
+          if(CfgPaths::is_prefix(np, sp) && np != sp) {
+            in_answers = false;
+            break;
+          }
+        }
+        if(in_answers) {
+          DEBUG_CFG_FRINGE("   " << np << "  (output)" << endl)
+          outputs.insert(np);
+          to_remove.push_back(i);
+        } else {
+          DEBUG_CFG_FRINGE("   " << np << "  (next round)" << endl)
         }
       }
-      if(in_answers) {
-        DEBUG_CFG_FRINGE("   " << np << "  (output)" << endl)
-        outputs.insert(np);
-        to_remove.push_back(i);
-      } else {
-        DEBUG_CFG_FRINGE("   " << np << "  (next round)" << endl)
-      }
-    }
 
-    for(auto item : to_remove) {
-      next_paths.erase(next_paths.begin() + item);
+      for(auto item : to_remove) {
+        assert(item < next_paths.size());
+        next_paths.erase(next_paths.begin() + item);
+      }
     }
     current_paths = next_paths;
   }
@@ -568,6 +580,7 @@ std::vector<DualAutomata::Edge> DualAutomata::compute_failure_edges(const Cfg& t
         cout << "Considering target_path=" << target_path;
         cout << " rewrite_path=" << rewrite_path << endl;
         bool match = false;
+        
         for(auto edge : edges) {
           cout << "   Considering edge=" << edge << endl;
           if(CfgPaths::is_prefix(edge.te, target_path) && 
@@ -633,11 +646,11 @@ void DualAutomata::serialize(std::ostream& os) const {
   stoke::serialize<vector<State>>(os, topological_sort_);
 }
 
-DualAutomata DualAutomata::deserialize(std::istream& is, DataCollector& dc) {
+DualAutomata DualAutomata::deserialize(std::istream& is) {
   auto* target = stoke::deserialize<Cfg*>(is);
   auto* rewrite = stoke::deserialize<Cfg*>(is);
 
-  DualAutomata pod(*target, *rewrite, dc);
+  DualAutomata pod(*target, *rewrite);
   pod.next_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
   pod.prev_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
   pod.invariants_ = stoke::deserialize<map<State, ConjunctionInvariant*>>(is);

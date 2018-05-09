@@ -20,21 +20,18 @@ using namespace std;
 using namespace stoke;
 using namespace pqxx;
 
-void PostgresObligationChecker::make_tables() {
-
+void PostgresClassChecker::make_tables() {
   
-  const char* sql_proof_obligation = 
-    "CREATE TABLE IF NOT EXISTS ProofObligation("                  \
+  const char* sql_class_obligation = 
+    "CREATE TABLE IF NOT EXISTS ClassObligation("                  \
       "hash VARCHAR(50) PRIMARY KEY,"                              \
       "problem TEXT"                                               \
     ")";
 
-  const char* sql_proof_obligation_result = 
-    "CREATE TABLE IF NOT EXISTS ProofObligationResult("             \
+  const char* sql_class_obligation_result = 
+    "CREATE TABLE IF NOT EXISTS ClassObligationResult("             \
       "id                 SERIAL PRIMARY KEY,"                      \
       "hash               VARCHAR(50),"                             \
-      "solver             VARCHAR(8),"                              \
-      "strategy           VARCHAR(8),"                              \
       "verified           BOOLEAN,"                                 \
       "ceg_target         TEXT,"                                    \
       "ceg_rewrite        TEXT,"                                    \
@@ -46,12 +43,8 @@ void PostgresObligationChecker::make_tables() {
       "version            VARCHAR(128)"                             \
     ")";
 
-  // indexes needed:
-  // 1. hash
-  // 2. hash, solver, strategy
-
-  const char* sql_proof_obligation_queue = 
-    "CREATE TABLE IF NOT EXISTS ProofObligationQueue("              \
+  const char* sql_class_obligation_queue = 
+    "CREATE TABLE IF NOT EXISTS ClassObligationQueue("              \
       "id                 SERIAL PRIMARY KEY,"                      \
       "hash               VARCHAR(50),"                             \
       "solver             VARCHAR(8),"                              \
@@ -60,21 +53,24 @@ void PostgresObligationChecker::make_tables() {
       "expiration         TIMESTAMP WITH TIME ZONE"                 \
     ")";
 
-  // indexes needed:
-  // 1. hash
-  // 2. hash, solver, strategy
+  const char* sql_blobs =
+    "CREATE TABLE IF NOT EXISTS Blobs("                             \
+      "hash               VARCHAR(50) PRIMARY KEY,"                 \
+      "data               TEXT"                                     \
+    ")";
 
   work tx(connection_);
-  tx.exec(sql_proof_obligation);
-  tx.exec(sql_proof_obligation_result);
-  tx.exec(sql_proof_obligation_queue);
+  tx.exec(sql_class_obligation);
+  tx.exec(sql_class_obligation_result);
+  tx.exec(sql_class_obligation_queue);
+  tx.exec(sql_blobs);
   tx.commit();
 
   cout << "make_tables() complete" << endl;
 
 }
 
-void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
+void PostgresClassChecker::check(const Cfg& target, const Cfg& rewrite,
                    Cfg::id_type target_block, Cfg::id_type rewrite_block,
                    const CfgPath& p, const CfgPath& q,
                    Invariant& assume, Invariant& prove,
@@ -113,7 +109,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
              << "WHERE"
              << "   NOT EXISTS (SELECT hash FROM ProofObligation WHERE hash='" << hash_esc << "')";
   pipeline_->insert(sql_add_po.str());
-  //cout << "SQL" << endl << sql_add_po.str() << endl;
+  tx.exec(sql_add_po.str().c_str());
 
   /** Add to queue, as needed */
   stringstream sql_add_poq;
@@ -130,7 +126,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
               << "    WHERE hash='" << hash_esc << "'"
               << "      AND solver=tmp.solver AND strategy=tmp.strategy))";
   pipeline_->insert(sql_add_poq.str());
-  //cout << "SQL" << endl << sql_add_poq.str() << endl;
+  tx.exec(sql_add_poq.str().c_str());
 
   /** Add to job list */
   Job& j = outstanding_jobs[hash]; //create new job or use existing one
@@ -142,7 +138,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
 }
 
 
-void PostgresObligationChecker::poll_database() {
+void PostgresClassChecker::poll_database() {
 
   work tx(connection_);
   stringstream sql;
@@ -235,7 +231,7 @@ void PostgresObligationChecker::poll_database() {
 }
 
 /** Blocks until all the checking has done and the callbacks have been called. */
-void PostgresObligationChecker::block_until_complete() {
+void PostgresClassChecker::block_until_complete() {
   if(pipeline_) {
     pipeline_->complete();
     pipeline_tx_->commit();

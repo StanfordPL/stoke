@@ -69,7 +69,7 @@ private:
   };
 
   /** Check a POD to see if it's obviously wrong. */
-  bool sanity_check(DualAutomata& dual);
+  bool sanity_check(const DualAutomata* dual) const;
 
   /** Compute the initial invariant */
   ConjunctionInvariant* get_initial_invariant(DualAutomata&) const;

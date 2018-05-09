@@ -82,8 +82,8 @@ public:
     static Edge deserialize(std::istream&);
   };
 
-  DualAutomata(Cfg& target, Cfg& rewrite, DataCollector& dc) :
-    target_(target), rewrite_(rewrite), data_collector_(dc) {
+  DualAutomata(Cfg& target, Cfg& rewrite) :
+    target_(target), rewrite_(rewrite) {
   }
 
   /** Form a start state from the two automata */
@@ -113,10 +113,12 @@ public:
   /** Add a feastible edge.  Returns true if not already present. */
   bool add_edge(Edge path) {
 
-    for (auto e : next_edges_[path.from]) {
-      if (e == path) {
-        std::cout << "      > edge already exists -- skipping" << std::endl;
-        return false;
+    if(next_edges_.count(path.from)) {
+      for (const auto& e : next_edges_.at(path.from)) {
+        if (e == path) {
+          std::cout << "      > edge already exists -- skipping" << std::endl;
+          return false;
+        }
       }
     }
 
@@ -127,9 +129,9 @@ public:
 
   /** Remove an edge. */
   void remove_edge(Edge e) {
-    auto& vec = next_edges_[e.from];
+    auto& vec = next_edges_.at(e.from);
     vec.erase(std::remove(vec.begin(), vec.end(), e), vec.end());
-    auto& vec2 = prev_edges_[e.to];
+    auto& vec2 = prev_edges_.at(e.to);
     vec2.erase(std::remove(vec2.begin(), vec2.end(), e), vec2.end());
   }
 
@@ -219,7 +221,7 @@ public:
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
   /** Learn invariants.  Returns 'true' if no error. */
-  bool learn_invariants(InvariantLearner&);
+  bool learn_invariants(DataCollector&, InvariantLearner&);
 
   /** Get invariant at state. */
   ConjunctionInvariant* get_invariant(const State& state) const {
@@ -299,11 +301,7 @@ public:
   }
 
   void serialize(std::ostream& os) const;
-  static DualAutomata deserialize(std::istream& is, DataCollector& dc);
-
-  const DataCollector& get_data_collector() const {
-    return data_collector_;
-  }
+  static DualAutomata deserialize(std::istream& is);
 
 private:
 
@@ -347,7 +345,6 @@ private:
   std::map<Edge, std::vector<CpuState>> target_edge_data_;
   std::map<Edge, std::vector<CpuState>> rewrite_edge_data_;
 
-  DataCollector data_collector_;
   std::vector<DualAutomata::State> topological_sort_; //serialize
 };
 

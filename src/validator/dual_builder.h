@@ -19,12 +19,10 @@ class DualBuilder {
 
 public:
   /** Create a new builder.  Requires:
-        - data from test cases
         - inductive paths for each node
         - linear equalities for equivalence classes  */
-  DualBuilder(DataCollector& collector, const DualAutomata& templ, ControlLearner& control_learner) :
+  DualBuilder(const DualAutomata& templ, ControlLearner& control_learner) :
     first_(true),
-    data_collector_(collector),
     control_learner_(control_learner),
     template_(templ),
     target_(template_.get_target()),
@@ -48,7 +46,7 @@ public:
   static EquivalenceClassMap get_handhold_class();
 
   /** Get POD from equivalence class */
-  DualAutomata generate_pod(const EquivalenceClassMap& mp);
+  DualAutomata* generate_pod(const EquivalenceClassMap& mp);
 
 
 private:
@@ -57,34 +55,11 @@ private:
   typedef std::map<DualAutomata::State, NodeClass> NodeClassMap;
 
   /** Data Structures */
-  struct ClassData {
-    /** for each node, for each invariant, what's its constant? */
-    NodeClassMap invariant_values;
-    /** what are the edges in this class? */
-    std::vector<DualAutomata::Edge> edges;
-
-    void debug() {
-      std::cout << "  ## Class" << std::endl;
-      for (auto pair : invariant_values) {
-        std::cout << "    " << pair.first << " --> ";
-        for (auto it : pair.second) {
-          std::cout << it << "  ";
-        }
-        std::cout << std::endl;
-      }
-      for (auto e : edges) {
-        std::cout << "    " << e << std::endl;
-      }
-    }
-  };
-
   struct Frontier {
-    DualAutomata::State head;
-    std::vector<DualAutomata::State> nodes;
-    std::vector<ClassData> all_classes;
-    size_t current_class_index;
-    size_t frontier_index;
+    DualAutomata::State head;   // what is my starting node?
+    size_t frontier_index;      // which frontier am I?
     DualBuilder* parent;
+    std::vector<DualAutomata::Edge> edges;
 
     std::map<size_t, size_t> get_block_counts(bool is_rewrite = false);
 
@@ -92,11 +67,8 @@ private:
       std::cout << "###### FRONTIER" << std::endl;
 
       std::cout << "head = " << head << std::endl;
-      for (auto it : nodes)
-        std::cout << it;
-      std::cout << std::endl;
-      for (auto cls : all_classes)
-        cls.debug();
+      for (auto e : edges)
+        std::cout << "    " << e << std::endl;
     }
   };
 
@@ -116,15 +88,11 @@ private:
   /** Remove the last frontier -- nothing left to try. */
   void remove_frontier();
 
-  /** Does the current frontier have another equivalence class to try? */
-  bool frontier_has_next_class() const;
-  /** Go to the next equivalence class in the current frontier. */
-  void next_class();
   /** Are we at the end of a frontier? */
   bool frontiers_complete() const;
 
   /** Generate a dual automata from the edges currently in the frontiers. */
-  DualAutomata generate_current_pod();
+  DualAutomata* generate_current_pod();
 
   /** 'current' state */
   std::vector<Frontier> frontiers_;
@@ -140,7 +108,6 @@ private:
   bool first_;
 
   /** Dependencies */
-  DataCollector& data_collector_;
   ControlLearner& control_learner_;
   const DualAutomata& template_;
   Cfg& target_;

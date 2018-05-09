@@ -170,6 +170,8 @@ bool CfgPaths::is_prefix(const CfgPath& p, const CfgPath& q) {
     return false;
 
   for (size_t i = 0; i < p.size(); ++i) {
+    assert(i < p.size());
+    assert(i < q.size());
     if (p[i] != q[i])
       return false;
   }

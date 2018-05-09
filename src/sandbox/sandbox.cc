@@ -16,10 +16,14 @@
 #include <set>
 #include <setjmp.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "src/sandbox/dispatch_table.h"
 #include "src/sandbox/sandbox.h"
 #include "src/serialize/serialize.h"
+
+#include "ext/stdio_filebuf.h"
 
 using namespace std;
 using namespace stoke;
@@ -104,6 +108,7 @@ bool Sandbox::is_supported(Opcode o) {
 void Sandbox::init() {
   set_abi_check(true);
   set_stack_check(true);
+  set_use_child(false);
   set_max_jumps(16);
   instr_offset_ = (uint64_t)(-1);
 
@@ -225,10 +230,139 @@ Sandbox& Sandbox::clear_callbacks() {
   return *this;
 }
 
+struct SandboxChildCallbackArg{
+  ostream& output;
+  StateCallback original_callback; // the address of the original callback
+  void* original_arg;               // the argument of the callback
+
+  SandboxChildCallbackArg(ostream& os) : output(os) { }
+};
+
+void sandbox_child_callback(const StateCallbackData& data, void* arg) {
+  cout << "child: invoking callback" << endl;
+  SandboxChildCallbackArg scca = *static_cast<SandboxChildCallbackArg*>(arg);
+  scca.output << "CALLBACK" << endl;
+  stoke::serialize<TUnit>(scca.output, TUnit(data.code));
+  stoke::serialize<CpuState>(scca.output, data.state);
+  scca.output << data.line << endl;
+  scca.output << dec << (uint64_t)scca.original_callback << endl;
+  scca.output << dec << (uint64_t)scca.original_arg << endl;
+}
+
+
+void Sandbox::update_child_callback(std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>>& m, ostream& os) {
+  for(auto& label_line_pair : m) {
+    for(auto& line_pair : label_line_pair.second) {
+      update_child_callback(line_pair.second, os);
+    }
+  }
+}
+
+void Sandbox::update_child_callback(pair<StateCallback, void*>& pair, ostream& os) {
+  if(pair.first == nullptr)
+    return;
+
+  SandboxChildCallbackArg* scca = new SandboxChildCallbackArg(os);
+  scca->original_callback = pair.first;
+  scca->original_arg = pair.second;
+  pair.first = sandbox_child_callback;
+  pair.second = (void*)scca;
+}
+
+void Sandbox::run_child(size_t index) {
+
+  int fds[2];
+  int ok = pipe(fds);
+  if(ok) {
+    perror("sandbox pipe");
+  }
+
+  pid_t pid = fork();
+  if(pid) {
+    // parent.
+    close(fds[1]);
+
+    // read input stream
+    __gnu_cxx::stdio_filebuf<char> filebuf(fds[0], std::ios::in);
+    istream is(&filebuf);
+
+    // listen to fifo
+    while(is.good()) {
+      string line;
+      cout << "waiting on child " << pid << endl;
+      getline(is, line);
+      if(line == "RESULT") {
+        cout << "Result received!" << endl;
+        // read the result and save it
+        auto io = io_pairs_[index];
+        io->out_ = stoke::deserialize<CpuState>(is);
+
+        // cleanup
+        getline(is, line);
+        assert(line == "DONE");
+        waitpid(pid, NULL, 0);
+        close(fds[0]);
+        break;
+      } else if (line == "CALLBACK") {
+        cout << "Callback received!" << endl;
+        size_t line;
+        uint64_t callback_ptr;
+        uint64_t arg_ptr;
+        TUnit tu = stoke::deserialize<TUnit>(is);
+        x64asm::Code code = tu.get_code();
+        CpuState state = stoke::deserialize<CpuState>(is);
+        is >> line;
+        StateCallbackData scd(code, line, state);
+        is >> callback_ptr;
+        is >> arg_ptr;
+        StateCallback sc = (StateCallback)(callback_ptr);
+        void* arg = (void*)(arg_ptr);
+        sc(scd, arg);
+      }
+    }
+
+  } else {
+    // child.  add new callbacks and run new sandbox.
+    close(fds[0]);
+    set_use_child(false);
+
+    // create output stream
+    __gnu_cxx::stdio_filebuf<char> filebuf(fds[1], std::ios::out);
+    ostream os(&filebuf);
+
+    // for each callback, create proxy callback
+    cout << "child: Updating callbacks" << endl;
+    update_child_callback(global_before_, os);
+    update_child_callback(global_after_, os);
+    update_child_callback(before_, os);
+    update_child_callback(after_, os);
+
+    // run the actual sandbox
+    cout << "child: Running" << endl;
+    run(index);
+
+    // return the result
+    auto io = io_pairs_[index];
+    os << "RESULT" << endl;
+    stoke::serialize<CpuState>(os, io->out_);
+    os << "DONE" << endl;
+
+    // cleanup
+    exit(0);
+  }
+
+}
+
 Sandbox& Sandbox::run(size_t index) {
 
   assert(num_functions() > 0);
   assert(index < num_inputs());
+
+  if(use_child_) {
+    run_child(index);
+    return *this;
+  }
+
   auto io = io_pairs_[index];
 
   // Don't bother executing testcases that are in error states

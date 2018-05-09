@@ -37,15 +37,9 @@ cpputil::ValueArg<size_t>& rewrite_bound_arg =
   .description("Bound on loop iterations from one DDEC cutpoint to the next in the rewrite.")
   .default_val(2);
 
-cpputil::ValueArg<int>& ddec_thread_count =
-  cpputil::ValueArg<int>::create("ddec_threads")
-  .usage("<int>")
-  .description("How many threads to use for DDEC.")
-  .default_val(1);
-
-cpputil::FlagArg& pubsub_class_checker_arg =
-  cpputil::FlagArg::create("pubsub_class_checker")
-  .description("Use pubsub to discharge DDEC equivalence classes");
+cpputil::FlagArg& handhold_arg =
+  cpputil::FlagArg::create("handhold")
+  .description("Use a handhold.txt file to pick the equivalence class to verifhy");
 } // namespace stoke
 
 #endif
