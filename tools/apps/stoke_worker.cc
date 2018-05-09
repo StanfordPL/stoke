@@ -304,6 +304,7 @@ size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
       << "  WHERE ("
       << "    expiration IS NULL "                                       
       << "    OR expiration < NOW()) " 
+      << "  ORDER BY hash "
       << "  LIMIT " << max << ") "
       << "UPDATE ProofObligationQueue SET "
       << "  expiration = NOW() + interval '10 seconds', "
