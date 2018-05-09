@@ -145,6 +145,7 @@ SymBitVector SymState::lookup(const Operand o) const {
       auto p = memory->read(addr, size, deref_);
       return p.first;
     } else {
+      // TODO I bet this is a bug.  Size should be multiplied by 8?
       return SymBitVector::tmp_var(size);
     }
   }
