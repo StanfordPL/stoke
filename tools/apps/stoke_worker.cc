@@ -439,29 +439,6 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       exit(0);
     }
 
-    // Parse the problem 
-    stringstream ss(qe->text);
-    ObligationChecker::Obligation oblig;
-    oblig.read_text(ss);
-
-    // Setup the solver
-    cout << pid << ": making solver" << endl;
-    SMTSolver* solver; 
-    if(strcmp(qe->solver, "z3") == 0) 
-      solver = static_cast<SMTSolver*>(new Z3Solver());
-    else
-      solver = static_cast<SMTSolver*>(new Cvc4Solver());
-    
-    // Setup the obligation checker
-    cout << pid << ": making handler" << endl;
-    auto handler = new ComboHandler();
-    auto filter = new BoundAwayFilter(*handler, (uint64_t)0x100, (uint64_t)(-0x100));
-    SmtObligationChecker oc(*solver, *filter);
-    if(strcmp(qe->strategy, "flat") == 0)
-      oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-    else
-      oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
-
     uint64_t start_time = time(0);
     pid_t child = fork();
     if(!child) {
@@ -474,6 +451,29 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       condition_variable cond;
       thread expiry_thread(expiry_helper, qe->id, &done, ref(cond_mu), ref(cond));
       cout << getpid() << ": expiry launched" << endl;
+
+      // Parse the problem 
+      stringstream ss(qe->text);
+      ObligationChecker::Obligation oblig;
+      oblig.read_text(ss);
+
+      // Setup the solver
+      cout << pid << ": making solver" << endl;
+      SMTSolver* solver; 
+      if(strcmp(qe->solver, "z3") == 0) 
+        solver = static_cast<SMTSolver*>(new Z3Solver());
+      else
+        solver = static_cast<SMTSolver*>(new Cvc4Solver());
+      
+      // Setup the obligation checker
+      cout << pid << ": making handler" << endl;
+      auto handler = new ComboHandler();
+      auto filter = new BoundAwayFilter(*handler, (uint64_t)0x100, (uint64_t)(-0x100));
+      SmtObligationChecker oc(*solver, *filter);
+      if(strcmp(qe->strategy, "flat") == 0)
+        oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+      else
+        oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
 
       // Prepare the callback
       ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
