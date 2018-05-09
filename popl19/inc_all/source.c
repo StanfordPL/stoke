@@ -15,6 +15,21 @@ inc_all(int* arr, int count) {
 
 }
 
+void
+__attribute__ ((noinline))
+inc_unroll2(int* arr, int count) {
+
+  size_t i;
+  for(i = 0; i+1 < count; i += 2) {
+    arr[i]++;
+    arr[i+1]++;
+  }
+  if(i < count) {
+    arr[i]++;
+  }
+
+}
+
 void test(int i, int j) {
   int* arr = malloc(sizeof(int)*(j+i));
   for(size_t k = i; k < i+j; ++k) {
