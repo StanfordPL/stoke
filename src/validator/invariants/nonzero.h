@@ -33,6 +33,11 @@ public:
     set_di(target, number, false);
     set_di(rewrite, number, true);
 
+    /*
+    std::cout << "NonzeroInvariant variable_.size = " << variable_.size << std::endl;
+    std::cout << "variable_.from_state(target,rewrite).width() = " 
+         << variable_.from_state(target, rewrite).width() << std::endl; */
+
     if(!negate_)
       return variable_.from_state(target, rewrite) != SymBitVector::constant(variable_.size*8, 0);
     else

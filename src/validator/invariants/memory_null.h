@@ -35,9 +35,9 @@ public:
     set_di(target, number, false);
     set_di(rewrite, number, true);
 
-    std::cout << "Visiting ";
+    //std::cout << "Visiting ";
     write(std::cout);
-    std::cout << " with no " << number << std::endl;
+    //std::cout << " with no " << number << std::endl;
 
     auto& state = is_rewrite_ ? rewrite : target;
 

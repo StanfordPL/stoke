@@ -141,11 +141,14 @@ SymBitVector SymState::lookup(const Operand o) const {
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
+    //cout << "PERFORMING LOOKUP ON TYPICAL MEMORY size=" << size << endl;
+    //cout << "memory = " << memory << endl;
     if (memory) {
       auto p = memory->read(addr, size, deref_);
+      //cout << "width in bits of result: " << p.first.width() << endl;
+      //cout << "result: " << p.first << endl;
       return p.first;
     } else {
-      // TODO I bet this is a bug.  Size should be multiplied by 8?
       return SymBitVector::tmp_var(size);
     }
   }

@@ -8,6 +8,12 @@ using namespace x64asm;
 SymBitVector Variable::from_state(SymState& target, SymState& rewrite) const {
   auto& prog = is_rewrite ? rewrite : target;
 
+  /*
+  cout << "====" << endl;
+  cout << "Looking up variable from state: " << *this << endl;
+  cout << "   size=" << size << "   offset=" << offset << endl;
+  */
+
   if (!is_ghost) {
     SymBitVector original_bv = prog[operand];
     SymBitVector extracted = original_bv[size*8+offset*8-1][offset*8];
@@ -133,6 +139,46 @@ istream& Variable::deserialize(istream& in) {
   } else {
     in >> operand >> ws;
   }
+
+  /** Unfortunately, writing and reading the operand looses the size of memory
+    references.  Therefore we need to modify the memory reference so that it
+    is sufficiently large to account for the size and offset (which are expressed
+    in bytes) */
+  size_t min_size = size+offset;
+  if(operand.size() < min_size*8) {
+    size_t new_size = 1;
+    while(new_size < min_size) {
+      new_size *= 2;
+    }
+    assert(operand.is_typical_memory());
+    /*
+    cout << "Upgrading operand " << operand << "to size " << new_size << endl;
+    cout << "is_typical_memory: " << operand.is_typical_memory() << endl;
+    */
+    M8 m = *static_cast<M8*>(&operand);
+
+    switch(new_size) {
+      case 1:
+        operand = M8(m);
+        break;
+      case 2:
+        operand = M16(m);
+        break;
+      case 4:
+        operand = M32(m);
+        break;
+      case 8:
+        operand = M64(m);
+        break;
+      case 16:
+        operand = M128(m);
+        break;
+      case 32:
+        operand = M256(m);
+        break;
+    }
+  }
+
   return in;
 }
 

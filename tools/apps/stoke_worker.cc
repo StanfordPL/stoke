@@ -342,7 +342,7 @@ size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
   return count;
 }
 
-void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_ms) {
+void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_s) {
 
   work tx(c);
   std::stringstream sql_add_result;
@@ -356,7 +356,7 @@ void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_ms) {
       << "  '" << tx.esc(qe.strategy) << "', "
       << "  FALSE, "
       << "  " << 0 << ", "
-      << "  " << time_taken_ms*1000 << ", "
+      << "  " << time_taken_s*1000*1000 << ", "
       << "  '" << tx.esc(version_info) << "',"
       << "  'TIMEOUT')";
   tx.exec(sql_add_result.str().c_str());
@@ -698,6 +698,7 @@ void debug_hash(string hash) {
 
   result r = tx.exec(sql.str().c_str());
   tx.commit();
+  c.disconnect();
 
   bool found_one = r.size() > 0;
   if(found_one) {
