@@ -200,8 +200,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
           continue;
         }
 
-        found_matching_edge = true;
-
         // if so, we:
         // (1) update the state
         TraceState follow = tr_state;
@@ -215,6 +213,27 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
           follow.target_current = follow.target_trace[edge.te.size()-1].cs;
         if (edge.re.size())
           follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
+
+        // (X) perform a sanity check; memory states should be equal.
+        if(follow.target_current.stack != follow.rewrite_current.stack) {
+          DEBUG_LEARN_STATE_DATA(cout << "    on this path stack states differ." << endl;)
+          continue;
+        }
+        if(follow.target_current.heap != follow.rewrite_current.heap) {
+          DEBUG_LEARN_STATE_DATA(cout << "    on this path heap states differ." << endl;)
+          continue;
+        }
+        if(follow.target_current.data != follow.rewrite_current.data) {
+          DEBUG_LEARN_STATE_DATA(cout << "    on this path memory data states differ." << endl;)
+          continue;
+        }
+        if(follow.target_current.segments != follow.rewrite_current.segments) {
+          DEBUG_LEARN_STATE_DATA(cout << "    on this path memory states differ." << endl;)
+          continue;
+        }
+
+        // Good job!
+        found_matching_edge = true;
 
         // (3) remove the prefixes from both traces
         remove_prefix(edge.te, follow.target_trace);

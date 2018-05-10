@@ -147,8 +147,6 @@ void PostgresObligationChecker::poll_database() {
   work tx(connection_);
   stringstream sql;
   sql << "SELECT *, smt_time+gen_time as total_time, "
-      << "  error IS NOT NULL as has_error, "
-      << "  ceg_target IS NOT NULL as has_ceg  "
       << "FROM ProofObligationResult "
       << "WHERE hash in (";
 
@@ -188,8 +186,10 @@ void PostgresObligationChecker::poll_database() {
     if(job.completed)
       continue;
 
-    bool has_error = row["has_error"].as<bool>();
+    bool has_error = !row["error"].is_null();
+    bool has_ceg = !row["ceg_target"].is_null();
     if(has_error) {
+      // we don't want to invoke the callback unless we get errors from all solvers
       error_counts[hash]++;
       error_message.insert({hash, row["error"].as<string>()});
       error_version.insert({hash, row["version"].as<string>()});
@@ -199,12 +199,33 @@ void PostgresObligationChecker::poll_database() {
       // TODO: add counterexample info
       Result r;
       r.verified = row["verified"].as<bool>();
-      r.has_ceg = false;
       r.has_error = false;
       r.smt_time_microseconds = row["smt_time"].as<uint64_t>();
       r.gen_time_microseconds = row["gen_time"].as<uint64_t>();
       r.source_version = row["version"].as<string>();
       //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
+
+      if(has_ceg) {
+        r.has_ceg = true;
+
+        stringstream target_ceg;
+        stringstream rewrite_ceg;
+        stringstream target_final_ceg;
+        stringstream rewrite_final_ceg;
+
+        target_ceg << row["ceg_target"].c_str();
+        rewrite_ceg << row["ceg_rewrite"].c_str();
+        target_final_ceg << row["target_final_ceg"].c_str();
+        rewrite_final_ceg << row["rewrite_final_ceg"].c_str();
+
+        r.target_ceg.read_text(target_ceg);
+        r.rewrite_ceg.read_text(rewrite_ceg);
+        r.target_final_ceg.read_text(target_final_ceg);
+        r.rewrite_final_ceg.read_text(rewrite_final_ceg);
+      } else {
+        r.has_ceg = false;
+      }
+
       job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);

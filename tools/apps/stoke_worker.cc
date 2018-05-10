@@ -375,44 +375,43 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
   std::stringstream sql_add_result;
 
   // First, add an entry recording what we got
-  if(result.verified == true) {
-    sql_add_result 
-      << "INSERT INTO ProofObligationResult "
-      << "  (hash, solver, strategy, verified, gen_time, smt_time, version) "
-      << "VALUES "
-      << "  ('" << tx.esc(qe.hash) << "', "
-      << "  '" << tx.esc(qe.solver) << "', "
-      << "  '" << tx.esc(qe.strategy) << "', "
-      << "  TRUE, "
-      << "  " << result.gen_time_microseconds << ", "
-      << "  " << result.smt_time_microseconds << ", "
-      << "  '" << tx.esc(result.source_version) << "')";
-  } else if (result.has_ceg) {
-    sql_add_result 
-      << "INSERT INTO ProofObligationResult "
-      << "  (hash, solver, strategy, verified, gen_time, smt_time, version) "
-      << "VALUES "
-      << "  ('" << tx.esc(qe.hash) << "', "
-      << "  '" << tx.esc(qe.solver) << "', "
-      << "  '" << tx.esc(qe.strategy) << "', "
-      << "  FALSE, "
-      << "  " << result.gen_time_microseconds << ", "
-      << "  " << result.smt_time_microseconds << ", "
-      << "  '" << tx.esc(result.source_version) << "')";
-  } else if (result.has_error) {
-    sql_add_result 
-      << "INSERT INTO ProofObligationResult "
-      << "  (hash, solver, strategy, verified, error, gen_time, smt_time, version) "
-      << "VALUES "
-      << "  ('" << tx.esc(qe.hash) << "', "
-      << "  '" << tx.esc(qe.solver) << "', "
-      << "  '" << tx.esc(qe.strategy) << "', "
-      << "  FALSE, "
-      << "  '" << tx.esc(result.error_message) << "', "
-      << "  " << result.gen_time_microseconds << ", "
-      << "  " << result.smt_time_microseconds << ", "
-      << "  '" << tx.esc(result.source_version) << "')";
+  sql_add_result
+    << "INSERT INTO ProofObligationResult "
+    << "  (hash, solver, strategy, gen_time, smt_time, version, verified"
+    << ( result.has_error ? ", error" : "")
+    << ( result.has_ceg ? ", ceg_target, ceg_rewrite, ceg_target_final, ceg_rewrite_final" : "")
+    << ") "
+    << "VALUES ("
+    << "  '" << tx.esc(qe.hash) << "', "
+    << "  '" << tx.esc(qe.solver) << "', "
+    << "  '" << tx.esc(qe.strategy) << "', "
+    << "  " << result.gen_time_microseconds << ", "
+    << "  " << result.smt_time_microseconds << ", "
+    << "  '" << tx.esc(result.source_version) << ", "
+    << "  " << (result.verified ? "TRUE" : "FALSE" );
+
+  if(result.has_error) {
+    sql_add_result << ", " << tx.esc(result.error_message);
   }
+
+  if(result.has_ceg) {
+    stringstream ss_ceg_target;
+    stringstream ss_ceg_rewrite;
+    stringstream ss_ceg_target_final;
+    stringstream ss_ceg_rewrite_final;
+
+    result.target_ceg.write_text(ss_ceg_target);
+    result.rewrite_ceg.write_text(ss_ceg_rewrite);
+    result.target_final_ceg.write_text(ss_ceg_target_final);
+    result.rewrite_final_ceg.write_text(ss_ceg_rewrite_final);
+
+    sql_add_result << ",  '" << tx.esc(ss_ceg_target.str()) << "'"
+                   << ",  '" << tx.esc(ss_ceg_rewrite.str()) << "'"
+                   << ",  '" << tx.esc(ss_ceg_target_final.str()) << "'"
+                   << ",  '" << tx.esc(ss_ceg_rewrite_final.str()) << "'";
+  }
+  sql_add_result << ")";
+  
   tx.exec(sql_add_result.str().c_str());
 
   // Next, remove from the queue
