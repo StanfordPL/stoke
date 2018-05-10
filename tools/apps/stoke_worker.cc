@@ -61,6 +61,11 @@ auto& worker_timeout_arg = ValueArg<uint64_t>::create("worker_timeout")
                       .description("Timeout in seconds")
                       .default_val(60*30); // 30 minutes
 
+auto& debug_hash_arg = ValueArg<string>::create("debug_hash")
+                      .usage("<string>")
+                      .description("Debug a specific problem in the database.")
+                      .default_val("");
+
 auto& io_opt = Heading::create("I/O options:");
 
 auto& filename_arg = ValueArg<string>::create("o")
@@ -418,6 +423,51 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
 
 }
 
+void solve_problem(const QueueEntry& qe, ObligationChecker::Callback& callback, bool debug_problem = false) {
+  // Parse the problem 
+  stringstream ss(qe.text);
+  ObligationChecker::Obligation oblig;
+  oblig.read_text(ss);
+
+  // Print out the problem
+  if(debug_problem) {
+    cout << "Target" << endl; 
+    cout << oblig.target.get_function() << endl << endl;
+
+    cout << "Rewrite" << endl; 
+    cout << oblig.rewrite.get_function() << endl << endl;
+
+    cout << "Paths from (" << oblig.target_block << ", " << oblig.rewrite_block << ")" << endl; 
+    cout << oblig.P << endl;
+    cout << oblig.Q << endl << endl;
+
+    cout << "Assume " << *oblig.assume << endl << endl;
+    cout << "Prove " << *oblig.prove << endl << endl;
+  }
+
+  // Setup the solver
+  SMTSolver* solver; 
+  if(strcmp(qe.solver, "z3") == 0) 
+    solver = static_cast<SMTSolver*>(new Z3Solver());
+  else
+    solver = static_cast<SMTSolver*>(new Cvc4Solver());
+  
+  // Setup the obligation checker
+  auto handler = new ComboHandler();
+  auto filter = new BoundAwayFilter(*handler, (uint64_t)0x100, (uint64_t)(-0x100));
+  SmtObligationChecker oc(*solver, *filter);
+  if(strcmp(qe.strategy, "flat") == 0)
+    oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  else
+    oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
+
+  // Run the checker
+  static_cast<ObligationChecker*>(&oc)->check(oblig, callback, NULL);
+  oc.block_until_complete();
+
+}
+
+
 pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
 
   // fork a process here, *before* doing anything with threads or the db (lololol)
@@ -453,29 +503,6 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       thread expiry_thread(expiry_helper, qe->id, &done, ref(cond_mu), ref(cond));
       cout << getpid() << ": expiry launched" << endl;
 
-      // Parse the problem 
-      stringstream ss(qe->text);
-      ObligationChecker::Obligation oblig;
-      oblig.read_text(ss);
-
-      // Setup the solver
-      cout << pid << ": making solver" << endl;
-      SMTSolver* solver; 
-      if(strcmp(qe->solver, "z3") == 0) 
-        solver = static_cast<SMTSolver*>(new Z3Solver());
-      else
-        solver = static_cast<SMTSolver*>(new Cvc4Solver());
-      
-      // Setup the obligation checker
-      cout << pid << ": making handler" << endl;
-      auto handler = new ComboHandler();
-      auto filter = new BoundAwayFilter(*handler, (uint64_t)0x100, (uint64_t)(-0x100));
-      SmtObligationChecker oc(*solver, *filter);
-      if(strcmp(qe->strategy, "flat") == 0)
-        oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-      else
-        oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
-
       // Prepare the callback
       ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
         // tell expiry thread it can stop 
@@ -500,8 +527,9 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       // set timeout
       cout << getpid() << "Calling alarm() with " << worker_timeout_arg.value() << endl;
       alarm(worker_timeout_arg.value()+1);
-      static_cast<ObligationChecker*>(&oc)->check(oblig, callback, NULL);
-      oc.block_until_complete();
+
+      // Solve the problem
+      solve_problem(*qe, callback);
       delete qe;
       exit(0);
     } else {
@@ -629,12 +657,7 @@ void make_workers(ConditionQueue<QueueEntry>& queue) {
   }
 }
 
-
-int main(int argc, char** argv) {
-
-  /** Parse command line arguments. */
-  CommandLineConfig::strict_with_convenience(argc, argv);
-  prctl(PR_SET_PDEATHSIG, SIGHUP);
+void main_loop() {
 
   /** Get a unique ID for locking */
   SeedGadget seed;
@@ -654,7 +677,67 @@ int main(int argc, char** argv) {
   /** Make workers to do everything */
   cout << "[main] Main process pid: " << getpid() << endl;
   make_workers(*queue); 
+}
 
+void debug_hash(string hash) {
+
+  ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
+    cout << "verified=" << result.verified << endl;
+    cout << "has_ceg=" << result.has_ceg << endl;
+    if(result.has_error)
+      cout << "error=" << result.error_message << endl;
+    cout << "gen_time=" << result.gen_time_microseconds << endl;
+    cout << "smt_time=" << result.smt_time_microseconds << endl;
+  };
+
+  connection c(postgres_arg.value());
+  work tx(c);
+
+  stringstream sql;
+  sql << "SELECT hash, problem FROM ProofObligation WHERE hash='" << tx.esc(hash) << "'";
+
+  result r = tx.exec(sql.str().c_str());
+  tx.commit();
+
+  bool found_one = r.size() > 0;
+  if(found_one) {
+    for(auto row : r) {
+      QueueEntry* qe = new QueueEntry();
+      qe->id = 0;
+      strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
+      strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+      strncpy(qe->strategy, alias_strategy_arg.value().c_str(), sizeof(qe->strategy)-1);
+
+      if(solver_arg.value() == Solver::CVC4) {
+        strcpy(qe->solver, "cvc4");
+      } else {
+        strcpy(qe->solver, "z3");
+      }
+
+      cout << "Debugging problem with hash " << qe->hash
+           << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;
+
+      solve_problem(*qe, callback, true);
+    }
+  } else {
+    cout << "Problem with hash " << hash << " not found." << endl;
+  }
+
+  exit(0);
+}
+
+
+int main(int argc, char** argv) {
+
+  /** Parse command line arguments. */
+  CommandLineConfig::strict_with_convenience(argc, argv);
+  prctl(PR_SET_PDEATHSIG, SIGHUP);
+
+  if(debug_hash_arg.value() == "") {
+    main_loop();
+  } else {
+    debug_hash(debug_hash_arg.value());
+  }
 
   return 0;
 }

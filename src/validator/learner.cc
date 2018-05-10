@@ -1113,6 +1113,18 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
 std::vector<Variable> InvariantLearner::sub_registers_for_regset(x64asm::RegSet rs, bool is_rewrite) const {
   vector<Variable> outputs;
+  for (auto r = rs.sse_begin(); r != sse_end(); ++r) {
+    size_t bytes = (*r).size()/8;
+    // add each 1,2,4,8-byte subregister
+    for(size_t k = 0; k < 4; ++k) {
+      size_t pow2 = (1 << k);
+      for(size_t i = 0; i < bytes; i += pow2) {
+        Variable sub64(*r, is_rewrite, pow2, i);
+        outputs.push_back(sub);
+      }
+    }
+  }
+
   for (auto r = rs.gp_begin(); r != rs.gp_end(); ++r) {
     size_t bytes = (*r).size()/8;
     switch(bytes) {
