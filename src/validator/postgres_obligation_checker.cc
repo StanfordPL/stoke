@@ -146,7 +146,7 @@ void PostgresObligationChecker::poll_database() {
 
   work tx(connection_);
   stringstream sql;
-  sql << "SELECT *, smt_time+gen_time as total_time, "
+  sql << "SELECT *, smt_time+gen_time as total_time "
       << "FROM ProofObligationResult "
       << "WHERE hash in (";
 
@@ -215,8 +215,8 @@ void PostgresObligationChecker::poll_database() {
 
         target_ceg << row["ceg_target"].c_str();
         rewrite_ceg << row["ceg_rewrite"].c_str();
-        target_final_ceg << row["target_final_ceg"].c_str();
-        rewrite_final_ceg << row["rewrite_final_ceg"].c_str();
+        target_final_ceg << row["ceg_target_final"].c_str();
+        rewrite_final_ceg << row["ceg_rewrite_final"].c_str();
 
         r.target_ceg.read_text(target_ceg);
         r.rewrite_ceg.read_text(rewrite_ceg);

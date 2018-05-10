@@ -357,7 +357,7 @@ void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_s) {
       << "  FALSE, "
       << "  " << 0 << ", "
       << "  " << time_taken_s*1000*1000 << ", "
-      << "  '" << tx.esc(version_info) << "',"
+      << "  '" << tx.esc(version_info) << "', "
       << "  'TIMEOUT')";
   tx.exec(sql_add_result.str().c_str());
 
@@ -387,7 +387,7 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
     << "  '" << tx.esc(qe.strategy) << "', "
     << "  " << result.gen_time_microseconds << ", "
     << "  " << result.smt_time_microseconds << ", "
-    << "  '" << tx.esc(result.source_version) << ", "
+    << "  '" << tx.esc(result.source_version) << "', "
     << "  " << (result.verified ? "TRUE" : "FALSE" );
 
   if(result.has_error) {
@@ -412,6 +412,7 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
   }
   sql_add_result << ")";
   
+  cout << "SQL: " << sql_add_result.str() << endl;
   tx.exec(sql_add_result.str().c_str());
 
   // Next, remove from the queue
