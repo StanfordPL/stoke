@@ -101,11 +101,11 @@ public:
   /** The width of this bitvector (number of bits). */
   uint16_t width() const;
 
-  /** Creates a constant bitvector of specified size and value */
+  /** Creates a constant bitvector of specified size (in bits) and value */
   static SymBitVector constant(uint16_t size, uint64_t constant);
-  /** Creates a bitvector variables of specified size and name */
+  /** Creates a bitvector variables of specified size (in bits) and name */
   static SymBitVector var(uint16_t size, std::string name);
-  /** Creates a bitvector temporary variable of given size */
+  /** Creates a bitvector temporary variable of given size in bits) */
   static SymBitVector tmp_var(uint16_t size);
   /** Creates a length-1 bitvector from a boolean */
   static SymBitVector from_bool(const SymBool& b);
@@ -144,9 +144,9 @@ public:
   SymBitVector s_div(const SymBitVector& other) const;
   /** Creates a sign-extended version of this bitvector DEPRECATED. */
   SymBitVector extend(uint16_t size) const;
-  /** Creates a sign-extended version of this bitvector */
+  /** Creates a sign-extended version of this bitvector, with size specified in bits */
   SymBitVector sign_extend(uint16_t size) const;
-  /** Creates a sign-extended version of this bitvector */
+  /** Creates a sign-extended version of this bitvector, with size specified in bits */
   SymBitVector zero_extend(uint16_t size) const;
   /** Creates a bitvector representing signed modulus */
   SymBitVector s_mod(const SymBitVector& other) const;

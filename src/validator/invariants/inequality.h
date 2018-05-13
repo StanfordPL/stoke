@@ -25,10 +25,11 @@ class InequalityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  InequalityInvariant(const Variable& v1, const Variable& v2,
-                      bool is_strict, bool is_signed=false) :
+  InequalityInvariant(const Variable& v1, const Variable& v2, 
+                      bool is_strict, bool is_signed=false, uint64_t lhs_constant = 0) :
     variable1_(v1), variable2_(v2),
-    is_strict_(is_strict), is_signed_(is_signed) {
+    is_strict_(is_strict), is_signed_(is_signed),
+    lhs_constant_(lhs_constant) {
     assert(v1.size == v2.size);
   }
 
@@ -39,6 +40,10 @@ public:
 
     auto lhs = variable1_.from_state(target, rewrite);
     auto rhs = variable2_.from_state(target, rewrite);
+
+    if(lhs_constant_) {
+      lhs = lhs + SymBitVector::constant(variable1_.size*8, lhs_constant_);
+    }
 
     if (!is_signed_) {
 
@@ -61,8 +66,8 @@ public:
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
 
-    auto lhs = variable1_.from_state(target, rewrite);
-    auto rhs = variable2_.from_state(target, rewrite);
+    uint64_t lhs = variable1_.from_state(target, rewrite) + lhs_constant_;
+    uint64_t rhs = variable2_.from_state(target, rewrite);
 
     // Unsigned is easy!
     if (!is_signed_) {
@@ -100,7 +105,6 @@ public:
 
       break;
     case 4:
-
       if (is_strict_) {
         return (int64_t)lhs < (int64_t)rhs;
       } else {
@@ -118,6 +122,9 @@ public:
 
   std::ostream& write(std::ostream& os) const {
     os << variable1_;
+    if(lhs_constant_ != 0) {
+      os << " + " << lhs_constant_;
+    }
 
     if (is_strict_)
       os << " <";
@@ -143,12 +150,19 @@ public:
     out << "InequalityInvariant" << std::endl;
     variable1_.serialize(out);
     variable2_.serialize(out);
-    out << is_strict_ << " " << is_signed_ << std::endl;
+    out << is_strict_ << " " << is_signed_ << " " << lhs_constant_ << std::endl;
     return out;
   }
 
   InequalityInvariant(std::istream& is) : variable1_(is), variable2_(is) {
     is >> is_strict_ >> is_signed_;
+    if(is.peek() == '\n') {
+      // version without lhs_constant
+      lhs_constant_ = 0;
+    } else {
+      // version with lhs_constant
+      is >> lhs_constant_;
+    }
   }
 
 
@@ -159,6 +173,8 @@ private:
 
   bool is_strict_;
   bool is_signed_;
+
+  uint64_t lhs_constant_;
 
 };
 

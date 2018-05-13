@@ -148,6 +148,13 @@ private:
   std::vector<InequalityInvariant*> build_inequality_invariants
   (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
+  /** Set of inequalities with constants */
+  std::vector<InequalityInvariant*> build_inequality_with_constant_invariants(
+    x64asm::RegSet target_regs, 
+    x64asm::RegSet rewrite_regs, 
+    const std::vector<CpuState>& target_states, 
+    const std::vector<CpuState>& rewrite_states) const;
+
   /** Create set of invariants of form x - y == c (mod N) that
    hold over given data. */
   std::vector<EqualityInvariant*> build_modulo_invariants(
