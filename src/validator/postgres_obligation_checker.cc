@@ -25,8 +25,9 @@ void PostgresObligationChecker::make_tables() {
   
   const char* sql_proof_obligation = 
     "CREATE TABLE IF NOT EXISTS ProofObligation("                  \
-      "hash VARCHAR(50) PRIMARY KEY,"                              \
-      "problem TEXT"                                               \
+      "hash         VARCHAR(50) PRIMARY KEY,"                      \
+      "problem      TEXT,"                                         \
+      "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"        \
     ")";
 
   const char* sql_proof_obligation_result = 
@@ -43,7 +44,8 @@ void PostgresObligationChecker::make_tables() {
       "error              TEXT,"                                    \
       "gen_time           INTEGER,"                                 \
       "smt_time           INTEGER,"                                 \
-      "version            VARCHAR(128)"                             \
+      "version            VARCHAR(128),"                            \
+      "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()"   \
     ")";
 
   // indexes needed:
@@ -57,7 +59,8 @@ void PostgresObligationChecker::make_tables() {
       "solver             VARCHAR(8),"                              \
       "strategy           VARCHAR(8),"                              \
       "locked_by          BIGINT,"                                  \
-      "expiration         TIMESTAMP WITH TIME ZONE"                 \
+      "expiration         TIMESTAMP WITH TIME ZONE,"                \
+      "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()"   \
     ")";
 
   // indexes needed:

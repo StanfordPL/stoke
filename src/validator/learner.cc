@@ -385,47 +385,48 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
     const vector<CpuState>& rewrite_states) const {
 
   vector<InequalityInvariant*> outputs;
+  vector<Variable> variables;
 
-  // For now, let's look at unsigned target-target and rewrite-rewrite modulo equalities
-  for (size_t k = 0; k < 2; ++k) {
+  for(size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
-    const auto& states = k ? rewrite_states : target_states;
-
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
-      for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
+      Variable v(*i, k);
+      variables.push_back(v);
+    }
+  }
 
-        if(*i == *j) // don't put this in loop guard: might not be in order?
-          continue;
+  for(auto& v1 : variables) {
+    for(auto& v2 : variables) {
+      if(v1 == v2)
+        continue;
 
-        // look for invariants of the form
-        // i + constant <= j   (i.e. constant <= j - i)
-        //                     (i.e. min value for j-i)
+      // look for invariants of the form
+      // i + constant <= j   (i.e. constant <= j - i)
+      //                     (i.e. min value for j-i)
 
-        // i + constant >= j   (i.e. constant >= j - i)
-        //                     (i.e. max value for j-i)
+      // i + constant >= j   (i.e. constant >= j - i)
+      //                     (i.e. max value for j-i)
 
-        /** collect all the differences. */
-        uint64_t min_difference = (uint64_t)(-1);
-        uint64_t max_difference = 0;
-        for(auto& it : states) {
-          uint64_t difference = it[*j] - it[*i];
-          if(difference > max_difference)
-            max_difference = difference;
-          if(difference < min_difference)
-            min_difference = difference;
-        }
-
-        Variable v(*i, k);
-        Variable w(*j, k);
-
-        // i + constant <= j
-        auto inv = new InequalityInvariant(v, w, false, false, min_difference);
-        outputs.push_back(inv);
-
-        // i + constant >= j   i.e.   j - constant <= i
-        auto inv2 = new InequalityInvariant(w, v, false, false, -max_difference);
-        outputs.push_back(inv2);
+      /** collect all the differences. */
+      uint64_t min_difference = (uint64_t)(-1);
+      uint64_t max_difference = 0;
+      for(size_t i = 0 ; i < target_states.size(); ++i) {
+        auto a = v1.from_state(target_states[i], rewrite_states[i]);
+        auto b = v2.from_state(target_states[i], rewrite_states[i]);
+        uint64_t difference = a - b;
+        if(difference > max_difference)
+          max_difference = difference;
+        if(difference < min_difference)
+          min_difference = difference;
       }
+
+      // i + constant <= j
+      auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
+      outputs.push_back(inv);
+
+      // i + constant >= j   i.e.   j - constant <= i
+      auto inv2 = new InequalityInvariant(v1, v2, false, false, -max_difference);
+      outputs.push_back(inv2);
     }
   }
 
