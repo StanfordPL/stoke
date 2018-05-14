@@ -48,7 +48,7 @@ public:
     auto oc_type = obligation_checker_arg.value();
     if(oc_type == "smt") {
       handler_ = new ComboHandler();
-      filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x100, (uint64_t)(-0x100));
+      filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x1000, (uint64_t)(-0x1000));
       solver_ = new SolverGadget();
       child_ = new SmtObligationChecker(*solver_, *filter_);
     } else if (oc_type == "postgres") {
