@@ -183,6 +183,21 @@ class Serializer<x64asm::RegSet, x64asm::RegSet> {
     }
 };
 
+/** M8 */
+template <>
+class Serializer<x64asm::M8, x64asm::M8> {
+  public: 
+    static void serialize(std::ostream& os, const x64asm::M8& t) {
+      os << t << " ";
+    }
+
+    static x64asm::M8 deserialize(std::istream& is) {
+      x64asm::M8 t(x64asm::Imm32(0));
+      is >> t;
+      return t;
+    }
+};
+
 
 /** Implementation */
 template<typename T>

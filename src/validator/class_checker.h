@@ -51,17 +51,20 @@ public:
     DualBuilder::EquivalenceClassMap equivalence_class;
     size_t target_bound;
     size_t rewrite_bound;
+    std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges;
 
     static Problem deserialize(std::istream& is);
     std::ostream& serialize(std::ostream& os) const;
 
     Problem(const DualAutomata& da, 
             const DualBuilder::EquivalenceClassMap& equ_class,
-            size_t tb, size_t rb) : 
+            size_t tb, size_t rb,
+            const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng) : 
       template_pod(da),
       equivalence_class(equ_class),
       target_bound(tb),
-      rewrite_bound(rb)
+      rewrite_bound(rb),
+      pointer_ranges(ptr_rng)
     {
 
     }
@@ -91,6 +94,12 @@ public:
     return *this;
   }
 
+  /** Set that a range of input locations must be pointers */
+  ClassChecker& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) {
+    pointer_ranges_.push_back({begin, end});
+    return *this;
+  }
+
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or
@@ -116,6 +125,7 @@ protected:
   ControlLearner& control_learner_;
   size_t target_bound_;
   size_t rewrite_bound_;
+  std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
 
   bool stop_early_;
 };

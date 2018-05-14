@@ -85,18 +85,51 @@ public:
 
 private:
 
+  void add_pointer_ranges(Validator& validator) {
+    std::string pointer_ranges = pointer_range_arg.value();
+    if(pointer_ranges.size() == 0)
+      return;
+
+    std::stringstream ss(pointer_ranges);
+    while(ss.good()) {
+      x64asm::M8 begin_addr(x64asm::Imm32(0));
+      x64asm::M8 end_addr(x64asm::Imm32(0));
+      ss >> begin_addr >> std::ws;
+      if(ss.peek() == ':') {
+        ss.get();
+      } else {
+        std::cerr << "Parsing failed for pointer range " << pointer_ranges << std::endl;
+        std::cerr << "Expected   \"memory_address:memory_address\", for example...";
+        std::cerr << "     (rax):7(rax,rdi,8)" << std::endl;
+        exit(1);
+      }
+      ss >> std::ws; 
+      ss >> end_addr >> std::ws;
+      if(ss.bad() || ss.fail()) {
+        std::cerr << "Parsing failed for pointer range " << pointer_ranges << std::endl;
+        std::cerr << "Expected   \"memory_address : memory_address\", for example...";
+        std::cerr << "     (rax) : 7(rax,rdi,8)" << std::endl;
+        exit(1);
+      }
+      std::cout << "Adding pointer range for " << begin_addr << " to " << end_addr << std::endl;
+      validator.add_pointer_range(begin_addr, end_addr);
+    }
+  }
+
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
       oc_ = new ObligationCheckerGadget();
       auto bv = new BoundedValidator(*oc_);
       bv->set_bound(bound_arg.value());
       bv->set_no_bailout(no_bailout_arg.value());
+      add_pointer_ranges(*bv);
       return bv;
     } else if (s == "ddec") {
       oc_ = new ObligationCheckerGadget();
       auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_use_handhold(handhold_arg.value());
+      add_pointer_ranges(*ddec);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

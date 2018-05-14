@@ -441,6 +441,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                     target_bound_, rewrite_bound_,
                     checker_, invariant_learner_); 
 
+  for(auto it : pointer_ranges_)
+    checker->add_pointer_range(it.first, it.second);
+
   if(use_handhold_) {
     /** Run handhold check */
     auto handhold_class = DualBuilder::get_handhold_class();

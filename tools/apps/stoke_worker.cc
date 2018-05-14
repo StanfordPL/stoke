@@ -66,6 +66,9 @@ auto& debug_hash_arg = ValueArg<string>::create("debug_hash")
                       .description("Debug a specific problem in the database.")
                       .default_val("");
 
+auto& verbose_arg = FlagArg::create("verbose")
+                      .description("Output more details.");
+
 auto& io_opt = Heading::create("I/O options:");
 
 auto& filename_arg = ValueArg<string>::create("o")
@@ -424,6 +427,11 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
 }
 
 void solve_problem(const QueueEntry& qe, ObligationChecker::Callback& callback, bool debug_problem = false) {
+
+  if(verbose_arg.value()) {
+    cout << "Problem text is: " << endl << qe.text << endl << endl;
+  }
+
   // Parse the problem 
   stringstream ss(qe.text);
   ObligationChecker::Obligation oblig;

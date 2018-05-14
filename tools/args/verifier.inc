@@ -53,6 +53,12 @@ cpputil::ValueArg<std::string>& alias_strategy_arg =
   .description("How to handle aliasing")
   .default_val("flat");
 
+cpputil::ValueArg<std::string>& pointer_range_arg = 
+  cpputil::ValueArg<std::string>::create("pointer_range")
+  .usage("<string>")
+  .description("Range of addresses that must be within pointer space")
+  .default_val("");
+
 cpputil::ValueArg<size_t>& process_count_arg =
   cpputil::ValueArg<size_t>::create("process_count")
   .usage("<int>")

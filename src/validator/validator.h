@@ -56,6 +56,12 @@ public:
   virtual ~Validator() {
   }
 
+  /** Set that a range of input locations must be pointers */
+  Verifier& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) {
+    pointer_ranges_.push_back({begin, end});
+    return *this;
+  }
+
   /** Evalue if the target and rewrite are the same */
   virtual bool verify(const Cfg& target, const Cfg& rewrite) {
     return false;
@@ -101,6 +107,8 @@ protected:
   /** Line where error occurred */
   size_t error_line_;
 
+  /** Range of input values that must be pointers */
+  std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
 };
 
 

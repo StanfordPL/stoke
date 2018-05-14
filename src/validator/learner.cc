@@ -384,6 +384,8 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
     const vector<CpuState>& target_states, 
     const vector<CpuState>& rewrite_states) const {
 
+  assert(target_states.size() == rewrite_states.size());
+
   vector<InequalityInvariant*> outputs;
   vector<Variable> variables;
 
@@ -413,20 +415,25 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       for(size_t i = 0 ; i < target_states.size(); ++i) {
         auto a = v1.from_state(target_states[i], rewrite_states[i]);
         auto b = v2.from_state(target_states[i], rewrite_states[i]);
-        uint64_t difference = a - b;
+        uint64_t difference = b - a;
+        //cout << "  difference " << difference << endl;
         if(difference > max_difference)
           max_difference = difference;
         if(difference < min_difference)
           min_difference = difference;
       }
+      //cout << "  max " << max_difference << endl;
+      //cout << "  min " << min_difference << endl;
 
       // i + constant <= j
       auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
       outputs.push_back(inv);
+      //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
       auto inv2 = new InequalityInvariant(v1, v2, false, false, -max_difference);
       outputs.push_back(inv2);
+      //cout << "  generating " << *inv2 << endl;
     }
   }
 

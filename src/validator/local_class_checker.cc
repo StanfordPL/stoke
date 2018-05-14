@@ -24,6 +24,7 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/nonzero.h"
+#include "src/validator/invariants/pointer_range.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -187,6 +188,13 @@ ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dua
   initial_invariant->add_invariant(sei);
   initial_invariant->add_invariant(new MemoryEqualityInvariant());
   initial_invariant->add_invariant(new NoSignalsInvariant());
+
+  for(auto span : pointer_ranges_) {
+    auto begin = span.first;
+    auto end = span.second;
+    auto pri = new PointerRangeInvariant(begin, end);
+    initial_invariant->add_invariant(pri);
+  }
 
   /*
     for (auto r : string_params_) {

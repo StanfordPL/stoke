@@ -98,6 +98,8 @@ Invariant* Invariant::deserialize(istream& in) {
     return new NotInvariant(in);
   } else if (class_name == "PointerNullInvariant") {
     return new PointerNullInvariant(in);
+  } else if (class_name == "PointerRangeInvariant") {
+    return new PointerRangeInvariant(in);
   } else if (class_name == "RangeInvariant") {
     return new RangeInvariant(in);
   } else if (class_name == "SignInvariant") {
@@ -110,8 +112,8 @@ Invariant* Invariant::deserialize(istream& in) {
     return new TrueInvariant(in);
   } else {
     cerr << "Got bad invariant class: " << class_name << endl;
-    exit(1);
     assert(false);
+    exit(1);
   }
 }
 
