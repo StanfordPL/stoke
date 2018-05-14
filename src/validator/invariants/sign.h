@@ -77,6 +77,7 @@ public:
 
   SignInvariant(std::istream& is) : variable_(is) {
     is >> positive_;
+    CHECK_STREAM(is);
   }
 
 

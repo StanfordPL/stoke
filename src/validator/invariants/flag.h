@@ -102,6 +102,7 @@ public:
 
   FlagInvariant(std::istream& is) {
     is >> predicate_ >> fallthrough_ >> is_rewrite_;
+    CHECK_STREAM(is);
   }
 
 

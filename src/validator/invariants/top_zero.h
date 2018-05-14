@@ -61,6 +61,7 @@ public:
 
   TopZeroInvariant(std::istream& is) : reg_(x64asm::rax) {
     is >> reg_ >> is_rewrite_;
+    CHECK_STREAM(is);
   }
 
 

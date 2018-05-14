@@ -1,4 +1,5 @@
 
+#include "src/serialize/check_stream.h"
 #include "src/validator/variable.h"
 
 using namespace stoke;
@@ -129,15 +130,19 @@ ostream& Variable::serialize(ostream& out) const {
 }
 
 istream& Variable::deserialize(istream& in) {
+  in >> std::dec;
   in >> is_rewrite >> ws
      >> size >> ws
      >> offset >> ws
      >> coefficient >> ws
      >> is_ghost >> ws;
+  CHECK_STREAM(in);
   if(is_ghost) {
     in >> name >> ws;
+    CHECK_STREAM(in);
   } else {
-    in >> operand >> ws;
+    in >> operand >> std::dec >> ws;
+    CHECK_STREAM(in);
   }
 
   /** Unfortunately, writing and reading the operand looses the size of memory

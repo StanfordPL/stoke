@@ -67,6 +67,7 @@ void Invariant::get_dereference_map(DereferenceMap& deref_map,
 Invariant* Invariant::deserialize(istream& in) {
   string class_name;
   in >> ws >> class_name;
+  CHECK_STREAM(in);
 
   if(class_name == "ConjunctionInvariant") {
     return new ConjunctionInvariant(in);    

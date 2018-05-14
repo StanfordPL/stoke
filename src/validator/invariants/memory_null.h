@@ -106,6 +106,7 @@ public:
   MemoryNullInvariant(std::istream& is) : m_(x64asm::M8(x64asm::Imm32(0))) {
     x64asm::M8 m8(x64asm::Imm32(0));
     is >> std::ws >> m8 >> is_rewrite_ >> is_null_;
+    CHECK_STREAM(is);
     m_ = *static_cast<x64asm::Mem*>(&m8);
   }
 

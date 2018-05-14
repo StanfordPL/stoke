@@ -82,7 +82,9 @@ public:
     return out;
   }
 
-  MemoryEqualityInvariant(std::istream& is) { }
+  MemoryEqualityInvariant(std::istream& is) { 
+    CHECK_STREAM(is);
+  }
 
 
 private:

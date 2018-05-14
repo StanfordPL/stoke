@@ -74,6 +74,7 @@ public:
 
   NonzeroInvariant(std::istream& is) : variable_(is) {
     is >> negate_;
+    CHECK_STREAM(is);
   }
 
 

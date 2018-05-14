@@ -156,12 +156,14 @@ public:
 
   InequalityInvariant(std::istream& is) : variable1_(is), variable2_(is) {
     is >> is_strict_ >> is_signed_;
+    CHECK_STREAM(is);
     if(is.peek() == '\n') {
       // version without lhs_constant
       lhs_constant_ = 0;
     } else {
       // version with lhs_constant
       is >> lhs_constant_;
+      CHECK_STREAM(is);
     }
   }
 

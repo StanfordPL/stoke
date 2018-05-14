@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_VALIDATOR_INVARIANT_H
 #define STOKE_SRC_VALIDATOR_INVARIANT_H
 
+#include "src/serialize/check_stream.h"
 #include "src/state/cpu_state.h"
 #include "src/symstate/state.h"
 #include "src/validator/variable.h"

@@ -140,6 +140,7 @@ public:
     is >> count;
     for(size_t i = 0; i < count; ++i) {
       invariants_.push_back(Invariant::deserialize(is));
+      CHECK_STREAM(is);
     }
   }
 

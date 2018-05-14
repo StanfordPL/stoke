@@ -33,19 +33,28 @@ istream& std::operator>>(istream& strm, stoke::ObligationChecker::Result& result
 
 istream& ObligationChecker::Result::read_text(istream& is) {
   is >> verified >> has_ceg >> has_error >> ws;
+  CHECK_STREAM(is);
   is >> gen_time_microseconds >> smt_time_microseconds;;
+  CHECK_STREAM(is);
   int n_solver, n_strategy;
   is >> n_solver >> n_strategy;
+  CHECK_STREAM(is);
   solver = (Solver)n_solver;
   strategy = (AliasStrategy)n_strategy;
   is >> source_version;
+  CHECK_STREAM(is);
   if(has_error)
     is >> error_message >> ws; 
+  CHECK_STREAM(is);
   if(has_ceg) {
     is >> target_ceg >> ws;
+    CHECK_STREAM(is);
     is >> rewrite_ceg >> ws;
+    CHECK_STREAM(is);
     is >> target_final_ceg >> ws;
+    CHECK_STREAM(is);
     is >> rewrite_final_ceg >> ws;
+    CHECK_STREAM(is);
   }
 
   return is;
@@ -90,13 +99,21 @@ ostream& ObligationChecker::Obligation::write_text(ostream& os) const {
 
 istream& ObligationChecker::Obligation::read_text(istream& is) {
   target = deserialize<Cfg>(is);
+  CHECK_STREAM(is);
   rewrite = deserialize<Cfg>(is);
+  CHECK_STREAM(is);
   is >> target_block >> rewrite_block;
+  CHECK_STREAM(is);
   P = deserialize<CfgPath>(is);
+  CHECK_STREAM(is);
   Q = deserialize<CfgPath>(is);
+  CHECK_STREAM(is);
   assume = Invariant::deserialize(is);
+  CHECK_STREAM(is);
   prove = Invariant::deserialize(is);
+  CHECK_STREAM(is);
   testcases = deserialize<vector<pair<CpuState, CpuState>>>(is);
+  CHECK_STREAM(is);
   return is;
 }
 

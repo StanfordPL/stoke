@@ -445,7 +445,7 @@ void solve_problem(const QueueEntry& qe, ObligationChecker::Callback& callback, 
   stringstream ss(qe.text);
   ObligationChecker::Obligation oblig;
   oblig.read_text(ss);
-  if(!ss.good()) {
+  if(ss.bad() || ss.fail()) {
     cout << __FILE__ << ":" << __LINE__ 
          << ": stringstream in bad state when parsing problem with hash "
          << qe.hash << endl;

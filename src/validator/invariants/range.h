@@ -71,7 +71,14 @@ public:
   }
 
   RangeInvariant(std::istream& is) : variable_(is) {
-    is >> min_ >> max_;
+    CHECK_STREAM(is);
+    std::cout << "got variable: " << variable_ << std::endl;
+    //std::string line;
+    //std::getline(is, line);
+    //std::cout << "got line: " << line << std::endl;
+    is >> min_ >> max_; 
+    CHECK_STREAM(is);
+
   }
 
 

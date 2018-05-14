@@ -64,6 +64,7 @@ public:
 
   NotInvariant(std::istream& is) {
     a_ = Invariant::deserialize(is);
+    CHECK_STREAM(is);
   }
 
 private:

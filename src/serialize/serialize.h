@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "src/ext/x64asm/src/reg_set.h"
+#include "src/serialize/check_stream.h"
 #include "src/validator/invariant.h"
 #include "src/validator/optional.h"
 

@@ -83,6 +83,7 @@ public:
 
   PointerNullInvariant(std::istream& is) : variable_(is) {
     is >> size_;
+    CHECK_STREAM(is);
   }
 
 

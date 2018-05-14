@@ -45,7 +45,9 @@ public:
     return out;
   }
 
-  TrueInvariant(std::istream& is) {}
+  TrueInvariant(std::istream& is) {
+    CHECK_STREAM(is);
+  }
 
 };
 

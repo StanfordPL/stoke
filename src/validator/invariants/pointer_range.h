@@ -82,7 +82,8 @@ public:
 
   PointerRangeInvariant(std::istream& is) : 
     begin_(x64asm::Imm32(0)), end_(x64asm::Imm32(0)) {
-    is >> std::ws >> begin_ >> std::ws >> end_;
+    is >> std::ws >> begin_ >> std::ws >> end_ >> std::dec;
+    CHECK_STREAM(is);
   }
 
 
