@@ -322,26 +322,35 @@ size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
       << "RETURNING *, "
       << "  (SELECT problem FROM ProofObligation "
       << "   WHERE ProofObligation.hash = ProofObligationQueue.hash) as problem";
-  result r = tx_pick.exec(sql.str().c_str());
-  tx_pick.commit();
-  found_one = r.size() > 0;
-  if(found_one) {
 
-    for(auto row : r) {
-      id = row["id"].as<uint64_t>();
-      cout << getpid() << ": picked id=" << id << endl;
+  try {
+    result r = tx_pick.exec(sql.str().c_str());
+    tx_pick.commit();
+    found_one = r.size() > 0;
+    if(found_one) {
 
-      QueueEntry* qe = new QueueEntry();
-      qe->id = id;
-      strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
-      strncpy(qe->solver, row["solver"].c_str(), sizeof(qe->solver)-1);
-      strncpy(qe->strategy, row["strategy"].c_str(), sizeof(qe->strategy)-1);
-      strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+      for(auto row : r) {
+        id = row["id"].as<uint64_t>();
+        cout << getpid() << ": picked id=" << id << endl;
 
-      count++;
-      output.push_back(qe);
+        QueueEntry* qe = new QueueEntry();
+        qe->id = id;
+        strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
+        strncpy(qe->solver, row["solver"].c_str(), sizeof(qe->solver)-1);
+        strncpy(qe->strategy, row["strategy"].c_str(), sizeof(qe->strategy)-1);
+        strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+
+        count++;
+        output.push_back(qe);
+      }
     }
+
+  } catch (pqxx::sql_error e) {
+    cout << __FILE__ << ":" << __LINE__ << ": Caught " << e.what() << endl;
+    return 0;
   }
+
+
   return count;
 }
 
@@ -580,6 +589,10 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
         c3.disconnect();
         delete qe;
       }
+
+      // check for OOM
+      // TODO: figure out total memory used by process, and see if it's close to / over the limit
+
       exit(0);
     }
     exit(0);
@@ -607,6 +620,10 @@ pid_t spawn_producer(ConditionQueue<QueueEntry>& queue) {
     vector<QueueEntry*> entries;
     entries.reserve(queue.space());
     connection c(postgres_arg.value());
+    work tx(c);
+    tx.exec("SET statement_timeout TO 2000"); // sometimes queries are getting stuck, and that's bad
+    tx.commit();
+     
 
     size_t count = 0;
     while(true) {

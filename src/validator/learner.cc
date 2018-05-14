@@ -431,7 +431,7 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
-      auto inv2 = new InequalityInvariant(v1, v2, false, false, -max_difference);
+      auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
       outputs.push_back(inv2);
       //cout << "  generating " << *inv2 << endl;
     }
