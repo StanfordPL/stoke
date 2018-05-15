@@ -117,7 +117,9 @@ private:
   void callback(ObligationChecker::Result& result, CallbackData& info);
 
   /** Dispatch a pair of paths to obligation checker. */
-  void verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
+  void verify_pair(const Cfg& target, const Cfg& rewrite, 
+                   const CfgPath& p, const CfgPath& q,
+                   ObligationChecker::Callback&);
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;

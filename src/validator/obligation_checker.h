@@ -90,6 +90,7 @@ public:
     Solver solver;
     AliasStrategy strategy;
     std::string source_version;
+    std::string info;  // for anything else (e.g. hash)
 
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;

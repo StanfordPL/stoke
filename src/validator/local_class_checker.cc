@@ -374,6 +374,20 @@ void LocalClassChecker::obligation_checker_callback(ObligationChecker::Result& r
   DischargeState& state = cci->state;
   auto& ss = *(cci->ss);
 
+  if (result.solver == Solver::Z3) {
+    ss << "    z3 ";
+  } else if (result.solver == Solver::CVC4) {
+    ss << "    cvc4 ";
+  }
+  if (result.strategy == ObligationChecker::AliasStrategy::FLAT) {
+    ss << "flat" << endl;
+  } else if (result.strategy == ObligationChecker::AliasStrategy::ARM) {
+    ss << "arm" << endl;
+  }
+  ss << "    time (ms) " << (result.gen_time_microseconds + result.gen_time_microseconds)/1000 << endl;
+  if(result.info.size() > 0) {
+    ss << "    info " << result.info << endl;
+  }
   ss << "    " << (result.verified ? "true" : "false") << endl;
   if(result.has_error) {
     ss << "    error: " << result.error_message << endl;

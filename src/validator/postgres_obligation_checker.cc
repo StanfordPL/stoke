@@ -206,6 +206,10 @@ void PostgresObligationChecker::poll_database() {
       r.smt_time_microseconds = row["smt_time"].as<uint64_t>();
       r.gen_time_microseconds = row["gen_time"].as<uint64_t>();
       r.source_version = row["version"].as<string>();
+      r.info = hash;
+      r.solver = (row["solver"].as<string>() == "z3" ? Solver::Z3 : Solver::CVC4);
+      r.strategy = (row["strategy"].as<string>() == "flat" ? ObligationChecker::AliasStrategy::FLAT :
+                                               ObligationChecker::AliasStrategy::ARM);
       //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
 
       if(has_ceg) {
@@ -250,6 +254,7 @@ void PostgresObligationChecker::poll_database() {
       r.has_error = true;
       r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
       r.source_version = error_version.at(hash);
+      r.info = hash;
       job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);

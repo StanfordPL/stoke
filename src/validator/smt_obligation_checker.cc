@@ -30,8 +30,8 @@
 
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { X }
+#define CONSTRAINT_DEBUG(X) { X }
 #define BUILD_TC_DEBUG(X) {  }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
@@ -45,7 +45,7 @@
 //#else
 //#define CEG_DEBUG(X) { }
 //#endif
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )

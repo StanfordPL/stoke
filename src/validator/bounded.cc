@@ -24,7 +24,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -75,7 +75,10 @@ void BoundedValidator::callback(ObligationChecker::Result& result, CallbackData&
 
 }
 
-void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, 
+                                   const CfgPath& P, const CfgPath& Q, 
+                                   ObligationChecker::Callback& callback) {
+
   StateEqualityInvariant assume_state(target.def_ins());
   StateEqualityInvariant prove_state(target.live_outs());
   NoSignalsInvariant no_sig;
@@ -94,10 +97,6 @@ void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   CallbackData* cd = new CallbackData();
   cd->P = P;
   cd->Q = Q;
-
-  ObligationChecker::Callback callback = [this] (ObligationChecker::Result& result, void* info) {
-    this->callback(result, *static_cast<CallbackData*>(info)); 
-  };
 
   bool equiv;
   vector<pair<CpuState, CpuState>> testcases;
@@ -156,6 +155,11 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   sort(target_paths.begin(), target_paths.end(), by_length);
   sort(rewrite_paths.begin(), rewrite_paths.end(), by_length);
 
+  ObligationChecker::Callback callback = [this] (ObligationChecker::Result& result, void* info) {
+    this->callback(result, *static_cast<CallbackData*>(info)); 
+  };
+
+
   // Step 2: check each pair of paths
   size_t total = target_paths.size() * rewrite_paths.size();
   size_t count = 0;
@@ -163,12 +167,12 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     for (auto rewrite_path : rewrite_paths) {
 
       BOUNDED_DEBUG(
-          lock_guard<mutex> guard(print_m)
+          lock_guard<mutex> guard(print_m);
           cout << "[bv] Checking pair: " << target_path << "; " << rewrite_path << endl;
       )
 
       count++;
-      verify_pair(target, rewrite, target_path, rewrite_path);
+      verify_pair(target, rewrite, target_path, rewrite_path, callback);
 
       // Case 1: verify failed and we have ceg; return false
       // Case 2: verify failed and no counterexampe: keep going

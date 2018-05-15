@@ -206,7 +206,7 @@ public:
     cout << getpid() << ": there are " << jobs_available << " jobs in the job queue" << endl;
     process_mutex_.lock();
     size_t sleepers = processes_.size();
-    //cout << "Found " << sleepers << " stopped jobs" << endl;
+    cout << "Found " << sleepers << " stopped jobs" << endl;
     if(sleepers > 0) {
       size_t num_to_wake = ( sleepers > jobs_available ? jobs_available : sleepers );
       cout << getpid() << ": waking up " << num_to_wake << " of them" << endl;
