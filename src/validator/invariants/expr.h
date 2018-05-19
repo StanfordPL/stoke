@@ -100,7 +100,11 @@ public:
   }
 
   ExprInvariant(std::istream& is) : expr_(NULL) {
+    is >> std::ws;
+    CHECK_STREAM(is);
     getline(is, original_);
+    CHECK_STREAM(is);
+    //std::cout << "Got line: " << original_ << std::endl;
     expr_ = parse(original_);
   }
 

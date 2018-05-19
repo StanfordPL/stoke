@@ -24,8 +24,8 @@ protected:
     stringstream ss;
     inv->serialize(ss);
     auto copy = ss.str();
-    //cout << "Invariant: " << *inv << endl;
-    //cout << "Serialized: " << endl << copy << endl;
+    cout << "Invariant: " << *inv << endl;
+    cout << "Serialized: " << endl << copy << endl;
 
     // check that deserialization results in an invariant with the same representation
     auto new_inv = Invariant::deserialize(ss);
@@ -94,6 +94,15 @@ TEST_F(ValidatorInvariantSerializationTest, EqualityInvariant) {
   auto inv = new EqualityInvariant(terms, 8, 32);
   check(inv);
 }
+
+TEST_F(ValidatorInvariantSerializationTest, ExprInvariant) {
+  string s = "t_%rdi>1000";
+  auto expr = ExprInvariant::parse(s);
+  auto inv = new ExprInvariant(expr, s);
+  check(inv);
+}
+
+
 
 TEST_F(ValidatorInvariantSerializationTest, FalseInvariant) {
   auto inv = new FalseInvariant();
