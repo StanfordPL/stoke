@@ -75,6 +75,8 @@ Invariant* Invariant::deserialize(istream& in) {
     return new DisjunctionInvariant(in);
   } else if (class_name == "EqualityInvariant") {
     return new EqualityInvariant(in);
+  } else if (class_name == "ExprInvariant") {
+    return new ExprInvariant(in);
   } else if (class_name == "FalseInvariant") {
     return new FalseInvariant(in);
   } else if (class_name == "FlagInvariant") {

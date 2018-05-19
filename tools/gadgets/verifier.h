@@ -127,8 +127,8 @@ private:
       exit(1);
     }
     Invariant* ei = new ExprInvariant(expr, s);
-    std::cout << "Parsing invariant" << std::endl;
-    std::cout << *ei << std::endl;
+    //std::cout << "Parsing invariant" << std::endl;
+    //std::cout << *ei << std::endl;
     validator.assume(ei);
 
   }

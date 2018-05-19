@@ -105,12 +105,12 @@ public:
   }
 
   static Expr<uint64_t>* parse(std::string s)  {
-    std::cout << "Attempting parse of " << s << std::endl;
+    //std::cout << "Attempting parse of " << s << std::endl;
     ExprParser<uint64_t> parser(s, [] (const std::string& s) -> bool { 
-      std::cout << "Got variable " << s << std::endl;
+      //std::cout << "Got variable " << s << std::endl;
       try {
         parse_variable(s);
-        std::cout << "Parse success" << std::endl;
+        //std::cout << "Parse success" << std::endl;
         return true;
       } catch(std::string s) {
         std::cerr << s << std::endl;
