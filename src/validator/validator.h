@@ -62,6 +62,11 @@ public:
     return *this;
   }
 
+  Verifier& assume(Invariant* assumption) {
+    extra_assumptions_.push_back(assumption);
+    return *this;
+  }
+
   /** Evalue if the target and rewrite are the same */
   virtual bool verify(const Cfg& target, const Cfg& rewrite) {
     return false;
@@ -109,6 +114,8 @@ protected:
 
   /** Range of input values that must be pointers */
   std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
+  /** Extra invariants to assume at the beginning. */
+  std::vector<Invariant*> extra_assumptions_;
 };
 
 

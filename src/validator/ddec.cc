@@ -443,6 +443,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   for(auto it : pointer_ranges_)
     checker->add_pointer_range(it.first, it.second);
+  for(auto it : extra_assumptions_)
+    checker->assume(it);
 
   if(use_handhold_) {
     /** Run handhold check */

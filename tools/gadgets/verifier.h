@@ -24,6 +24,7 @@
 #include "src/validator/ddec.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/invariants/expr.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
@@ -116,6 +117,22 @@ private:
     }
   }
 
+  void add_assumptions(Validator& validator) {
+    std::string s = assume_arg.value();
+    if(s.size() == 0)
+      return;
+
+    auto expr = ExprInvariant::parse(s);
+    if(expr == NULL) {
+      exit(1);
+    }
+    Invariant* ei = new ExprInvariant(expr, s);
+    std::cout << "Parsing invariant" << std::endl;
+    std::cout << *ei << std::endl;
+    validator.assume(ei);
+
+  }
+
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
       oc_ = new ObligationCheckerGadget();
@@ -123,6 +140,7 @@ private:
       bv->set_bound(bound_arg.value());
       bv->set_no_bailout(no_bailout_arg.value());
       add_pointer_ranges(*bv);
+      add_assumptions(*bv);
       return bv;
     } else if (s == "ddec") {
       oc_ = new ObligationCheckerGadget();
@@ -130,6 +148,7 @@ private:
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_use_handhold(handhold_arg.value());
       add_pointer_ranges(*ddec);
+      add_assumptions(*ddec);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

@@ -196,6 +196,10 @@ ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dua
     initial_invariant->add_invariant(pri);
   }
 
+  for(auto assumption : extra_assumptions_) {
+    initial_invariant->add_invariant(assumption);
+  }
+
   /*
     for (auto r : string_params_) {
       // rsi_start = rsi (for example)

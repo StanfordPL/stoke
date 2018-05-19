@@ -235,6 +235,16 @@ public:
     if (memory_manager_)
       memory_manager_->add(ptr_);
   }
+  /** Constructs a new SymBitVector from a bool */
+  SymBitVector(const SymBool& b) {
+    SymBitVector fb = from_bool(b);
+    ptr = fb.ptr;
+  }
+  /** Constructs a new SymBitVector from a constant */
+  SymBitVector(uint64_t n) {
+    SymBitVector cons = SymBitVector::constant(64, n);
+    ptr = cons.ptr;
+  }
 
   /** Set a memory manager */
   static void set_memory_manager(SymMemoryManager* mm) {

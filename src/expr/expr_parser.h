@@ -265,8 +265,13 @@ private:
   Expr<T>* parse_VAR() {
     std::string var = "";
 
-    while (peek() >= 'a' && peek() <= 'z') {
+    char c = peek();
+    while ( (c >= 'a' && c <= 'z') ||
+            (c >= 'A' && c <= 'Z') ||
+            (c >= '0' && c <= '9') ||
+            (c == '_') || (c == '%')) {
       var = var.append(1, next());
+      c = peek();
     }
 
     if (!is_var_valid_(var)) {
@@ -284,7 +289,8 @@ private:
       num = num.append(1, next());
     }
 
-    T value = stol(num);
+    long constant = stol(num);
+    T value = T(constant);
     return new Expr<T>(value);
   }
   /** Parse a BINOP */

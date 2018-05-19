@@ -72,8 +72,8 @@ public:
       switch (op_) {
       case NONE:
         assert(false);
-      case EXP:
-        return (size_t)pow((double)c1, (double)c2);
+      /*case EXP:
+        return (size_t)pow((double)c1, (double)c2);*/
       case PLUS:
         return c1+c2;
       case MINUS:
@@ -93,23 +93,34 @@ public:
       case SHR:
         return c1 >> c2;
       case LT:
-        return c1 < c2;
+        return (T)(c1 < c2);
       case LTE:
-        return c1 <= c2;
+        return (T)(c1 <= c2);
       case GT:
-        return c1 > c2;
+        return (T)(c1 > c2);
       case GTE:
-        return c1 >= c2;
+        return (T)(c1 >= c2);
       case EQ:
-        return c1 == c2;
+        return (T)(c1 == c2);
       case NEQ:
-        return c1 != c2;
+        return (T)(c1 != c2);
       default:
         assert(false);
       }
     }
     assert(false);
-    return 0;
+    return (T)((uint64_t)0);
+  }
+
+  template <typename U>
+  Expr<U>* map() const {
+    if(arity_ == 0) {
+      return new Expr<U>((U)(constant_));
+    } else if (arity_ == 1) {
+      return new Expr<U>(var_);
+    } else {
+      return new Expr<U>(a1_->map<U>(), a2_->map<U>(), (typename Expr<U>::Operator)op_);
+    } 
   }
 
 private:

@@ -59,6 +59,12 @@ cpputil::ValueArg<std::string>& pointer_range_arg =
   .description("Range of addresses that must be within pointer space")
   .default_val("");
 
+cpputil::ValueArg<std::string>& assume_arg = 
+  cpputil::ValueArg<std::string>::create("assume")
+  .usage("<string>")
+  .description("Add an assumption about the initial state.")
+  .default_val("");
+
 cpputil::ValueArg<size_t>& process_count_arg =
   cpputil::ValueArg<size_t>::create("process_count")
   .usage("<int>")

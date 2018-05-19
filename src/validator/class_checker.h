@@ -100,6 +100,12 @@ public:
     return *this;
   }
 
+  /** Add an extra assumption at beginning. */
+  ClassChecker& assume(Invariant* assumption) {
+    extra_assumptions_.push_back(assumption);
+    return *this;
+  }
+
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or
@@ -126,6 +132,8 @@ protected:
   size_t target_bound_;
   size_t rewrite_bound_;
   std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
+  /** Extra invariants to assume at the beginning. */
+  std::vector<Invariant*> extra_assumptions_;
 
   bool stop_early_;
 };
