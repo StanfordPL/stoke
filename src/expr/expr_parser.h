@@ -289,7 +289,7 @@ private:
       num = num.append(1, next());
     }
 
-    long constant = stol(num);
+    unsigned long long constant = stoull(num);
     T value = T(constant);
     return new Expr<T>(value);
   }

@@ -102,6 +102,13 @@ TEST_F(ValidatorInvariantSerializationTest, ExprInvariant) {
   check(inv);
 }
 
+TEST_F(ValidatorInvariantSerializationTest, ExprInvariant2) {
+  string s = "(4096<=t_%rdi)&(t_%rdi+t_%esi*4+8<=18446744073709547519)&(t_%rdi<=t_%rdi+t_%esi*4+8)";
+  auto expr = ExprInvariant::parse(s);
+  auto inv = new ExprInvariant(expr, s);
+  check(inv);
+}
+
 
 
 TEST_F(ValidatorInvariantSerializationTest, FalseInvariant) {
