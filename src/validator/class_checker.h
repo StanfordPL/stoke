@@ -52,6 +52,7 @@ public:
     size_t target_bound;
     size_t rewrite_bound;
     std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges;
+    std::vector<Invariant*> extra_assumptions;
 
     static Problem deserialize(std::istream& is);
     std::ostream& serialize(std::ostream& os) const;
@@ -59,12 +60,14 @@ public:
     Problem(const DualAutomata& da, 
             const DualBuilder::EquivalenceClassMap& equ_class,
             size_t tb, size_t rb,
-            const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng) : 
+            const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng,
+            const std::vector<Invariant*>& invariants) : 
       template_pod(da),
       equivalence_class(equ_class),
       target_bound(tb),
       rewrite_bound(rb),
-      pointer_ranges(ptr_rng)
+      pointer_ranges(ptr_rng),
+      extra_assumptions(assume)
     {
 
     }

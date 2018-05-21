@@ -217,6 +217,26 @@ void make_tc_different_memory(
   }
 }
 
+void fix_cache_lines(CpuState& tc, default_random_engine& gen) {
+  auto segments = tc.get_segments();
+  for(auto segment : segments) {
+    for(uint64_t i = 0; i < (uint64_t)segment->size(); ++i) {
+      uint64_t addr = segment->lower_bound() + i;
+      if(segment->is_valid(addr)) {
+        uint64_t low =  addr & 0xffffffffffffff00;
+        uint64_t high = low+15;
+        assert(low < high);
+        for(uint64_t fix = low; low <= fix && fix <= high; fix++) {
+          if(!segment->is_valid(addr)) {
+            segment->set_valid(addr, true);
+            (*segment)[addr] = gen() % 256;
+          }
+        }
+      }
+    } 
+  }
+}
+
 int main(int argc, char** argv) {
 
   statm_t memory_usage;
@@ -322,6 +342,12 @@ int main(int argc, char** argv) {
       if (debug_arg.value())
         cerr << " * No testcase found" << endl;
     }
+  }
+
+  // Go through final testcases and mark memory locations in the same cache line 
+  // (e.g. 16-byte chunk) as valid.
+  for(auto& tc : outputs) {
+    fix_cache_lines(tc, gen);
   }
 
   DEBUG(cout << "Output argument: " << output_arg.value() << endl;)

@@ -52,7 +52,7 @@ private:
 
   /** Select from a vector elements at random. */
   template<typename T>
-  std::vector<T> pick_at_random(std::vector<T> items, size_t count);
+  std::vector<T> pick_at_random(const std::vector<T>& items, size_t count);
 
   /** Cached data points across all executions. */
   TCPairMap test_case_pairs_;

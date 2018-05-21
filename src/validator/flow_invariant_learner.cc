@@ -1,6 +1,7 @@
 
 #include "src/validator/invariants/equality.h"
 
+#include <cstdlib>
 #include "src/validator/flow_invariant_learner.h"
 
 using namespace std;
@@ -34,7 +35,7 @@ void remove_duplicates(vector<CpuState>& states) {
 }
 
 template<typename T>
-std::vector<T> FlowInvariantLearner::pick_at_random(vector<T> items, size_t count) {
+std::vector<T> FlowInvariantLearner::pick_at_random(const vector<T>& items, size_t count) {
   if (count > items.size()) {
     return items;
   }
@@ -211,12 +212,36 @@ void FlowInvariantLearner::collect_data(size_t tc_index) {
   add_shadow_variables(*target_, target_trace);
   add_shadow_variables(*rewrite_, rewrite_trace);
 
+  /** Make sure that the trace is valid */
+  auto last_target = target_trace.back().cs;
+  auto last_rewrite = rewrite_trace.back().cs;
+  if(last_target.code != ErrorCode::NORMAL) {
+    cerr << "Target fails on test case " << tc_index << endl;
+    exit(1);
+  }
+  if(last_rewrite.code != ErrorCode::NORMAL) {
+    cerr << "Rewrite fails on test case " << tc_index << endl;
+    exit(1);
+  }
+
+
   /** Get all program points in target/rewrite for given block and
     take the cross-product. */
+  pair<Cfg::id_type, Cfg::id_type> index(0, 0);
+  pair<CpuState, CpuState> state_pair;
+  srand(0);
   for (auto t_state : target_trace) {
     for (auto r_state: rewrite_trace) {
-      auto index = pair<Cfg::id_type, Cfg::id_type>(t_state.block_id, r_state.block_id);
-      test_case_pairs_[index].push_back(pair<CpuState,CpuState>(t_state.cs, r_state.cs));
+      index.first = t_state.block_id; 
+      index.second = r_state.block_id;
+      size_t count = test_case_pairs_[index].size();
+      double cutoff = count > 0 ? 50/(double)count : 1;
+      double value = (double)rand()/RAND_MAX;
+      if(value < cutoff) {
+        state_pair.first = t_state.cs;
+        state_pair.second = r_state.cs;
+        test_case_pairs_[index].push_back(state_pair);
+      }
     }
   }
 

@@ -22,111 +22,148 @@ using namespace pqxx;
 
 void PostgresClassChecker::make_tables() {
   
-  const char* sql_class_obligation = 
-    "CREATE TABLE IF NOT EXISTS ClassObligation("                  \
+  const char* sql_class_problem = 
+    "CREATE TABLE IF NOT EXISTS ClassProblem("                     \
       "hash VARCHAR(50) PRIMARY KEY,"                              \
+      "testcase_set VARCHAR(50),"                                  \
+      "options TEXT,"                                              \
       "problem TEXT"                                               \
+      "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"        \
     ")";
 
-  const char* sql_class_obligation_result = 
-    "CREATE TABLE IF NOT EXISTS ClassObligationResult("             \
+  const char* sql_testcase_set = 
+    "CREATE TABLE IF NOT EXISTS TestcaseSet("                     \
+      "hash VARCHAR(50) PRIMARY KEY,"                             \
+      "testcases TEXT,"                                           \
+      "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"       \
+    ")"
+
+  const char* sql_class_result = 
+    "CREATE TABLE IF NOT EXISTS ClassResult("                       \
       "id                 SERIAL PRIMARY KEY,"                      \
       "hash               VARCHAR(50),"                             \
       "verified           BOOLEAN,"                                 \
-      "ceg_target         TEXT,"                                    \
-      "ceg_rewrite        TEXT,"                                    \
-      "ceg_target_final   TEXT,"                                    \
-      "ceg_rewrite_final  TEXT,"                                    \
       "error              TEXT,"                                    \
-      "gen_time           INTEGER,"                                 \
-      "smt_time           INTEGER,"                                 \
-      "version            VARCHAR(128)"                             \
+      "time_ms            INTEGER,"                                 \
+      "version            VARCHAR(128),"                            \
+      "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"         \
     ")";
 
-  const char* sql_class_obligation_queue = 
-    "CREATE TABLE IF NOT EXISTS ClassObligationQueue("              \
+  const char* sql_class_result_index =
+    "CREATE UNIQUE INDEX IF NOT EXISTS class_result_hash_index "    \
+      "ON ClassResult(hash)";
+
+  const char* sql_class_queue = 
+    "CREATE TABLE IF NOT EXISTS ClassQueue("                        \
       "id                 SERIAL PRIMARY KEY,"                      \
-      "hash               VARCHAR(50),"                             \
-      "solver             VARCHAR(8),"                              \
-      "strategy           VARCHAR(8),"                              \
+      "hash               VARCHAR(50) UNIQUE,"                      \
       "locked_by          BIGINT,"                                  \
-      "expiration         TIMESTAMP WITH TIME ZONE"                 \
+      "expiration         TIMESTAMP WITH TIME ZONE,"                \
+      "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"         \
     ")";
 
-  const char* sql_blobs =
-    "CREATE TABLE IF NOT EXISTS Blobs("                             \
-      "hash               VARCHAR(50) PRIMARY KEY,"                 \
-      "data               TEXT"                                     \
-    ")";
+  const char* sql_class_queue_index =
+    "CREATE UNIQUE INDEX IF NOT EXISTS class_queue_hash_index "     \
+      "ON ClassQueue(hash)";
+
 
   work tx(connection_);
-  tx.exec(sql_class_obligation);
-  tx.exec(sql_class_obligation_result);
-  tx.exec(sql_class_obligation_queue);
-  tx.exec(sql_blobs);
+  tx.exec(sql_class_problem);
+  tx.exec(sql_testcase_set);
+  tx.exec(sql_class_result);
+  tx.exec(sql_class_result_index);
+  tx.exec(sql_class_queue);
+  tx.exec(sql_class_queue_index);
   tx.commit();
 
   cout << "make_tables() complete" << endl;
 
 }
 
-void PostgresClassChecker::check(const Cfg& target, const Cfg& rewrite,
-                   Cfg::id_type target_block, Cfg::id_type rewrite_block,
-                   const CfgPath& p, const CfgPath& q,
-                   Invariant& assume, Invariant& prove,
-                   const std::vector<std::pair<CpuState, CpuState>>& testcases,
-                   Callback& callback,
-                   void* optional) {
+void PostgresClassChecker::initialize() {
+  pipeline_tx_ = new work(connection_);
+  pipeline_ = new pipeline(*pipeline_tx_);
 
-  Obligation obligation;
-  obligation.target = target;
-  obligation.rewrite = rewrite;
-  obligation.target_block = target_block;
-  obligation.rewrite_block = rewrite_block;
-  obligation.P = p;
-  obligation.Q = q;
-  obligation.assume = &assume;
-  obligation.prove = &prove;
-  obligation.testcases = testcases;
+  // collect all testcases
+  vector<CpuState> testcases;
+  auto& sb = data_collector_.get_sandbox();
+  for(size_t i = 0; i < sb.size(); ++i) {
+    testcases.push_back(*sb.get_input(0)); 
+  }
+
+  // serialize and hash the testcases
+  stringstream ss;
+  serialize<vector<CpuState>>(ss, testcases);
+  string tc_str = ss.str();
+  auto hash = md5(tc_str);
+
+  // check if hash is in DB?
+  work tx(connection_);
+  stringstream sql;
+  sql << "SELECT count(*) FROM TestcaseSet WHERE hash='" << tx.esc(hash) << "'";
+  auto results = tx.exec(sql.str());
+  tx.commit();
+  assert(results.size() > 0);
+  auto row = results[0];
+  size_t count = row[0].as<size_t>();
+  testcase_set_ = hash;
+
+  if(count == 0) {
+    stringstream insert;
+    insert << "INSERT INTO TestcaseSet(hash, testcases) VALUES(" 
+           << "'" << tx.esc(hash) << "', '" << tx.esc(tc_str) << "')";
+    work tx2(connection_);
+    tx2.exec(insert.str());
+    tx2.commit();
+    //pipeline_->insert(insert.str());
+  }
+
+}
+
+void PostgresClassChecker::check( 
+                     const DualAutomata& template_pod,
+                     const DualBuilder::EquivalenceClassMap& equivalence_class,
+                     Callback& callback,
+                     void* optional = NULL) {
+  Problem problem;
+  problem.template_pod = template_pod;
+  problem.equivalence_class = equivalence_class;
+  problem.target_bound = target_bound_;
+  problem.rewrite_bound = rewrite_bound_;
+  problem.pointer_ranges = pointer_ranges_;
+  problem.extra_assumptions = extra_assumptions_;
 
   stringstream ss;
-  obligation.write_text(ss);
+  problem.write_text(ss);
   auto hash = md5(ss.str());
 
-  if(pipeline_ == NULL) {
-    pipeline_tx_ = new work(connection_);
-    pipeline_ = new pipeline(*pipeline_tx_);
-  }
+  if(pipeline_ == NULL)
+    initialize();
 
   auto hash_esc = pipeline_tx_->esc(hash);
   auto prob_esc = pipeline_tx_->esc(ss.str());
-   
+  auto testcase_set_esc = pipeline_tx_->esc(testcase_set_);
 
   /** Add to proof obligations */
   stringstream sql_add_po;
-  sql_add_po << "INSERT INTO ProofObligation(hash, problem) "
-             << "SELECT '" << hash_esc << "', '" << prob_esc << "' "
-             << "WHERE"
-             << "   NOT EXISTS (SELECT hash FROM ProofObligation WHERE hash='" << hash_esc << "')";
-  pipeline_->insert(sql_add_po.str());
-  tx.exec(sql_add_po.str().c_str());
+  sql_add_cp << "INSERT INTO ClassProblem(hash, problem, testcase_set, options) "
+             << "SELECT '" << hash_esc << "', " 
+             << "'" << prob_esc << "', "
+             << "'" << testcase_set_esc << "', "
+             << "''"
+             << " WHERE NOT EXISTS ("
+             << " SELECT hash FROM ClassProblem WHERE hash='" << hash_esc << "')";
+  pipeline_->insert(sql_add_cp.str());
 
   /** Add to queue, as needed */
-  stringstream sql_add_poq;
-  sql_add_poq << "INSERT INTO ProofObligationQueue(hash, solver, strategy) "
-              << "SELECT '" << hash_esc << "', tmp.solver, tmp.strategy FROM "
-              << "  (VALUES ('z3','flat'), ('cvc4','flat'), ('z3','arm'), ('cvc4','arm'))"
-              << "     as tmp (solver, strategy) "
-              << "WHERE "
-              << "   (NOT EXISTS (SELECT hash FROM ProofObligationResult "
-              << "    WHERE hash='" << hash_esc << "' "
-              << "      AND solver=tmp.solver AND strategy=tmp.strategy)) "
-              << "AND "
-              << "   (NOT EXISTS (SELECT hash FROM ProofObligationQueue "
-              << "    WHERE hash='" << hash_esc << "'"
-              << "      AND solver=tmp.solver AND strategy=tmp.strategy))";
-  pipeline_->insert(sql_add_poq.str());
-  tx.exec(sql_add_poq.str().c_str());
+  stringstream sql_add_cq;
+  sql_add_cq  << "INSERT INTO ClassQueue(hash) "
+              << "SELECT '" << hash_esc << "' "
+              << "WHERE NOT EXISTS ("
+              << " SELECT hash FROM ClassQueue WHERE hash='" << hash_esc << "') ";
+              << "AND NOT EXISTS ("
+              << " SELECT hash FROM ClassResult WHERE hash='" << hash_esc << "')";
+  pipeline_->insert(sql_add_cq.str());
 
   /** Add to job list */
   Job& j = outstanding_jobs[hash]; //create new job or use existing one
@@ -142,10 +179,7 @@ void PostgresClassChecker::poll_database() {
 
   work tx(connection_);
   stringstream sql;
-  sql << "SELECT *, smt_time+gen_time as total_time, "
-      << "  error IS NOT NULL as has_error, "
-      << "  ceg_target IS NOT NULL as has_ceg  "
-      << "FROM ProofObligationResult "
+  sql << "SELECT *, error is NULL as has_error FROM ClassResult "
       << "WHERE hash in (";
 
   bool first = true;
@@ -159,73 +193,33 @@ void PostgresClassChecker::poll_database() {
     sql << "'" << tx.esc(hash) << "'";
     first = false;
   }
-  sql << ") ORDER BY total_time ASC";
+  sql << ")";
 
   result r = tx.exec(sql.str().c_str());
   //cout << "Polling with: " << sql.str() << endl;
   //cout << "Got " << r.size() << " results" << endl;
 
-  map<string, size_t> error_counts;
-  map<string, string> error_message;
-  map<string, string> error_version;
-
   for(auto row : r) {
     auto hash = row["hash"].as<string>();
-    //cout << "Processing row with hash = " << hash << endl;
+    cout << "Processing row with hash = " << hash << endl;
 
     // check if job has already been processed
     if(outstanding_jobs.count(hash) == 0) {
-      //cout << "  * skipping this row" << endl;
+      cout << "  * skipping this row" << endl;
       continue;
     }
-
-    // check job status
-    auto& job = outstanding_jobs.at(hash);
-    if(job.completed)
-      continue;
 
     bool has_error = row["has_error"].as<bool>();
-    if(has_error) {
-      error_counts[hash]++;
-      error_message.insert({hash, row["error"].as<string>()});
-      error_version.insert({hash, row["version"].as<string>()});
-      //cout << "  * recording an error for this row" << endl;
-    } else {
-      // invoke callback
-      // TODO: add counterexample info
-      Result r;
-      r.verified = row["verified"].as<bool>();
-      r.has_ceg = false;
-      r.has_error = false;
-      r.smt_time_microseconds = row["smt_time"].as<uint64_t>();
-      r.gen_time_microseconds = row["gen_time"].as<uint64_t>();
-      r.source_version = row["version"].as<string>();
-      //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
-      job.invoke_callbacks(r);
-      job.completed = true;
-      outstanding_jobs.erase(hash);
-    }
-  }
+    // invoke callback
+    Result r;
+    r.verified = row["verified"].as<bool>();
+    r.has_error = row["has_error"].as<bool>();
+    if(r.has_error)
+      r.error = row["error"].as<string>();
 
-  for(auto pair : error_counts) {
-    if(pair.second >= 4) {
-      auto hash = pair.first;
-      if(outstanding_jobs.count(hash) == 0)
-        continue;
-
-      auto& job = outstanding_jobs.at(hash);
-      if(job.completed)
-        continue;
-      Result r;
-      r.verified = false;
-      r.has_ceg = false;
-      r.has_error = true;
-      r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
-      r.source_version = error_version.at(hash);
-      job.invoke_callbacks(r);
-      job.completed = true;
-      outstanding_jobs.erase(hash);
-    }
+    job.invoke_callbacks(r);
+    job.completed = true;
+    outstanding_jobs.erase(hash);
   }
 
 }
@@ -240,7 +234,7 @@ void PostgresClassChecker::block_until_complete() {
 
   poll_database();
   while(outstanding_jobs.size() > 0) {
-    sleep(1);
+    sleep(5);
     poll_database();
   }
 }

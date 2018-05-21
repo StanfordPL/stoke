@@ -25,7 +25,7 @@
 typedef unsigned int size_t;
 
 
-void* my_memchar(void const *s, int c_in, size_t n) {
+void* my_memchr(void const *s, int c_in, size_t n) {
 
   const char* ptr = (const char*)s;
   for(size_t i = 0; i < n; ++i) {

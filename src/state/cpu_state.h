@@ -184,16 +184,35 @@ struct CpuState {
     return in_range(addr, m.size()/8);
   }
 
-  /** Check if memory is in range. */
-  bool in_range(uint64_t addr, size_t size=1) const {
+  std::vector<const Memory*> get_segments() const {
     std::vector<const Memory*> my_segments;
     my_segments.push_back(&heap);
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
     for (auto& it : segments) {
+      // WARNING WARNING it could move!!
       my_segments.push_back(&it);
     }
+    return my_segments;
+  }
+
+  std::vector<Memory*> get_segments() {
+    std::vector<Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto& it : segments) {
+      // WARNING WARNING it could move!!
+      my_segments.push_back(&it);
+    }
+    return my_segments;
+  }
+
+  /** Check if memory is in range. */
+  bool in_range(uint64_t addr, size_t size=1) const {
+    auto my_segments = get_segments();
 
     for (auto& segment : my_segments) {
       if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {
@@ -204,14 +223,7 @@ struct CpuState {
   }
 
   bool is_valid(uint64_t addr, size_t size=1) const {
-    std::vector<const Memory*> my_segments;
-    my_segments.push_back(&heap);
-    my_segments.push_back(&stack);
-    my_segments.push_back(&data);
-
-    for (auto& it : segments) {
-      my_segments.push_back(&it);
-    }
+    auto my_segments = get_segments();
 
     for (auto& segment : my_segments) {
       if (segment->in_range(addr) && segment->in_range(addr + size - 1)) {

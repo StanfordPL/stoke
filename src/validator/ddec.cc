@@ -483,13 +483,24 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 }
 
 set<DualBuilder::EquivalenceClass> DdecValidator::make_wildcard_classes(const set<DualBuilder::EquivalenceClass>& done, const vector<uint64_t>& remaining) {
-  if(remaining.size() == 0)
-    return done;
+  set<DualBuilder::EquivalenceClass> new_done;
+
+  if(remaining.size() == 0) {
+    if(done.size() == 0) {
+      cout << "Adding empty class" << endl;
+      DualBuilder::EquivalenceClass ec;
+      new_done.insert(ec);    
+      cout << "new_done.size() = " << new_done.size() << endl;
+      return new_done;
+    } else {
+      cout << "done.size() = " << done.size() << endl;
+      return done;
+    }
+  }
 
   auto elem = remaining[0];
   auto new_remaining = remaining;
   new_remaining.erase(new_remaining.begin());
-  set<DualBuilder::EquivalenceClass> new_done;
 
   if(done.size() == 0) {
     new_done.insert({optional<uint64_t>()});
@@ -530,14 +541,15 @@ vector<DualBuilder::EquivalenceClass> DdecValidator::get_classes_for_state(DualA
       DualAutomata::Edge e(start, tp, rp);
       cout << "[get_class_for_state] pair " << tp << " / " << rp << endl;
       auto classification = get_invariant_class(templ, state, e);
-      /*cout << "classification = ";
+      cout << "classification = ";
       for(auto it : classification)
         cout << it << "  ";
-      cout << endl;*/
+      cout << endl;
 
       // each classification turns into 2^N equivalence classes where N is the length of the vector
       set<DualBuilder::EquivalenceClass> starting_set;
       auto wildcards = make_wildcard_classes(starting_set, classification);
+      cout << "Made " << wildcards.size() << " wildcard classes" << endl;
       classes.insert(wildcards.begin(), wildcards.end());
     }
   }
