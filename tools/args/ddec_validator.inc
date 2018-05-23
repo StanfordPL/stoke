@@ -37,6 +37,12 @@ cpputil::ValueArg<size_t>& rewrite_bound_arg =
   .description("Bound on loop iterations from one DDEC cutpoint to the next in the rewrite.")
   .default_val(2);
 
+cpputil::ValueArg<std::string>& class_checker_arg =
+  cpputil::ValueArg<std::string>::create("class_checker")
+  .usage("<string>")
+  .description("How to check equivalence classes.")
+  .default_val("local");
+
 cpputil::FlagArg& handhold_arg =
   cpputil::FlagArg::create("handhold")
   .description("Use a handhold.txt file to pick the equivalence class to verifhy");

@@ -61,7 +61,7 @@ public:
             const DualBuilder::EquivalenceClassMap& equ_class,
             size_t tb, size_t rb,
             const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng,
-            const std::vector<Invariant*>& invariants) : 
+            const std::vector<Invariant*>& assume) : 
       template_pod(da),
       equivalence_class(equ_class),
       target_bound(tb),

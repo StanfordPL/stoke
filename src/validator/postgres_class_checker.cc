@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "src/serialize/serialize.h"
-#include "src/validator/postgres_obligation_checker.h"
+#include "src/validator/postgres_class_checker.h"
 #include "src/validator/md5.h"
 
 using namespace std;
@@ -27,7 +27,7 @@ void PostgresClassChecker::make_tables() {
       "hash VARCHAR(50) PRIMARY KEY,"                              \
       "testcase_set VARCHAR(50),"                                  \
       "options TEXT,"                                              \
-      "problem TEXT"                                               \
+      "problem TEXT,"                                              \
       "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"        \
     ")";
 
@@ -36,7 +36,7 @@ void PostgresClassChecker::make_tables() {
       "hash VARCHAR(50) PRIMARY KEY,"                             \
       "testcases TEXT,"                                           \
       "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"       \
-    ")"
+    ")";
 
   const char* sql_class_result = 
     "CREATE TABLE IF NOT EXISTS ClassResult("                       \
@@ -81,9 +81,7 @@ void PostgresClassChecker::make_tables() {
 }
 
 void PostgresClassChecker::initialize() {
-  pipeline_tx_ = new work(connection_);
-  pipeline_ = new pipeline(*pipeline_tx_);
-
+  std::cout << "PostgresClassChecker::initialize()" << std::endl;
   // collect all testcases
   vector<CpuState> testcases;
   auto& sb = data_collector_.get_sandbox();
@@ -97,6 +95,7 @@ void PostgresClassChecker::initialize() {
   string tc_str = ss.str();
   auto hash = md5(tc_str);
 
+  cout << "Hashed testcases got : " << hash << endl;
   // check if hash is in DB?
   work tx(connection_);
   stringstream sql;
@@ -108,36 +107,43 @@ void PostgresClassChecker::initialize() {
   size_t count = row[0].as<size_t>();
   testcase_set_ = hash;
 
+  cout << "Count of test case sets found: " << count << endl;
   if(count == 0) {
+    work tx2(connection_);
     stringstream insert;
     insert << "INSERT INTO TestcaseSet(hash, testcases) VALUES(" 
-           << "'" << tx.esc(hash) << "', '" << tx.esc(tc_str) << "')";
-    work tx2(connection_);
+           << "'" << tx2.esc(hash) << "', '" << tx2.esc(tc_str) << "')";
     tx2.exec(insert.str());
     tx2.commit();
     //pipeline_->insert(insert.str());
   }
 
+  // initialize pipeline
+  pipeline_tx_ = new work(connection_);
+  pipeline_ = new pipeline(*pipeline_tx_);
+
+
 }
 
-void PostgresClassChecker::check( 
+int PostgresClassChecker::check( 
                      const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
-                     void* optional = NULL) {
-  Problem problem;
-  problem.template_pod = template_pod;
-  problem.equivalence_class = equivalence_class;
-  problem.target_bound = target_bound_;
-  problem.rewrite_bound = rewrite_bound_;
-  problem.pointer_ranges = pointer_ranges_;
-  problem.extra_assumptions = extra_assumptions_;
+                     void* optional) {
+  cout << "PostgresClassChecker::check()" << endl;
+  Problem problem(
+      template_pod, 
+      equivalence_class, 
+      target_bound_, 
+      rewrite_bound_, 
+      pointer_ranges_, 
+      extra_assumptions_);
 
   stringstream ss;
-  problem.write_text(ss);
+  problem.serialize(ss);
   auto hash = md5(ss.str());
 
-  if(pipeline_ == NULL)
+  if(pipeline_ == nullptr)
     initialize();
 
   auto hash_esc = pipeline_tx_->esc(hash);
@@ -145,7 +151,7 @@ void PostgresClassChecker::check(
   auto testcase_set_esc = pipeline_tx_->esc(testcase_set_);
 
   /** Add to proof obligations */
-  stringstream sql_add_po;
+  stringstream sql_add_cp;
   sql_add_cp << "INSERT INTO ClassProblem(hash, problem, testcase_set, options) "
              << "SELECT '" << hash_esc << "', " 
              << "'" << prob_esc << "', "
@@ -160,23 +166,23 @@ void PostgresClassChecker::check(
   sql_add_cq  << "INSERT INTO ClassQueue(hash) "
               << "SELECT '" << hash_esc << "' "
               << "WHERE NOT EXISTS ("
-              << " SELECT hash FROM ClassQueue WHERE hash='" << hash_esc << "') ";
+              << " SELECT hash FROM ClassQueue WHERE hash='" << hash_esc << "') "
               << "AND NOT EXISTS ("
               << " SELECT hash FROM ClassResult WHERE hash='" << hash_esc << "')";
   pipeline_->insert(sql_add_cq.str());
 
   /** Add to job list */
-  Job& j = outstanding_jobs[hash]; //create new job or use existing one
+  Job& j = outstanding_jobs[hash]; 
   j.callbacks.push_back(&callback);
   j.optionals.push_back(optional);
 
   cout << "Dispatching hash " << hash << endl;
+  return 0;
 
 }
 
 
 void PostgresClassChecker::poll_database() {
-
   work tx(connection_);
   stringstream sql;
   sql << "SELECT *, error is NULL as has_error FROM ClassResult "
@@ -196,6 +202,7 @@ void PostgresClassChecker::poll_database() {
   sql << ")";
 
   result r = tx.exec(sql.str().c_str());
+  tx.commit();
   //cout << "Polling with: " << sql.str() << endl;
   //cout << "Got " << r.size() << " results" << endl;
 
@@ -209,13 +216,17 @@ void PostgresClassChecker::poll_database() {
       continue;
     }
 
+    auto& job = outstanding_jobs.at(hash);
+    if(job.completed)
+      continue;
+
     bool has_error = row["has_error"].as<bool>();
     // invoke callback
     Result r;
     r.verified = row["verified"].as<bool>();
     r.has_error = row["has_error"].as<bool>();
     if(r.has_error)
-      r.error = row["error"].as<string>();
+      r.error_message = row["error"].as<string>();
 
     job.invoke_callbacks(r);
     job.completed = true;
@@ -226,6 +237,7 @@ void PostgresClassChecker::poll_database() {
 
 /** Blocks until all the checking has done and the callbacks have been called. */
 void PostgresClassChecker::block_until_complete() {
+  cout << "PostgresClassChecker::block_until_complete()" << endl;
   if(pipeline_) {
     pipeline_->complete();
     pipeline_tx_->commit();

@@ -36,14 +36,15 @@ class DdecValidator : public Validator {
 
 public:
 
-  DdecValidator(ObligationChecker& checker, Sandbox& sandbox, InvariantLearner& inv) :
+  DdecValidator(ObligationChecker& checker, ClassChecker& class_chk, Sandbox& sandbox, InvariantLearner& inv) :
     Validator(checker),
     target_({}), rewrite_({}),
           sandbox_(sandbox),
           data_collector_(sandbox),
           invariant_learner_(inv),
           flow_invariant_learner_(NULL),
-          control_learner_(NULL)
+          control_learner_(NULL),
+          class_checker_(class_chk)
   {
     set_use_handhold(false);
   }
@@ -57,6 +58,7 @@ public:
     invariant_learner_(rhs.invariant_learner_),
     flow_invariant_learner_(NULL),
     control_learner_(NULL),
+    class_checker_(rhs.class_checker_),
     use_handhold_(rhs.use_handhold_) {
 
     target_bound_ = rhs.target_bound_;
@@ -108,6 +110,7 @@ private:
   InvariantLearner invariant_learner_;
   FlowInvariantLearner* flow_invariant_learner_;
   ControlLearner* control_learner_;
+  ClassChecker& class_checker_;
 
   /** Generate a warning for the user about a possible failure reason. */
   void warn(std::string s);

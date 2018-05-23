@@ -194,6 +194,7 @@ SRC_OBJ=\
 	src/validator/md5.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
+	src/validator/postgres_class_checker.o \
 	src/validator/postgres_obligation_checker.o \
 	src/validator/sage.o \
 	src/validator/smt_obligation_checker.o \

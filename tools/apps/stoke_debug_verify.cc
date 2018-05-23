@@ -21,6 +21,8 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "tools/common/version_info.h"
+
+#include "tools/gadgets/class_checker.h"
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/rewrite.h"
@@ -78,7 +80,14 @@ int main(int argc, char** argv) {
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
   InvariantLearnerGadget learner(seed, target, rewrite);
-  VerifierGadget verifier(sb, fxn, learner);
+
+  DataCollector data_collector(sb);
+  ControlLearner control_learner(target, rewrite, sb);
+  ObligationCheckerGadget obligation_checker;
+  InvariantLearner invariant_learner(target, rewrite);
+  ClassCheckerGadget ccg(data_collector, control_learner, obligation_checker, invariant_learner);
+
+  VerifierGadget verifier(sb, fxn, learner, ccg);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

@@ -436,15 +436,16 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     return class_checker_callback(r, optional);
   };
   
+  /*
   ClassChecker* checker = NULL;
   checker = new LocalClassChecker(data_collector_, *control_learner_, 
                     target_bound_, rewrite_bound_,
-                    checker_, invariant_learner_); 
+                    checker_, invariant_learner_); */
 
   for(auto it : pointer_ranges_)
-    checker->add_pointer_range(it.first, it.second);
+    class_checker_.add_pointer_range(it.first, it.second);
   for(auto it : extra_assumptions_)
-    checker->assume(it);
+    class_checker_.assume(it);
 
   if(use_handhold_) {
     /** Run handhold check */
@@ -452,7 +453,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto ji = new JobInfo();
     ji->number = 10;
     ji->m = handhold_class;
-    checker->check(template_pod, handhold_class, callback, (void*)ji);
+    class_checker_.check(template_pod, handhold_class, callback, (void*)ji);
   } else {
     /** Run all the checks */
     verified_ = 0;
@@ -465,7 +466,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto ji = new JobInfo();
       ji->m = cls;
       ji->number = (size_t)-1;
-      size_t jobid = (size_t)checker->check(template_pod, cls, callback, (void*)ji);
+      size_t jobid = (size_t)class_checker_.check(template_pod, cls, callback, (void*)ji);
       // WARNING: at this point, ji may already be deleted by the callback.
       cout << "Class for checker job " << jobid << endl;
       stoke::serialize(cout, cls);
@@ -474,7 +475,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   }
 
   /** Finish it off. */
-  checker->block_until_complete();
+  class_checker_.block_until_complete();
 
   if(verified_ > 0)
     return true;
