@@ -39,6 +39,7 @@ public:
     bool verified;
     bool has_error;
     std::string error_message;
+    std::string source_version;
 
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;

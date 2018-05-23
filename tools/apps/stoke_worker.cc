@@ -35,6 +35,11 @@
 #include "tools/common/interprocess_mutex.h"
 #include "tools/common/version_info.h"
 
+#include "src/serialize/serialize.h"
+#include "src/state/cpu_states.h"
+#include "src/validator/class_checker.h"
+#include "src/validator/local_class_checker.h"
+
 #define MAX_JOB_COUNT 256
 #define MAX_WORKER_COUNT 128
 
@@ -78,24 +83,55 @@ auto& filename_arg = ValueArg<string>::create("o")
 
 int64_t my_unique_id;
 
-struct QueueEntry {
+struct ObligationQueueEntry {
   uint64_t id;
   char hash[64];
   char solver[8];
   char strategy[8];
   char text[1024*1024*10]; // 10 megabytes
 
-  bool operator==(const QueueEntry& other) {
+  bool operator==(const ObligationQueueEntry& other) {
     return id == other.id;
   }
 
-  QueueEntry() {
+  static string queue_tablename() {
+    return "ProofObligationQueue";
+  }
+
+  typedef ObligationChecker::Result Result;
+  typedef ObligationChecker::Callback Callback;
+
+  ObligationQueueEntry() {
     hash[sizeof(hash)-1] = '\0';
     solver[sizeof(solver)-1] = '\0';
     strategy[sizeof(strategy)-1] = '\0';
     text[sizeof(text)-1] = '\0';
   }
 
+};
+
+struct ClassQueueEntry {
+  uint64_t id;
+  char hash[64];
+  char text[1024*1024*10]; // 10 megabytes
+  char testcase_set[64];   // testcase set
+
+  bool operator==(const ClassQueueEntry& other) {
+    return id == other.id;
+  }
+
+  static string queue_tablename() {
+    return "ClassQueue";
+  }
+
+  typedef ClassChecker::Result Result;
+  typedef ClassChecker::Callback Callback;
+
+  ClassQueueEntry() {
+    hash[sizeof(hash)-1] = '\0';    
+    testcase_set[sizeof(testcase_set)-1] = '\0';
+    text[sizeof(text)-1] = '\0';
+  }
 };
 
 template<typename T, size_t N>
@@ -171,24 +207,31 @@ public:
   ConditionQueue(size_t n) : processes_(n), jobs_(n) {
   }
 
-  bool fetch_job(T& t) {
+  void add_to_notify_list() {
     pid_t my_pid = getpid();
+    process_mutex_.lock();
+    processes_.insert(&my_pid);
+    cout << my_pid << ": there are " << processes_.size() << " stopped jobs" << endl;
+    process_mutex_.unlock();
+  }
 
-    // see if we can get a job
+  bool fetch_job_nonblock(T& t) {
+    job_mutex_.lock();
+    bool gotone = jobs_.fetch(t);
+    job_mutex_.unlock();
+    return gotone;
+  }
+
+  bool fetch_job(T& t) {
+
     while(true) {
-      job_mutex_.lock();
-      bool got_one = jobs_.fetch(t);
+      // see if we can get a job
+      bool got_one = fetch_job_nonblock(t);
 
       // if not, add ourself to the list of waiting processes, release mutexes, and stop.
       if(!got_one) {
-        process_mutex_.lock();
-        processes_.insert(&my_pid);
-        cout << my_pid << ": there are " << processes_.size() << " stopped jobs" << endl;
-        process_mutex_.unlock();
-        job_mutex_.unlock();
-        cout << my_pid << ": raising SIGTSTP" << endl;
+        add_to_notify_list();
         raise(SIGTSTP);
-        cout << my_pid << ": continuing after SIGTSTP" << endl;
       } else {
         job_mutex_.unlock();
         return true;
@@ -197,13 +240,13 @@ public:
     return false;
   }
 
-  void insert_jobs(const vector<T*>& items) {
-    job_mutex_.lock();
-    jobs_.insert(items);
-    size_t jobs_available = jobs_.size();
-    job_mutex_.unlock();
+  void notify(size_t jobs_available = (size_t)(-1)) {
+    if(jobs_available == (size_t)(-1)) {
+      job_mutex_.lock();
+      jobs_available = jobs_.size();
+      job_mutex_.unlock();
+    }
 
-    cout << getpid() << ": there are " << jobs_available << " jobs in the job queue" << endl;
     process_mutex_.lock();
     size_t sleepers = processes_.size();
     cout << "Found " << sleepers << " stopped jobs" << endl;
@@ -222,6 +265,16 @@ public:
       }
     }
     process_mutex_.unlock();
+  }
+
+  void insert_jobs(const vector<T*>& items) {
+    job_mutex_.lock();
+    jobs_.insert(items);
+    size_t jobs_available = jobs_.size();
+    job_mutex_.unlock();
+
+    cout << getpid() << ": there are " << jobs_available << " jobs in the job queue" << endl;
+    notify(jobs_available);
   }
 
   size_t space() {
@@ -246,11 +299,10 @@ private:
 };
 
 
-bool update_expiry(uint64_t id, connection& c) {
-
+bool update_expiry(uint64_t id, connection& c, string tablename) {
   work tx(c);
   stringstream sql;
-  sql << "UPDATE ProofObligationQueue SET "
+  sql << "UPDATE " << tx.esc(tablename) << " SET "
       << "  expiration=NOW() + interval '10 seconds', "
       << "  locked_by=" << my_unique_id << " "
       << "WHERE " 
@@ -273,7 +325,7 @@ bool update_expiry(uint64_t id, connection& c) {
   }
 }
 
-void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& cond) {
+void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& cond, string tablename) {
 
   while(true) {
     // wait for up to 5 seconds on condition variable
@@ -291,7 +343,7 @@ void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& 
 
     // update expiry info
     connection c(postgres_arg.value());
-    update_expiry(id, c);
+    update_expiry(id, c, tablename);
     c.disconnect();
   }
 }
@@ -301,7 +353,7 @@ void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& 
 /** Pick one or more jobs from the database whose expiration is NULL or passed.
   Fetch problem text while we're at it.
   Will return immediately if none are available */
-size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
+size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max = 1) {
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
@@ -333,7 +385,7 @@ size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
         id = row["id"].as<uint64_t>();
         cout << getpid() << ": picked id=" << id << endl;
 
-        QueueEntry* qe = new QueueEntry();
+        ObligationQueueEntry* qe = new ObligationQueueEntry();
         qe->id = id;
         strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
         strncpy(qe->solver, row["solver"].c_str(), sizeof(qe->solver)-1);
@@ -354,7 +406,64 @@ size_t select_job(connection& c, vector<QueueEntry*>& output, size_t max = 1) {
   return count;
 }
 
-void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_s) {
+
+/** Pick one or more jobs from the database whose expiration is NULL or passed.
+  Fetch problem text while we're at it.
+  Will return immediately if none are available */
+size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max = 1) {
+  bool found_one = false;
+  size_t count = 0;
+  uint64_t id;
+  work tx_pick(c);
+  stringstream sql;
+  sql << "WITH tmp AS ("
+      << "  SELECT id FROM ClassQueue "
+      << "  WHERE ("
+      << "    expiration IS NULL "                                       
+      << "    OR expiration < NOW()) " 
+      << "  ORDER BY RANDOM() "
+      << "  LIMIT " << max << ") "
+      << "UPDATE ClassQueue SET "
+      << "  expiration = NOW() + interval '10 seconds', "
+      << "  locked_by = " << my_unique_id << " "
+      << "FROM tmp "
+      << "WHERE tmp.id = ClassQueue.id "
+      << "RETURNING *, "
+      << "  (SELECT problem FROM ClassProblem WHERE ClassProblem.hash = ClassQueue.hash) as problem, "
+      << "  (SELECT testcase_set FROM ClassProblem WHERE ClassProblem.hash = ClassQueue.hash) as testcase_set";
+
+  try {
+    result r = tx_pick.exec(sql.str().c_str());
+    tx_pick.commit();
+    found_one = r.size() > 0;
+    if(found_one) {
+
+      for(auto row : r) {
+        id = row["id"].as<uint64_t>();
+        cout << getpid() << ": picked id=" << id << endl;
+
+        ClassQueueEntry* qe = new ClassQueueEntry();
+        qe->id = id;
+        strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
+        strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+        strncpy(qe->testcase_set, row["testcase_set"].c_str(), sizeof(qe->testcase_set)-1);
+
+        count++;
+        output.push_back(qe);
+      }
+    }
+
+  } catch (pqxx::sql_error e) {
+    cout << __FILE__ << ":" << __LINE__ << ": Caught " << e.what() << endl;
+    return 0;
+  }
+
+
+  return count;
+}
+
+
+void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken_s) {
 
   work tx(c);
   std::stringstream sql_add_result;
@@ -381,7 +490,40 @@ void report_timeout(connection& c, QueueEntry& qe, uint64_t time_taken_s) {
 
 }
 
-void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& result) {
+void report_timeout(connection& c, ClassQueueEntry& qe, uint64_t time_taken_s) {
+  // no need to report this.  just come back later.
+}
+
+
+
+void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& result) {
+
+  work tx(c);
+  std::stringstream sql_add_result;
+
+  // First, add an entry recording what we got
+  sql_add_result
+    << "INSERT INTO ClassResult "
+    << "  (hash, time_ms, version, verified, error) "
+    << "VALUES ("
+    << "  '" << tx.esc(qe.hash) << "', "
+    << "  "  << 0 << ", " // for now
+    << "  '" << tx.esc(result.source_version) << "', "
+    << "  "  << (result.verified ? "TRUE, " : "FALSE, " ) 
+    << "  '"  << tx.esc(result.error_message) << "'"
+    << ")";
+
+  cout << "SQL: " << sql_add_result.str() << endl;
+  tx.exec(sql_add_result.str().c_str());
+
+  // Next, remove from the queue
+  stringstream sql_remove;
+  sql_remove << "DELETE FROM ClassQueue WHERE id=" << qe.id;
+  tx.exec(sql_remove.str().c_str());
+  tx.commit();
+}
+
+void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::Result& result) {
 
   work tx(c);
   std::stringstream sql_add_result;
@@ -435,7 +577,7 @@ void report_result(connection& c, QueueEntry& qe, ObligationChecker::Result& res
 
 }
 
-void solve_problem(const QueueEntry& qe, ObligationChecker::Callback& callback, bool debug_problem = false) {
+void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callback& callback, bool debug_problem = false) {
 
   if(verbose_arg.value()) {
     cout << "Problem text is: " << endl << qe.text << endl << endl;
@@ -490,22 +632,125 @@ void solve_problem(const QueueEntry& qe, ObligationChecker::Callback& callback, 
 
 }
 
+void fetch_testcases_db(const char* testcase_hash) {
+  connection c(postgres_arg.value());
+  work tx(c);
 
-pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
+  stringstream sql;
+  sql << "SELECT * FROM TestcaseSet WHERE hash='" << tx.esc(testcase_hash) << "'";
+  auto r = tx.exec(sql.str());
+  tx.commit();
+
+  if(r.size() == 0) {
+    cerr << "Testcase set not found" << endl;
+    return;
+  }
+
+  auto row = r[0];
+  stringstream ss;
+  ss << row["testcases"].as<const char*>();
+
+  stringstream filess;
+  filess << "/tmp/testcases/" << testcase_hash;
+  ofstream ofs(filess.str());
+  ofs << ss.str();
+  ofs.close();
+}
+
+CpuStates fetch_testcases(const char* testcase_hash) {
+  // first, make sure we have a testcases directory
+  struct stat status;
+  int bad = stat("/tmp/testcases", &status);
+  if(bad) {
+    bad = mkdir("/tmp/testcases", 0755);
+    if(bad) {
+      cerr << "Could not make directory for testcases!  That's bad!!" << endl;
+      exit(1);
+    }
+  }
+
+  // check if a file is lying around
+  stringstream filename_ss;
+  filename_ss << "/tmp/testcases/" << testcase_hash;
+  string filename = filename_ss.str();
+
+  bad = stat(filename.c_str(), &status);
+  while(bad || !S_ISREG(status.st_mode)) {
+    fetch_testcases_db(testcase_hash);
+    bad = stat(filename.c_str(), &status);
+    if(bad || !S_ISREG(status.st_mode)) {
+      sleep(10); // apparently the testcases haven't been uploaded
+    }
+  }
+
+  ifstream ifs(filename.c_str());
+  auto tcs = deserialize<vector<CpuState>>(ifs);
+  return tcs;
+}
+
+void discharge_problem(const ClassQueueEntry& qe, ClassChecker::Callback& callback, bool debug_problem = false) {
+
+  if(verbose_arg.value()) {
+    cout << "Problem text is: " << endl << qe.text << endl << endl;
+  }
+
+  // Parse the problem 
+  stringstream ss(qe.text);
+  auto prob = ClassChecker::Problem::deserialize(ss);
+  if(ss.bad() || ss.fail()) {
+    cout << __FILE__ << ":" << __LINE__ 
+         << ": stringstream in bad state when parsing problem with hash "
+         << qe.hash << endl;
+    exit(1);
+  }
+
+  auto& target = prob.template_pod.get_target();
+  auto& rewrite = prob.template_pod.get_rewrite();
+
+  // Setup the sandbox / testcases
+  auto testcases = fetch_testcases(qe.testcase_set);
+  Sandbox sandbox;
+  for(auto tc : testcases)
+    sandbox.insert_input(tc);
+
+  // Setup the class checker
+  DataCollector data_collector(sandbox);
+  ControlLearner control_learner(target, rewrite, sandbox);
+  size_t target_bound = prob.target_bound;
+  size_t rewrite_bound = prob.rewrite_bound;
+  PostgresObligationChecker poc(postgres_arg.value());
+  InvariantLearner learner(target, rewrite);
+  LocalClassChecker lcc(data_collector, control_learner, target_bound, rewrite_bound, poc, learner);
+
+  // Add extra info from problem
+  for(auto range : prob.pointer_ranges)
+    lcc.add_pointer_range(range.first, range.second);
+  for(auto assumption : prob.extra_assumptions)
+    lcc.assume(assumption);
+
+  // Run the checker
+  static_cast<ClassChecker*>(&lcc)->check(prob, callback, NULL);
+  lcc.block_until_complete();
+
+}
+
+
+
+template <typename T>
+pid_t spawn_worker(T* item) {
 
   // fork a process here, *before* doing anything with threads or the db (lololol)
   pid_t pid = fork();
   if(!pid) {
     // get the job to work on
     pid_t pid = getpid();
-    cout << pid << ": [worker] getting item from queue" << endl;
 
-    QueueEntry* qe = new QueueEntry();
-    queue.fetch_job(*qe);
-    cout << pid << ": [worker] fetched job " << qe->id << endl;
+    T* qe = new T(); //*must* allocate on heap
+    *qe = *item;
+    cout << pid << ": [worker] got job " << qe->id << endl;
 
     connection c(postgres_arg.value());
-    bool ok = update_expiry(qe->id, c);
+    bool ok = update_expiry(qe->id, c, T::queue_tablename());
     cout << pid << ": [worker] updated expiry!" << endl;
     c.disconnect();
     if(!ok) {
@@ -523,11 +768,11 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       bool done = false;
       mutex cond_mu;
       condition_variable cond;
-      thread expiry_thread(expiry_helper, qe->id, &done, ref(cond_mu), ref(cond));
+      thread expiry_thread(expiry_helper, qe->id, &done, ref(cond_mu), ref(cond), T::queue_tablename());
       cout << getpid() << ": expiry launched" << endl;
 
       // Prepare the callback
-      ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
+      typename T::Callback callback = [&] (typename T::Result& result, void* optional) {
         // tell expiry thread it can stop 
         unique_lock<mutex> lock(cond_mu);
         done = true;
@@ -552,7 +797,7 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
       alarm(worker_timeout_arg.value()+1);
 
       // Solve the problem
-      solve_problem(*qe, callback);
+      discharge_problem(*qe, callback);
       delete qe;
       exit(0);
     } else {
@@ -600,24 +845,25 @@ pid_t spawn_worker(ConditionQueue<QueueEntry>& queue) {
   return pid;
 }
 
-ConditionQueue<QueueEntry>* make_queue(size_t n) {
+template <typename T>
+ConditionQueue<T>* make_queue(size_t n) {
 
-  ConditionQueue<QueueEntry>* tmp = new ConditionQueue<QueueEntry>(n);
+  ConditionQueue<T>* tmp = new ConditionQueue<T>(n);
   size_t size = sizeof(*tmp);
   cout << "Allocing " << size << " bytes for queue" << endl;
   delete tmp;
 
   void* buffer = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   cout << "mmap'd buffer is at " << (uint64_t) buffer << endl;
-  return new (buffer) ConditionQueue<QueueEntry>(n);
-  return new ConditionQueue<QueueEntry>(n);
+  return new (buffer) ConditionQueue<T>(n);
 }
 
-pid_t spawn_producer(ConditionQueue<QueueEntry>& queue) {
+template <typename T>
+pid_t spawn_producer(ConditionQueue<T>& queue) {
 
   pid_t pid = fork();
   if(!pid) {
-    vector<QueueEntry*> entries;
+    vector<T*> entries;
     entries.reserve(queue.space());
     connection c(postgres_arg.value());
     work tx(c);
@@ -631,6 +877,8 @@ pid_t spawn_producer(ConditionQueue<QueueEntry>& queue) {
       size_t space = queue.space();
       if(!space) {
         cout << getpid() << ": no space... waiting!" << endl;
+        // make sure that nobody is waiting on the queue by mistake
+        queue.notify();
         sleep(1); // todo: use condition variable
         continue;
       }
@@ -653,37 +901,75 @@ pid_t spawn_producer(ConditionQueue<QueueEntry>& queue) {
   return pid;
 }
 
-void make_workers(ConditionQueue<QueueEntry>& queue) {
-
-  /** spawn initial workers */
-  for(size_t i = 0; i < workers_arg.value(); ++i) {
-    spawn_worker(queue);
-  }
+void make_workers(ConditionQueue<ObligationQueueEntry>& obligation_queue,
+                  ConditionQueue<ClassQueueEntry>& class_queue) {
 
   /** make new workers as the old ones end */
+  size_t running_workers = 0;
+
+  ObligationQueueEntry* temp_oe = new ObligationQueueEntry();
+  ClassQueueEntry* temp_ce = new ClassQueueEntry();
+
   while(true) {
     int status;
 
-    pid_t p = -1;
-    while(p < 0) {
-      p = waitpid(-1, &status, 0);
-      if(p < 0) {
-        perror("waitpid");
-        exit(1);
-        sleep(1);
+    // if we're totally busy, wait for someone to finish
+    while(running_workers >= workers_arg.value()) {
+      pid_t p = -1;
+      while(p < 0) {
+        p = waitpid(-1, &status, 0);
+        if(p < 0) {
+          perror("waitpid");
+          exit(1);
+          sleep(1);
+        }
       }
+
+      if(WIFEXITED(status) || WIFSIGNALED(status))
+        running_workers--;
+
+      cout << "[make_workers] pid: " << p << endl;
+      cout << "[make_workers] if_exited: " << WIFEXITED(status) << endl;
+      cout << "[make_workers] if_signaled: " << WIFSIGNALED(status) << endl;
+      cout << "[make_workers] if_stopped: " << WIFSTOPPED(status) << endl;
+      cout << "[make_workers] if_continued: " << WIFCONTINUED(status) << endl;
+
     }
 
-    cout << "[main] pid: " << p << endl;
-    cout << "[main] if_exited: " << WIFEXITED(status) << endl;
-    cout << "[main] if_signaled: " << WIFSIGNALED(status) << endl;
-    cout << "[main] if_stopped: " << WIFSTOPPED(status) << endl;
-    cout << "[main] if_continued: " << WIFCONTINUED(status) << endl;
 
-    if(WIFEXITED(status) || WIFSIGNALED(status)) {
-      cout << "[main] Spawning a new worker!" << endl;
-      pid_t pid = spawn_worker(queue);
-      cout << "[main] new worker has pid " << pid << endl;
+    // wait for one queue or the other to have some work
+    // prefer the proofobligationqueue
+
+    // if (proofobligationqueue has work) {
+    //  pull job from that queue
+    // } else if (classqueue has work) {
+    //  pull job
+    // }
+    // wait for one or the other to have work
+
+    while(true) {
+
+      bool got_oe = obligation_queue.fetch_job_nonblock(*temp_oe);
+      if(got_oe) {
+        cout << "[make_workers] Spawning a new obligation queue worker!" << endl;
+        pid_t pid = spawn_worker(temp_oe);
+        cout << "[make_workers] new worker has pid " << pid << endl;
+        running_workers++;
+        break;
+      }
+
+      bool got_ce = class_queue.fetch_job_nonblock(*temp_ce);
+      if(got_ce) {
+        cout << "[make_workers] Spawning a new class queue worker!" << endl;
+        pid_t pid = spawn_worker(temp_ce);
+        cout << "[make_workers] new worker has pid " << pid << endl;
+        running_workers++;
+        break;
+      }
+
+      obligation_queue.add_to_notify_list();
+      class_queue.add_to_notify_list();
+      raise(SIGSTOP);
     }
   }
 }
@@ -699,15 +985,23 @@ void main_loop() {
   while(my_unique_id < 0)
     my_unique_id = distribution(gen);
 
-  /** Create a queue in shared memory */
-  auto queue = make_queue(waitlist_arg.value());
+  /** Create queues in shared memory */
+  auto obligation_queue = make_queue<ObligationQueueEntry>(waitlist_arg.value());
+  auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value());
 
-  /** Populate the queue */
-  spawn_producer(*queue);
+  /** Populate the queues */
+  spawn_producer(*obligation_queue);
+  spawn_producer(*class_queue);
 
   /** Make workers to do everything */
-  cout << "[main] Main process pid: " << getpid() << endl;
-  make_workers(*queue); 
+  cout << "[main_loop] Main process pid: " << getpid() << endl;
+  if(!fork()) {
+    make_workers(*obligation_queue, *class_queue); 
+  } else {
+    while(true) {
+      wait(NULL);
+    }
+  }
 }
 
 void debug_hash(string hash) {
@@ -734,7 +1028,7 @@ void debug_hash(string hash) {
   bool found_one = r.size() > 0;
   if(found_one) {
     for(auto row : r) {
-      QueueEntry* qe = new QueueEntry();
+      ObligationQueueEntry* qe = new ObligationQueueEntry();
       qe->id = 0;
       strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
       strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
@@ -749,7 +1043,7 @@ void debug_hash(string hash) {
       cout << "Debugging problem with hash " << qe->hash
            << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;
 
-      solve_problem(*qe, callback, true);
+      discharge_problem(*qe, callback, true);
     }
   } else {
     cout << "Problem with hash " << hash << " not found." << endl;

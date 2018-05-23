@@ -59,6 +59,7 @@ int LocalClassChecker::check(
     r.verified = false;
     r.has_error = false;
     r.error_message = "POD not sane";
+    r.source_version = string(version_info);
     callback(r, optional);
     return 0;
   }
@@ -76,6 +77,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
   r.verified = false;
   r.has_error = false;
   r.error_message = "";
+  r.source_version = string(version_info);
 
 
   dual.remove_prefixes();

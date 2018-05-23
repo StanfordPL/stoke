@@ -185,7 +185,7 @@ int PostgresClassChecker::check(
 void PostgresClassChecker::poll_database() {
   work tx(connection_);
   stringstream sql;
-  sql << "SELECT *, error is NULL as has_error FROM ClassResult "
+  sql << "SELECT *, error is NOT NULL as has_error FROM ClassResult "
       << "WHERE hash in (";
 
   bool first = true;
