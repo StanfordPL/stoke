@@ -86,7 +86,7 @@ void PostgresClassChecker::initialize() {
   vector<CpuState> testcases;
   auto& sb = data_collector_.get_sandbox();
   for(size_t i = 0; i < sb.size(); ++i) {
-    testcases.push_back(*sb.get_input(0)); 
+    testcases.push_back(*sb.get_input(i)); 
   }
 
   // serialize and hash the testcases
@@ -141,6 +141,7 @@ int PostgresClassChecker::check(
 
   stringstream ss;
   problem.serialize(ss);
+  ss << endl << testcase_set_ << endl;
   auto hash = md5(ss.str());
 
   if(pipeline_ == nullptr)

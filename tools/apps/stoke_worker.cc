@@ -728,8 +728,12 @@ void discharge_problem(const ClassQueueEntry& qe, ClassChecker::Callback& callba
   for(auto assumption : prob.extra_assumptions)
     lcc.assume(assumption);
 
+  cout << "TEMPLATE CLASS" << endl;
+  prob.template_pod.print_all();
+  cout << endl << endl;
+
   // Run the checker
-  static_cast<ClassChecker*>(&lcc)->check(prob, callback, NULL);
+  lcc.check(prob.template_pod, prob.equivalence_class, callback, NULL);
   lcc.block_until_complete();
 
 }
@@ -1004,7 +1008,7 @@ void main_loop() {
   }
 }
 
-void debug_hash(string hash) {
+bool debug_hash_obligation(string hash) {
 
   ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
     cout << "verified=" << result.verified << endl;
@@ -1045,11 +1049,49 @@ void debug_hash(string hash) {
 
       discharge_problem(*qe, callback, true);
     }
+    return true;
   } else {
     cout << "Problem with hash " << hash << " not found." << endl;
+    return false;
   }
+}
 
-  exit(0);
+bool debug_hash_checker(string hash) {
+
+  ClassChecker::Callback callback = [&] (ClassChecker::Result& result, void* optional) {
+    cout << "verified=" << result.verified << endl;
+    if(result.error_message.size())
+      cout << "error=" << result.error_message << endl;
+  };
+
+  connection c(postgres_arg.value());
+  work tx(c);
+
+  stringstream sql;
+  sql << "SELECT hash, problem, testcase_set FROM ClassProblem WHERE hash='" << tx.esc(hash) << "'";
+
+  result r = tx.exec(sql.str().c_str());
+  tx.commit();
+  c.disconnect();
+
+  bool found_one = r.size() > 0;
+  if(found_one) {
+    for(auto row : r) {
+
+      ClassQueueEntry* qe = new ClassQueueEntry();
+      strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
+      strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+      strncpy(qe->testcase_set, row["testcase_set"].c_str(), sizeof(qe->testcase_set)-1);
+
+      cout << "Debugging problem with hash " << qe->hash << endl;
+
+      discharge_problem(*qe, callback, true);
+    }
+    return true;
+  } else {
+    cout << "Problem with hash " << hash << " not found." << endl;
+    return false;
+  }
 }
 
 
@@ -1062,7 +1104,10 @@ int main(int argc, char** argv) {
   if(debug_hash_arg.value() == "") {
     main_loop();
   } else {
-    debug_hash(debug_hash_arg.value());
+    bool b = debug_hash_obligation(debug_hash_arg.value());
+    if(!b) {
+      debug_hash_checker(debug_hash_arg.value());
+    }
   }
 
   return 0;

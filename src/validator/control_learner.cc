@@ -139,7 +139,7 @@ bool ControlLearner::does_repeat(const CfgPath& pattern, const CfgPath& total) {
 void ControlLearner::compute() {
 
   // Collect data
-  DEBUG_CONTROL_LEARNER(cout << "COLLECTING DATA..." << endl;)
+  DEBUG_CONTROL_LEARNER(cout << "COLLECTING DATA ON " << sandbox_.size() << " TCs..." << endl;)
   for (size_t i = 0; i < sandbox_.size(); ++i) {
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
@@ -180,13 +180,15 @@ void ControlLearner::compute() {
     }
   }
 
+  DEBUG_CONTROL_LEARNER(cout << "STARTING MATRIX IS " << starting_matrix.size() << " x " << starting_matrix[0].size() << endl;)
+
   auto final_matrix = remove_duplicate_rows(starting_matrix);
 
   /** Debug */
   DEBUG_CONTROL_LEARNER(
-    cout << "DEBUGGUING FREQUENCY MATRICIES" << endl;
+    cout << "DEBUGING FREQUENCY MATRICIES" << endl;
   for (size_t i = 0; i < final_matrix.size(); ++i) {
-  for (size_t j = 0; j < final_matrix[i].size(); ++j) {
+    for (size_t j = 0; j < final_matrix[i].size(); ++j) {
       cout << "  " << final_matrix[i][j];
     }
     cout << endl;
@@ -248,6 +250,11 @@ void ControlLearner::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trac
   }
 
   sandbox_.run(testcase);
+
+  auto code =  sandbox_.get_output(testcase)->code;
+  if(code != ErrorCode::NORMAL) {
+    cerr << "WARNING: testcase " << testcase << " exited with code " << (int)code << endl;
+  }
 
   for (auto it : to_free)
     delete it;

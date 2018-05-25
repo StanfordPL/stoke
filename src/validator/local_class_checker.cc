@@ -53,6 +53,8 @@ int LocalClassChecker::check(
   DualBuilder builder(template_pod, control_learner_);
   builder.set_bound(target_bound_, rewrite_bound_);
   DualAutomata* pod = builder.generate_pod(equivalence_class);
+  cout << "ABOUT TO DO SANITY CHECK" << endl;
+  pod->print_all();
   bool sane = sanity_check(pod);
   if(!sane) {
     Result r;
