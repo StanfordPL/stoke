@@ -310,10 +310,10 @@ void SimpleHandler::add_all() {
     ss.set(eflags_zf, SymBool::tmp_var());
     ss.set(eflags_af, SymBool::tmp_var());
     ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
 
     ss.set(eflags_of, of);
     ss.set(eflags_cf, of);
-    ss.set(eflags_sf, res[n-1]);
   });
 
   add_opcode_str({"imulq", "imull", "imulw"},
@@ -333,10 +333,10 @@ void SimpleHandler::add_all() {
     ss.set(eflags_zf, SymBool::tmp_var());
     ss.set(eflags_af, SymBool::tmp_var());
     ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
 
     ss.set(eflags_of, of);
     ss.set(eflags_cf, of);
-    ss.set(eflags_sf, res[n-1]);
   });
 
   add_opcode_str({"mulq", "mull", "mulw", "mulb"},
@@ -423,8 +423,8 @@ void SimpleHandler::add_all() {
     ss.set(eflags_zf, SymBool::tmp_var());
     ss.set(eflags_af, SymBool::tmp_var());
     ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
 
-    ss.set(eflags_sf, full_res[n-1]);
     ss.set(eflags_of, of);
     ss.set(eflags_cf, of);
   });
