@@ -101,7 +101,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   auto hash = md5(ss.str());
 
   if(pipeline_ == NULL) {
-    pipeline_tx_ = new work(connection_);
+    pipeline_tx_ = new nontransaction(connection_);
     pipeline_ = new pipeline(*pipeline_tx_);
   }
 

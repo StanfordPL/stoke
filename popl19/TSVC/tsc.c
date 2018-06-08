@@ -77,6 +77,7 @@ int dummy(float[LEN], float[LEN], float[LEN], float[LEN], float[LEN], float[LEN2
 int dummy_media(short[], char[], int);
 
 // BRC set1d OK set the values of a floating point array with different strides
+// BRC not single loop
 int set1d(float arr[LEN], float value, int stride)
 {
 	if (stride == -1) {
@@ -96,6 +97,7 @@ int set1d(float arr[LEN], float value, int stride)
 }
 
 // BRC set1ds DUPLICATE 
+// BRC not single loop
 int set1ds(int _n, float arr[LEN], float value, int stride)
 {
 	if (stride == -1) {
@@ -115,6 +117,7 @@ int set1ds(int _n, float arr[LEN], float value, int stride)
 }
 
 // BRC set2d 2D set values of 2D array
+// BRC not single loop
 int set2d(float arr[LEN2][LEN2], float value, int stride)
 {
 
@@ -143,6 +146,7 @@ int set2d(float arr[LEN2][LEN2], float value, int stride)
 }
 
 // BRC sum1d OK sum values of a floating point array
+// BRC included
 float sum1d(float arr[LEN]){
 	float ret = 0.;
 	for (int i = 0; i < LEN; i++)
@@ -775,6 +779,7 @@ int init(char* name)
 }
 
 // BRC s000 OK copy a floating point array incrementing each cell by 1
+// BRC included
 int s000()
 {
 
@@ -804,6 +809,7 @@ int s000()
 
 // %1.1
 // BRC s111 OK shift a floating point vector and add to it
+// BRC included
 int s111()
 {
 
@@ -831,6 +837,7 @@ int s111()
 }
 
 // BRC s1111 OK sum of dot products of every-other entry
+// BRC included
 int s1111()
 {
 
@@ -858,6 +865,7 @@ int s1111()
 // %1.1
 
 // BRC s112 OK loop iterating backwards version of s111
+// BRC included
 int s112()
 {
 
@@ -886,6 +894,7 @@ int s112()
 
 
 // BRC s1112 OK copy array and add 1, iterating backwards
+// BRC included
 int s1112()
 {
 
@@ -914,6 +923,7 @@ int s1112()
 
 // %1.1
 // BRC s113 OK copying vector and adding constant
+// BRC redundant
 int s113()
 {
 
@@ -940,6 +950,7 @@ int s113()
 }
 
 // BRC s1113 OK copying vector and adding constant
+// BRC redundant
 int s1113()
 {
 
@@ -1057,6 +1068,7 @@ int s1115()
 // %1.1
 
 // BRC s116 OK weird unrolled self-corrollation thing
+// BRC included
 int s116()
 {
 
@@ -1210,6 +1222,7 @@ int s121()
 // %1.2
 
 // BRC s122 OK
+// BRC included
 int s122(int n1, int n3)
 {
 
@@ -1242,7 +1255,7 @@ int s122(int n1, int n3)
 
 // %1.2
 
-// BRC s123 OK
+// BRC s123 not vectorizable
 int s123()
 {
 
@@ -1278,7 +1291,7 @@ int s123()
 
 // %1.2
 
-// BRC s124 OK
+// BRC s124 doesn't vectorize in gcc/llvm
 int s124()
 {
 
@@ -1313,7 +1326,7 @@ int s124()
 }
 
 // %1.2
-// BRC s125 HARD
+// BRC s125 double nested HARD
 int s125()
 {
 
@@ -1345,7 +1358,7 @@ int s125()
 }
 
 // %1.2
-// BRC s126 HARD
+// BRC s126 double nested HARD
 int s126()
 {
 
@@ -1380,6 +1393,7 @@ int s126()
 // %1.2
 
 // BRC s127 OK
+// gcc can vectorize this!
 int s127()
 {
 
@@ -1412,7 +1426,7 @@ int s127()
 
 // %1.2
 
-// BRC s128 OK
+// BRC s128 BAD gcc/llvm don't vectorize
 int s128()
 {
 
@@ -1446,7 +1460,8 @@ int s128()
 
 // %1.3
 
-// BRC s131 OK
+// BRC s131 OK gcc vectorizes
+// BRC duplicate of s121 for our purposes
 int s131()
 {
 //	global data flow analysis
@@ -1474,7 +1489,8 @@ int s131()
 
 // %1.3
 
-// BRC s132 OK
+// BRC s132 OK gcc vectorizes
+// BRC skipped because it iterates over 2D array, so I need new test cases
 int s132()
 {
 //	global data flow analysis
@@ -1503,7 +1519,7 @@ int s132()
 
 // %1.4
 
-// BRC s141 HARD
+// BRC s141 HARD double nested
 int s141()
 {
 
@@ -1537,7 +1553,6 @@ int s141()
 
 // %1.5
 
-// BRC s151s OK
 int s151s(float a[LEN], float b[LEN],  int m)
 {
 	for (int i = 0; i < LEN-1; i++) {
@@ -1546,6 +1561,8 @@ int s151s(float a[LEN], float b[LEN],  int m)
 	return 0;
 }
 
+// BRC s151s OK
+// BRC duplicate of s121 for our purposes
 int s151()
 {
 
@@ -1603,7 +1620,7 @@ int s152()
 
 // %1.6
 
-// BRC s161 OK fun with gotos!
+// BRC s161 BAD doesn't vectorize
 int s161()
 {
 
@@ -1638,7 +1655,7 @@ L10:
 	return 0;
 }
 
-// BRC s1161 OK
+// BRC s1161 BAD doesn't vectorize
 int s1161()
 {
 
@@ -1675,7 +1692,8 @@ L10:
 
 // %1.6
 
-// BRC s162 OK
+// BRC s162 OK vectorizes in llvm/gcc
+// BRC included
 int s162(int k)
 {
 //	control flow
@@ -1704,7 +1722,7 @@ int s162(int k)
 
 // %1.7
 
-// BRC s171 OK
+// BRC s171 BAD doesn't vectorize
 int s171(int inc)
 {
 
@@ -1731,7 +1749,7 @@ int s171(int inc)
 
 // %1.7
 
-// BRC s172 OK
+// BRC s172 BAD doesn't vectorize
 int s172( int n1, int n3)
 {
 //	symbolics
@@ -1758,7 +1776,8 @@ int s172( int n1, int n3)
 
 // %1.7
 
-// BRC s173 OK
+// BRC s173 OK gcc vectorizes (at least)
+// BRC included
 int s173()
 {
 //	symbolics
@@ -1787,6 +1806,7 @@ int s173()
 // %1.7
 
 // BRC s174 OK
+// BRC duplicate of s173 for our purposes
 int s174(int M)
 {
 
@@ -1815,6 +1835,7 @@ int s174(int M)
 // %1.7
 
 // BRC s175 OK
+// BRC included
 int s175(int inc)
 {
 
@@ -1842,7 +1863,7 @@ int s175(int inc)
 
 // %1.7
 
-// BRC s176 HARD
+// BRC s176 HARD double-nest
 int s176()
 {
 
@@ -1879,7 +1900,7 @@ int s176()
 
 // %2.1
 
-// BRC s211 OK
+// BRC s211 BAD doesn't vectorize
 int s211()
 {
 
@@ -1908,7 +1929,7 @@ int s211()
 
 // %2.1
 
-// BRC s212 OK
+// BRC s212 BAD doesn't vectorize
 int s212()
 {
 
@@ -1934,7 +1955,7 @@ int s212()
 	return 0;
 }
 
-// BRC s1213 OK
+// BRC s1213 BAD doesn't vectorize
 int s1213()
 {
 
@@ -1962,7 +1983,7 @@ int s1213()
 
 // %2.2
 
-// BRC s221 OK
+// BRC s221 BAD doesn't vectorize
 int s221()
 {
 
@@ -1990,6 +2011,7 @@ int s221()
 }
 
 // BRC s1221 OK
+// BRC included
 int s1221()
 {
 
@@ -2016,7 +2038,7 @@ int s1221()
 
 // %2.2
 
-// BRC s222 OK
+// BRC s222 BAD doesn't vectorize
 int s222()
 {
 
@@ -2227,7 +2249,7 @@ int s235()
 
 // %2.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s241()
 {
 
@@ -2257,7 +2279,7 @@ int s241()
 
 // %2.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s242(float s1, float s2)
 {
 
@@ -2284,7 +2306,8 @@ int s242(float s1, float s2)
 
 // %2.4
 
-// BRC OK
+// BRC OK vectorizes
+// BRC included
 int s243()
 {
 
@@ -2314,7 +2337,7 @@ int s243()
 
 // %2.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s244()
 {
 
@@ -2342,7 +2365,7 @@ int s244()
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s1244()
 {
 
@@ -2369,7 +2392,7 @@ int s1244()
 	return 0;
 }
 
-// BRC OK
+// BRC OK vectorizes
 int s2244()
 {
 
@@ -2396,9 +2419,9 @@ int s2244()
 	return 0;
 }
 
-// %2.5
+// %2.5 
 
-// BRC OK
+// BRC OK vectorizes
 int s251()
 {
 
@@ -2426,7 +2449,7 @@ int s251()
 	return 0;
 }
 
-// BRC OK
+// BRC OK vectorizes
 int s1251()
 {
 
@@ -2455,7 +2478,7 @@ int s1251()
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s2251()
 {
 
@@ -2484,7 +2507,7 @@ int s2251()
 	return 0;
 }
 
-// BRC OK
+// BRC OK vectorizes
 int s3251()
 {
 

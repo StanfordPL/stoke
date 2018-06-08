@@ -121,7 +121,7 @@ void PostgresClassChecker::initialize() {
   // initialize pipeline
   pipeline_tx_ = new work(connection_);
   pipeline_ = new pipeline(*pipeline_tx_);
-
+  pipeline_->retain(2);
 
 }
 
@@ -150,6 +150,8 @@ int PostgresClassChecker::check(
   auto hash_esc = pipeline_tx_->esc(hash);
   auto prob_esc = pipeline_tx_->esc(ss.str());
   auto testcase_set_esc = pipeline_tx_->esc(testcase_set_);
+
+  pipeline_->resume();
 
   /** Add to proof obligations */
   stringstream sql_add_cp;

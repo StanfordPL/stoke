@@ -264,7 +264,8 @@ BIN=\
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_verify \
 	bin/stoke_obligation_check \
-	bin/stoke_worker
+	bin/stoke_worker \
+	bin/tcgen_tsvc
 
 #bin/stoke_replace \
 #bin/stoke_search \

@@ -306,7 +306,7 @@ void LocalClassChecker::discharge_thread(DualAutomata& dual, DischargeState& dis
     auto& edge = problem.first;
     auto conjunct = problem.second;
     if(conjunct == (size_t)(-1)) { /* we're done. */
-      cout << "[discharge_thread " << i << "] all done!" << endl;
+      cout << "[discharge_thread " << i << "] finished calling discharge edge.. waiting for callbacks!" << endl;
       return;
     }
     stringstream* ss = new stringstream();

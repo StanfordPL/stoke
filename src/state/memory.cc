@@ -101,9 +101,9 @@ void Memory::read_text_summary(istream& is) {
   is.get(); // ' '
   is.get(); // ']'
 
-  // Fail for memories that are larger than 100 KB
-  if (upper - lower > 100*1024) {
-    fail(is) << "Only memories of size up to 100KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
+  // Fail for memories that are larger than 200 KB
+  if (upper - lower > 200*1024) {
+    fail(is) << "Only memories of size up to 200KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
     return;
   }
 

@@ -317,7 +317,7 @@ bool update_expiry(uint64_t id, connection& c, string tablename) {
   tx.commit();
 
   if(r.affected_rows())  {
-    cout << getpid() << ": Updated expiry for id=" << id << endl;
+    //cout << getpid() << ": Updated expiry for id=" << id << endl;
     return true;
   } else {
     cout << getpid() << ": Looks like someone else holds lock for " << id << "!" << endl;
@@ -877,10 +877,10 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
 
     size_t count = 0;
     while(true) {
-      cout << getpid() << ": checking if there's space in the queue..." << endl;
+      //cout << getpid() << ": checking if there's space in the queue..." << endl;
       size_t space = queue.space();
       if(!space) {
-        cout << getpid() << ": no space... waiting!" << endl;
+        //cout << getpid() << ": no space... waiting!" << endl;
         // make sure that nobody is waiting on the queue by mistake
         queue.notify();
         sleep(1); // todo: use condition variable

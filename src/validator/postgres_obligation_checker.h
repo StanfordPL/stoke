@@ -98,7 +98,7 @@ private:
   std::string connection_string_;
   pqxx::connection connection_;
   pqxx::pipeline* pipeline_;
-  pqxx::work* pipeline_tx_;
+  pqxx::transaction_base* pipeline_tx_;
 
   /** Solver functionality */
   bool enable_z3_;

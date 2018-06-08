@@ -10,4 +10,4 @@ all:
 	stoke debug cfg --target opt1/my_memset.s -o my_memset.pdf
 
 tests:
-	stoke_tcgen --target opt1/libc_memset.s --bound 4 --def_in "{ %rdi %rsi %rdx }" --live_out "{ }" --output tcs/gen --mutants 0
+	stoke_tcgen --target opt1/libc_memset.s --bound 4 --def_in "{ %rdi %rsi %rdx }" --live_out "{ }" --output tcs/gen --mutants 2
