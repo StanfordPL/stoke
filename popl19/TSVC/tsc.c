@@ -2508,6 +2508,7 @@ int s2251()
 }
 
 // BRC OK vectorizes
+// BRC included
 int s3251()
 {
 
@@ -2537,7 +2538,7 @@ int s3251()
 
 // %2.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s252()
 {
 
@@ -2569,7 +2570,7 @@ int s252()
 // %2.5
 
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s253()
 {
 
@@ -2602,7 +2603,7 @@ int s253()
 
 // %2.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s254()
 {
 
@@ -2633,7 +2634,7 @@ int s254()
 
 // %2.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s255()
 {
 
@@ -2666,7 +2667,7 @@ int s255()
 
 // %2.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s256()
 {
 
@@ -2697,7 +2698,7 @@ int s256()
 
 // %2.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s257()
 {
 
@@ -2726,7 +2727,7 @@ int s257()
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s258()
 {
 
@@ -2760,7 +2761,7 @@ int s258()
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s261()
 {
 
@@ -2790,7 +2791,7 @@ int s261()
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s271()
 {
 
@@ -2820,7 +2821,7 @@ int s271()
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s272(float t)
 {
 
@@ -2851,7 +2852,7 @@ int s272(float t)
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s273()
 {
 
@@ -2882,7 +2883,7 @@ int s273()
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s274()
 {
 
@@ -2915,7 +2916,7 @@ int s274()
 
 // %2.7
 
-// BRC HARD doubly nested
+// BRC BAD doesn't vectorize
 int s275()
 {
 
@@ -2945,7 +2946,7 @@ int s275()
 	return 0;
 }
 
-// BRC HARD double nest
+// BRC HARD double nest (vectorizes)
 int s2275()
 {
 
@@ -2975,7 +2976,7 @@ int s2275()
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s276()
 {
 

@@ -180,6 +180,16 @@ TYPE s1251(int count) {
   return 0;
 }
 
+TYPE s3251(int count) {
+  TYPE s;
+  for (int i = 0; i < count; i++) {
+		a[i+1] = b[i]+c[i];
+		b[i]   = c[i]*e[i];
+		d[i]   = a[i]*e[i];
+  }
+  return 0;
+}
+
 // LLVM vectorizes.
 void s431(int count) {
   int k = 0;
