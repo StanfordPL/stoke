@@ -4,6 +4,8 @@
 
 def print_usage
   puts "usage: ./demo.rb verify <compiler1> <compiler2> <benchmark>"
+  puts "       ./demo.rb verify-all"
+  puts "       ./demo.rb check-tc-all"
   puts ""
 end
 
@@ -14,9 +16,49 @@ def check_file(s)
     exit 1
   end
 end
+  
+def validate_all
+  File.readlines('benchmarks').each do |line|
+    benchmark = line.strip
+    validate "baseline", "gcc", benchmark, true
+    validate "baseline", "llvm", benchmark, true
+  end
+  Process.waitall
+end
 
+def check_all_testcases
+  File.readlines('benchmarks').each do |line|
+    benchmark = line.strip
+    check_testcases 'baseline', benchmark, 'testcases/16'
+    check_testcases 'gcc',      benchmark, 'testcases/16'
+    check_testcases 'llvm',     benchmark, 'testcases/16'
+  end
+end
 
-def validate(compiler1, compiler2, benchmark) 
+def check_testcases(compiler1, benchmark, tcfile)
+
+  (0..15).each do |index|
+    args = [
+      "--testcases #{tcfile}",
+      "--target #{compiler1}/#{benchmark}.s",
+      "--index #{index}"
+    ]
+
+    stoke_cmd = "stoke_debug_sandbox #{args.join(" ")}"
+    output = `#{stoke_cmd}`
+#print output
+    if output.include?("Control returned abnormally")
+      puts "#{compiler1}/#{benchmark} BAD index=#{index}"
+      return false
+    end
+      
+  end
+  puts "#{compiler1}/#{benchmark} GOOD"
+  return true
+end
+
+def validate(compiler1, compiler2, benchmark, dofork=false) 
+  puts "Running benchmark #{benchmark} with compilers #{compiler1}/#{compiler2}"
 
   num = 0
   prefix = "#{benchmark}_#{compiler1}_#{compiler2}"
@@ -47,13 +89,21 @@ def validate(compiler1, compiler2, benchmark)
     "--target_bound 10",
     "--rewrite_bound 2",
     "--assume \"t_%rdi<=16\"",
+    "2> traces/#{name}.err",
     "| tee traces/#{name}"
   ]
 
   puts "Recording data in traces/#{name}"
   stoke_cmd = "stoke_debug_verify #{stoke_args.join(" ")}"
   time_cmd = "/usr/bin/time -o times/#{name} #{stoke_cmd}"
-  `#{time_cmd}`
+
+  if dofork
+    Process.fork do
+      `#{time_cmd}`
+    end
+  else
+    `#{time_cmd}`
+  end
 end
 
 if ARGV[0] == "verify" then
@@ -62,6 +112,13 @@ if ARGV[0] == "verify" then
   else
     print_usage
   end
+elsif ARGV[0] == "verify-all" then
+  validate_all
+  while true do
+    sleep 10
+  end
+elsif ARGV[0] == "check-tc-all" then
+  check_all_testcases
 else
   print_usage
 end

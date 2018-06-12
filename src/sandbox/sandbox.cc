@@ -783,7 +783,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
 }
 
 /** Back in the day, this function did a switch() statement to choose between
- * the stack/heap/data segments, rather than receiving a pointer to memory.
+ * the stack/heap/data segments, rather than receiving a Memory*.
  * Hence "cases" in the name.  It could, probably, be
  * renamed/removed/refactored.  And we can do that.  But for now, as a tribute
  * to Eric's work on the Sandbox, it's gonna stick around here. -- BRC */
@@ -889,6 +889,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
         cout << "Emitting label before " << instr << endl;
         assm_.bind(middle);
       }
+      cout << "Emitting with hex_offset=" << std::hex << hex_offset << std::dec << endl;
       emit_instruction(instr, label, hex_offset, entry, exit);
       if (global_after_.first != nullptr || !after_.empty()) {
         emit_after(cfg.get_function().get_leading_label(), i);
@@ -1076,6 +1077,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
     int32_t disp = old_op.get_disp();
     int64_t sign_extend = (int64_t)disp;
     assm_.mov(rdi, Imm64(hex_offset + (uint64_t)sign_extend));
+    cout << "Generating RIP offset addressing to " << hex << hex_offset + (uint64_t)sign_extend << dec << endl;
   } else {
     if (uses_rsp) {
       assm_.mov(rsp, Imm64(&user_rsp_));

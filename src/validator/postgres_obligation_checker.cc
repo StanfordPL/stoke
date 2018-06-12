@@ -267,13 +267,12 @@ void PostgresObligationChecker::poll_database() {
 void PostgresObligationChecker::block_until_complete() {
   if(pipeline_) {
     pipeline_->complete();
-    pipeline_tx_->commit();
     cout << "Pipeline of inserts complete!" << endl;
   }
 
   poll_database();
   while(outstanding_jobs.size() > 0) {
-    sleep(1);
+    sleep(60);
     poll_database();
   }
 }

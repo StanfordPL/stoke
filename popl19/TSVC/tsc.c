@@ -3008,7 +3008,7 @@ int s276()
 }
 
 // %2.7
-// BRC OK
+// BRC BAD doesn't vectorize
 int s277()
 {
 
@@ -3046,7 +3046,7 @@ L20:
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s278()
 {
 
@@ -3082,7 +3082,7 @@ L30:
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s279()
 {
 
@@ -3120,7 +3120,7 @@ L30:
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s1279()
 {
 
@@ -3194,7 +3194,7 @@ int s2710( float x)
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s2711()
 {
 
@@ -3223,7 +3223,7 @@ int s2711()
 
 // %2.7
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s2712()
 {
 
@@ -3253,7 +3253,7 @@ int s2712()
 
 // %2.8
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s281()
 {
 
@@ -3283,7 +3283,7 @@ int s281()
 	return 0;
 }
 
-// BRC OK
+// BRC OK vectorizes
 int s1281()
 {
 
@@ -3315,7 +3315,7 @@ int s1281()
 
 // %2.9
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s291()
 {
 
@@ -3346,7 +3346,7 @@ int s291()
 
 // %2.9
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s292()
 {
 
@@ -3380,7 +3380,7 @@ int s292()
 
 // %2.9
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s293()
 {
 
@@ -3407,7 +3407,7 @@ int s293()
 
 // %2.10
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s2101()
 {
 
@@ -3436,7 +3436,7 @@ int s2101()
 
 // %2.12
 
-// BRC HARD double nested
+// BRC BAD doesn't vectorize
 int s2102()
 {
 
@@ -3467,7 +3467,7 @@ int s2102()
 
 // %2.11
 
-// BRC HARD double nested
+// BRC BAD doesn't vectorize
 int s2111()
 {
 
@@ -3507,7 +3507,7 @@ int s2111()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s311()
 {
 
@@ -3543,7 +3543,7 @@ float test(float* A){
   return s;
 }
 
-// BRC HARD
+// BRC BAD doesn't vectorize
 int s31111()
 {
 
@@ -3578,7 +3578,7 @@ int s31111()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s312()
 {
 
@@ -3608,7 +3608,7 @@ int s312()
 }
 
 // %3.1
-// BRC OK
+// BRC BAD doesn't vectorize
 int s313()
 {
 
@@ -3639,7 +3639,7 @@ int s313()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s314()
 {
 
@@ -3672,7 +3672,7 @@ int s314()
 
 // %3.1
 
-// BRC OK
+// BRC OK gcc vectorizes
 int s315()
 {
 
@@ -3711,7 +3711,7 @@ int s315()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s316()
 {
 
@@ -3743,7 +3743,7 @@ int s316()
 }
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s317()
 {
 
@@ -3776,7 +3776,8 @@ int s317()
 
 // %3.1
 
-// BRC OK
+// BRC OK -- not sure if this really vectorizes
+// BRC included
 int s318( int inc)
 {
 
@@ -3819,7 +3820,7 @@ L5:
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s319()
 {
 
@@ -3852,7 +3853,7 @@ int s319()
 }
 
 // %3.1
-
+// BRC BAD doesn't vectorize
 int s3110()
 {
 
@@ -3892,6 +3893,7 @@ int s3110()
 	return 0;
 }
 
+// BRC BAD doesn't vectorize
 int s13110()
 {
 
@@ -3930,7 +3932,7 @@ int s13110()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s3111()
 {
 
@@ -3963,7 +3965,7 @@ int s3111()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s3112()
 {
 
@@ -3995,7 +3997,7 @@ int s3112()
 
 // %3.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s3113()
 {
 
@@ -4028,7 +4030,7 @@ int s3113()
 
 // %3.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s321()
 {
 
@@ -4056,7 +4058,7 @@ int s321()
 
 // %3.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s322()
 {
 
@@ -4084,7 +4086,7 @@ int s322()
 
 // %3.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s323()
 {
 
@@ -4113,7 +4115,7 @@ int s323()
 
 // %3.3
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s331()
 {
 
@@ -4155,7 +4157,7 @@ int max(int a1, int b1)
 }
 
 // %3.3
-// BRC OK
+// BRC BAD doesn't vectorize
 int s332( float t)
 {
 
@@ -4196,7 +4198,7 @@ L20:
 
 // %3.4
 
-// BRC BAD
+// BRC BAD doesn't vectorize
 int s341()
 {
 
@@ -4230,7 +4232,7 @@ int s341()
 
 // %3.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s342()
 {
 
@@ -4262,7 +4264,7 @@ int s342()
 	return 0;
 }
 
-// %3.4
+// BRC BAD doesn't vectorize
 int s343()
 {
 
@@ -4299,6 +4301,7 @@ int s343()
 // %3.5
 
 // BRC OK
+// BRC included
 int s351()
 {
 
@@ -4329,7 +4332,7 @@ int s351()
 	return 0;
 }
 
-// BRC OK
+// BRC OK llvm vectorizes
 int s1351()
 {
 
@@ -4362,7 +4365,7 @@ int s1351()
 
 // %3.5
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s352()
 {
 
@@ -4394,7 +4397,7 @@ int s352()
 
 // %3.5
 
-// BRC OK
+// BRC - llvm vectorizes - BAD need other test cases
 int s353(int* __restrict__ ip)
 {
 
@@ -4435,7 +4438,7 @@ int s353(int* __restrict__ ip)
 // %4.1
 // %4.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s421()
 {
 
@@ -4466,7 +4469,7 @@ int s421()
 	return 0;
 }
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s1421()
 {
 
@@ -4498,7 +4501,7 @@ int s1421()
 
 // %4.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s422()
 {
 
@@ -4533,7 +4536,7 @@ int s422()
 
 // %4.2
 
-// BRC OK
+// BRC BAD - not leaf function
 int s423()
 {
 
@@ -4566,7 +4569,7 @@ int s423()
 
 // %4.2
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s424()
 {
 
@@ -4600,7 +4603,7 @@ int s424()
 
 // %4.3
 
-// BRC OK
+// BRC duplicate of sample, for our purposes
 int s431()
 {
 
@@ -4631,7 +4634,7 @@ int s431()
 
 // %4.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s441()
 {
 
@@ -4665,7 +4668,7 @@ int s441()
 
 // %4.4
 
-// BRC OK interesting
+// BRC BAD doesn't vectorize
 int s442()
 {
 
@@ -4711,7 +4714,7 @@ L50:
 
 // %4.4
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s443()
 {
 
@@ -4750,7 +4753,7 @@ L50:
 
 // %4.5
 
-// BRC unsure -- sinf cosf
+// BRC BAD doesn't vectorize
 int s451()
 {
 
@@ -4779,6 +4782,7 @@ int s451()
 // %4.5
 
 // BRC OK
+// BRC included
 int s452()
 {
 
@@ -4835,7 +4839,7 @@ int s453()
 }
 
 // %4.7
-
+// BRC bad call statements
 int s471(){
 
 //	call statements
@@ -4869,6 +4873,7 @@ int s471(){
 
 // %4.8
 
+// BRC bad call statements
 int s481()
 {
 
@@ -4900,7 +4905,7 @@ int s481()
 // %4.8
 
 // %4.8
-// BRC OK
+// BRC BAD doesn't vectorize
 int s482()
 {
 
@@ -4934,7 +4939,7 @@ int min(int a, int b){
 
 // %4.9
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s491(int* __restrict__ ip)
 {
 
@@ -4963,7 +4968,7 @@ int s491(int* __restrict__ ip)
 
 // %4.11
 
-// BRC OK interesting
+// BRC BAD doesn't vectorize
 int s4112(int* __restrict__ ip, float s)
 {
 
@@ -4991,7 +4996,7 @@ int s4112(int* __restrict__ ip, float s)
 
 // %4.11
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s4113(int* __restrict__ ip)
 {
 
@@ -5020,7 +5025,7 @@ int s4113(int* __restrict__ ip)
 
 // %4.11
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s4114(int* ip, int n1)
 {
 
@@ -5052,7 +5057,7 @@ int s4114(int* ip, int n1)
 
 // %4.11
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s4115(int* __restrict__ ip)
 {
 
@@ -5084,7 +5089,7 @@ int s4115(int* __restrict__ ip)
 
 // %4.11
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s4116(int* __restrict__ ip, int j, int inc)
 {
 
@@ -5118,7 +5123,7 @@ int s4116(int* __restrict__ ip, int j, int inc)
 
 // %4.11
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int s4117()
 {
 
@@ -5146,7 +5151,7 @@ int s4117()
 
 // %4.12
 
-// BRC OK
+// BRC BAD - function call
 int s4121()
 {
 
@@ -5175,6 +5180,7 @@ int s4121()
 // %5.1
 
 // BRC OK
+// BRC included
 int va()
 {
 
@@ -5201,7 +5207,7 @@ int va()
 
 // %5.1
 
-// BRC OK
+// BRC - needs other test cases
 int vag( int* __restrict__ ip)
 {
 
@@ -5230,7 +5236,7 @@ int vag( int* __restrict__ ip)
 
 // %5.1
 
-// BRC OK
+// BRC -- needs other test cases
 int vas( int* __restrict__ ip)
 {
 
@@ -5259,6 +5265,8 @@ int vas( int* __restrict__ ip)
 
 // %5.1
 
+// BRC ok
+// BRC included
 int vif()
 {
 
@@ -5288,7 +5296,7 @@ int vif()
 
 // %5.1
 
-// BRC OK
+// BRC duplicate
 int vpv()
 {
 
@@ -5316,6 +5324,7 @@ int vpv()
 
 // %5.1
 
+// BRC included
 int vtv()
 {
 
@@ -5345,6 +5354,7 @@ int vtv()
 // %5.1
 
 // BRC OK
+// BRC included
 int vpvtv()
 {
 
@@ -5371,7 +5381,7 @@ int vpvtv()
 }
 
 // %5.1
-
+// BRC included
 int vpvts( float s)
 {
 
@@ -5400,6 +5410,7 @@ int vpvts( float s)
 // %5.1
 
 // BRC OK
+// BRC included
 int vpvpv()
 {
 
@@ -5427,7 +5438,7 @@ int vpvpv()
 
 // %5.1
 
-// BRC OK
+// BRC OK included
 int vtvtv()
 {
 
@@ -5455,7 +5466,7 @@ int vtvtv()
 
 // %5.1
 
-// BRC OK
+// BRC BAD doesn't vectorize
 int vsumr()
 {
 
@@ -5516,7 +5527,7 @@ int vdotr()
 
 // %5.1
 
-// BRC OK
+// BRC - 2D array BAD need other test cases
 int vbor()
 {
 
@@ -5561,6 +5572,7 @@ int vbor()
 	return 0;
 }
 
+// BRC bad - need other test cases
 void set(int* ip, float* s1, float* s2){
 	xx = (float*) memalign(16, LEN*sizeof(float));
 	printf("\n");

@@ -49,6 +49,10 @@ auto& num_tc = ValueArg<size_t>::create("num_testcases")
                .description("The number of testcases to generate")
                .default_val(16);
 
+auto& segment_length = ValueArg<size_t>::create("segment_length")
+               .usage("<int>")
+               .description("The length of each segment to create in ints")
+               .default_val(128);
 
 int main(int argc, char** argv) {
 
@@ -57,13 +61,102 @@ int main(int argc, char** argv) {
   CpuStates outputs;
 
   vector<uint64_t> segments = {
-    0x601880, //b
-    0x601280, //a
-    0x601680, //c
-    0x601080, //d
-    0x601480  //e
+    0x601880, //e
+    0x601680, //d
+    0x601480, //c
+    0x601280, //b
+    0x601080  //a
   };
-  uint64_t length = 128*sizeof(int);
+  uint64_t length = segment_length.value()*sizeof(int);
+
+
+  uint64_t gcc_segment_start = 0x601a80;
+  vector<uint8_t> gcc_segment = {
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x0,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x2,
+    0x0,
+    0x0,
+    0x0,
+
+    0x3,
+    0x0,
+    0x0,
+    0x0,
+
+    0x4,
+    0x0,
+    0x0,
+    0x0,
+    
+    0x4,
+    0x0,
+    0x0,
+    0x0,
+
+    0x4,
+    0x0,
+    0x0,
+    0x0,
+
+    0x4,
+    0x0,
+    0x0,
+    0x0
+  };
+
+  uint64_t llvm_segment_start = 0x601c80;
+  vector<uint8_t> llvm_segment = {
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0,
+
+    0x1,
+    0x0,
+    0x0,
+    0x0
+  };
+
+
 
 
   srand(time(0) ^ (getpid()*0xff));
@@ -75,7 +168,27 @@ int main(int argc, char** argv) {
   for (size_t i = 0; i < count; ++i) {
     CpuState tc;
     sg.get(tc);
-    tc.update(rdi, rand() % 17);
+    tc.update(rdi, i);
+
+    // LLVM read-only data
+    Memory llvm;
+    llvm.resize(llvm_segment_start, 32);
+    for(size_t i = 0; i < llvm_segment.size(); ++i) {
+      uint64_t addr = llvm_segment_start + i;
+      llvm.set_valid(addr, true);
+      llvm[addr] = rand() % 256;
+    }
+    tc.segments.push_back(llvm);
+
+    // GCC read-only data
+    Memory gcc;
+    gcc.resize(gcc_segment_start, 1024);
+    for(size_t i = 0; i < gcc_segment.size(); ++i) {
+      uint64_t addr = gcc_segment_start + i;
+      gcc.set_valid(addr, true);
+      gcc[addr] = rand() % 256;
+    }
+    tc.segments.push_back(gcc);
 
     for(uint64_t start : segments) {
       Memory m;
@@ -87,6 +200,9 @@ int main(int argc, char** argv) {
 
       tc.segments.push_back(m);
     }
+
+
+
     outputs.push_back(tc);
   }
 

@@ -189,6 +189,7 @@ int main(int argc, char** argv) {
 
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
+  cout << target.get_function() << endl;
   SeedGadget seed;
   TestcaseGadget tc(seed);
   CpuStates tcs;
