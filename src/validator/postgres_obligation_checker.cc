@@ -67,7 +67,7 @@ void PostgresObligationChecker::make_tables() {
   // 1. hash
   // 2. hash, solver, strategy
 
-  work tx(connection_);
+  nontransaction tx(connection_);
   tx.exec(sql_proof_obligation);
   tx.exec(sql_proof_obligation_result);
   tx.exec(sql_proof_obligation_queue);
