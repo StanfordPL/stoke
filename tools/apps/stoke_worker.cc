@@ -204,7 +204,12 @@ class ConditionQueue {
 
 public:
 
-  ConditionQueue(size_t n) : processes_(n), jobs_(n) {
+  ConditionQueue(size_t n, string name) : processes_(n), jobs_(n) {
+    strncpy(name_, name.c_str(), 32);
+  }
+
+  const char* get_name() {
+    return name_;
   }
 
   void add_to_notify_list() {
@@ -296,11 +301,13 @@ private:
 
   CircularQueue<pid_t, MAX_WORKER_COUNT> processes_;
   CircularQueue<T, MAX_JOB_COUNT> jobs_;
+
+  char name_[32];
 };
 
 
 bool update_expiry(uint64_t id, connection& c, string tablename) {
-  work tx(c);
+  nontransaction tx(c);
   stringstream sql;
   sql << "UPDATE " << tx.esc(tablename) << " SET "
       << "  expiration=NOW() + interval '10 seconds', "
@@ -357,10 +364,10 @@ void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& 
   Fetch problem text while we're at it.
   Will return immediately if none are available */
 size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max = 1) {
+  cout << "Entry" << endl;
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
-  work tx_pick(c);
   stringstream sql;
   sql << "WITH tmp AS ("
       << "  SELECT id FROM ProofObligationQueue "
@@ -378,9 +385,14 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
       << "  (SELECT problem FROM ProofObligation "
       << "   WHERE ProofObligation.hash = ProofObligationQueue.hash) as problem";
 
+  cout << "Running " << sql.str() << endl;
   try {
+    cout << "Inside try" << endl;
+    nontransaction tx_pick(c);
     result r = tx_pick.exec(sql.str().c_str());
+    cout << "Got result" << endl;
     tx_pick.commit();
+    cout << "  Got " << r.size() << " results" << endl;
     found_one = r.size() > 0;
     if(found_one) {
 
@@ -403,8 +415,11 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
   } catch (pqxx::sql_error e) {
     cout << __FILE__ << ":" << __LINE__ << ": Caught " << e.what() << endl;
     return 0;
+  } catch (exception e) {
+    cout << __FILE__ << ":" << __LINE__ << ": Caught " << e.what() << endl;
+    return 0;
   }
-
+  cout << "... made it to the end of the function!" << endl;
 
   return count;
 }
@@ -417,7 +432,7 @@ size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max = 
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
-  work tx_pick(c);
+  nontransaction tx_pick(c);
   stringstream sql;
   sql << "WITH tmp AS ("
       << "  SELECT id FROM ClassQueue "
@@ -468,7 +483,7 @@ size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max = 
 
 void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken_s) {
 
-  work tx(c);
+  nontransaction tx(c);
   std::stringstream sql_add_result;
 
   sql_add_result
@@ -501,7 +516,7 @@ void report_timeout(connection& c, ClassQueueEntry& qe, uint64_t time_taken_s) {
 
 void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& result) {
 
-  work tx(c);
+  nontransaction tx(c);
   std::stringstream sql_add_result;
 
   // First, add an entry recording what we got
@@ -528,7 +543,7 @@ void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& res
 
 void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::Result& result) {
 
-  work tx(c);
+  nontransaction tx(c);
   std::stringstream sql_add_result;
 
   // First, add an entry recording what we got
@@ -637,7 +652,7 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
 
 void fetch_testcases_db(const char* testcase_hash) {
   connection c(postgres_arg.value());
-  work tx(c);
+  nontransaction tx(c);
 
   stringstream sql;
   sql << "SELECT * FROM TestcaseSet WHERE hash='" << tx.esc(testcase_hash) << "'";
@@ -853,16 +868,16 @@ pid_t spawn_worker(T* item) {
 }
 
 template <typename T>
-ConditionQueue<T>* make_queue(size_t n) {
+ConditionQueue<T>* make_queue(size_t n, string name) {
 
-  ConditionQueue<T>* tmp = new ConditionQueue<T>(n);
+  ConditionQueue<T>* tmp = new ConditionQueue<T>(n, name);
   size_t size = sizeof(*tmp);
   cout << "Allocing " << size << " bytes for queue" << endl;
   delete tmp;
 
   void* buffer = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
   cout << "mmap'd buffer is at " << (uint64_t) buffer << endl;
-  return new (buffer) ConditionQueue<T>(n);
+  return new (buffer) ConditionQueue<T>(n, name);
 }
 
 template <typename T>
@@ -890,7 +905,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
         continue;
       }
 
-      cout << getpid() << ": we have " << space << " much space.. querying."  << endl;
+      cout << getpid() << ": " << queue.get_name() << ": we have " << space << " much space.. querying."  << endl;
       size_t n = select_job(c, entries, space);
       if(n > 0) {
         cout << getpid() << ": adding " << n << " jobs to queue." << endl;
@@ -993,8 +1008,8 @@ void main_loop() {
     my_unique_id = distribution(gen);
 
   /** Create queues in shared memory */
-  auto obligation_queue = make_queue<ObligationQueueEntry>(waitlist_arg.value());
-  auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value());
+  auto obligation_queue = make_queue<ObligationQueueEntry>(waitlist_arg.value(), "po");
+  auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value(), "cq");
 
   /** Populate the queues */
   spawn_producer(*obligation_queue);
@@ -1068,7 +1083,7 @@ bool debug_hash_checker(string hash) {
   };
 
   connection c(postgres_arg.value());
-  work tx(c);
+  nontransaction tx(c);
 
   stringstream sql;
   sql << "SELECT hash, problem, testcase_set FROM ClassProblem WHERE hash='" << tx.esc(hash) << "'";
