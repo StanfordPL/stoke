@@ -373,24 +373,36 @@ string generate_random_hash(default_random_engine& gen) {
 /** Pick one or more jobs from the database whose expiration is NULL or passed.
   Fetch problem text while we're at it.
   Will return immediately if none are available */
-size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max, default_random_engine& gen) {
+size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max) {
   cout << "Entry" << endl;
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
-  nontransaction tx_pick(c);
 
-  string midpoint = generate_random_hash(gen);
+  nontransaction count_tx(c);
+  auto r = count_tx.exec("select count(*) from proofobligationqueue");
+  count_tx.commit();
+  double total_rows = r[0][0].as<double>();
+  if(total_rows == 0) 
+    return 0;
+
+  double ratio = 1.1*100*(double)max/(double)total_rows;
+  if(ratio > 100)
+    ratio = 100;
+  if(ratio < 0.001)
+    ratio = 0.001;
+
+  work tx_pick(c);
 
   stringstream sql;
   sql << "WITH tmp AS ("
-      << "  SELECT id FROM ProofObligationQueue "
+      << "  SELECT id FROM ProofObligationQueue TABLESAMPLE BERNOULLI(" 
+      <<      std::fixed << std::setprecision(5) << ratio << ")"
       << "  WHERE ("
-      << "    hash > '" << tx_pick.esc(midpoint.c_str()) << "' AND "
-      << "    (expiration IS NULL "                                       
-      << "    OR expiration < NOW())) " 
-      << "  ORDER BY hash "
-      << "  LIMIT " << max << ") "
+      << "    expiration IS NULL "                                       
+      << "    OR expiration < NOW()) " 
+      << "  LIMIT " << max 
+      << ") "
       << "UPDATE ProofObligationQueue SET "
       << "  expiration = NOW() + interval '10 seconds', "
       << "  locked_by = " << my_unique_id << " "
@@ -402,6 +414,7 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
 
   string sql_str = sql.str();
   try {
+    tx_pick.exec("SET LOCAL statement_timeout TO 5000"); // sometimes queries are getting stuck, and that's bad
     cout << "Executing... " << sql_str << endl;
     result r = tx_pick.exec(sql_str.c_str());
     tx_pick.commit();
@@ -441,7 +454,7 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
 /** Pick one or more jobs from the database whose expiration is NULL or passed.
   Fetch problem text while we're at it.
   Will return immediately if none are available */
-size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max, default_random_engine& gen) {
+size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max) {
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
@@ -894,17 +907,13 @@ ConditionQueue<T>* make_queue(size_t n, string name) {
 }
 
 template <typename T>
-pid_t spawn_producer(ConditionQueue<T>& queue, default_random_engine& gen) {
+pid_t spawn_producer(ConditionQueue<T>& queue) {
 
   pid_t pid = fork();
   if(!pid) {
     vector<T*> entries;
     entries.reserve(queue.space());
     connection c(postgres_arg.value());
-    work tx(c);
-    tx.exec("SET statement_timeout TO 2000"); // sometimes queries are getting stuck, and that's bad
-    tx.commit();
-     
 
     size_t count = 0;
     while(true) {
@@ -919,7 +928,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue, default_random_engine& gen) {
       }
 
       cout << getpid() << ": " << queue.get_name() << ": we have " << space << " much space.. querying."  << endl;
-      size_t n = select_job(c, entries, space, gen);
+      size_t n = select_job(c, entries, space);
       if(n > 0) {
         cout << getpid() << ": adding " << n << " jobs to queue." << endl;
         queue.insert_jobs(entries);
@@ -1025,8 +1034,8 @@ void main_loop() {
   auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value(), "cq");
 
   /** Populate the queues */
-  spawn_producer(*obligation_queue, gen);
-  spawn_producer(*class_queue, gen);
+  spawn_producer(*obligation_queue);
+  spawn_producer(*class_queue);
 
   /** Make workers to do everything */
   cout << "[main_loop] Main process pid: " << getpid() << endl;
