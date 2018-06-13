@@ -359,22 +359,37 @@ void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& 
 }
 
 
+string generate_random_hash(default_random_engine& gen) {
+  string hash(32, 0);
+  char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+  std::uniform_int_distribution<> dist(0, 15);
+  for(size_t i = 0; i < hash.length(); ++i) {
+    hash[i] = hex[dist(gen)];
+  }
+
+  return hash;
+}
 
 /** Pick one or more jobs from the database whose expiration is NULL or passed.
   Fetch problem text while we're at it.
   Will return immediately if none are available */
-size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max = 1) {
+size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t max, default_random_engine& gen) {
   cout << "Entry" << endl;
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
+  nontransaction tx_pick(c);
+
+  string midpoint = generate_random_hash(gen);
+
   stringstream sql;
   sql << "WITH tmp AS ("
       << "  SELECT id FROM ProofObligationQueue "
       << "  WHERE ("
-      << "    expiration IS NULL "                                       
-      << "    OR expiration < NOW()) " 
-      << "  ORDER BY RANDOM() "
+      << "    hash > '" << tx_pick.esc(midpoint.c_str()) << "' AND "
+      << "    (expiration IS NULL "                                       
+      << "    OR expiration < NOW())) " 
+      << "  ORDER BY hash "
       << "  LIMIT " << max << ") "
       << "UPDATE ProofObligationQueue SET "
       << "  expiration = NOW() + interval '10 seconds', "
@@ -385,12 +400,10 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
       << "  (SELECT problem FROM ProofObligation "
       << "   WHERE ProofObligation.hash = ProofObligationQueue.hash) as problem";
 
-  cout << "Running " << sql.str() << endl;
+  string sql_str = sql.str();
   try {
-    cout << "Inside try" << endl;
-    nontransaction tx_pick(c);
-    result r = tx_pick.exec(sql.str().c_str());
-    cout << "Got result" << endl;
+    cout << "Executing... " << sql_str << endl;
+    result r = tx_pick.exec(sql_str.c_str());
     tx_pick.commit();
     cout << "  Got " << r.size() << " results" << endl;
     found_one = r.size() > 0;
@@ -428,7 +441,7 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
 /** Pick one or more jobs from the database whose expiration is NULL or passed.
   Fetch problem text while we're at it.
   Will return immediately if none are available */
-size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max = 1) {
+size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max, default_random_engine& gen) {
   bool found_one = false;
   size_t count = 0;
   uint64_t id;
@@ -881,7 +894,7 @@ ConditionQueue<T>* make_queue(size_t n, string name) {
 }
 
 template <typename T>
-pid_t spawn_producer(ConditionQueue<T>& queue) {
+pid_t spawn_producer(ConditionQueue<T>& queue, default_random_engine& gen) {
 
   pid_t pid = fork();
   if(!pid) {
@@ -906,7 +919,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
       }
 
       cout << getpid() << ": " << queue.get_name() << ": we have " << space << " much space.. querying."  << endl;
-      size_t n = select_job(c, entries, space);
+      size_t n = select_job(c, entries, space, gen);
       if(n > 0) {
         cout << getpid() << ": adding " << n << " jobs to queue." << endl;
         queue.insert_jobs(entries);
@@ -1012,8 +1025,8 @@ void main_loop() {
   auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value(), "cq");
 
   /** Populate the queues */
-  spawn_producer(*obligation_queue);
-  spawn_producer(*class_queue);
+  spawn_producer(*obligation_queue, gen);
+  spawn_producer(*class_queue, gen);
 
   /** Make workers to do everything */
   cout << "[main_loop] Main process pid: " << getpid() << endl;
