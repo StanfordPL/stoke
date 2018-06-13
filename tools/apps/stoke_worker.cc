@@ -343,7 +343,10 @@ void expiry_helper(uint64_t id, bool* finish_up, mutex& mu, condition_variable& 
 
     // update expiry info
     connection c(postgres_arg.value());
-    update_expiry(id, c, tablename);
+    bool updated = update_expiry(id, c, tablename);
+    if(!updated) {
+      exit(0);
+    }
     c.disconnect();
   }
 }

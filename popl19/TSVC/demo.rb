@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 
-@default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 }\""
+@default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 %rax %rbp %rsp %xmm0 %xmm1 %xmm2 %xmm3 %rbx %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 }\""
 
 def print_usage
   puts "usage: ./demo.rb verify <compiler1> <compiler2> <benchmark>"
@@ -97,6 +97,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   stoke_cmd = "stoke_debug_verify #{stoke_args.join(" ")}"
   time_cmd = "/usr/bin/time -o times/#{name} #{stoke_cmd}"
 
+  print stoke_cmd
   if dofork
     Process.fork do
       `#{time_cmd}`
