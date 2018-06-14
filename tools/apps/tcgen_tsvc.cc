@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
     for(size_t i = 0; i < llvm_segment.size(); ++i) {
       uint64_t addr = llvm_segment_start + i;
       llvm.set_valid(addr, true);
-      llvm[addr] = rand() % 256;
+      llvm[addr] = llvm_segment[i];
     }
     tc.segments.push_back(llvm);
 
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
     for(size_t i = 0; i < gcc_segment.size(); ++i) {
       uint64_t addr = gcc_segment_start + i;
       gcc.set_valid(addr, true);
-      gcc[addr] = rand() % 256;
+      gcc[addr] = gcc_segment[i];
     }
     tc.segments.push_back(gcc);
 

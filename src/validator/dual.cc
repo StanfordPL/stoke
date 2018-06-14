@@ -9,7 +9,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { }
+#define DEBUG_LEARN_STATE_DATA(X) { X }
 #define DEBUG_IS_PREFIX(X) { }
 #define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
 

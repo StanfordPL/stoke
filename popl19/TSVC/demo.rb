@@ -89,15 +89,18 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--target_bound 10",
     "--rewrite_bound 2",
     "--assume \"t_%rdi<=16\"",
-    "2> traces/#{name}.err",
-    "| tee traces/#{name}"
   ]
 
   puts "Recording data in traces/#{name}"
+  io = "2> traces/#{name}.err | tee traces/#{name}"
   stoke_cmd = "stoke_debug_verify #{stoke_args.join(" ")}"
-  time_cmd = "/usr/bin/time -o times/#{name} #{stoke_cmd}"
+  time_cmd = "/usr/bin/time -o times/#{name} #{stoke_cmd} #{io}"
 
-  print stoke_cmd
+  File.open("traces/#{name}.cmd", 'w') do |file|
+    file.write(stoke_cmd)
+  end
+
+  puts time_cmd
   if dofork
     Process.fork do
       `#{time_cmd}`
