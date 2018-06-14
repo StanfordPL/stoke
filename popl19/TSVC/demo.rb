@@ -4,7 +4,7 @@
 
 def print_usage
   puts "usage: ./demo.rb verify <compiler1> <compiler2> <benchmark>"
-  puts "       ./demo.rb verify-all"
+  puts "       ./demo.rb verify-all <list>"
   puts "       ./demo.rb check-tc-all"
   puts ""
 end
@@ -17,8 +17,8 @@ def check_file(s)
   end
 end
   
-def validate_all
-  File.readlines('benchmarks').each do |line|
+def validate_all(filename)
+  File.readlines(filename).each do |line|
     benchmark = line.strip
     validate "baseline", "gcc", benchmark, true
     validate "baseline", "llvm", benchmark, true
@@ -26,8 +26,8 @@ def validate_all
   Process.waitall
 end
 
-def check_all_testcases
-  File.readlines('benchmarks').each do |line|
+def check_all_testcases(filename)
+  File.readlines(filename).each do |line|
     benchmark = line.strip
     check_testcases 'baseline', benchmark, 'testcases/16'
     check_testcases 'gcc',      benchmark, 'testcases/16'
@@ -114,12 +114,12 @@ if ARGV[0] == "verify" then
     print_usage
   end
 elsif ARGV[0] == "verify-all" then
-  validate_all
+  validate_all ARGV[1]
   while true do
     sleep 10
   end
 elsif ARGV[0] == "check-tc-all" then
-  check_all_testcases
+  check_all_testcases ARGV[1]
 else
   print_usage
 end

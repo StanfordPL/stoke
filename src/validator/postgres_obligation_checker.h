@@ -30,7 +30,7 @@ public:
 
   PostgresObligationChecker(std::string connection_string) : 
     handler_(), filter_(handler_), connection_string_(connection_string),
-    connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL)
+    connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL), dispatches_(0)
   {
     enable_z3(true);
     enable_cvc4(true);
@@ -100,6 +100,7 @@ private:
   pqxx::pipeline* pipeline_;
   pqxx::transaction_base* pipeline_tx_;
 
+  size_t dispatches_;
   /** Solver functionality */
   bool enable_z3_;
   bool enable_cvc4_;

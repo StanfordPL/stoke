@@ -79,6 +79,10 @@ void PostgresObligationChecker::make_tables() {
   tx3.exec(sql_proof_obligation_queue);
   tx3.commit();
 
+  nontransaction tx4(connection_);
+  tx4.exec("SET SESSION synchronous_commit TO OFF");
+  tx4.commit();
+
   cout << "make_tables() complete" << endl;
 
 }
@@ -106,16 +110,17 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.write_text(ss);
   auto hash = md5(ss.str());
 
-  //if(pipeline_ == NULL) {
-    //pipeline_tx_ = new nontransaction(connection_);
-    //pipeline_ = new pipeline(*pipeline_tx_);
-  //}
+  if(pipeline_ == NULL) {
+    pipeline_tx_ = new nontransaction(connection_);
+    pipeline_ = new pipeline(*pipeline_tx_);
+    pipeline_->retain(2);
+  }
 
   /** Add to proof obligations */
-  nontransaction ntx1(connection_);
+  //nontransaction ntx1(connection_);
 
-  auto hash_esc = ntx1.esc(hash);
-  auto prob_esc = ntx1.esc(ss.str());
+  auto hash_esc = pipeline_tx_->esc(hash);
+  auto prob_esc = pipeline_tx_->esc(ss.str());
 
   stringstream sql_add_po;
   sql_add_po << "INSERT INTO ProofObligation(hash, problem) "
@@ -123,13 +128,13 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
              << "WHERE"
              << "   NOT EXISTS (SELECT hash FROM ProofObligation WHERE hash='" << hash_esc << "')";
 
-  ntx1.exec(sql_add_po.str().c_str());
-  ntx1.commit();
-  //pipeline_->insert(sql_add_po.str());
+  //ntx1.exec(sql_add_po.str().c_str());
+  //ntx1.commit();
+  pipeline_->insert(sql_add_po.str());
   //cout << "SQL" << endl << sql_add_po.str() << endl;
 
   /** Add to queue, as needed */
-  nontransaction ntx2(connection_);
+  //nontransaction ntx2(connection_);
   stringstream sql_add_poq;
   sql_add_poq << "INSERT INTO ProofObligationQueue(hash, solver, strategy) "
               << "SELECT '" << hash_esc << "', tmp.solver, tmp.strategy FROM "
@@ -140,12 +145,16 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
               << "    WHERE hash='" << hash_esc << "' "
               << "      AND solver=tmp.solver AND strategy=tmp.strategy)) "
               << "AND "
+              << "   (NOT EXISTS (SELECT hash FROM ProofObligationResult "
+              << "    WHERE hash='" << hash_esc << "' "
+              << "      AND error is null)) " 
+              << "AND "
               << "   (NOT EXISTS (SELECT hash FROM ProofObligationQueue "
               << "    WHERE hash='" << hash_esc << "'"
               << "      AND solver=tmp.solver AND strategy=tmp.strategy))";
-  ntx2.exec(sql_add_poq.str().c_str());
-  ntx2.commit();
-  //pipeline_->insert(sql_add_poq.str());
+  //ntx2.exec(sql_add_poq.str().c_str());
+  //ntx2.commit();
+  pipeline_->insert(sql_add_poq.str());
   //cout << "SQL" << endl << sql_add_poq.str() << endl;
 
   /** Add to job list */
@@ -154,6 +163,18 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   j.optionals.push_back(optional);
 
   cout << "Dispatching hash " << hash << endl;
+
+  dispatches_++;
+  if(dispatches_ % 100 == 0) {
+    cout << "Waiting on pipeline..." << endl;
+    pipeline_->complete();
+    cout << "Closing up nontransaction..." << endl;
+    pipeline_tx_->commit();
+    delete pipeline_;
+    delete pipeline_tx_;
+    pipeline_ = NULL;
+    pipeline_tx_ = NULL;
+  }
 
 }
 
@@ -279,6 +300,13 @@ void PostgresObligationChecker::poll_database() {
 
 /** Blocks until all the checking has done and the callbacks have been called. */
 void PostgresObligationChecker::block_until_complete() {
+  if(pipeline_) {
+    cout << "Waiting on pipeline..." << endl;
+    pipeline_->complete();
+    cout << "Closing up nontransaction..." << endl;
+    pipeline_tx_->commit();
+  }
+
   cout << "Polling!" << endl;
 
   poll_database();
