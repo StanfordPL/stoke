@@ -165,7 +165,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   cout << "Dispatching hash " << hash << endl;
 
   dispatches_++;
-  if(dispatches_ % 100 == 0) {
+  if(dispatches_ % 50 == 0) {
     cout << "Waiting on pipeline..." << endl;
     pipeline_->complete();
     cout << "Closing up nontransaction..." << endl;

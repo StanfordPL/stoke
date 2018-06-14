@@ -64,7 +64,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   prefix = "#{benchmark}_#{compiler1}_#{compiler2}"
   name = "#{prefix}.#{num}"
 
-  testcase_file = "testcases/8"
+  testcase_file = "testcases/96"
   check_file "#{compiler1}/#{benchmark}.s"
   check_file "#{compiler2}/#{benchmark}.s"
   check_file testcase_file

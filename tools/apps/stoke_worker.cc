@@ -719,11 +719,14 @@ CpuStates fetch_testcases(const char* testcase_hash) {
   string filename = filename_ss.str();
 
   bad = stat(filename.c_str(), &status);
+  int sleep_time = 1;
   while(bad || !S_ISREG(status.st_mode)) {
     fetch_testcases_db(testcase_hash);
     bad = stat(filename.c_str(), &status);
     if(bad || !S_ISREG(status.st_mode)) {
-      sleep(10); // apparently the testcases haven't been uploaded
+      sleep(sleep_time); // apparently the testcases haven't been uploaded
+      if(sleep_time < 1024)
+        sleep_time*=2;
     }
   }
 
@@ -909,6 +912,7 @@ ConditionQueue<T>* make_queue(size_t n, string name) {
 template <typename T>
 pid_t spawn_producer(ConditionQueue<T>& queue) {
 
+  int sleep_time = 1;
   pid_t pid = fork();
   if(!pid) {
     vector<T*> entries;
@@ -930,6 +934,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
       cout << getpid() << ": " << queue.get_name() << ": we have " << space << " much space.. querying."  << endl;
       size_t n = select_job(c, entries, space);
       if(n > 0) {
+        sleep_time = 1;
         cout << getpid() << ": adding " << n << " jobs to queue." << endl;
         queue.insert_jobs(entries);
         for(auto it : entries)
@@ -938,7 +943,9 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
       } else {
         cout << getpid() << ": no jobs in database ready." << endl;
       }
-      sleep(10);
+      sleep(sleep_time);
+      if(sleep_time < 1024)
+        sleep_time *= 2;
     }
   }
 
@@ -965,7 +972,6 @@ void make_workers(ConditionQueue<ObligationQueueEntry>& obligation_queue,
         if(p < 0) {
           perror("waitpid");
           exit(1);
-          sleep(1);
         }
       }
 
