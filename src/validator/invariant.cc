@@ -87,6 +87,8 @@ Invariant* Invariant::deserialize(istream& in) {
     return new ImplicationInvariant(in);
   } else if (class_name == "InequalityInvariant") {
     return new InequalityInvariant(in);
+  } else if (class_name == "MemoryConstant") {
+    return new MemoryConstantInvariant(in);
   } else if (class_name == "MemoryEqualityInvariant") {
     return new MemoryEqualityInvariant(in);
   } else if (class_name == "MemoryNullInvariant") {
