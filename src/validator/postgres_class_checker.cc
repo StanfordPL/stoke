@@ -137,7 +137,8 @@ int PostgresClassChecker::check(
       target_bound_, 
       rewrite_bound_, 
       pointer_ranges_, 
-      extra_assumptions_);
+      extra_assumptions_,
+      assume_always_);
 
   stringstream ss;
   problem.serialize(ss);

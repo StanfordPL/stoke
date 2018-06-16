@@ -67,7 +67,7 @@ public:
     os << m_;
     if (is_rewrite_)
       os << "'";
-    os << " == " << byte_;
+    os << " == " << (uint64_t)byte_;
 
     return os;
   }
@@ -75,15 +75,17 @@ public:
   virtual std::ostream& serialize(std::ostream& out) const {
     out << "MemoryConstant" << std::endl;
     const x64asm::Operand* op = static_cast<const x64asm::Operand*>(&m_);
-    out << *op << " " << is_rewrite_ << " " << byte_ << std::endl;
+    out << *op << " " << is_rewrite_ << " " << std::dec << (uint64_t)byte_ << std::endl;
     return out;
   }
 
   MemoryConstantInvariant(std::istream& is) : m_(x64asm::M8(x64asm::Imm32(0))) {
     x64asm::M8 m8(x64asm::Imm32(0));
-    is >> std::ws >> m8 >> is_rewrite_ >> byte_;
+    uint64_t byte;
+    is >> std::ws >> m8 >> is_rewrite_ >> std::dec >> byte;
     CHECK_STREAM(is);
     m_ = m8;
+    byte_ = (uint8_t)byte;
   }
 
 private:

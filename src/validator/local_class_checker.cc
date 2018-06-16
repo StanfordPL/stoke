@@ -247,9 +247,14 @@ ConjunctionInvariant* LocalClassChecker::get_fail_invariant() const {
 /** returns true if everything was successful. */
 void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, stringstream* ss) {
 
-  auto start_inv = dual.get_invariant(edge.from);
-  auto end_inv = dual.get_invariant(edge.to);
-  auto partial_inv = (*end_inv)[conjunct];
+  ConjunctionInvariant* start_inv = dual.get_invariant(edge.from);
+  ConjunctionInvariant* start_inv_copy = new ConjunctionInvariant(*start_inv);
+  for(auto inv : assume_always_) {
+    start_inv_copy->add_invariant(inv);
+  }
+
+  ConjunctionInvariant* end_inv = dual.get_invariant(edge.to);
+  Invariant* partial_inv = (*end_inv)[conjunct];
   *ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
   *ss << "    Edge " << edge << endl;
   *ss << "    Proving " << *partial_inv << endl;
@@ -275,7 +280,7 @@ void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState&
   auto target = dual.get_target();
   auto rewrite = dual.get_rewrite();
   obligation_checker_.check(target, rewrite, edge.from.ts, edge.from.rs,
-                 edge.te, edge.re, *start_inv, *partial_inv, testcases, callback_, (void*)info);
+                 edge.te, edge.re, *start_inv_copy, *partial_inv, testcases, callback_, (void*)info);
 
 }
 

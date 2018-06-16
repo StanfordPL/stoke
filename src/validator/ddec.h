@@ -77,6 +77,12 @@ public:
     return *this;
   }
 
+  /** Add an assumption that holds at every point (e.g. read-only memory) */
+  DdecValidator& assume_always(Invariant* assumption) {
+    assume_always_.push_back(assumption);
+    return *this;
+  }
+
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
@@ -146,6 +152,9 @@ private:
     ConjunctionInvariant* invariant
   );
 
+
+  /** Invariants assumed to hold at any point. */
+  std::vector<Invariant*> assume_always_;
 
   /** Bound */
   size_t target_bound_;

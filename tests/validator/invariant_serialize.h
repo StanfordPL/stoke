@@ -216,8 +216,15 @@ TEST_F(ValidatorInvariantSerializationTest, TrueInvariant) {
   check(inv);
 }
 
+TEST_F(ValidatorInvariantSerializationTest, MemoryConstantInvariant) {
+  x64asm::M8 m(x64asm::rdx);
+  auto inv = new MemoryConstantInvariant(m, true, 0x40);
+  check(inv);
+}
 
-
-
-
+TEST_F(ValidatorInvariantSerializationTest, MemoryConstantInvariant2) {
+  x64asm::M8 m(x64asm::Imm32(0xdeadbeef));
+  auto inv = new MemoryConstantInvariant(m, false, 0xf0);
+  check(inv);
+}
 } //namespace stoke

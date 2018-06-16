@@ -54,6 +54,7 @@ public:
     size_t rewrite_bound;
     std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges;
     std::vector<Invariant*> extra_assumptions;
+    std::vector<Invariant*> assume_always;
 
     static Problem deserialize(std::istream& is);
     std::ostream& serialize(std::ostream& os) const;
@@ -62,13 +63,15 @@ public:
             const DualBuilder::EquivalenceClassMap& equ_class,
             size_t tb, size_t rb,
             const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng,
-            const std::vector<Invariant*>& assume) : 
+            const std::vector<Invariant*>& assume,
+            const std::vector<Invariant*>& always) : 
       template_pod(da),
       equivalence_class(equ_class),
       target_bound(tb),
       rewrite_bound(rb),
       pointer_ranges(ptr_rng),
-      extra_assumptions(assume)
+      extra_assumptions(assume),
+      assume_always(always)
     {
 
     }
@@ -110,6 +113,12 @@ public:
     return *this;
   }
 
+  /** Add an assumption that holds at every point (e.g. read-only memory) */
+  ClassChecker& assume_always(Invariant* assumption) {
+    assume_always_.push_back(assumption);
+    return *this;
+  }
+
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or
@@ -138,6 +147,7 @@ protected:
   std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
   /** Extra invariants to assume at the beginning. */
   std::vector<Invariant*> extra_assumptions_;
+  std::vector<Invariant*> assume_always_;
 
   bool stop_early_;
 };

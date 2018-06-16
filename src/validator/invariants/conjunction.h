@@ -28,6 +28,9 @@ public:
 
   ConjunctionInvariant(std::vector<Invariant*> invariants) : invariants_(invariants) { }
 
+  /** makes a copy of the container, but not a deep copy */
+  ConjunctionInvariant(ConjunctionInvariant* other) : invariants_(other->invariants_) { }
+
   ConjunctionInvariant& add_invariants(ConjunctionInvariant* invs) {
     for (size_t i = 0; i < invs->size(); ++i)
       add_invariant((*invs)[i]);
