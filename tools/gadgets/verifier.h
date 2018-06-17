@@ -25,6 +25,7 @@
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 #include "src/validator/invariants/expr.h"
+#include "src/validator/invariants/memory_constant.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
@@ -133,6 +134,35 @@ private:
 
   }
 
+  void add_readonly_memory(DdecValidator& ddec, Memory m) {
+    std::cout << "PROCESSING RO SEGMENT" << std::endl;
+
+    // watch out for overflow here!!
+    for(uint64_t i = m.lower_bound(); i - m.lower_bound() < m.size(); ++i) {
+      if(m.is_valid(i)) {
+        x64asm::Imm32 imm(i);
+        x64asm::M8 ref(imm);
+        auto inv = new MemoryConstantInvariant(ref, true, m[i]);
+        ddec.assume_always(inv);
+        std::cout << "  Adding invariant " << *inv << std::endl;
+      }
+    }
+  }
+
+  void add_readonly_memory(DdecValidator& ddec) {
+    auto ro_testcases = rodata.value();
+
+    for(auto& tc : ro_testcases) {
+      std::cout << "PROCESSING RO TESTCASE" << std::endl;
+      add_readonly_memory(ddec, tc.stack);
+      add_readonly_memory(ddec, tc.heap);
+      add_readonly_memory(ddec, tc.data);
+      for(auto& segment : tc.segments) {
+        add_readonly_memory(ddec, segment);
+      }
+    }
+  }
+
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv, ClassChecker& cc) {
     if (s == "bounded") {
       oc_ = new ObligationCheckerGadget();
@@ -149,6 +179,7 @@ private:
       ddec->set_use_handhold(handhold_arg.value());
       add_pointer_ranges(*ddec);
       add_assumptions(*ddec);
+      add_readonly_memory(*ddec);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(sandbox, fxn);

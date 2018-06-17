@@ -68,6 +68,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   check_file "#{compiler1}/#{benchmark}.s"
   check_file "#{compiler2}/#{benchmark}.s"
   check_file testcase_file
+  check_file "rodata"
 
   while File.exist?("traces/#{name}")
     num = num+1
@@ -81,6 +82,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--target #{compiler1}/#{benchmark}.s",
     "--rewrite #{compiler2}/#{benchmark}.s",
     "--testcases #{testcase_file}",
+    "--rodata rodata",
     "--heap_out",
     "--stack_out",
     "--max_jumps 129000",

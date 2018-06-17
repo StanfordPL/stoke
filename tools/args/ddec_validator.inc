@@ -18,6 +18,8 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
 #include "src/solver/solver.h"
+#include "src/state/cpu_states.h"
+#include "tools/io/cpu_states.h"
 #include "tools/io/solver.h"
 
 namespace stoke {
@@ -46,6 +48,11 @@ cpputil::ValueArg<std::string>& class_checker_arg =
 cpputil::FlagArg& handhold_arg =
   cpputil::FlagArg::create("handhold")
   .description("Use a handhold.txt file to pick the equivalence class to verifhy");
+
+cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& rodata =
+  cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("rodata");
+
+
 } // namespace stoke
 
 #endif

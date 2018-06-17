@@ -108,13 +108,22 @@ public:
   }
 
   /** Add an extra assumption at beginning. */
-  ClassChecker& assume(Invariant* assumption) {
+  virtual ClassChecker& assume(Invariant* assumption) {
+    for(auto curr : extra_assumptions_)
+      if(curr == assumption)
+        return *this;
+
     extra_assumptions_.push_back(assumption);
     return *this;
   }
 
   /** Add an assumption that holds at every point (e.g. read-only memory) */
-  ClassChecker& assume_always(Invariant* assumption) {
+  virtual ClassChecker& assume_always(Invariant* assumption) {
+    for(auto curr : assume_always_)
+      if(curr == assumption)
+        return *this;
+
+    std::cout << "ClassChecker getting assume always: " << *assumption << std::endl;
     assume_always_.push_back(assumption);
     return *this;
   }

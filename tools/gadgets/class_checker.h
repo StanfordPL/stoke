@@ -73,6 +73,10 @@ public:
     return child_->assume(assumption);
   }
 
+  ClassChecker& assume_always(Invariant* assumption) {
+    return child_->assume(assumption);
+  }
+
   /** Check.  This performs the requested obligation check, and depending on the implementation may
     choose to either:
       (1) block, call the callback (in the same thread/process), and then return; or
