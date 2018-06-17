@@ -96,13 +96,13 @@ public:
   }
 
   /** Set strategy for aliasing */
-  ClassChecker& set_stop_early(bool b) {
+  virtual ClassChecker& set_stop_early(bool b) {
     stop_early_ = b;
     return *this;
   }
 
   /** Set that a range of input locations must be pointers */
-  ClassChecker& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) {
+  virtual ClassChecker& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) {
     pointer_ranges_.push_back({begin, end});
     return *this;
   }

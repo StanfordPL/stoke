@@ -90,7 +90,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--def_in #{@default_def_ins}",
     "--target_bound 10",
     "--rewrite_bound 2",
-    "--assume \"t_%rdi<=16\"",
+    "--assume \"t_%rdi<=15\"",
   ]
 
   puts "Recording data in traces/#{name}"
