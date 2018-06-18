@@ -34,6 +34,23 @@ tcgen:
 	tcgen_tsvc --num_testcases 16 >> testcases/96
 	tcgen_tsvc --num_testcases 16 >> testcases/96
 	tcgen_tsvc --num_testcases 16 >> testcases/96
+	# 192
+	tcgen_tsvc --num_testcases 8 > testcases/192
+	tcgen_tsvc --num_testcases 8 >> testcases/192
+	tcgen_tsvc --num_testcases 8 >> testcases/192
+	tcgen_tsvc --num_testcases 8 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 12 >> testcases/192
+	tcgen_tsvc --num_testcases 16 >> testcases/192
+	tcgen_tsvc --num_testcases 16 >> testcases/192
+	tcgen_tsvc --num_testcases 16 >> testcases/192
+	tcgen_tsvc --num_testcases 16 >> testcases/192
 	# sixteen
 	tcgen_tsvc --num_testcases 16 > testcases/16
 

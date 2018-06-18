@@ -463,8 +463,8 @@ void DualAutomata::remove_prefixes() {
           if (is_edge_prefix(e1.te, e2.te) && is_edge_prefix(e1.re, e2.re)) {
             remove_edge(e2);
             done = false;
+            break;
           }
-          break;
         }
         if (done == false)
           break;

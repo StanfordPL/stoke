@@ -47,7 +47,7 @@ class DischargeState {
 
     auto start_inv = dual_.get_invariant(edge.from);
     auto end_inv = (*dual_.get_invariant(edge.to))[conjunct];
-    std::cout << s;
+    std::cout << s << std::endl;
 
     if(!success) {
       auto state = edge.to;

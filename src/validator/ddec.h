@@ -89,7 +89,8 @@ public:
 
 private:
 
-  void class_checker_callback(const ClassChecker::Result& result, void* optional);
+  /** Callback for class checker.  Returns 'true' if it should abort. */
+  bool class_checker_callback(const ClassChecker::Result& result, void* optional);
 
   // Enumerating equivalence classes
   bool init_class_enumeration(DualAutomata& pod);

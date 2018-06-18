@@ -823,7 +823,7 @@ pid_t spawn_worker(T* item) {
       cout << getpid() << ": expiry launched" << endl;
 
       // Prepare the callback
-      typename T::Callback callback = [&] (typename T::Result& result, void* optional) {
+      typename T::Callback callback = [&] (typename T::Result& result, void* optional) -> bool {
         // tell expiry thread it can stop 
         unique_lock<mutex> lock(cond_mu);
         done = true;
@@ -841,6 +841,7 @@ pid_t spawn_worker(T* item) {
         // Clean up
         expiry_thread.join();
         exit(0);
+        return false;
       };
 
       // set timeout
@@ -1104,10 +1105,11 @@ bool debug_hash_obligation(string hash) {
 
 bool debug_hash_checker(string hash) {
 
-  ClassChecker::Callback callback = [&] (ClassChecker::Result& result, void* optional) {
+  ClassChecker::Callback callback = [&] (ClassChecker::Result& result, void* optional) -> bool {
     cout << "verified=" << result.verified << endl;
     if(result.error_message.size())
       cout << "error=" << result.error_message << endl;
+    return false;
   };
 
   connection c(postgres_arg.value());

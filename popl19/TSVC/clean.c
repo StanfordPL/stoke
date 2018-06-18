@@ -68,7 +68,7 @@ TYPE s1111(int count) {
   return 0;
 }
 
-// llvm vectorizes this
+// gcc vectorizes this
 TYPE s112(int count) {
   for (int i = count*8-1; i >= 1; i--) {
     a[i] = a[i-1] + b[i];
@@ -95,6 +95,7 @@ TYPE s116(int count) {
   return 0;
 }
 
+// llvm vectorizes
 TYPE s121(int count) {
   for (int i = 0; i < count*8-1; i++) {
     a[i] = a[i+1] + b[i];

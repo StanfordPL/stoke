@@ -78,7 +78,7 @@ public:
   };
 
   
-  typedef std::function<void (Result&, void*)> Callback;
+  typedef std::function<bool (Result&, void*)> Callback;
 
   ClassChecker(DataCollector& data_collector,
                ControlLearner& control_learner,

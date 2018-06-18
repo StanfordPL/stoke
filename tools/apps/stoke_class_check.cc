@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
   ObligationChecker& obligation_checker = *(new ObligationCheckerGadget());
 
   /** Prepare the callback */
-  ClassChecker::Callback callback = [] (ClassChecker::Result& result, void* optional) {
+  ClassChecker::Callback callback = [] (ClassChecker::Result& result, void* optional) -> bool {
     /** On standard output, write the solution. */
     if(filename_arg.value().size() > 0) {
       ofstream of(filename_arg.value());
@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
       cout << result;
     }
     exit(0);
+    return false;
   };
 
   /** On standard input, read in the problem. */

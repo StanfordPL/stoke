@@ -371,7 +371,7 @@ ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
   return inv_trans;
 }
 
-void DdecValidator::class_checker_callback(const ClassChecker::Result& result, void* optional) {
+bool DdecValidator::class_checker_callback(const ClassChecker::Result& result, void* optional) {
   JobInfo* ji = static_cast<JobInfo*>(optional);
   cout << "[class_checker_callback] number=" << ji->number << endl 
        << "  verified=" << result.verified << endl
@@ -383,8 +383,10 @@ void DdecValidator::class_checker_callback(const ClassChecker::Result& result, v
    
   if(result.verified) {
     verified_++;
+    return true;
   }
   delete ji;
+  return false;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
