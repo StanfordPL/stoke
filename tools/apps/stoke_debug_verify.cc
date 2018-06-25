@@ -84,8 +84,7 @@ int main(int argc, char** argv) {
   DataCollector data_collector(sb);
   ControlLearner control_learner(target, rewrite, sb);
   ObligationCheckerGadget obligation_checker;
-  InvariantLearner invariant_learner(target, rewrite);
-  ClassCheckerGadget ccg(data_collector, control_learner, obligation_checker, invariant_learner);
+  ClassCheckerGadget ccg(data_collector, control_learner, obligation_checker, learner);
 
   VerifierGadget verifier(sb, fxn, learner, ccg);
 
@@ -105,7 +104,7 @@ int main(int argc, char** argv) {
   Console::msg() << endl;
 
   if (strategy_arg.value() == "none") {
-    Console::warn() << "'--stragegy none' passed, so no verification is done." << endl;
+    Console::warn() << "'--strategy none' passed, so no verification is done." << endl;
     return 0;
   }
 

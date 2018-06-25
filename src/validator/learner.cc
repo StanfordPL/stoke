@@ -412,27 +412,41 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       /** collect all the differences. */
       uint64_t min_difference = (uint64_t)(-1);
       uint64_t max_difference = 0;
+      uint64_t max_count = 0;
+      uint64_t min_count = 0;
       for(size_t i = 0 ; i < target_states.size(); ++i) {
         auto a = v1.from_state(target_states[i], rewrite_states[i]);
         auto b = v2.from_state(target_states[i], rewrite_states[i]);
         uint64_t difference = b - a;
         //cout << "  difference " << difference << endl;
-        if(difference > max_difference)
+        if(difference > max_difference) {
           max_difference = difference;
-        if(difference < min_difference)
+          max_count = 1;
+        } else if (difference == max_difference) {
+          max_count++;
+        }
+        if(difference < min_difference) {
           min_difference = difference;
+          min_count = 1;
+        } else if (difference == min_difference) {
+          min_count++;
+        }
       }
       //cout << "  max " << max_difference << endl;
       //cout << "  min " << min_difference << endl;
 
       // i + constant <= j
-      auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
-      outputs.push_back(inv);
+      if(min_count > 1) {
+        auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
+        outputs.push_back(inv);
+      }
       //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
-      auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
-      outputs.push_back(inv2);
+      if(max_count > 1) {
+        auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
+        outputs.push_back(inv2);
+      }
       //cout << "  generating " << *inv2 << endl;
     }
   }
@@ -1088,6 +1102,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
 
   // Learn easy equalities over a really huge set of (sub) registers
+  cout << "enable_vector_vars_ = " << enable_vector_vars_ << endl;
   if(enable_vector_vars_) {
     vector<Variable> vector_columns;
     auto vector_vars_target = sub_registers_for_regset(target_regs, false);
@@ -1190,6 +1205,8 @@ std::vector<Variable> InvariantLearner::sub_registers_for_regset(x64asm::RegSet 
       size_t pow2 = (1 << k);
       for(size_t i = 0; i < bytes; i += pow2) {
         Variable sub(*r, is_rewrite, pow2, i);
+        cout << "Adding subregister " << *r << " is_rewrite=" << is_rewrite << " pow2=" << pow2 << " i=" << i << endl;
+        cout << sub << endl;
         outputs.push_back(sub);
       }
     }

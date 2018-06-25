@@ -64,7 +64,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   prefix = "#{benchmark}_#{compiler1}_#{compiler2}"
   name = "#{prefix}.#{num}"
 
-  testcase_file = "testcases/96"
+  testcase_file = "testcases/192"
   check_file "#{compiler1}/#{benchmark}.s"
   check_file "#{compiler2}/#{benchmark}.s"
   check_file testcase_file
@@ -83,6 +83,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--rewrite #{compiler2}/#{benchmark}.s",
     "--testcases #{testcase_file}",
     "--rodata rodata",
+    "--vector_invariants",
     "--heap_out",
     "--stack_out",
     "--max_jumps 129000",

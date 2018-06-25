@@ -450,9 +450,10 @@ void DualAutomata::remove_prefixes() {
 
   bool done = false;
 
+  auto states = get_edge_reachable_states();
   while (!done) {
     done = true;
-    for (auto state : data_reachable_states_) {
+    for (auto state : states) {
       auto edges = next_edges_[state];
 
       for (auto e1 : edges) {
@@ -460,10 +461,14 @@ void DualAutomata::remove_prefixes() {
           if (e1 == e2)
             continue;
 
+          cout << "Checking for prefix relationship between " << e1 << " AND " << e2 << endl;
           if (is_edge_prefix(e1.te, e2.te) && is_edge_prefix(e1.re, e2.re)) {
+            cout << "   Yes, prefix found" << endl;
             remove_edge(e2);
             done = false;
             break;
+          } else {
+            cout << "   No prefix here" << endl;
           }
         }
         if (done == false)
