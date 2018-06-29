@@ -14,6 +14,7 @@
 
 
 #include <iostream>
+#include <map>
 #include <vector>
 
 #ifndef _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
@@ -256,7 +257,14 @@ public:
     return memory_manager_;
   }
 
+  //static std::vector<SymBool> get_axioms();
+
 private:
+
+#ifdef STOKE_UF_MULTIPLICATION
+  /** Get multiplication function */
+  static std::map<size_t, SymFunction*> multiplication_functions_; 
+#endif
 
   /** Memory Manager */
   static thread_local SymMemoryManager* memory_manager_;

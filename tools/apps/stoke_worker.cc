@@ -945,7 +945,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
         cout << getpid() << ": no jobs in database ready." << endl;
       }
       sleep(sleep_time);
-      if(sleep_time < 1024)
+      if(sleep_time < 64)
         sleep_time *= 2;
     }
   }

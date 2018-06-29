@@ -153,7 +153,7 @@ TYPE s1221(int count) {
 }
 
 TYPE s243(int count) {
-  for (int i = 0; i < count-1; i++) {
+  for (int i = 0; i < count*8-1; i++) {
     a[i] = b[i] + c[i  ] * d[i];
     b[i] = a[i] + d[i  ] * e[i];
     a[i] = b[i] + a[i+1] * d[i];
@@ -162,7 +162,7 @@ TYPE s243(int count) {
 }
 
 TYPE s2244(int count) {
-  for (int i = 0; i < count-1; i++) {
+  for (int i = 0; i < count*8-1; i++) {
   	a[i+1] = b[i] + e[i];
 		a[i] = b[i] + c[i];
   }
@@ -269,7 +269,7 @@ TYPE s1351(int count) {
 }
 
 TYPE s452(int count) {
-  for (int i = 0; i < count-1; i++) {
+  for (int i = 0; i < count*8; i++) {
 	  a[i] = b[i] + c[i] * (float) (i+1);
   }
   return 0;

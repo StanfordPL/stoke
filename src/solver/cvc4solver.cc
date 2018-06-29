@@ -25,6 +25,24 @@ using namespace CVC4;
 
 #define DEBUG_CVC4(X) { }
 
+vector<SymBool> split_constraints_cvc4(const vector<SymBool>& constraints) {
+  vector<SymBool> split;
+  for(auto it : constraints) {
+    if(it.type() == SymBool::AND) {
+      auto val = static_cast<const SymBoolAnd*>(it.ptr);
+      SymBool a(val->a_);
+      SymBool b(val->b_);
+      vector<SymBool> temp = {a, b};
+      auto result = split_constraints_cvc4(temp);
+      split.insert(split.begin(), result.begin(), result.end());
+    } else {
+      split.push_back(it);
+    }
+  }
+  return split;
+}
+
+
 
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
@@ -37,7 +55,14 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
   SymTypecheckVisitor tc;
   ExprConverter ec(this);
 
-  for (auto it : constraints) {
+  auto split = split_constraints_cvc4(constraints);
+
+  cout << "CONSTRAINTS - Generic" << endl;
+  for(auto it : split)
+    cout << it << endl;
+
+  cout << "CONSTRAINTS - CVC4" << endl;
+  for (auto it : split) {
 
     if (tc(it) != 1) {
       stringstream ss;
@@ -56,6 +81,7 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
       return false;
     }
 
+    cout << converted << endl;
     smt_->assertFormula(converted);
   }
 
@@ -87,6 +113,13 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bit
     bv[i] = ret.isBitSet(i);
   }
 
+  DEBUG_CVC4(
+    uint64_t value = 0;
+    for(int i = bits-1; i >= 0; --i) {
+      value = value*2 + bv[i];
+    }
+    cout << "model[" << var << "] = " << value << endl;
+  )
   assert(bv.num_bits() == bits);
   return bv;
 }

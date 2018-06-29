@@ -89,8 +89,8 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--max_jumps 129000",
     "--live_out \"{ }\"",
     "--def_in #{@default_def_ins}",
-    "--target_bound 10",
-    "--rewrite_bound 2",
+    "--target_bound 18",
+    "--rewrite_bound 4",
     "--assume \"t_%rdi<=15\"",
   ]
 

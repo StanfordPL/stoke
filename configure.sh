@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help {
-  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4] [--renew-kerberos]"
+  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4] [--renew-kerberos] [--uf-multiplication]"
   echo ""
 }
 
@@ -42,6 +42,11 @@ while :; do
     -h|--help)
       show_help
       exit
+      ;;
+
+    --uf-multiplication)
+      MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_UF_MULTIPLICATION"
+      shift
       ;;
     --debug-ddec)
       MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_DEBUG_DDEC"

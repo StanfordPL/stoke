@@ -212,7 +212,7 @@ std::ostream& operator<<(std::ostream& os, const stoke::Variable& v) {
 
     if (sub_size < total_size) {
       // we need to add some indexing information
-      os << "[" << (v.size*8 + v.offset*8) << ":" << (v.offset*8) << "]";
+      os << "[" << (v.size*8 + v.offset*8 - 1) << ":" << (v.offset*8) << "]";
     }
   } else {
     os << v.name;

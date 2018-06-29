@@ -196,6 +196,12 @@ bool SmtObligationChecker::check_counterexample(
   // First, the counterexample has to pass the invariant.
   if (!assume.check(ceg, ceg2)) {
     cout << "  (Counterexample does not meet assumed invariant.)  P=" << P << " Q=" << Q << " Prove=" << prove << endl;
+    auto conj = static_cast<ConjunctionInvariant&>(assume);
+    for(size_t i = 0; i < conj.size(); ++i) {
+      auto inv = conj[i];
+      if(!inv->check(ceg, ceg2))
+        cout << "    " << *inv << endl;
+    }
     return false;
   }
 
@@ -699,6 +705,7 @@ void SmtObligationChecker::check(
     if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf)) {
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
     } else {
+      ok = false;
       CEG_DEBUG(cout << "  (Spurious counterexample detected) P=" << P << " Q=" << Q << endl;)
     }
 

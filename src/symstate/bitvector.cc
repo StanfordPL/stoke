@@ -24,6 +24,11 @@ using namespace stoke;
 thread_local SymMemoryManager* SymBitVector::memory_manager_ = NULL;
 uint64_t SymBitVector::tmp_counter_ = 0;
 
+#ifdef STOKE_UF_MULTIPLICATION
+std::map<size_t, SymFunction*> SymBitVector::multiplication_functions_;
+#endif
+
+
 /* Various constructors */
 SymBitVector SymBitVector::constant(uint16_t size, uint64_t value) {
   return SymBitVector(new SymBitVectorConstant(size, value));
@@ -71,7 +76,19 @@ SymBitVector SymBitVector::operator%(const SymBitVector& other) const {
 }
 
 SymBitVector SymBitVector::operator*(const SymBitVector& other) const {
+#ifdef STOKE_UF_MULTIPLICATION
+  uint16_t bits = width();
+  auto mf = multiplication_functions_[bits];
+  if(mf == nullptr) {
+    stringstream name;
+    name << "bv_multiply_" << bits;
+    mf = new SymFunction(name.str(), bits, { bits, bits });
+    multiplication_functions_[bits] = mf;
+  }
+  return (*mf)(*this, other);
+#else
   return SymBitVector(new SymBitVectorMult(ptr, other.ptr));
+#endif
 }
 
 SymBitVector SymBitVector::operator!() const {
@@ -257,3 +274,4 @@ std::ostream& std::operator<< (std::ostream& out, const stoke::SymBitVector& bv)
   spv(bv);
   return out;
 }
+

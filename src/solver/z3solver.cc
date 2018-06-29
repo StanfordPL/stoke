@@ -14,6 +14,7 @@
 
 
 #include <iostream>
+#include <fstream>
 #include <chrono>
 
 #include "src/solver/z3solver.h"
@@ -37,6 +38,25 @@ uint64_t Z3Solver::convert_time_ = 0;
 uint64_t Z3Solver::solver_time_ = 0;
 #endif
 
+vector<SymBool> split_constraints(const vector<SymBool>& constraints) {
+  vector<SymBool> split;
+  for(auto it : constraints) {
+    if(it.type() == SymBool::AND) {
+      auto val = static_cast<const SymBoolAnd*>(it.ptr);
+      SymBool a(val->a_);
+      SymBool b(val->b_);
+      vector<SymBool> temp = {a, b};
+      auto result = split_constraints(temp);
+      split.insert(split.begin(), result.begin(), result.end());
+    } else {
+      split.push_back(it);
+    }
+  }
+  return split;
+}
+
+
+
 bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
@@ -52,7 +72,8 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Convert constraints and query to z3 object */
   SymTypecheckVisitor tc;
 
-  const vector<SymBool>* current = &constraints;
+  const vector<SymBool> split = split_constraints(constraints);
+  const vector<SymBool>* current = &split;
   vector<SymBool>* new_constraints = 0;
   bool free_it = false;
 
@@ -103,6 +124,9 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       microseconds convert_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
       convert_time_ += (convert_end - typecheck_end).count();
 #endif
+      DEBUG_Z3(
+      cout << it << endl;
+      cout << constraint << endl;)
       solver_.add(constraint);
     }
 
@@ -120,6 +144,13 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     microseconds solver_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
     if (check_abort()) return false;
+
+    DEBUG_Z3(
+    ofstream ofs("z3-smtlib");
+    string smtlib = solver_.to_smt2();
+    ofs << smtlib << endl;
+    ofs.close();)
+
     auto result = solver_.check();
 #if defined(DEBUG_Z3_INTERFACE_PERFORMANCE) || defined(DEBUG_Z3_PERFORMANCE)
     microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -140,6 +171,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       if (model_ != NULL)
         delete model_;
       model_ = new z3::model(solver_.get_model());
+#ifdef DEBUG_Z3
+      cout << "MODEL: " << endl;
+      cout << *model_ << endl;
+#endif
       return true;
     }
 
