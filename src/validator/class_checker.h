@@ -41,6 +41,9 @@ public:
     std::string error_message;
     std::string source_version;
 
+    // (not serialized)
+    std::string comments;
+
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;
 

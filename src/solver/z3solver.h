@@ -67,6 +67,12 @@ public:
       delete model_;
   }
 
+#ifdef STOKE_Z3_DEBUG_LAST_HASH
+  std::string get_last_hash() {
+    return last_hash_;
+  }
+#endif
+
   /** Check if a query is satisfiable given constraints */
   bool is_sat(const std::vector<SymBool>& constraints);
 
@@ -121,6 +127,9 @@ private:
     return context_.str_symbol(s.c_str());
   }
 
+#ifdef STOKE_Z3_DEBUG_LAST_HASH
+  std::string last_hash_;
+#endif
 
   /** This class converts symbolic bit-vectors into Z3's format. */
   class ExprConverter : public SymMemoVisitor<z3::expr, z3::expr, z3::expr> {

@@ -16,7 +16,7 @@ function error {
 ## START
 
 ## All options are off by default
-MISC_OPTIONS=""
+MISC_OPTIONS="-DSTOKE_Z3_DEBUG_LAST_HASH"
 
 ## Detect platform
 $(grep avx2 /proc/cpuinfo >/dev/null)

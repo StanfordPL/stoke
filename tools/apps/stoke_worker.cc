@@ -548,13 +548,14 @@ void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& res
   // First, add an entry recording what we got
   sql_add_result
     << "INSERT INTO ClassResult "
-    << "  (hash, time_ms, version, verified, error) "
+    << "  (hash, time_ms, version, verified, error, comments) "
     << "VALUES ("
     << "  '" << tx.esc(qe.hash) << "', "
     << "  "  << 0 << ", " // for now
     << "  '" << tx.esc(result.source_version) << "', "
     << "  "  << (result.verified ? "TRUE, " : "FALSE, " ) 
     << "  '"  << tx.esc(result.error_message) << "'"
+    << "  '" << tx.esc(result.comments) << "'"
     << ")";
 
   cout << "SQL: " << sql_add_result.str() << endl;
@@ -671,9 +672,8 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
     oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
 
   // Run the checker
-  static_cast<ObligationChecker*>(&oc)->check(oblig, callback, NULL);
+  static_cast<ObligationChecker*>(&oc)->check(oblig, callback, solver);
   oc.block_until_complete();
-
 }
 
 void fetch_testcases_db(const char* testcase_hash) {
@@ -830,6 +830,23 @@ pid_t spawn_worker(T* item) {
         lock.unlock();
         cond.notify_one();
 
+#ifdef STOKE_Z3_DEBUG_LAST_HASH
+        // Report last hash
+        cout << "Checking last hash" << endl;
+        if(optional != nullptr) {
+          cout << "  Optional not null" << endl;
+          ObligationQueueEntry* oqe = static_cast<ObligationQueueEntry*>((void*)qe);
+          if(strcmp(oqe->solver, "z3") == 0 && strcmp(oqe->strategy, "flat") == 0) {
+            Z3Solver* z3 = static_cast<Z3Solver*>(optional);
+            string last_hash = z3->get_last_hash();
+            stringstream comments;
+            comments << "z3hash: " << last_hash;
+            result.comments = comments.str();
+            cout << "  " << result.comments << endl;
+          }
+        }
+#endif
+
         // Report result to DB
         cout << getpid() << ": got answer!" << endl;
         result.write_text(cout) << endl;
@@ -945,7 +962,7 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
         cout << getpid() << ": no jobs in database ready." << endl;
       }
       sleep(sleep_time);
-      if(sleep_time < 64)
+      if(sleep_time < 128)
         sleep_time *= 2;
     }
   }
@@ -1057,15 +1074,6 @@ void main_loop() {
 
 bool debug_hash_obligation(string hash) {
 
-  ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
-    cout << "verified=" << result.verified << endl;
-    cout << "has_ceg=" << result.has_ceg << endl;
-    if(result.has_error)
-      cout << "error=" << result.error_message << endl;
-    cout << "gen_time=" << result.gen_time_microseconds << endl;
-    cout << "smt_time=" << result.smt_time_microseconds << endl;
-  };
-
   connection c(postgres_arg.value());
   work tx(c);
 
@@ -1076,31 +1084,64 @@ bool debug_hash_obligation(string hash) {
   tx.commit();
   c.disconnect();
 
+  /** Check that a result exists */
   bool found_one = r.size() > 0;
-  if(found_one) {
-    for(auto row : r) {
-      ObligationQueueEntry* qe = new ObligationQueueEntry();
-      qe->id = 0;
-      strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
-      strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
-      strncpy(qe->strategy, alias_strategy_arg.value().c_str(), sizeof(qe->strategy)-1);
-
-      if(solver_arg.value() == Solver::CVC4) {
-        strcpy(qe->solver, "cvc4");
-      } else {
-        strcpy(qe->solver, "z3");
-      }
-
-      cout << "Debugging problem with hash " << qe->hash
-           << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;
-
-      discharge_problem(*qe, callback, true);
-    }
-    return true;
-  } else {
+  if(!found_one) {
     cout << "Problem with hash " << hash << " not found." << endl;
     return false;
   }
+
+  /** Fetch data from that result. */
+  ObligationQueueEntry* qe = new ObligationQueueEntry();
+  for(auto row : r) {
+    qe->id = 0;
+    strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
+    strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
+    strncpy(qe->strategy, alias_strategy_arg.value().c_str(), sizeof(qe->strategy)-1);
+
+  }
+
+  /** Do some parsing */
+  if(solver_arg.value() == Solver::CVC4) {
+    strcpy(qe->solver, "cvc4");
+  } else {
+    strcpy(qe->solver, "z3");
+  }
+
+  cout << "Debugging problem with hash " << qe->hash
+       << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;
+
+
+  ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
+
+#ifdef STOKE_Z3_DEBUG_LAST_HASH
+    // Report last hash
+    cout << "Checking last hash" << endl;
+    if(optional != nullptr) {
+      cout << "  Optional not null" << endl;
+      if(strcmp(qe->solver, "z3") == 0 && strcmp(qe->strategy, "flat") == 0) {
+        Z3Solver* z3 = static_cast<Z3Solver*>(optional);
+        string last_hash = z3->get_last_hash();
+        stringstream comments;
+        comments << "z3hash: " << last_hash;
+        result.comments = comments.str();
+        cout << "  " << result.comments << endl;
+      }
+    }
+#endif
+
+    cout << "verified=" << result.verified << endl;
+    cout << "has_ceg=" << result.has_ceg << endl;
+    if(result.has_error)
+      cout << "error=" << result.error_message << endl;
+    cout << "gen_time=" << result.gen_time_microseconds << endl;
+    cout << "smt_time=" << result.smt_time_microseconds << endl;
+  };
+
+
+  discharge_problem(*qe, callback, true);
+  return true;
+
 }
 
 bool debug_hash_checker(string hash) {

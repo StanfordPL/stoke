@@ -57,11 +57,13 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
   auto split = split_constraints_cvc4(constraints);
 
+  DEBUG_CVC4(
   cout << "CONSTRAINTS - Generic" << endl;
   for(auto it : split)
-    cout << it << endl;
+    cout << it << endl;)
 
-  cout << "CONSTRAINTS - CVC4" << endl;
+  DEBUG_CVC4(
+  cout << "CONSTRAINTS - CVC4" << endl;)
   for (auto it : split) {
 
     if (tc(it) != 1) {
@@ -81,7 +83,7 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
       return false;
     }
 
-    cout << converted << endl;
+    DEBUG_CVC4(cout << converted << endl;)
     smt_->assertFormula(converted);
   }
 

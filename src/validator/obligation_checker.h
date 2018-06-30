@@ -92,6 +92,9 @@ public:
     std::string source_version;
     std::string info;  // for anything else (e.g. hash)
 
+    /** placeholder for local use (not serialized/deserialized) */
+    std::string comments;
+
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;
 

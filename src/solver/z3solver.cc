@@ -22,6 +22,7 @@
 #include "src/symstate/typecheck_visitor.h"
 #include "src/symstate/memo_visitor.h"
 #include "src/symstate/visitor.h"
+#include "src/validator/md5.h"
 
 using namespace stoke;
 using namespace z3;
@@ -150,6 +151,11 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     string smtlib = solver_.to_smt2();
     ofs << smtlib << endl;
     ofs.close();)
+
+#ifdef STOKE_Z3_DEBUG_LAST_HASH
+  string smt = solver_.to_smt2();
+  last_hash_ = md5(smt);
+#endif
 
     auto result = solver_.check();
 #if defined(DEBUG_Z3_INTERFACE_PERFORMANCE) || defined(DEBUG_Z3_PERFORMANCE)
