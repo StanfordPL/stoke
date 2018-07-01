@@ -177,10 +177,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       if (model_ != NULL)
         delete model_;
       model_ = new z3::model(solver_.get_model());
-#ifdef DEBUG_Z3
+      DEBUG_Z3(
       cout << "MODEL: " << endl;
       cout << *model_ << endl;
-#endif
+      )
       return true;
     }
 
