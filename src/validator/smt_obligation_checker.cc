@@ -30,7 +30,7 @@
 
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
 #define DEBUG_MAP_TC(X) {}
