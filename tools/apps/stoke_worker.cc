@@ -554,7 +554,7 @@ void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& res
     << "  "  << 0 << ", " // for now
     << "  '" << tx.esc(result.source_version) << "', "
     << "  "  << (result.verified ? "TRUE, " : "FALSE, " ) 
-    << "  '"  << tx.esc(result.error_message) << "'"
+    << "  '"  << tx.esc(result.error_message) << "', "
     << "  '" << tx.esc(result.comments) << "'"
     << ")";
 
@@ -588,8 +588,7 @@ void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::R
     << "  " << result.smt_time_microseconds << ", "
     << "  '" << tx.esc(result.source_version) << "', "
     << "  " << (result.verified ? "TRUE" : "FALSE" ) << ", "
-    << "  '" << tx.esc(result.comments) << "'"
-    << ")";
+    << "  '" << tx.esc(result.comments) << "'";
 
   if(result.has_error) {
     sql_add_result << ", " << tx.esc(result.error_message);
