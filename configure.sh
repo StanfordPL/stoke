@@ -93,6 +93,15 @@ if [ ! -z $NOCVC4 ]; then
 echo "NOCVC4=$NOCVC4" >> .stoke_config
 fi
 
+path_to_gcc49=$(which gcc-4.9)
+if [ -x "$path_to_gcc49" ]; then
+  echo "CC=$path_to_gcc49" >> .stoke_config
+fi
+
+path_to_gpp49=$(which g++-4.9)
+if [ -x "$path_to_gpp49" ]; then
+  echo "CXX=$path_to_gpp49" >> .stoke_config
+fi
 
 ## All done!
 
