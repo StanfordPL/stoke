@@ -576,7 +576,7 @@ void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::R
   // First, add an entry recording what we got
   sql_add_result
     << "INSERT INTO ProofObligationResult "
-    << "  (hash, solver, strategy, gen_time, smt_time, version, verified"
+    << "  (hash, solver, strategy, gen_time, smt_time, version, verified, comments"
     << ( result.has_error ? ", error" : "")
     << ( result.has_ceg ? ", ceg_target, ceg_rewrite, ceg_target_final, ceg_rewrite_final" : "")
     << ") "
@@ -587,7 +587,9 @@ void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::R
     << "  " << result.gen_time_microseconds << ", "
     << "  " << result.smt_time_microseconds << ", "
     << "  '" << tx.esc(result.source_version) << "', "
-    << "  " << (result.verified ? "TRUE" : "FALSE" );
+    << "  " << (result.verified ? "TRUE" : "FALSE" ) << ", "
+    << "  '" << tx.esc(result.comments) << "'"
+    << ")";
 
   if(result.has_error) {
     sql_add_result << ", " << tx.esc(result.error_message);
