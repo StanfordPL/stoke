@@ -73,6 +73,17 @@ Cfg::id_type ControlLearner::index_to_block(size_t n) {
     return n-target_.num_blocks()-1;
 }
 
+string ControlLearner::index_to_string(size_t n) {
+  stringstream ss;
+  if(index_is_target(n)) {
+    ss << "T";
+  } else {
+    ss << "R";
+  }
+  ss << index_to_block(n);
+  return ss.str();
+}
+
 void ControlLearner::print_basis_vector(IntVector v) {
   bool first = true;
   for (size_t j = 0; j < v.size(); ++j) {
@@ -186,7 +197,12 @@ void ControlLearner::compute() {
 
   /** Debug */
   DEBUG_CONTROL_LEARNER(
-    cout << "DEBUGING FREQUENCY MATRICIES" << endl;
+  cout << "DEBUGGING FREQUENCY MATRICIES" << endl;
+  if(final_matrix.size()) {
+    for(size_t i = 0; i < final_matrix[0].size(); ++i) {
+      cout << " " << index_to_string(i) << endl;
+    }
+  }
   for (size_t i = 0; i < final_matrix.size(); ++i) {
     for (size_t j = 0; j < final_matrix[i].size(); ++j) {
       cout << "  " << final_matrix[i][j];

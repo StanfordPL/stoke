@@ -436,14 +436,14 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       //cout << "  min " << min_difference << endl;
 
       // i + constant <= j
-      if(min_count > 1) {
+      if(min_count > 2) {
         auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
         outputs.push_back(inv);
       }
       //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
-      if(max_count > 1) {
+      if(max_count > 2) {
         auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
         outputs.push_back(inv2);
       }
@@ -469,23 +469,32 @@ vector<RangeInvariant*> InvariantLearner::build_range_invariants(
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
 
-      // first, let's get gcd for all values for just this register
       uint64_t min = (uint64_t)(-1);
       uint64_t max = 0;
+      uint64_t min_count = 0;
+      uint64_t max_count = 0;
       for(auto& it : states) {
         auto value = it[*i];
-        if(value > max)
+        if(value == max) {
+          max_count++;
+        } else if(value > max) {
           max = value;
-        if(value < min)
+          max_count = 1;
+        }
+        if(value == min) {
+          min_count++;
+        } if(value < min) {
           min = value;
+          min_count = 1;
+        }
       }
-      if(min > 0) {
+      if(min_count > 2) {
         Variable v(*i, k);
         auto inv = new RangeInvariant(v, min, (uint64_t)(-1));
         assert(inv->check(target_states, rewrite_states));
         ranges.push_back(inv);
       }
-      if(max < (uint64_t)(-1)) {
+      if(max_count > 2) {
         Variable v(*i, k);
         auto inv = new RangeInvariant(v, 0, max);
         assert(inv->check(target_states, rewrite_states));

@@ -151,6 +151,7 @@ private:
 
   ////////////////////////////// COLUMN TRACKING ////////////////////////////////
 
+  std::string index_to_string(size_t n);
   bool index_is_target(size_t n);
   bool index_is_rewrite(size_t n);
   Cfg::id_type index_to_block(size_t n);

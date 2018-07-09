@@ -461,14 +461,14 @@ void DualAutomata::remove_prefixes() {
           if (e1 == e2)
             continue;
 
-          cout << "Checking for prefix relationship between " << e1 << " AND " << e2 << endl;
+          //cout << "Checking for prefix relationship between " << e1 << " AND " << e2 << endl;
           if (is_edge_prefix(e1.te, e2.te) && is_edge_prefix(e1.re, e2.re)) {
-            cout << "   Yes, prefix found" << endl;
+            //cout << "   Yes, prefix found" << endl;
             remove_edge(e2);
             done = false;
             break;
           } else {
-            cout << "   No prefix here" << endl;
+            //cout << "   No prefix here" << endl;
           }
         }
         if (done == false)

@@ -31,11 +31,11 @@
 
 #include "tools/common/version_info.h"
 
-#ifdef STOKE_DEBUG_CEG
+//#ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
-#else
-#define CEG_DEBUG(X) { }
-#endif
+//#else
+//#define CEG_DEBUG(X) { }
+//#endif
 
 
 

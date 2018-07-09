@@ -60,7 +60,6 @@ TYPE s111(int count) {
   return 0;
 }
 
-// llvm vectorizes this
 TYPE s1111(int count) {
   for (int i = 0; i < count*4; i++) {
 	  a[2*i] = c[i] * b[i] + d[i] * b[i] + c[i] * c[i] + d[i] * b[i] + d[i] * c[i];
@@ -68,7 +67,6 @@ TYPE s1111(int count) {
   return 0;
 }
 
-// gcc vectorizes this
 TYPE s112(int count) {
   for (int i = count*8-1; i >= 1; i--) {
     a[i] = a[i-1] + b[i];
@@ -83,7 +81,6 @@ TYPE s1112(int count) {
   return 0;
 }
 
-// llvm vectorizes this
 TYPE s116(int count) {
   for (int i = 0; i < count*8-5; i+=5) {
     a[i] = a[i + 1] * a[i];
@@ -95,7 +92,6 @@ TYPE s116(int count) {
   return 0;
 }
 
-// llvm vectorizes
 TYPE s121(int count) {
   for (int i = 0; i < count*8-1; i++) {
     a[i] = a[i+1] + b[i];

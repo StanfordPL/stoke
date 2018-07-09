@@ -57,6 +57,64 @@ std::vector<T> FlowInvariantLearner::pick_at_random(const vector<T>& items, size
 
 ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_block,
     Cfg::id_type rewrite_block) {
+  
+  /** These are cached by data collector; no real performance hit here. */
+  const auto& target_traces = data_collector_.get_traces(*target_);
+  const auto& rewrite_traces = data_collector_.get_traces(*rewrite_);
+
+  while(true) {
+    auto inv = get_invariant_inner(target_block, rewrite_block);
+    bool bad = false;
+
+    cout << "[fil] Checking invariant..." << endl;
+    // test this invariant
+    for(size_t tc_index = 0; tc_index < target_traces.size(); ++tc_index) {
+      /** Pick out the traces we're interested in. */
+      auto target_trace = target_traces[tc_index];
+      auto rewrite_trace = rewrite_traces[tc_index];
+
+      /** Add all the shadow variables we'll need later. */
+      add_shadow_variables(*target_, target_trace);
+      add_shadow_variables(*rewrite_, rewrite_trace);
+
+      /** Get all program points in target/rewrite for given block and
+        take the cross-product. */
+      pair<Cfg::id_type, Cfg::id_type> index(0, 0);
+      pair<CpuState, CpuState> state_pair;
+      for (auto t_state : target_trace) {
+        for (auto r_state: rewrite_trace) {
+          if(t_state.block_id == target_block && r_state.block_id == rewrite_block) {
+            bool holds = inv->check(t_state.cs, r_state.cs);
+            if(!holds) {
+              cout << "[fil] ... these invariants are spurious on trace tc_index=" << tc_index << endl;
+              // add this data point
+              index.first = t_state.block_id; 
+              index.second = r_state.block_id;
+              state_pair.first = t_state.cs;
+              state_pair.second = r_state.cs;
+              test_case_pairs_[index].push_back(state_pair);
+
+              // retry
+              bad = true;
+              break;
+            }
+          }
+        }
+        if(bad)
+          break;
+      }
+      if(bad)
+        break;
+    }
+    if(!bad) {
+      cout << "[fil] ... these invariants hold over all test data." << endl;
+      return inv;
+    }
+  }
+}
+
+ConjunctionInvariant* FlowInvariantLearner::get_invariant_inner(Cfg::id_type target_block,
+    Cfg::id_type rewrite_block) {
 
   /** Fetch and unzip the pairs */
   auto pairs = test_case_pairs_[pair<Cfg::id_type, Cfg::id_type>(target_block, rewrite_block)];
@@ -235,7 +293,7 @@ void FlowInvariantLearner::collect_data(size_t tc_index) {
       index.first = t_state.block_id; 
       index.second = r_state.block_id;
       size_t count = test_case_pairs_[index].size();
-      double cutoff = count > 0 ? 50/(double)count : 1;
+      double cutoff = count > 0 ? (double)100/(double)count : 1.0;
       double value = (double)rand()/RAND_MAX;
       if(value < cutoff) {
         state_pair.first = t_state.cs;

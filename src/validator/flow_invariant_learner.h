@@ -29,7 +29,9 @@ public:
   /** Initialize learner for this target/rewrite pair */
   void initialize(Cfg& target, Cfg& rewrite);
 
-  /** Get an invariant corresponding to a pair of basic blocks. */
+  /** Get an invariant corresponding to a pair of basic blocks. This outer function does
+    the work of checking the invariant across all the test data and adding more data
+    if needed. */
   ConjunctionInvariant* get_invariant(Cfg::id_type target_block, Cfg::id_type rewrite_block);
 
   /** Transform an invariant so that it holds on a set of inductive paths. */
@@ -49,6 +51,10 @@ private:
   /** Collect all the CpuStates for each test case, update TCPairMap data structure,
     and record the last pair of states for each test case. */
   void collect_data(size_t tc_id);
+
+  /** Get an invariant corresponding to a pair of basic blocks. */
+  ConjunctionInvariant* get_invariant_inner(Cfg::id_type target_block, Cfg::id_type rewrite_block);
+
 
   /** Select from a vector elements at random. */
   template<typename T>

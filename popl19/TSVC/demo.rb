@@ -1,11 +1,21 @@
 #!/usr/bin/ruby
 
+@options = { 
+  :target_bound => 18,
+  :rewrite_bound => 4
+}
+
 @default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 %rax %rbp %rsp %xmm0 %xmm1 %xmm2 %xmm3 %rbx %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 }\""
 
 def print_usage
-  puts "usage: ./demo.rb verify <compiler1> <compiler2> <benchmark>"
+  puts "usage: ./demo.rb verify [options] <compiler1> <compiler2> <benchmark>"
   puts "       ./demo.rb verify-all <list>"
   puts "       ./demo.rb check-tc-all"
+  puts ""
+  puts "Options:"
+  puts ""
+  puts "  --target-bound n"
+  puts "  --rewrite-bound n"
   puts ""
 end
 
@@ -17,11 +27,15 @@ def check_file(s)
   end
 end
   
-def validate_all(filename)
+def validate_all(filename, compiler)
   File.readlines(filename).each do |line|
     benchmark = line.strip
-    validate "baseline", "gcc", benchmark, true
-    validate "baseline", "llvm", benchmark, true
+    if compiler == :all or compiler == :gcc then
+      validate "baseline", "gcc", benchmark, true
+    end
+    if compiler == :all or compiler == :llvm then
+      validate "baseline", "llvm", benchmark, true
+    end
   end
   Process.waitall
 end
@@ -89,8 +103,8 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--max_jumps 129000",
     "--live_out \"{ }\"",
     "--def_in #{@default_def_ins}",
-    "--target_bound 18",
-    "--rewrite_bound 4",
+    "--target_bound #{@options[:target_bound]}",
+    "--rewrite_bound #{@options[:rewrite_bound]}",
     "--assume \"t_%rdi<=15\"",
   ]
 
@@ -114,13 +128,35 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
 end
 
 if ARGV[0] == "verify" then
-  if ARGV.size == 4 then 
-    validate ARGV[1], ARGV[2], ARGV[3]
+  n=1
+  while ARGV[n].start_with?("-") do
+    if ARGV[n] == "--target-bound" then
+      n = n+1
+      @options[:target_bound] = ARGV[n].to_i
+    end
+    if ARGV[n] == "--rewrite-bound" then
+      n = n+1
+      @options[:rewrite_bound] = ARGV[n].to_i
+    end
+    n = n+1
+  end
+  if ARGV.size == n+3 then 
+    validate ARGV[n], ARGV[n+1], ARGV[n+2]
   else
     print_usage
   end
 elsif ARGV[0] == "verify-all" then
-  validate_all ARGV[1]
+  validate_all ARGV[1], :all
+  while true do
+    sleep 10
+  end
+elsif ARGV[0] == "verify-llvm" then
+  validate_all ARGV[1], :llvm
+  while true do
+    sleep 10
+  end
+elsif ARGV[0] == "verify-gcc" then
+  validate_all ARGV[1], :gcc
   while true do
     sleep 10
   end

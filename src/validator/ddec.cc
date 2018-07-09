@@ -99,19 +99,21 @@ size_t DdecValidator::learn_inductive_paths_at_block(
     for (auto tp : target_paths) {
       for (auto rp : rewrite_paths) {
 
+        auto tp_copy = tp;
+        auto rp_copy = rp;
+
         /** if we have a loop with another block, the last node on the end is redundant. */
-        if (tp.size() > 1 && tp[1] != tp[0]) {
-          tp.erase(tp.end()-1);
+        if (tp_copy.size() > 1 && tp_copy[1] != tp_copy[0]) {
+          tp_copy.erase(tp_copy.end()-1);
         }
-        if (rp.size() > 1 && rp[1] != rp[0]) {
-          rp.erase(rp.end()-1);
+        if (rp_copy.size() > 1 && rp_copy[1] != rp_copy[0]) {
+          rp_copy.erase(rp_copy.end()-1);
         }
 
-
-        if (control_learner_->pair_feasible(tp, rp, true)) {
-          cout << "Found inductive pair " << tp << " and " << rp << endl;
-          target_inductive_paths.push_back(tp);
-          rewrite_inductive_paths.push_back(rp);
+        if (control_learner_->pair_feasible(tp_copy, rp_copy, true)) {
+          cout << "Found inductive pair " << tp_copy << " and " << rp_copy << endl;
+          target_inductive_paths.push_back(tp_copy);
+          rewrite_inductive_paths.push_back(rp_copy);
           found_pair++;
         }
       }
@@ -478,6 +480,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "Class for checker job " << jobid << endl;
       stoke::serialize(cout, cls);
       cout << endl;
+
+      // happy to abort early at this point
+      if(verified_ > 0)
+        return true;
     }
   }
 
