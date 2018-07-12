@@ -300,7 +300,7 @@ void SimpleHandler::add_all() {
     auto a_ext = a.extend(2*n);
     auto b_ext = b.extend(2*n);
 
-    auto full_res = a_ext * b_ext;
+    auto full_res = multiply(a_ext, b_ext);
     auto res = full_res[n-1][0];
     auto truncated_res = res.extend(2*n);
     auto of = full_res != truncated_res;
@@ -323,7 +323,7 @@ void SimpleHandler::add_all() {
     auto a_ext = b.extend(2*n);
     auto b_ext = c.extend(2*n);
 
-    auto full_res = a_ext * b_ext;
+    auto full_res = multiply(a_ext, b_ext);
     auto res = full_res[n-1][0];
     auto truncated_res = res.extend(2*n);
     auto of = full_res != truncated_res;
@@ -359,7 +359,7 @@ void SimpleHandler::add_all() {
     auto a_ext = SymBitVector::constant(n, 0) || a;
     auto b_ext = SymBitVector::constant(n, 0) || b;
 
-    auto full_res = a_ext * b_ext;
+    auto full_res = multiply(a_ext, b_ext);
     auto of = full_res[2*n-1][n] != SymBitVector::constant(n, 0);
 
     if (n == 8) {
@@ -404,7 +404,7 @@ void SimpleHandler::add_all() {
     auto a_ext = a.extend(2*n);
     auto b_ext = b.extend(2*n);
 
-    auto full_res = a_ext * b_ext;
+    auto full_res = multiply(a_ext, b_ext);
     auto of = full_res != full_res[n-1][0].extend(2*n);
 
     if (n == 8) {

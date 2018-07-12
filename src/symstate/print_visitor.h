@@ -239,6 +239,21 @@ public:
   void visit(const SymBoolFalse * const b) {
     os_ << "FALSE";
   }
+  /** Visit a boolean FOR_ALL */
+  void visit(const SymBoolForAll * const b) {
+    os_ << "∀";
+    bool first = true;
+    for(auto v : b->vars_) {
+      if(!first)
+        os_ << ", ";
+      os_ << v.name_;
+      first = false;
+    }
+    os_ << " . ";
+    (*this)(b->a_);
+  }
+
+
 
   /** Visit a boolean NOT */
   void visit(const SymBoolNot * const b) {

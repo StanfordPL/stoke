@@ -82,6 +82,8 @@ private:
       return this->visit(static_cast<const SymBoolEq * const>(b));
     case SymBool::FALSE:
       return this->visit(static_cast<const SymBoolFalse * const>(b));
+    case SymBool::FOR_ALL:
+      return this->visit(static_cast<const SymBoolForAll * const>(b));
     case SymBool::GE:
       return this->visit(static_cast<const SymBoolGe * const>(b));
     case SymBool::GT:

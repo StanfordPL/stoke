@@ -367,6 +367,9 @@ public:
   uint16_t visit(const SymBoolFalse * const b) {
     return 1;
   }
+  uint16_t visit(const SymBoolForAll * const b) {
+    return (*this)(b->a_);
+  }
   /** Visit a boolean NOT */
   uint16_t visit(const SymBoolNot * const b) {
     return (*this)(b->b_);

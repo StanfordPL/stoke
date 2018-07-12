@@ -50,6 +50,15 @@ public:
   /** Build a circuit for a particular instruction */
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+  /** Enable/disable uninterprted multiply */
+  virtual void enable_uninterpreted_multiply(bool b) {
+    for(auto h : handlers_) {
+      h->enable_uninterpreted_multiply(b);
+    }
+    uninterpreted_multiply_ = true;
+  }
+
+
 protected:
 
   /** Get the handler and support level for an instruction */

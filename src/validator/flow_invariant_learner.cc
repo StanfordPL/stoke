@@ -212,12 +212,12 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
     }
   }
 
-  cout << "DEBUGING TRANSFORM MATRIX" << endl;
+  cout << "DEBUGGING TRANSFORM MATRIX" << endl;
   matrix.print();
 
   auto solutions = matrix.solve_diophantine();
 
-  cout << "DEBUGING TRANSFORM MATRIX NULLSPACE" << endl;
+  cout << "DEBUGGING TRANSFORM MATRIX NULLSPACE" << endl;
   solutions.print();
 
   auto transformed = new ConjunctionInvariant();

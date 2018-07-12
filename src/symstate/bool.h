@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <string>
+#include <vector>
 
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
@@ -26,6 +27,7 @@ namespace stoke {
 
 class SymBitVector;
 class SymBitVectorAbstract;
+class SymBitVectorVar;
 class SymBoolAbstract;
 class SymArrayAbstract;
 
@@ -34,6 +36,7 @@ class SymBoolAnd;
 class SymBoolArrayEq;
 class SymBoolEq;
 class SymBoolFalse;
+class SymBoolForAll;
 class SymBoolGe;
 class SymBoolGt;
 class SymBoolIff;
@@ -61,6 +64,7 @@ public:
     ARRAY_EQ,
     EQ,
     FALSE,
+    FOR_ALL,
     GE,
     GT,
     IFF,
@@ -110,8 +114,10 @@ public:
   SymBool operator!=(const SymBool other) const;
   /** Builds an if-then-else expression */
   SymBool ite(const SymBool t, const SymBool f) const;
-  /** BUilds an if-then-else expression for bitvectors */
+  /** Builds an if-then-else expression for bitvectors */
   SymBitVector ite(const SymBitVector t, const SymBitVector f) const;
+  /** Builds an expression quantified over specified variables. */
+  SymBool forall(const std::vector<SymBitVector>& vars) const;
 
   /** Tells if two symbolic bools are identical */
   bool equals(const SymBool other) const;
@@ -240,6 +246,26 @@ public:
   bool equals(const SymBoolAbstract * const other) const {
     return other->type() == SymBool::Type::FALSE;
   }
+};
+
+class SymBoolForAll : public SymBoolAbstract {
+  friend class SymBool;
+  friend class SymTransformVisitor;
+
+protected:
+
+  SymBoolForAll(const SymBoolAbstract * const a, const std::vector<SymBitVectorVar>& vars) : a_(a), vars_(vars) {
+  }
+
+public:
+  const SymBoolAbstract * const a_;
+  const std::vector<SymBitVectorVar> vars_;
+
+  SymBool::Type type() const {
+    return SymBool::Type::FOR_ALL;
+  }
+
+  bool equals(const SymBoolAbstract * const other) const;
 };
 
 class SymBoolGe : public SymBoolCompare {

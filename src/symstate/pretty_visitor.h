@@ -253,6 +253,31 @@ public:
     reset();
   }
 
+  /** Visit a boolean FOR_ALL */
+  void visit(const SymBoolForAll * const b) {
+
+    auto l = get_level(b->a_);
+    if(l < level_) {
+      parens(l, b);
+    } else {
+      os_ << "∀";
+      bool first = true;
+      for(auto v : b->vars_) {
+        if(first) {
+          first = false;
+          os_ << " ";
+        } else {
+          os_ << ", ";
+        }
+        os_ << v.name_;
+      }
+      os_ << ".";
+      pretty(l, b->a_);
+    }
+
+    reset();
+  }
+
   /** Visit a boolean NOT */
   void visit(const SymBoolNot * const b) {
     prefix(level_, (const SymBoolAbstract * const)b, "!", b->b_);
@@ -432,6 +457,8 @@ private:
       return 30;
     case SymBitVector::U_MINUS:
       return 30;
+    case SymBitVector::CONCAT:
+      return 35; // 140
     case SymBitVector::DIV:
       return 40;
     case SymBitVector::MOD:
@@ -462,8 +489,6 @@ private:
       return 100;
     case SymBitVector::OR:
       return 110;
-    case SymBitVector::CONCAT:
-      return 35; // 140
     case SymBitVector::ITE:
       return 150;
     default:
@@ -520,6 +545,8 @@ private:
       return 120;
     case SymBool::IFF:
       return 130;
+    case SymBool::FOR_ALL:
+      return 150;
     default:
       std::cerr << "Unexpected bool type " << type
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;

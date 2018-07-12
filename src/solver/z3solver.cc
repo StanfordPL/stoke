@@ -30,7 +30,7 @@ using namespace std;
 using namespace std::chrono;
 
 //#define DEBUG_Z3_PERFORMANCE 1
-#define DEBUG_Z3(X) { }
+#define DEBUG_Z3(X) { X }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
@@ -527,8 +527,7 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorUMinus * const bv) {
 
 /** Visit a bit-vector variable */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
-  auto type = context_.bv_sort(bv->size_);
-  return z3::expr(context_, Z3_mk_const(context_, get_symbol(bv->name_), type));
+  return context_.bv_const(bv->name_.c_str(), bv->size_);
 }
 
 /** Visit a bit-vector array access */
@@ -599,6 +598,37 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolAnd * const b) {
 /** Visit a boolean FALSE */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolFalse * const b) {
   return z3::expr(context_, Z3_mk_false(context_));
+}
+
+/** Visit a boolean FOR_ALL */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolForAll * const b) {
+
+  /** Get expressions for variable */
+  auto vars = b->vars_;
+  vector<expr> exprs;
+  for(auto v : vars) {
+    exprs.push_back(context_.bv_const(v.name_.c_str(), v.size_));
+  }
+
+  /** Get expression for child formula */
+  auto inside = (*this)(b->a_);
+
+  /** Find a method that works... */
+  if(vars.size() == 1) {
+    return z3::forall(exprs[0], inside);
+  } else if (vars.size() == 2) {
+    return z3::forall(exprs[0], exprs[1], inside);
+  } else if (vars.size() == 3) {
+    return z3::forall(exprs[0], exprs[1], exprs[2], inside);
+  } else {
+    // NOTE: this code doesn't work
+    assert(false);
+    expr_vector vect(context_);
+    for(auto e : exprs) {
+      vect.push_back(e);
+    }
+    return z3::forall(vect, inside);
+  }
 }
 
 /** Visit a boolean IFF */

@@ -148,10 +148,12 @@ private:
     /** Visit a bit-vector variable */
     CVC4::Expr visit(const SymBitVectorVar * const bv);
 
-    /** Visit a boolean FALSE */
+    /** Visit a boolean ARRAY_EQ */
     CVC4::Expr visit(const SymBoolArrayEq * const b);
     /** Visit a boolean FALSE */
     CVC4::Expr visit(const SymBoolFalse * const b);
+    /** Visit a boolean FOR_ALL */
+    CVC4::Expr visit(const SymBoolForAll * const b);
     /** Visit a boolean NOT */
     CVC4::Expr visit(const SymBoolNot * const b);
     /** Visit a boolean TRUE */

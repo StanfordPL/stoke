@@ -431,6 +431,12 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolFalse * const b) {
   return em_.mkConst(false);
 }
 
+/** Visit a boolean FOR_ALL */
+Expr Cvc4Solver::ExprConverter::visit(const SymBoolForAll * const b) {
+  //TODO fixme
+  return em_.mkConst(false);
+}
+
 /** Visit a boolean NOT */
 Expr Cvc4Solver::ExprConverter::visit(const SymBoolNot * const b) {
   return em_.mkExpr(kind::NOT, (*this)(b->b_));

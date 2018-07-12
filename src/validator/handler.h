@@ -121,6 +121,10 @@ public:
     return res;
   }
 
+  virtual void enable_uninterpreted_multiply(bool b) {
+    uninterpreted_multiply_ = b;
+  }
+
   virtual ~Handler() {}
 
   /** List of ATT memonics.  */
@@ -141,6 +145,8 @@ protected:
 
   std::string error_;
 
+  bool uninterpreted_multiply_;
+
   /** Returns true if the validator supports all the operands of the instruction. */
   bool operands_supported(const x64asm::Instruction& instr);
 
@@ -148,6 +154,9 @@ protected:
   SymBool plus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
   /** Returns the overflow flag given the MSB of the two arguments and total for a minus operation */
   SymBool minus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
+
+  /** Multiply, with or without uninterpreted function */
+  SymBitVector multiply(SymBitVector a, SymBitVector b) const;
 
 
 };

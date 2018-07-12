@@ -256,6 +256,8 @@ private:
     z3::expr visit(const SymBoolAnd * const b);
     /** Visit a boolean FALSE */
     z3::expr visit(const SymBoolFalse * const b);
+    /** Visit a boolean FOR_ALL */
+    z3::expr visit(const SymBoolForAll * const b);
     /** Visit a boolean IFF */
     z3::expr visit(const SymBoolIff * const b);
     /** Visit a boolean implies */

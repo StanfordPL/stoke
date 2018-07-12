@@ -588,20 +588,20 @@ public:
       return SymBitVector::constant(32, 0) || b;
     }, 32, 64);
 
-    add_opcode("pmuldq", [] (SymBitVector a, SymBitVector b) {
-      return (a[31][0].extend(64))*(b[31][0].extend(64));
+    add_opcode("pmuldq", [this] (SymBitVector a, SymBitVector b) {
+      return multiply(a[31][0].extend(64), b[31][0].extend(64));
     }, 64);
 
-    add_opcode("pmulhw", [] (SymBitVector a, SymBitVector b) {
-      return (a.extend(32)*b.extend(32))[31][16];
+    add_opcode("pmulhw", [this] (SymBitVector a, SymBitVector b) {
+      return (multiply(a.extend(32), b.extend(32)))[31][16];
     }, 16);
 
-    add_opcode("pmulld", [] (SymBitVector a, SymBitVector b) {
-      return (a.extend(64)*b.extend(64))[31][0];
+    add_opcode("pmulld", [this] (SymBitVector a, SymBitVector b) {
+      return (multiply(a.extend(64),b.extend(64)))[31][0];
     }, 32);
 
-    add_opcode("pmullw", [] (SymBitVector a, SymBitVector b) {
-      return (a.extend(32)*b.extend(32))[15][0];
+    add_opcode("pmullw", [this] (SymBitVector a, SymBitVector b) {
+      return (multiply(a.extend(32),b.extend(32)))[15][0];
     }, 16);
 
     add_opcode("por", [] (SymBitVector a, SymBitVector b) {

@@ -113,6 +113,8 @@ public:
       return visit(static_cast<const SymBoolEq * const>(b));
     case SymBool::FALSE:
       return visit(static_cast<const SymBoolFalse * const>(b));
+    case SymBool::FOR_ALL:
+      return visit(static_cast<const SymBoolForAll * const>(b));
     case SymBool::GE:
       return visit(static_cast<const SymBoolGe * const>(b));
     case SymBool::GT:
@@ -333,6 +335,8 @@ public:
   virtual TBool visit(const SymBoolArrayEq * const b) = 0;
   /** Visit a boolean FALSE */
   virtual TBool visit(const SymBoolFalse * const b) = 0;
+  /** Visit a boolean FOR_ALL */
+  virtual TBool visit(const SymBoolForAll * const b) = 0;
   /** Visit a boolean NOT */
   virtual TBool visit(const SymBoolNot * const b) = 0;
   /** Visit a boolean TRUE */

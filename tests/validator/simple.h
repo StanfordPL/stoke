@@ -421,9 +421,5 @@ TEST_F(ValidatorBaseTest, Issue764_2) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorBaseTest, ConcreteMemoryWorks) {
-
-
-}
 
 } //namespace stoke

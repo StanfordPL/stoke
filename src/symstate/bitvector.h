@@ -803,6 +803,10 @@ public:
     return name_ == cast->name_ && size_ == cast->size_;
   }
 
+  bool operator==(const SymBitVectorVar& other) const {
+    return name_ == other.name_ && size_ == other.size_;
+  }
+
   const std::string name_;
   const uint16_t size_;
 };

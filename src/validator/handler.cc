@@ -66,4 +66,16 @@ const array<const char*, X64ASM_NUM_OPCODES> Handler::att_ = {{
   }
 };
 
+SymBitVector Handler::multiply(SymBitVector a, SymBitVector b) const {
+  if(uninterpreted_multiply_) {
+    assert(a.width() == b.width());
+    auto width = a.width();
 
+    stringstream fn_name;
+    fn_name << "bv_multiply_" << width;
+    SymFunction fn(fn_name.str(), width, {width, width});
+    return fn(a, b);
+  } else {
+    return a*b;
+  }
+}

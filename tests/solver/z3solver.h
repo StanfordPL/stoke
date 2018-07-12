@@ -314,4 +314,40 @@ TEST(Z3SolverTest, DifferentStoreStoreLoadEqual) {
   EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
 }
 
+TEST(Z3SolverTest, QuantifiersUnsat) {
+  // for all x,y, F(x, y) = F(y, x)
+  // prove that if a=b and c=d then F(a,c) = F(d,b)
+  auto x = SymBitVector::var(64, "x");
+  auto y = SymBitVector::var(64, "y");
+  auto c = SymBitVector::var(64, "c");
+  auto d = SymBitVector::var(64, "d");
+
+  SymFunction f("F", 64, {64, 64});
+
+  auto assume = (f(x,y) == f(y,x)).forall({x,y});
+  auto prove = (f(x,c) == f(d,y));
+  vector<SymBool> constraints = {assume, x == y, c == d, !prove};
+  Z3Solver z3;
+  EXPECT_FALSE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
+
+TEST(Z3SolverTest, QuantifiersSat) {
+  // for all x,y, F(x, y) = F(y, x)
+  // for all x,y,z F(F(x,y),z) = F(x,F(y,z))
+  // prove that F(2,x) = x
+  auto x = SymBitVector::var(64, "x");
+  auto y = SymBitVector::var(64, "y");
+  auto z = SymBitVector::var(64, "z");
+  SymFunction f("F", 64, {64, 64});
+
+  auto a1 = (f(x,y) == f(y,x)).forall({x,y});
+  auto a2 = (f(f(x,y),z) == f(x,f(y,z))).forall({x,y});
+  auto prove = f(x, SymBitVector::constant(64,2)) == x;
+  vector<SymBool> constraints = {a1, a2, !prove};
+  Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
+
 }
