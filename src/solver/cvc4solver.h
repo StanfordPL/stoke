@@ -33,7 +33,7 @@ public:
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
     smt_->setTimeLimit(timeout_, true);
-    smt_->setLogic("QF_AUFBV");
+    smt_->setLogic("AUFBV");
     smt_->push();
   }
 
@@ -42,7 +42,7 @@ public:
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
     smt_->setTimeLimit(s.get_timeout(), true);
-    smt_->setLogic("QF_AUFBV");
+    smt_->setLogic("AUFBV");
     smt_->push();
   }
 
@@ -108,20 +108,25 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr> {
+  /** NOTE: turned off memoization due to bound variables, which changes things;
+    a single AST node may need multiple different translations. */
+  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr> {
 
   public:
-    ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
+    ExprConverter(Cvc4Solver* parent) : 
+      em_(parent->em_), 
+      variables_(parent->variables_),
+      bound_variables_(),
       uninterpreted_(&(parent->uninterpreted_)) {}
 
     CVC4::Expr operator()(const SymBool& b) {
-      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
     }
     CVC4::Expr operator()(const SymBitVector& bb) {
-      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(bb.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(bb.ptr);
     }
     CVC4::Expr operator()(const SymArray& a) {
-      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(a.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(a.ptr);
     }
 
     /** Visit bit-vector binop */
@@ -182,6 +187,7 @@ private:
     CVC4::ExprManager& em_;
     /** Reference to variable table */
     std::map<std::string, CVC4::Expr>& variables_;
+    std::map<std::string, CVC4::Expr> bound_variables_;
     bool* uninterpreted_;
 
     /** Keep error messages */

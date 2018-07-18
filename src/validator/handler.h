@@ -28,6 +28,10 @@ class Handler {
 
 public:
 
+  Handler() {
+    enable_uninterpreted_multiply(true);
+  }
+
   /** These flags specify the support that the handler can provide for a
    * given instruction.  These flags are ORd together. */
   enum SupportLevel {

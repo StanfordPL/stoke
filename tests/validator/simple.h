@@ -374,6 +374,39 @@ TEST_F(ValidatorBaseTest, NopsAndLabelsSupported) {
   assert_equiv();
 }
 
+TEST_F(ValidatorBaseTest, UFMultiplyCommutes) {
+
+  target_ << ".foo:"  << std::endl;
+  target_ << "movq %rdx, %rax" << std::endl;
+  target_ << "mulq %rcx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".bar:" << std::endl;
+  rewrite_ << "movq %rcx, %rax" << std::endl;
+  rewrite_ << "mulq %rdx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+  assert_equiv();
+}
+
+TEST_F(ValidatorBaseTest, UFMultiplyWrong) {
+
+  target_ << ".foo:"  << std::endl;
+  target_ << "movq %rdx, %rax" << std::endl;
+  target_ << "incq %rax" << std::endl;
+  target_ << "mulq %rcx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".bar:" << std::endl;
+  rewrite_ << "movq %rcx, %rax" << std::endl;
+  rewrite_ << "mulq %rdx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+  assert_ceg_nocheck();
+}
+
 TEST_F(ValidatorBaseTest, Issue550) {
 
   target_ << ".foo:" << std::endl;

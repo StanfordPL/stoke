@@ -51,13 +51,13 @@ SymBool SymBool::tmp_var() {
   return SymBool(new SymBoolVar(name.str()));
 }
 
-SymBool SymBool::forall(const std::vector<SymBitVector>& vars) const {
+SymBool SymBool::forall(const std::vector<SymBitVector>& vars, const std::vector<SymBitVector>& patterns) const {
   vector<SymBitVectorVar> converted_vars;
   for(auto v : vars) {
     const auto ptr = static_cast<const SymBitVectorVar* const>(v.ptr);
     converted_vars.push_back(*ptr);
   }
-  return SymBool(new SymBoolForAll(ptr, converted_vars));
+  return SymBool(new SymBoolForAll(ptr, converted_vars, patterns));
 }
 
 /* Bool Operators */

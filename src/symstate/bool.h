@@ -117,7 +117,8 @@ public:
   /** Builds an if-then-else expression for bitvectors */
   SymBitVector ite(const SymBitVector t, const SymBitVector f) const;
   /** Builds an expression quantified over specified variables. */
-  SymBool forall(const std::vector<SymBitVector>& vars) const;
+  SymBool forall(const std::vector<SymBitVector>& vars, 
+                 const std::vector<SymBitVector>& patterns) const;
 
   /** Tells if two symbolic bools are identical */
   bool equals(const SymBool other) const;
@@ -254,12 +255,13 @@ class SymBoolForAll : public SymBoolAbstract {
 
 protected:
 
-  SymBoolForAll(const SymBoolAbstract * const a, const std::vector<SymBitVectorVar>& vars) : a_(a), vars_(vars) {
+  SymBoolForAll(const SymBoolAbstract * const a, const std::vector<SymBitVectorVar>& vars, const std::vector<SymBitVector>& patterns) : a_(a), vars_(vars), patterns_(patterns) {
   }
 
 public:
   const SymBoolAbstract * const a_;
   const std::vector<SymBitVectorVar> vars_;
+  const std::vector<SymBitVector> patterns_;
 
   SymBool::Type type() const {
     return SymBool::Type::FOR_ALL;

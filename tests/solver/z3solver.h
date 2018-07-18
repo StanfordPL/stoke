@@ -324,7 +324,7 @@ TEST(Z3SolverTest, QuantifiersUnsat) {
 
   SymFunction f("F", 64, {64, 64});
 
-  auto assume = (f(x,y) == f(y,x)).forall({x,y});
+  auto assume = (f(x,y) == f(y,x)).forall({x,y},{});
   auto prove = (f(x,c) == f(d,y));
   vector<SymBool> constraints = {assume, x == y, c == d, !prove};
   Z3Solver z3;
@@ -341,8 +341,8 @@ TEST(Z3SolverTest, QuantifiersSat) {
   auto z = SymBitVector::var(64, "z");
   SymFunction f("F", 64, {64, 64});
 
-  auto a1 = (f(x,y) == f(y,x)).forall({x,y});
-  auto a2 = (f(f(x,y),z) == f(x,f(y,z))).forall({x,y});
+  auto a1 = (f(x,y) == f(y,x)).forall({x,y}, {});
+  auto a2 = (f(f(x,y),z) == f(x,f(y,z))).forall({x,y}, {});
   auto prove = f(x, SymBitVector::constant(64,2)) == x;
   vector<SymBool> constraints = {a1, a2, !prove};
   Z3Solver z3;

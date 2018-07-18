@@ -303,8 +303,8 @@ public:
     add_to_memory_manager(res);
     return res;
   }
-  SymBoolForAll* make_forall(const SymBoolAbstract* const b, const std::vector<SymBitVectorVar>& vars) {
-    auto res = new SymBoolForAll(b, vars);
+  SymBoolForAll* make_forall(const SymBoolAbstract* const b, const std::vector<SymBitVectorVar>& vars, const std::vector<SymBitVector>& patterns) {
+    auto res = new SymBoolForAll(b, vars, patterns);
     add_to_memory_manager(res);
     return res;
   }
@@ -457,7 +457,7 @@ public:
     if(inside == b->a_) {
       return cache(b, (SymBoolForAll*)b);
     }
-    return cache(b, make_forall(inside, b->vars_));
+    return cache(b, make_forall(inside, b->vars_, b->patterns_));
   }
 
   SymBoolAbstract* visit(const SymBoolNot * const b) {

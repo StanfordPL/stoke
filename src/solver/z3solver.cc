@@ -18,6 +18,7 @@
 #include <chrono>
 
 #include "src/solver/z3solver.h"
+#include "src/symstate/axiom_visitor.h"
 #include "src/symstate/bitvector.h"
 #include "src/symstate/typecheck_visitor.h"
 #include "src/symstate/memo_visitor.h"
@@ -70,10 +71,17 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   stop_now_.store(false);
   solver_.reset();
 
+  /** Get all the axioms we need. */
+  SymAxiomVisitor av;
+  for(auto it : constraints)
+    av(it);
+  auto all_constraints = av.get_axioms();
+  all_constraints.insert(all_constraints.begin(), constraints.begin(), constraints.end());
+
   /* Convert constraints and query to z3 object */
   SymTypecheckVisitor tc;
 
-  const vector<SymBool> split = split_constraints(constraints);
+  const vector<SymBool> split = split_constraints(all_constraints);
   const vector<SymBool>* current = &split;
   vector<SymBool>* new_constraints = 0;
   bool free_it = false;

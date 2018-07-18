@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include "src/solver/cvc4solver.h"
+#include "src/symstate/axiom_visitor.h"
 #include "src/symstate/bitvector.h"
 #include "src/symstate/typecheck_visitor.h"
 
@@ -55,7 +56,15 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
   SymTypecheckVisitor tc;
   ExprConverter ec(this);
 
-  auto split = split_constraints_cvc4(constraints);
+
+  /** Get all the axioms we need. */
+  SymAxiomVisitor av;
+  for(auto it : constraints)
+    av(it);
+  auto all_constraints = av.get_axioms();
+  all_constraints.insert(all_constraints.begin(), constraints.begin(), constraints.end());
+
+  auto split = split_constraints_cvc4(all_constraints);
 
   DEBUG_CVC4(
   cout << "CONSTRAINTS - Generic" << endl;
@@ -408,6 +417,9 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
 
 /** Visit a bit-vector variable */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
+  if(bound_variables_.count(bv->name_)) {
+    return bound_variables_[bv->name_];
+  }
   if (!variables_.count(bv->name_)) {
     auto type = em_.mkBitVectorType(bv->size_);
     auto var = em_.mkVar(bv->name_, type);
@@ -433,8 +445,33 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolFalse * const b) {
 
 /** Visit a boolean FOR_ALL */
 Expr Cvc4Solver::ExprConverter::visit(const SymBoolForAll * const b) {
-  //TODO fixme
-  return em_.mkConst(false);
+  auto old_bound_variables = bound_variables_;  
+
+  vector<Expr> bound_vars;
+  for(auto var : b->vars_) {
+    auto type = em_.mkBitVectorType(var.size_);
+    auto bvar = em_.mkBoundVar(var.name_, type);
+    bound_vars.push_back(bvar);
+    bound_variables_[var.name_] = bvar;
+  }
+
+  auto child = (*this)(b->a_);
+  Expr bound_var_list;
+  if(bound_vars.size() == 1)
+    bound_var_list = em_.mkExpr(kind::BOUND_VAR_LIST, bound_vars[0]);
+  else if(bound_vars.size() == 2) 
+    bound_var_list = em_.mkExpr(kind::BOUND_VAR_LIST, bound_vars[0], bound_vars[1]);
+  else if(bound_vars.size() == 3)
+    bound_var_list = em_.mkExpr(kind::BOUND_VAR_LIST, bound_vars[0], bound_vars[1], bound_vars[2]);
+  else {
+    cerr << "STOKE's custom CVC4 binding does not support 0 or 4+ bound vars in universal quantifier." << endl;
+    cerr << "bound_vars.size() == " << bound_vars.size() << endl;
+    assert(false);
+  }
+
+  bound_variables_ = old_bound_variables;
+
+  return em_.mkExpr(kind::FORALL, bound_var_list, child);
 }
 
 /** Visit a boolean NOT */

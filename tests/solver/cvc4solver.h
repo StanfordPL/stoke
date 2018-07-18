@@ -319,4 +319,37 @@ TEST(Cvc4SolverTest, DifferentStoreStoreLoadEqual) {
 }
 
 
+TEST(Cvc4SolverTest, QuantifiersUnsat) {
+  // for all x,y, F(x, y) = F(y, x)
+  // prove that if a=b and c=d then F(a,c) = F(d,b)
+  auto x = SymBitVector::var(64, "x");
+  auto y = SymBitVector::var(64, "y");
+  auto c = SymBitVector::var(64, "c");
+  auto d = SymBitVector::var(64, "d");
+
+  SymFunction f("F", 64, {64, 64});
+
+  auto assume = (f(x,y) == f(y,x)).forall({x,y},{});
+  auto prove = (f(x,c) == f(d,y));
+  vector<SymBool> constraints = {assume, x == y, c == d, !prove};
+  Cvc4Solver z3;
+  EXPECT_FALSE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Cvc4 encountered: " << z3.get_error();
+}
+
+TEST(Cvc4SolverTest, QuantifiersSat) {
+  // for all x,y, F(x, y) = F(y, x)
+  // prove that F(x,x) = x
+  auto x = SymBitVector::var(64, "x");
+  auto y = SymBitVector::var(64, "y");
+  SymFunction f("F", 64, {64, 64});
+
+  auto a1 = (f(x,y) == f(y,x)).forall({x,y},{});
+  auto prove = f(x, x) == x;
+  vector<SymBool> constraints = {a1, !prove};
+  Cvc4Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Cvc4 encountered: " << z3.get_error();
+}
+
 } //namespace stoke
