@@ -31,7 +31,7 @@ using namespace std;
 using namespace std::chrono;
 
 //#define DEBUG_Z3_PERFORMANCE 1
-#define DEBUG_Z3(X) { X }
+#define DEBUG_Z3(X) { }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
