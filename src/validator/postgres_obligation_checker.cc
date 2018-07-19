@@ -42,8 +42,8 @@ void PostgresObligationChecker::make_tables() {
       "ceg_target_final   TEXT,"                                    \
       "ceg_rewrite_final  TEXT,"                                    \
       "error              TEXT,"                                    \
-      "gen_time           INTEGER,"                                 \
-      "smt_time           INTEGER,"                                 \
+      "gen_time           BIGINT,"                                  \
+      "smt_time           BIGINT,"                                  \
       "version            VARCHAR(128),"                            \
       "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()"   \
     ")";

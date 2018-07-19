@@ -573,12 +573,6 @@ void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::R
   nontransaction tx(c);
   std::stringstream sql_add_result;
 
-  if(result.gen_time_microseconds > 0x7fffffff) {
-    // more than 30 minutes for constraint generation... 
-    // something is wrong and this doesn't fit in DB :(
-    result.gen_time_microseconds = 0x7fffffff;
-  }
-
   // First, add an entry recording what we got
   sql_add_result
     << "INSERT INTO ProofObligationResult "
