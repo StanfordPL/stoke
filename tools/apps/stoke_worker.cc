@@ -591,7 +591,7 @@ void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::R
     << "  '" << tx.esc(result.comments) << "'";
 
   if(result.has_error) {
-    sql_add_result << ", " << tx.esc(result.error_message);
+    sql_add_result << ", '" << tx.esc(result.error_message) << "'";
   }
 
   if(result.has_ceg) {
