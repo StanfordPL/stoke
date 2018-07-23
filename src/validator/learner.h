@@ -87,7 +87,7 @@ public:
   std::vector<Variable> pick_variables(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_block,
                                        Cfg::id_type rewrite_block,
-                                       bool include_defin);
+                                       bool include_defin=false);
 
   /** Learn a precise invariant over a set of data */
   // TODO: add set of memory locations to look at
