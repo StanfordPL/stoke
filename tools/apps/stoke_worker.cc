@@ -43,6 +43,8 @@
 #define MAX_JOB_COUNT 256
 #define MAX_WORKER_COUNT 128
 
+#define STOKE_Z3_DEBUG_LAST_HASH YESPLEASE
+
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
