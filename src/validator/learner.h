@@ -86,7 +86,8 @@ public:
   /** Get live-out variables for a program point. */
   std::vector<Variable> pick_variables(const Cfg& target, const Cfg& rewrite,
                                        Cfg::id_type target_block,
-                                       Cfg::id_type rewrite_block);
+                                       Cfg::id_type rewrite_block,
+                                       bool include_defin);
 
   /** Learn a precise invariant over a set of data */
   // TODO: add set of memory locations to look at

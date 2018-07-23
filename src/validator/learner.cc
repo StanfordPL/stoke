@@ -56,11 +56,23 @@ RegSet live_out_regs(const Cfg& cfg, Cfg::id_type s) {
   }
 }
 
+RegSet def_in_regs(const Cfg& cfg, Cfg::id_type s) {
+
+  if (s == cfg.get_entry()) {
+    return cfg.def_ins();
+  } else {
+    assert(cfg.num_instrs(s) > 0);
+    auto loc = Cfg::loc_type(s, cfg.num_instrs(s)-1);
+    return cfg.def_ins(loc);
+  }
+}
+
 
 vector<Variable> InvariantLearner::pick_variables(const Cfg& target,
     const Cfg& rewrite,
     Cfg::id_type target_block,
-    Cfg::id_type rewrite_block) {
+    Cfg::id_type rewrite_block,
+    bool include_defin) {
 
   vector<Variable> variables;
 
@@ -70,6 +82,10 @@ vector<Variable> InvariantLearner::pick_variables(const Cfg& target,
     auto& block = is_rewrite ? rewrite_block : target_block;
 
     auto regset = live_out_regs(cfg, block);
+    if(include_defin) {
+      auto defins = def_in_regs(cfg, block);
+      regset = regset | defins;
+    }
     for (auto r = regset.gp_begin(); r != regset.gp_end(); ++r) {
       if((*r).size() != 64) // TODO: revisit; what's the right thing to do here?
         continue;

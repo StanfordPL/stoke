@@ -25,6 +25,8 @@
 
 //#define DEBUG_Z3_INTERFACE_PERFORMANCE
 
+#define STOKE_Z3_DEBUG_LAST_HASH YESPLEASE
+
 namespace stoke {
 
 class Z3Solver : public SMTSolver {

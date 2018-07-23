@@ -127,7 +127,9 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant_inner(Cfg::id_type tar
 
   cout << "* picking variables" << endl;
   vector<Variable> columns = invariant_learner_.pick_variables(*target_, *rewrite_,
-                             target_block, rewrite_block);
+                             target_block, rewrite_block, true);
+  for(auto it : columns)
+    cout << "     " << it << endl;
   auto target_shadows = get_shadow_vars(*target_, false);
   auto rewrite_shadows = get_shadow_vars(*rewrite_, true);
   columns.insert(columns.begin(), target_shadows.begin(), target_shadows.end());
@@ -157,6 +159,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
     Each fi and gi is a linear function, with fi(0) = 0.
 
     Now, if v_1,v_2,... are vectors encoding the counts of basic blocks
+    in the inductive loop,
     then we are looking for a function f = a_1f_1 + a_2f_2 + ... + a_kf_k
     such that f(N + v_i) = f(N) for all i.  Since f is linear, that just
     means that f(v_i) = 0 for all i.  Or, that

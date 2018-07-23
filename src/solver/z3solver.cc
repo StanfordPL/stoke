@@ -30,6 +30,7 @@ using namespace z3;
 using namespace std;
 using namespace std::chrono;
 
+#define STOKE_Z3_DEBUG_LAST_HASH YESPLEASE
 //#define DEBUG_Z3_PERFORMANCE 1
 #define DEBUG_Z3(X) { }
 
