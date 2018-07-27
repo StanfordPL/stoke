@@ -24,7 +24,9 @@ const std::set<std::string> SymAxiomVisitor::commutative_functions_ = {
   "bv_multiply_32",
   "bv_multiply_64",
   "bv_multiply_128",
-  "bv_multiply_256"
+  "bv_multiply_256",
+  "mul_double",
+  "mul_single"
 };
 
 const std::set<std::string> SymAxiomVisitor::associative_functions_ = {
