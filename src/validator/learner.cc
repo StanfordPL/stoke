@@ -109,17 +109,26 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
   set<Variable> results;
 
   set<x64asm::Mem> memory_operands;
-  for (auto& prog : {
-         target, rewrite
-       }) {
-    for (auto instr : prog.get_code()) {
+  vector<const Cfg*> programs = {&target, &rewrite};
+  for (const Cfg* prog : programs) {
+    for (auto instr : prog->get_code()) {
+      //cout << "  processing instr " << instr << endl;
       if (instr.is_explicit_memory_dereference()) {
         auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
-        //cout << "Considering operand " << mem << endl;
+        //cout << "     - considering operand " << mem 
+        //     << " of size " << mem.size() << " type " << mem.type() << endl;
         memory_operands.insert(mem);
       }
     }
   }
+
+  /*
+  cout << "Inserted operands include: " << endl;
+  for(auto mem : memory_operands) {
+    cout << "     - considering operand " << mem 
+         << " of size " << mem.size() << " type " << mem.type() << endl;
+  }
+  */
 
   for(size_t k = 0; k < 2; ++k) {
 
@@ -139,6 +148,42 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
         }
       }
 
+      if(mem.size() == 256) { 
+        for (size_t offset : {
+               0,32,-32
+             }) {
+
+          // Make everything an M256
+          M256 mem_fixed(mem.get_seg(),
+                        mem.get_base(),
+                        mem.get_index(),
+                        mem.get_scale(),
+                        mem.get_disp() + offset);
+
+          Variable v(mem_fixed, k);
+          results.insert(v);
+          //cout << "256 Inserting variable " << v << endl;
+        }
+      }
+
+      if(mem.size() == 128) { 
+        for (size_t offset : {
+               0,16,-16
+             }) {
+
+          // Make everything an M128
+          M128 mem_fixed(mem.get_seg(),
+                        mem.get_base(),
+                        mem.get_index(),
+                        mem.get_scale(),
+                        mem.get_disp() + offset);
+
+          Variable v(mem_fixed, k);
+          results.insert(v);
+          //cout << "128 Inserting variable " << v << endl;
+        }
+      }
+
       if(mem.size() == 64) { 
         for (size_t offset : {
                0,8,-8
@@ -153,6 +198,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
           Variable v(mem_fixed, k);
           results.insert(v);
+          //cout << "64 Inserting variable " << v << endl;
         }
       }
 
@@ -169,6 +215,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
           Variable v(mem_fixed, k);
           results.insert(v);
+          //cout << "32 Inserting variable " << v << endl;
         }
       }
 
@@ -185,6 +232,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
           Variable v(mem_fixed, k);
           results.insert(v);
+          //cout << "16 Inserting variable " << v << endl;
         }
       }
 
@@ -201,6 +249,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
           Variable v(mem_fixed, k);
           results.insert(v);
+          //cout << "8 Inserting variable " << v << endl;
         }
       }
     }
@@ -208,6 +257,12 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
   vector<Variable> condensed;
   condensed.insert(condensed.begin(), results.begin(), results.end());
+
+  /*
+  for(auto it : condensed) {
+    cout << "Condensed includes " << it << endl;
+  }
+  */
 
   return condensed;
 }
@@ -230,6 +285,55 @@ vector<NonzeroInvariant*> InvariantLearner::build_memory_null_invariants(RegSet 
   cout << "[learner][memory_null] Considering these invariants!" << endl;
   for (auto it : invariants) {
     cout << *it << endl;
+  }
+
+  return invariants;
+}
+
+/** Return a set of possible memory-register equalities */
+vector<EqualityInvariant*> InvariantLearner::build_memory_register_equalities(RegSet target_regs, RegSet rewrite_regs) const {
+
+  set<size_t> mem_sizes;
+  vector<EqualityInvariant*> invariants;
+  auto memory_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+  for(auto mv : memory_vars) {
+    mem_sizes.insert(mv.size);
+    cout << "   considering mem var " << mv << endl;
+  }
+  for(auto it : mem_sizes) 
+    cout << "   mem size seen: " << it << endl;
+
+  vector<Variable> register_vars;
+  for (size_t k = 0; k < 2; ++k) {
+    auto& def_ins = k ? rewrite_regs : target_regs;
+    for(size_t mem_size : mem_sizes) {
+      for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
+        if ((*r).size() >= mem_size*8) {
+          Variable c(*r, k, mem_size, 0);
+          register_vars.push_back(c);
+          cout << "   considering variable " << c << endl;
+        }
+      }
+      for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
+        for (size_t i = 0; i < (*r).size()/(mem_size*8); ++i) {
+          Variable c(*r,k,mem_size,i*mem_size);
+          register_vars.push_back(c);
+          cout << "   considering variable " << c << endl;
+        }
+      }
+    }
+  }
+
+  for(auto mv : memory_vars) {
+    for(auto rv : register_vars) {
+      if(rv.size == mv.size) {
+        mv.coefficient = 1;
+        rv.coefficient = -1;
+        EqualityInvariant* inv = new EqualityInvariant({rv,mv},0);
+        invariants.push_back(inv);
+        cout << "Proposing " << *inv << endl;
+      }
+    }
   }
 
   return invariants;
@@ -1049,6 +1153,21 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
         conj->add_invariant(sign);
       } else {
         delete sign;
+      }
+    }
+  }
+
+  // Memory-Register equalities
+  if (enable_nonlinear_) {
+    cout << "Learning Memory-Register Equalities" << endl;
+    auto potential_equalities = build_memory_register_equalities(target_regs, rewrite_regs);
+    for (auto ineq : potential_equalities) {
+      if (ineq->check(target_states, rewrite_states)) {
+        cout << "Using " << *ineq << endl;
+        conj->add_invariant(ineq);
+      } else {
+        cout << "Discarding " << *ineq << endl;
+        delete ineq;
       }
     }
   }

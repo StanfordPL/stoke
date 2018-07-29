@@ -149,6 +149,10 @@ private:
   std::vector<InequalityInvariant*> build_inequality_invariants
   (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
+  /** Overapproximate set of possible memory-register equality invariants. */
+  std::vector<EqualityInvariant*> build_memory_register_equalities
+  (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+
   /** Set of inequalities with constants */
   std::vector<InequalityInvariant*> build_inequality_with_constant_invariants(
     x64asm::RegSet target_regs, 
