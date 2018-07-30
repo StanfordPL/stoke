@@ -66,7 +66,7 @@ auto& workers_arg = ValueArg<size_t>::create("workers")
 auto& worker_timeout_arg = ValueArg<uint64_t>::create("worker_timeout")
                       .usage("<int>")
                       .description("Timeout in seconds")
-                      .default_val(60*30); // 30 minutes
+                      .default_val(60*60*4); // 4 hours
 
 auto& debug_hash_arg = ValueArg<string>::create("debug_hash")
                       .usage("<string>")

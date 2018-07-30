@@ -43,6 +43,10 @@ struct Variable {
 
   /** From a concrete state, find the value of this term. */
   uint64_t from_state(const CpuState& target, const CpuState& rewrite) const;
+  /** From a concrete state, find the value of this term. */
+  cpputil::BitVector from_state_vector(const CpuState& target, const CpuState& rewrite) const;
+
+
   /** Is this variable safe to use?  i.e. does it not derference bad memory? */
   bool is_valid(const CpuState& target, const CpuState& rewrite) const;
   bool is_valid(const std::vector<CpuState>& target, const std::vector<CpuState>& rewrite) const;

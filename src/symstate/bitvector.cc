@@ -33,6 +33,14 @@ std::map<size_t, SymFunction*> SymBitVector::multiplication_functions_;
 SymBitVector SymBitVector::constant(uint16_t size, uint64_t value) {
   return SymBitVector(new SymBitVectorConstant(size, value));
 }
+/*
+SymBitVector SymBitVector::constant(cpputil::BitVector v) {
+  SymBitVector result;
+  for(size_t i = 0; i < v.size()/8; ++i) {
+    result = result || v.get_fixed_byte(i);
+  }
+  return result;
+}*/
 SymBitVector SymBitVector::var(uint16_t size, string name) {
   return SymBitVector(new SymBitVectorVar(size, name));
 }

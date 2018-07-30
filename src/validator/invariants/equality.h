@@ -52,27 +52,34 @@ public:
     set_di(target, number, false);
     set_di(rewrite, number, true);
 
-    SymBitVector sum = SymBitVector::constant(64, 0);
+    size_t size = 64;
+    for(auto var : terms_) {
+      if(var.size*8 > size)
+        size = var.size*8;
+    }
+
+    SymBitVector sum = SymBitVector::constant(size, 0);
 
     for (auto term : terms_) {
       auto value = term.from_state(target, rewrite);
-      auto value64 = value.zero_extend(64);
-      sum = sum + SymBitVector::constant(64, term.coefficient)*value64;
+      auto value_ext = value.zero_extend(size);
+      sum = sum + SymBitVector::constant(size, term.coefficient)*value_ext;
     }
 
     if(modulus_ == 0)
-      return sum == SymBitVector::constant(64, constant_);
+      return sum == SymBitVector::constant(size, constant_);
     else
       return 
-        ((sum - SymBitVector::constant(64, constant_)) 
-          % SymBitVector::constant(64, modulus_)) 
-        == SymBitVector::constant(64, 0);
+        ((sum - SymBitVector::constant(size, constant_)) 
+          % SymBitVector::constant(size, modulus_)) 
+        == SymBitVector::constant(size, 0);
   }
 
   /** Check if this invariant holds over a concrete state. */
   bool check(const CpuState& target, const CpuState& rewrite) const {
     uint64_t sum = 0;
 
+    // TODO: properly handle invariants of more than 64 bits
     for (auto term : terms_) {
       auto value64 = term.from_state(target, rewrite);
       sum = sum + term.coefficient*value64;

@@ -51,34 +51,44 @@ bool Variable::is_valid(const vector<CpuState>& target, const vector<CpuState>& 
 }
 
 /** From a concrete state, find the value of this term. */
-uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) const {
+cpputil::BitVector Variable::from_state_vector(const CpuState& target, const CpuState& rewrite) const {
 
-  assert(size <= 8);
   assert(offset >= 0);
 
   auto& cs = is_rewrite ? rewrite : target;
+  
 
   if (!is_ghost) {
 
     if (operand.is_typical_memory()) {
       auto mem = static_cast<const x64asm::Mem&>(operand);
       if (!cs.is_valid(mem)) {
-        return 0; // it would really be a segfault
+        cpputil::BitVector v(mem.size());
+        return v; // it would really be a segfault
       }
     }
 
     auto vector = cs[operand];
-
-    uint64_t value = 0;
-    for (int i = offset + (int)size - 1; (int)i >= offset; --i) {
-      value = value << 8;
-      value = value | vector.get_fixed_byte(i);
-    }
-
-    return value;
+    return vector;
   } else {
-    return cs.shadow.at(name);
+    cpputil::BitVector v(64);
+    v.get_fixed_quad(0) = cs.shadow.at(name);
+    return v;
   }
+}
+
+/** From a concrete state, find the value of this term. */
+uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) const {
+  assert(size <= 8);
+  assert(offset >= 0);
+
+  auto vector = from_state_vector(target, rewrite);
+  uint64_t value = 0;
+  for (int i = offset + (int)size - 1; (int)i >= offset; --i) {
+    value = value << 8;
+    value = value | vector.get_fixed_byte(i);
+  }
+  return value;
 }
 
 /** Does this have a memory dereference? */
