@@ -230,7 +230,26 @@ _Z6popcntm:
 ```
 
 The next step is to generate a set of testcases for guiding STOKE's search
-procedure. These can be obtained by typing:
+procedure. There are a few ways of genrating testcases:
+
+ (1) Random generation + backtracking
+ (2) Symbolic Execution + random search
+ (3) Custom test case generator
+ (4) Dynamically recording execution data from a sample program
+
+Option 1 is the easiest to start with, but can be limitted.  It reliably works if there are no branches or instructions that trigger exceptions (like division).  It tends to have trouble if the input code has both control flow branches and memory dereferences.  To give this a try, one can run:
+
+`stoke testcase --target bins/_Z6popcntm --max_testcases 1024 > popcnt.tc`
+
+It will generate 1024 random test cases to standard output and save them in `popcnt.tc`.  It will put random values in registers, and then try to fill in dereferenced memory locations with random values.
+
+Option 2 takes more compute time than option 1, and does well in different circumstances.  It uses STOKE's formal verification tools to symbolically execute the code on paths up to a certain bound, generating a few test cases for each path.  It uses random search to produce extra test cases beyond these.  It's good for exercising corner cases in code.  It tends to do poorly in cases where (i) a loop executes a fixed, large number of iterations, meaning there are no short paths through the program; (ii) where there's an exponential number of paths; and (iii) when there are a lot of memory dereferences and the bound is high.  In the case of the tutorial, a bound of 64 is needed to exercise all the relevant program paths, but the tool handles this:
+
+`stoke_tcgen --target bins/_Z6popcntm --bound 64 > popcnt.tc`
+
+Option 3 means writing code to generate your own test cases for your problem.  This gives you the most versitility and can be used in almost any situation.  Often you can use a combination of domain knowledge and randomness to create test cases that thoroughly explore paths through the program, especially paths involving long-running loops.  Combining option 3 and option 2 is often a powerful combination.  For an example of this, see the code in `tools/apps/tcgen_tsvc.cc` in the `ddec-diophantine` branch.  This code generates random test cases for a particular set of benchmarks that need arrays of fixed length and some static read-only data.
+
+Lastly, option 4, dynamic instrumentation of a program, offers the flexibility of option 3 and (ideally) is easier to use.  Right now, unfortunately, the tools are a bit buggy (see #971).  When the tool is working, these can be obtained by typing:
 
     $ stoke testcase --config testcase.conf
     
