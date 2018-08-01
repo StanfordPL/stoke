@@ -119,6 +119,9 @@ following code can be found in the `examples/tutorial/` directory.  As this
 code is tested using our continuous integration system, the code there will
 always be up-to-date, but this README can fall behind.
 
+Running Example
+-----
+
 Consider a
 C++ program that repeatedly counts the number of bits (population count) in the
 64-bit representation of an integer. (Keeping track of a running sum prevents
@@ -152,6 +155,9 @@ int main(int argc, char** argv) {
   return ret;
 }
 ```
+
+Compiling and Disassembling your Code
+-----
 
 STOKE is a compiler and programming language agnostic optimization tool. It can
 be applied to any x86-64 ELF binary. Although this example uses the GNU
@@ -229,13 +235,16 @@ _Z6popcntm:
   .size _Z6popcntm, .-_Z6popcntm
 ```
 
+Test case Generation
+-----
+
 The next step is to generate a set of testcases for guiding STOKE's search
 procedure. There are a few ways of genrating testcases:
 
- (1) Random generation + backtracking
- (2) Symbolic Execution + random search
- (3) Custom test case generator
- (4) Dynamically recording execution data from a sample program
+ 1. Random generation + backtracking
+ 2. Symbolic Execution + random search
+ 3. Custom test case generator
+ 4. Dynamically recording execution data from a sample program
 
 Option 1 is the easiest to start with, but can be limitted.  It reliably works if there are no branches or instructions that trigger exceptions (like division).  It tends to have trouble if the input code has both control flow branches and memory dereferences.  To give this a try, one can run:
 
@@ -353,6 +362,9 @@ dereferenced at least one of those bytes. Each row contains values and state
 flags. Bytes are flagged as either (v)alid (the target dereferenced this byte),
   or (.)invalid (the target did not dereference this byte). 
 
+Final Configuration
+-----
+
 Each of the random transformations performed by STOKE are evaluated with
 respect to the contents of this file. Rewrites are compiled into a sandbox and
 executed beginning from the machine state represented by each entry. Rewrites
@@ -380,6 +392,9 @@ undefined behavior. This includes leaving registers in a state that violates
 the x86-64 callee-save ABI, dereferencing invalid memory, performing a
 computation that results in a floating-point exception, or becoming trapped in
 a loop that performs more than `max_jumps` (see `synthesize.conf`, below). 
+
+Starting STOKE
+-----
 
 The final step is to use these testcases and the target code contained in
 `bins/_Z6popcntm.s` to run STOKE search in synthesis mode (i.e., trying to find a program starting from the empty program) by typing:
@@ -491,6 +506,9 @@ _Z6popcntm:
   retq
   .size _Z6popcntm, .-_Z6popcntm
 ```
+
+Rewriting Optimized Binary
+-----
 
 This result can then be patched back into the original binary by typing:
 
