@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract testcase_random synthesize replace
+all: orig extract testcase synthesize replace
 
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
@@ -34,6 +34,8 @@ testcase_smt:
 
 testcase_pin:
 	stoke testcase --config testcase.conf
+
+testcase: testcase_random
 
 synthesize:
 	stoke synthesize --config synthesize.conf
