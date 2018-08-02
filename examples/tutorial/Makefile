@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract testcase synthesize replace
+all: orig extract testcase_random synthesize replace
 
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
@@ -24,7 +24,15 @@ extract:
 	chmod +x test.sh
 	stoke extract --config extract.conf
 
-testcase:
+testcase_random:
+	mkdir -p tcs
+	stoke testcase --target bins/_Z6popcntm.s -o tcs/_Z6popcntm
+
+testcase_smt:
+	mkdir -p tcs
+	stoke_tcgen --bound 64 --target bins/_Z6popcntm.s --output tcs/_Z6popcntm
+
+testcase_pin:
 	stoke testcase --config testcase.conf
 
 synthesize:
@@ -33,8 +41,10 @@ synthesize:
 # 'make check' should always work unless there's
 # a bug in 'stoke debug verify' or 'stoke synthesize'
 # or the search just fails.
-check:
+verify:
 	stoke debug verify --config verify.conf
+
+check: verify
 
 replace:
 	stoke replace --config replace.conf
