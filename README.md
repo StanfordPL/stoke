@@ -26,8 +26,14 @@ Table of Contents
 0. [Prerequisites](#prerequisites)
 1. [Choosing a STOKE version](#choosing-a-stoke-version)
 2. [Building STOKE](#building-stoke)
- 1. [Using the formal validator](#using-the-formal-validator)
 3. [Using STOKE](#using-stoke)
+ 1. [Running Example](#running-example)
+ 1. [Compiling and Disassembling Your Code](#compiling-and-disassembling-your-code)
+ 1. [Test Case Generation](#test-case-generation)
+ 1. [Final Configuration](#final-configuration)
+ 1. [Starting STOKE](#starting-stoke)
+ 1. [Rewriting the Binary](#rewriting-the-binary)
+ 1. [Using the formal validator](#using-the-formal-validator)
 4. [Additional Features](#additional-features)
 5. [User FAQ](#user-faq)
 6. [Developer FAQ](#developer-faq)
@@ -166,7 +172,7 @@ full optimizations, type:
 
     $ g++ -std=c++11 -O3 -fno-inline main.cc
     
-To measure runtime, type:
+Note that turning on optimizations (at least -O1) is helpful to remove unneeded stack operations, and gives STOKE a better program to start from.  Usually, if using STOKE for optimization, starting with a better program often results in a better program.  To measure runtime, type:
 
     $ time ./a.out 100000000
     
@@ -235,7 +241,7 @@ _Z6popcntm:
   .size _Z6popcntm, .-_Z6popcntm
 ```
 
-Test case Generation
+Test Case Generation
 -----
 
 The next step is to generate a set of testcases for guiding STOKE's search
@@ -248,13 +254,13 @@ procedure. There are a few ways of genrating testcases:
 
 Option 1 is the easiest to start with, but can be limitted.  It reliably works if there are no branches or instructions that trigger exceptions (like division).  It tends to have trouble if the input code has both control flow branches and memory dereferences.  To give this a try, one can run:
 
-`stoke testcase --target bins/_Z6popcntm --max_testcases 1024 > popcnt.tc`
+`stoke testcase --target bins/_Z6popcntm.s --max_testcases 1024 -o popcnt.tc`
 
 It will generate 1024 random test cases to standard output and save them in `popcnt.tc`.  It will put random values in registers, and then try to fill in dereferenced memory locations with random values.
 
 Option 2 takes more compute time than option 1, and does well in different circumstances.  It uses STOKE's formal verification tools to symbolically execute the code on paths up to a certain bound, generating a few test cases for each path.  It uses random search to produce extra test cases beyond these.  It's good for exercising corner cases in code.  It tends to do poorly in cases where (i) a loop executes a fixed, large number of iterations, meaning there are no short paths through the program; (ii) where there's an exponential number of paths; and (iii) when there are a lot of memory dereferences and the bound is high.  In the case of the tutorial, a bound of 64 is needed to exercise all the relevant program paths, but the tool handles this:
 
-`stoke_tcgen --target bins/_Z6popcntm --bound 64 > popcnt.tc`
+`stoke_tcgen --target bins/_Z6popcntm.s --bound 64 --output popcnt.tc`
 
 Option 3 means writing code to generate your own test cases for your problem.  This gives you the most versitility and can be used in almost any situation.  Often you can use a combination of domain knowledge and randomness to create test cases that thoroughly explore paths through the program, especially paths involving long-running loops.  Combining option 3 and option 2 is often a powerful combination.  For an example of this, see the code in `tools/apps/tcgen_tsvc.cc` in the `ddec-diophantine` branch.  This code generates random test cases for a particular set of benchmarks that need arrays of fixed length and some static read-only data.
 
@@ -271,7 +277,7 @@ where `testcase.conf` contains:
 --args 10000000 # Command line arguments that should be passed to ./a.out
 --functions bins # Disassembly directory created by stoke extract
 
--o popcnt.tc # Path to file to write testcases to
+-o tcs/_Z6popcntm # Path to file to write testcases to
 
 --fxn _Z6popcntm # The name of the function to generate testcases for
 --max_testcases 1024 # The maximum number of testcases to generate. 
@@ -507,7 +513,7 @@ _Z6popcntm:
   .size _Z6popcntm, .-_Z6popcntm
 ```
 
-Rewriting Optimized Binary
+Rewriting the Binary
 -----
 
 This result can then be patched back into the original binary by typing:
@@ -542,12 +548,15 @@ validator instead of hold out testing, specify `--strategy bounded` for any
 STOKE binary that you use.  For code with loops, all paths will be explored up
 to a certain depth, specified using the --bound argument, which defaults to 2.  There's also `--strategy ddec` which attempts to run the data-driven equivalence checking algorithm; however, the current implementation isn't very robust -- please file bug reports with (target, rewrite) pairs that fail to validate but should.
 
-An example of using the validator can be found in the `examples/pairity`
+The bounded validator can be used to verify the example, but it takes a little while!  One can run `make check` to do a fast check or `stoke debug verify --def_in "{ %rax %rdi }" --live_out "{ %rax }" --target bins/_Z6popcntm.s --rewrite result.s --abi_check --strategy bounded --bound 64` to do a complete proof of equivalence.  The faster check uses a bound of 8.  Roughly speaking, this checks that the rewrite is correct when the input value is only 8 bits in size.  Increasing the boundwill check more cases, and when the bound is 64 it will check all of them, but running time is exponential in the bound.
+
+Another example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
 to follow.  The key difference is that the pairity example does not use
-testcases to guide search.  Instead, after producing a candidate rewrite,
-the validator checks for equivalence.  If the codes are not equivalent, 
-a counterexample is found, and this is used as a new testcase to help guide search.
+testcases to guide search.  Instead, after producing a candidate rewrite, the
+validator checks for equivalence.  If the codes are not equivalent, a
+counterexample is found, and this is used as a new testcase to help guide
+search.
 
 There are some important limitations to keep in mind while using the validator:
 

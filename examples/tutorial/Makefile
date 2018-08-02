@@ -24,8 +24,18 @@ extract:
 	chmod +x test.sh
 	stoke extract --config extract.conf
 
-testcase:
+testcase_random:
+	mkdir -p tcs
+	stoke testcase --target bins/_Z6popcntm.s -o tcs/_Z6popcntm
+
+testcase_smt:
+	mkdir -p tcs
+	stoke_tcgen --bound 64 --target bins/_Z6popcntm.s --output tcs/_Z6popcntm
+
+testcase_pin:
 	stoke testcase --config testcase.conf
+
+testcase: testcase_random
 
 synthesize:
 	stoke synthesize --config synthesize.conf
@@ -33,8 +43,10 @@ synthesize:
 # 'make check' should always work unless there's
 # a bug in 'stoke debug verify' or 'stoke synthesize'
 # or the search just fails.
-check:
+verify:
 	stoke debug verify --config verify.conf
+
+check: verify
 
 replace:
 	stoke replace --config replace.conf

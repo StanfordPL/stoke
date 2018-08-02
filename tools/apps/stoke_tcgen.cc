@@ -61,6 +61,7 @@ auto& iterations_arg = ValueArg<size_t>::create("iterations")
                        .default_val(1000);
 
 auto& output_arg = ValueArg<string>::create("output")
+                   .alternate("o")
                    .description("file to write testcases");
 
 auto& stop_at = ValueArg<size_t>::create("max_tcs")
