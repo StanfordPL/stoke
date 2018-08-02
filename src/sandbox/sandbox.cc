@@ -285,8 +285,8 @@ Sandbox& Sandbox::run() {
 
 bool Sandbox::check_abi(const IoPair& iop) const {
   for (const auto& r : {
-         rbx, rbp, rsp, r12, r13, r14, r15
-       }) {
+  rbx, rbp, rsp, r12, r13, r14, r15
+}) {
     if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
       return false;
     }
