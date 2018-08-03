@@ -75,12 +75,16 @@ Cfg::id_type ControlLearner::index_to_block(size_t n) {
 
 string ControlLearner::index_to_string(size_t n) {
   stringstream ss;
-  if(index_is_target(n)) {
-    ss << "T";
+  if(n == 0) {
+    ss << "1";
   } else {
-    ss << "R";
+    if(index_is_target(n)) {
+      ss << "T";
+    } else {
+      ss << "R";
+    }
+    ss << index_to_block(n);
   }
-  ss << index_to_block(n);
   return ss.str();
 }
 

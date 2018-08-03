@@ -9,7 +9,9 @@
 
 def print_usage
   puts "usage: ./demo.rb verify [options] <compiler1> <compiler2> <benchmark>"
-  puts "       ./demo.rb verify-all <list>"
+  puts "       ./demo.rb verify-all [options] <list>"
+  puts "       ./demo.rb verify-gcc [options] <list>"
+  puts "       ./demo.rb verify-llvm [options] <list>"
   puts "       ./demo.rb check-tc-all"
   puts ""
   puts "Options:"
@@ -127,7 +129,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   end
 end
 
-if ARGV[0] == "verify" then
+def update_options
   n=1
   while ARGV[n].start_with?("-") do
     if ARGV[n] == "--target-bound" then
@@ -140,23 +142,31 @@ if ARGV[0] == "verify" then
     end
     n = n+1
   end
+  n
+end
+
+if ARGV[0] == "verify" then
+  n = update_options
   if ARGV.size == n+3 then 
     validate ARGV[n], ARGV[n+1], ARGV[n+2]
   else
     print_usage
   end
 elsif ARGV[0] == "verify-all" then
-  validate_all ARGV[1], :all
+  n = update_options
+  validate_all ARGV[n], :all
   while true do
     sleep 10
   end
 elsif ARGV[0] == "verify-llvm" then
-  validate_all ARGV[1], :llvm
+  n = update_options
+  validate_all ARGV[n], :llvm
   while true do
     sleep 10
   end
 elsif ARGV[0] == "verify-gcc" then
-  validate_all ARGV[1], :gcc
+  n = update_options
+  validate_all ARGV[n], :gcc
   while true do
     sleep 10
   end

@@ -515,6 +515,12 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       Variable v(*i, k);
       variables.push_back(v);
     }
+
+    const Cfg& prog = k ? rewrite_ : target_;
+    for(size_t i = 1; i < prog.num_blocks()-1; ++i) {
+      Variable v = Variable::bb_ghost(i, k);
+      variables.push_back(v);
+    }
   }
 
   for(auto& v1 : variables) {

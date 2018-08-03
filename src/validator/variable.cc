@@ -79,9 +79,6 @@ cpputil::BitVector Variable::from_state_vector(const CpuState& target, const Cpu
 
 /** From a concrete state, find the value of this term. */
 uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) const {
-  assert(size <= 8);
-  assert(offset >= 0);
-
   auto vector = from_state_vector(target, rewrite);
   uint64_t value = 0;
   for (int i = offset + (int)size - 1; (int)i >= offset; --i) {

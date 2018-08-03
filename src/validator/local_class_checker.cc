@@ -249,7 +249,6 @@ void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState&
 
   ConjunctionInvariant* start_inv = dual.get_invariant(edge.from);
   ConjunctionInvariant* start_inv_copy = new ConjunctionInvariant(*start_inv);
-  cout << "Class checker adds assumptions " << endl;
   for(auto inv : assume_always_) {
     start_inv_copy->add_invariant(inv);
     cout << "  " << *inv << endl;
