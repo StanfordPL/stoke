@@ -132,8 +132,8 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
   for(size_t k = 0; k < 2; ++k) {
 
-    auto& cfg = k ? target : rewrite;
-    auto regs = k ? target_regs : rewrite_regs;
+    auto& cfg = k ? rewrite : target;
+    auto regs = k ? rewrite_regs : target_regs;
 
     for (auto mem : memory_operands) {
 
