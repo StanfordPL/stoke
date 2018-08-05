@@ -31,6 +31,7 @@
 
 #include "tools/gadgets/obligation_checker.h"
 #include "tools/gadgets/seed.h"
+#include "tools/io/tunit.h"
 
 #include "tools/common/interprocess_mutex.h"
 #include "tools/common/version_info.h"
@@ -73,6 +74,16 @@ auto& debug_hash_arg = ValueArg<string>::create("debug_hash")
                       .description("Debug a specific problem in the database.")
                       .default_val("");
 
+auto& debug_rewrite_arg = FileArg<TUnit, TUnitReader, TUnitWriter>::create("debug_rewrite")
+                      .usage("<path/to/file.s>")
+                      .description("Alternate rewrite");
+
+auto& debug_target_arg = FileArg<TUnit, TUnitReader, TUnitWriter>::create("debug_target")
+                      .usage("<path/to/file.s>")
+                      .description("Alternate target");
+
+
+
 auto& verbose_arg = FlagArg::create("verbose")
                       .description("Output more details.");
 
@@ -87,6 +98,7 @@ int64_t my_unique_id;
 
 struct ObligationQueueEntry {
   uint64_t id;
+  uint64_t timeout; // in seconds
   char hash[64];
   char solver[8];
   char strategy[8];
@@ -426,10 +438,16 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
 
       for(auto row : r) {
         id = row["id"].as<uint64_t>();
+        //uint64_t timeout = row["timeout"].as<uint64_t>();
         cout << getpid() << ": picked id=" << id << endl;
+
+        //if(timeout == 0) {
+        //  timeout = worker_timeout_arg.value();
+        //}
 
         ObligationQueueEntry* qe = new ObligationQueueEntry();
         qe->id = id;
+        //qe->timeout = timeout;
         strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
         strncpy(qe->solver, row["solver"].c_str(), sizeof(qe->solver)-1);
         strncpy(qe->strategy, row["strategy"].c_str(), sizeof(qe->strategy)-1);
@@ -640,6 +658,17 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
          << ": stringstream in bad state when parsing problem with hash "
          << qe.hash << endl;
     exit(1);
+  }
+
+
+  if(debug_target_arg.has_been_provided()) {
+    auto target = debug_target_arg.value();
+    oblig.target = Cfg(target, oblig.target.def_ins(), oblig.target.live_outs());
+  }
+
+  if(debug_rewrite_arg.has_been_provided()) {
+    auto rewrite = debug_rewrite_arg.value();
+    oblig.rewrite = Cfg(rewrite, oblig.rewrite.def_ins(), oblig.rewrite.live_outs());
   }
 
   // Print out the problem
