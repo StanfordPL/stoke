@@ -400,6 +400,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   flow_invariant_learner_ = new FlowInvariantLearner(data_collector_, invariant_learner_);
   flow_invariant_learner_->initialize(target_, rewrite_);
   control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
+  control_learner_->compute();
   DualAutomata template_pod = learn_inductive_paths();
 
   // free all that memory :)

@@ -52,7 +52,6 @@ public:
   /** Initiates computation of the cutpoints for target/rewrite. */
   ControlLearner(const Cfg& target, const Cfg& rewrite, Sandbox& sandbox) :
     target_(target), rewrite_(rewrite), sandbox_(sandbox) {
-    compute();
   }
 
   std::vector<Trace> get_target_traces() {
@@ -78,6 +77,9 @@ public:
 
   void serialize(std::ostream& os) const;
   static ControlLearner deserialize(const Cfg& target, const Cfg& rewrite, std::istream& is);
+
+  /** This is the main function that computes all the matricies and fills local variables. */
+  void compute();
 
 private:
 
@@ -124,9 +126,6 @@ private:
 
 
 
-
-  /** This is the main function that computes all the matricies and fills local variables. */
-  void compute();
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */
   void mine_data(const Cfg& cfg, size_t testcase, Trace& trace);

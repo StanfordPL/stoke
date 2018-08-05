@@ -62,8 +62,10 @@ public:
 
     for (auto term : terms_) {
       auto value = term.from_state(target, rewrite);
-      auto value_ext = value.zero_extend(size);
-      sum = sum + SymBitVector::constant(size, term.coefficient)*value_ext;
+      auto value_ext = value.sign_extend(size);
+      auto coefficient = SymBitVector::constant(64, term.coefficient);
+      auto coefficient_ext = coefficient.sign_extend(size);
+      sum = sum + coefficient_ext*value_ext;
     }
 
     if(modulus_ == 0)
