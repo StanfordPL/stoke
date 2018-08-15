@@ -1,5 +1,5 @@
 %% For double-blind review submission, w/o CCS and ACM Reference (max submission space)
-\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\documentclass[sigplan,10pt,review,anonymous]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
 %% For double-blind review submission, w/ CCS and ACM Reference
 %\documentclass[sigplan,review,anonymous]{acmart}\settopmatter{printfolios=true}
 %% For single-blind review submission, w/o CCS and ACM Reference (max submission space)
@@ -13,8 +13,8 @@
 %% Conference information
 %% Supplied to authors by publisher for camera-ready submission;
 %% use defaults for review submission.
-\acmConference[PL'18]{ACM SIGPLAN Conference on Programming Languages}{January 01--03, 2018}{New York, NY, USA}
-\acmYear{2018}
+\acmConference[PLDI'19]{ACM SIGPLAN Conference on Programming Languages}{June 24--26, 2019}{Phoenix, AZ, USA}
+\acmYear{2019}
 \acmISBN{} % \acmISBN{978-x-xxxx-xxxx-x/YY/MM}
 \acmDOI{} % \acmDOI{10.1145/nnnnnnn.nnnnnnn}
 \startPage{1}
@@ -66,11 +66,11 @@
 \title[Short Title]{Full Title}         %% [Short Title] is optional;
                                         %% when present, will be used in
                                         %% header instead of Full Title.
-\titlenote{with title note}             %% \titlenote is optional;
+%\titlenote{with title note}             %% \titlenote is optional;
                                         %% can be repeated if necessary;
                                         %% contents suppressed with 'anonymous'
-\subtitle{Subtitle}                     %% \subtitle is optional
-\subtitlenote{with subtitle note}       %% \subtitlenote is optional;
+%\subtitle{Subtitle}                     %% \subtitle is optional
+%\subtitlenote{with subtitle note}       %% \subtitlenote is optional;
                                         %% can be repeated if necessary;
                                         %% contents suppressed with 'anonymous'
 
@@ -173,10 +173,12 @@ Text of abstract \ldots.
 \maketitle
 
 
-\section{Introduction}
-
-Text of paper \ldots
-
+\input{intro.tex}
+\input{background.tex}
+\input{example.tex}
+\input{algorithm.tex}
+\input{results.tex}
+\input{conclusion.tex}
 
 %% Acknowledgments
 \begin{acks}                            %% acks environment is optional
@@ -197,7 +199,7 @@ Text of paper \ldots
 
 
 %% Bibliography
-%\bibliography{bibfile}
+\bibliography{pldi2019}
 
 
 %% Appendix
