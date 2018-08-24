@@ -1,20 +1,186 @@
 \section{Algorithm}
 
-\subsection{Learning Linear Control Flow Relationships}
+\todo{Write a short summary of the overall idea}
+
+The enumeration of candidate \bisimreps{} proceeds in four main steps.
+First, we identify linear relationships between the number of times
+basic blocks are executed in the target and the rewrite; these
+relationships help identify a correspondence between the loops
+of the two programs (Section \ref{algstep1}). Second, we infer
+a $\Z{64}$-module of flow-insensitive invariants that hold at a
+\cutpoint, regardless of the paths taken in each program to reach the
+\cutpoint{} (Section \ref{algstep2}). Third, we compute a submodule
+of flow-sensitive loop invariants, meaning invariants that appear
+to hold inductively over loop iterations (Section \ref{algstep3}).
+Lastly, we use the flow-sensitive loop invariants to create a search
+space of \bisimreps. (Section \ref{algstep4}). We enumerate \bisimreps and
+apply inexpensive checks to eliminate those that are invalid (Section
+\ref{algstep5}), followed by a more expensive verification that a
+remaining \bisimrep{} is correct (Section \ref{algstep6}).
 
 
-\subsection{Learning Linear Flow-Insensitive Loop Invariants}
+\subsection{Learning Linear Control Flow Relationships} \label{algstep1}
 
+In this step our goal is to learn relationships between the number of
+times basic blocks execute and to identify corresponding loops in the
+target and rewrite. For example, we might observe that a loop body
+in the target executes four times as often as a corresponding
+loop body in the rewrite. We instrument each basic block with an extra
+instruction that counts the number times the block executes. In block
+$i$ of the target we use \shadow{} $n_i$ to represent its execution
+count, and $n_i'$ for basic block $i$ of the rewrite.
 
-\subsection{Identifying the Subspace of Linear Flow-Sensitive Loop Invariants}
+Throughout the algorithm, we represent the counts of each basic
+block in both program path as a vector.  Given a path $P$ through the
+target and a path $Q$ through the rewrite, we define the \emph{vector
+representation of paths P,Q} or $v(P,Q)$ as the vector that encodes
+the number of times each basic block appears on the path as follows:
 
+$$<1, n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}'>$$
 
-\subsection{Enumerating Search Space}
+To learn the control flow relationships, we construct a
+matrix $\controlflowmatrix$ and compute its nullspace,
+$\nullsp{\controlflowmatrix}$. We run each test case $\tau_i$ on
+the target and rewrite programs. Each $\tau_i$ exhibits paths
+$P_i$ and $Q_i$. We construct $\controlflowmatrix$ by setting the
+$i$th row to $v(P_i, Q_i)$. Each vector in the generating set of
+$\nullsp{\controlflowmatrix}$ is a linear equality between basic block
+counts (either relating target basic block counts, rewrite basic block
+counts, or both).
 
+Armed with these linear equalities, we perform a search to identify
+corresponding loops. A naive approach is to check if any equality
+in $\nullsp{\controlflowmatrix}$ is of the form $n_i = k*n_j'$,
+however this will not reliably work as the generating set may instead
+include a relationship of the form $n_i + n_0 = k*n_j' + n_0'$ and
+$n_0 = n_0'$ separately. These two linear equalities encode the same
+information, but the information cannot be recovered by pattern
+matching on the linear equalities. Instead, we enumerate strongly
+connected components $C_1, C_2, \dotsc$ and $C_1', C_2', \dotsc$ of
+the control flow graphs of the target and rewrite. For each $C_i$ we
+pick a basic block to serve as the target's half of the \cutpoint{}
+and enumerate paths $SelfLoop(C_i)$ from the \cutpoint{} to itself
+up to some bound. For each $C_i$ and $C_j'$ we consider $SelfLoops =
+SelfLoop(C_i) \times SelfLoop(C_j')$ and check to see if there exists
+$x \in SelfLoops$ where $v(x) \in \nullsp{\controlflowmatrix}$. If
+so, we have identified a corresponding pair of paths in the target
+and rewrite programs. If no pairs are found, we double the bound. In
+practice, we initialize the bound to 1 and allow a maximum of 128.
 
-\subsection{Eliminating Spurious Candidates}
+We use a search to choose the \cutpoint{} for each pair of
+corresponding loops. In our early experiments, merely choosing the
+loop heads or loop exits of corresponding loops was insufficient;
+depending on the choice of program points, different values are live,
+which affect the quality of the invariants ultimately learned. For
+each pair of corresponding loops, we perform a search over every
+possible pair of program points that could be used as a \cutpoint.
+For each candidate cutpoint, we perform the above correspondence of
+loops, the invariant learning described in section \ref{algstep2} and
+section \ref{algstep 3} and use a heuristic to evaluate the quality of
+the learned invariants. The heuristic is to count the number of live
+variables constrained by learned invariants; more is better. We then
+use the \cutpoint{} that generated the best invariant.
 
+Another option might be to preserve the values of
+clobbered registers in a \shadow{} and use these for computing
+invariants as well; however, this would increase the computational
+cost of invariant learning.
 
-\subsection{Verifying Correctness}
+\subsection{Learning Linear Flow-Insensitive Loop Invariants} \label{algstep2}
+
+For each test case $\tau_i$ we run the target and the rewrite
+programs. At each selected program point of each program we record the
+register and \shadow{} values. This gives us a list of target data
+points $\alpha_1, \alpha_2, \dotsc, \alpha_N$ and a list of rewrite
+data points $\beta_1, \beta_2, \dotsc, \beta_M$. For each $1 \leq i
+\leq N, 1 \leq j \leq M$, we concatenate $\alpha_i$ and $\beta_j$
+and add this as a row in our matrix. We compute the nullspace of
+this matrix, and this yields a generating set for a $\Z{64}$-module of
+flow-insensitive invariants; we can take sums, differences, and scalar
+multiples of the generating set elements, and they will still hold across all
+the provided data.
+
+\subsection{Identifying the Subspace of Linear Flow-Sensitive Loop Invariants} \label{algstep3}
+
+Suppose at a \cutpoint{} the generating set for the flow-insensitive invariants are as follows:
+
+\begin{eqnarray*}
+a_{11}r_1 + a_{12}r_2 + \dotsm + a_{1n}r_n &=& b_{11}n_1 + b_{12}n_2 + \dotsm + b_{1m}n_m + c_1\\
+a_{21}r_1 + a_{22}r_2 + \dotsm + a_{2n}r_n &=& b_{21}n_1 + b_{22}n_2 + \dotsm + b_{2m}n_m + c_2\\
+\vdots &\vdots& \vdots\\
+a_{k1}r_1 + a_{k2}r_2 + \dotsm + a_{kn}r_n &=& b_{k1}n_1 + b_{k2}n_2 + \dotsm + b_{km}n_m + c_k
+\end{eqnarray*}
+
+Note that, in general, these invariants would be very difficult to
+prove because proving them would require reasoning about all paths
+a program could take to arrive at a \cutpoint. As a result, proving
+all of these invariants directly would be as hard as reasoning about
+each program individually, and then asserting equality at the end.
+Moreover, proving any one of these invariants might be very difficult,
+because each one may capture aspects of a complete execution run of
+one program or the other. \note{this will be more clear following the example}
+
+Instead, our goal is to create an explicit \bisim{} where a submodule
+of these invariants hold where two traces align at a \cutpoint.
+Suppose at this \cutpoint{} there is self-loop with paths $P, Q$.
+If the dot product of $v(P,Q)$ with the corresponding vector from
+the $i$th equation is non-zero, then this invariant cannot easily be
+proven inductively only considering this loop. Note that here the
+constant term of the invariant is ignored. \todo{explain this better}
+
+Now, we consider the paths the programs take between \cutpoints.
+
+\subsection{Enumerating Search Space} \label{algstep4}
+
+Given the set of \cutpoints and{} a space of flow-sensitive loop
+invariants, we can add all the edges needed to complete the \bisimrep.
+We choose a topological ordering on the \cutpoints{} $C_1, C_2,
+\dotsc, C_n$ and systematically learn edges from $C_i$ to $C_j$ with
+$i < j$. We use the flow-sensitive loop invariants to partition all
+pairs of paths into $C_i$ into equivalence classes. For class $C_i$
+we represent each equivalence class with a vector over $\Z{64}$,
+with one entry per flow-insensitive invariant in the generating set.
+The $i$th entry the vector corresponds to the difference between
+the unspecified constant term of the corresponding invariant. For
+a pair of paths $P, Q$ from $C_1$ to $C_i$ we take $v(P,Q)$ dotted
+with the invariant to determine the equivalence class. To prevent
+an exponential blowup in the number of paths to consider, when we
+consider pairs of paths from $C_j$ to $C_i$ we arbitrarily choose one
+representative path from $C_1$ to $C_j$ to represent the prefixes of
+all paths from $C_j$ to $C_i$.  
+
+To enumerate \bisimreps{} we consider every possible assignment of an
+equivalence class to each \cutpoint. For each assignment, we enumerate
+paths up to a bound from $C_i$ to $C_j$ where $i \leq j$ and pick only
+the edges whose equivalence class matches that of the \cutpoint. We
+add these edges to the \bisimrep. Additionally, sometimes its helpful
+to consider only a subset of the invariants for the equivalence
+classes, so we also search over all the subsets.
+
+\subsection{Eliminating Spurious Candidates} \label{algstep5}
+
+We perform quick checks on the \bisimrep{} before attempting to prove
+it correct. First, we ensure that the graph is connected; in some
+cases, the choice of equivalence class will preclude the existence of
+edges from a node to the exit, and thus such an equivalence class is
+invalid.
+
+Second, we use the data from the test cases to ensure that the
+\bisimrep{} is usable. We want to verify that, if test case $\tau$
+executes on paths $P$ and $Q$ through the rewrite, then the paths
+may be decomposed into $P = P_1P_2\dotsm P_k$ and $Q = Q_1Q_2\dotsm
+Q_k$ such that each $(P_i, Q_i)$ is an edge in the \bisimrep. To do
+so, we treat the \bisimrep as the graph of a nondeterministic finite
+automata whose transitions are labeled by pairs of program paths, and
+check that this automata accepts the input $(P, Q)$. 
+
+Following each transition of the automata, we record the program state
+corresponding to the execution of paths $P_1\dotsm P_i$ and $Q_1
+\dotsm Q_i$, which is data for some cutpoint $C$. We additionally
+check that, at each transition, the heap of the target matches the
+heap of the rewrite; if not, we know that we cannot prove the programs
+equivalent.
+
+\subsection{Learning Non-Linear Invariants and Verifying Correctness} \label{algstep6}
 
 
