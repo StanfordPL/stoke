@@ -1,1 +1,32 @@
 \section{Example}
+
+Consider
+
+\begin{figure}
+\begin{lstlisting}[language=C]
+void swap_case(char* r, int len) {
+  for(int i = 0; i < len*8; i++,r++) {
+    *r ^= 0x20; 
+  }
+}
+\end{lstlisting}
+\subcaption{Target}
+\begin{lstlisting}[language=C]
+void swap_case(char* r, int len) {
+  int i = 0;
+  for(;i < len*8 && 
+       (uint64_t)(r) % 8 != 0; i++, r++) {
+    *r ^= 0x20 
+  }
+  for(;i < len*8; i+=8,r+=8) {
+    *((long*)r) ^= 0x2020202020202020
+  }
+}
+\end{lstlisting}
+\subcaption{Rewrite}
+\end{figure}
+
+
+an naive way of building a bisimulation relation would be to 
+
+

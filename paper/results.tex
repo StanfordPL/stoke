@@ -1,1 +1,92 @@
 \section{Evaluation}
+
+In this section we seek to answer the following questions,
+
+\begin{itemize}
+\item For a representative collection of vectorization optimizations, what proportion can we verify?
+\item How does our \bisim{} inference algorithm compare with other state-of-the-art techniques?
+\item How efficient is our algorithm to enumerate candidate \bisimreps{} for verification?
+\item Are the complexities of the algorithm necessary
+        - using equivalence classes
+        - how important / useful are the sanity checks
+  %% IDEA: look in POD and see if branch conditions are equal?
+\end{itemize}
+
+\subsection{Benchmarks}
+
+To evaluate \tool{} we construct a set of benchmarks for verifying
+vectorization optimizations. We started with the \emph{Test Suite
+for Vectorizing Compilers} (TSVC), which was developed ``to assess
+the vectorizing capabilities of compilers'' and ported to C in
+\cite{TSVC}. These benchmarks operated over arrays of floating point
+values of fixed size. However, because modern SMT solvers are limited
+in their ability to reason accurately about floats and our desire to
+demonstrate proving equivalence over unbounded programs, we rewrote
+the benchmarks to operate over integer arrays and parameterized the
+input length.  We had to remove three classes of benchmarks from the
+original TSVC set:
+
+\begin{itemize}
+\item Benchmarks that could not be vectorized with either GCC 4.9.2 nor clang 3.4 using -msse4.2 and -O3.\todo{number?}
+\item Duplicate benchmarks where nearly identical assembly code was generated after compilation as another benchmark. \todo{number?}
+\item Benchmark functions that contained calls to other methods. \todo{number?}
+\item Benchmarks containing doubly-nested loops.  These often triggered aggressive loop tiling optimizations beyond the scope of our work. \todo{number?}
+\end{itemize}
+
+We had to remove duplicate benchmarks because some of the TSVC
+benchmarks were designed to see if a compiler could perform an
+analysis to verify an optimization was safe to perform; however,
+after compilation, the two programs would be the same. 26 benchmarks
+remained. Most of the benchmarks iterate over one or more arrays (up
+to 5), perform some computation (often adds and multiplies), and
+update the arrays. Some benchmarks process the array forwards, some
+backwards, and some with a stride.
+
+\subsection{Discharging Proof Obligations}
+
+We constructed test cases by creating machine states containing input
+vectors of randomly-chosen bytes. This same set of test cases was
+sufficient to obtain code coverage over all these benchmarks. We
+also manually placed a bound on the input size to exclude overflow
+conditions and other undefined behavior; this is generally needed for
+proving equivalence\todo{cite sorav}.
+
+\todo{discuss use of ARM and flat memory model}
+
+\todo{describe cloud infrastructure}
+
+\todo{add table of results}
+
+\todo{discuss failures and timeouts}
+
+\todo{add comparison with recent work}
+
+\todo{add straw-man comparison; try using wildcard equivalence class with bound 1}
+
+
+%% TODO: add table with 
+%   - benchmark
+%   - ASM LOC O1 / O3
+%   - equivalent / non-equivalent / timeout
+%   - linear algebra time
+%   - other enumeration time
+%   - total time for our algorithm
+%   - total CPU-time for proof obligation discharge
+
+\subsection{Results}
+
+\subsection{strlen case study}
+
+GNU Lib C contains widely-used functions, such as strlen, which are
+used frequently throughout userspace applications. In many cases,
+compilers are unable to vectorize performance-critical functions, and
+instead programmers perform the vectorization themselves. This is the
+case for the strlen function since libc \todo{version number}. The
+handwritten C code uses clever bit-manipulation techniques to read
+up to 8 characters from the string at a time, check if any character
+contains a null byte, and to then either continue or terminate.
+
+To the best of our knowledge, no other technique in the equivalence
+checking or translation validation literature is able to handle this
+kind of example. 
+\todo{not sure what we'll put in the example yet, so I don't want to fill in too much here}

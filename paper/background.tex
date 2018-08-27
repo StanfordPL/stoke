@@ -4,6 +4,16 @@
 
 \subsection{Bisimulation Relations}
 
+The mathematical definition of a bisimulation relation specifies
+a correspondence between two state transition systems, and in the
+equivalence checking literature bisimulation relations are widely
+used to prove equivalence of programs. Many works model the program as
+a state transition system by treating one state as the combination of
+a program point with all live variables. In our setting, this model
+isn't sufficient; relating the machine state and current program point
+is not enough to prove equivalence in some examples because it forgets
+the past history of the execution which can encode vital knowledge
+
 \subsection{Modules and $\Z{n}$}
 
 On processors, arithmetic does not happen over $\mathbb{Z}$, but
