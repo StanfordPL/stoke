@@ -18,49 +18,69 @@ apply inexpensive checks to eliminate those that are invalid (Section
 \ref{algstep5}), followed by a more expensive verification that a
 remaining \bisimrep{} is correct (Section \ref{algstep6}).
 
+\subsection{Representing Paths as Vectors}
+
+We use control flow data from dynamic execution traces to learn
+a \bisim{} between the target and rewrite programs. A recurring
+technique in our approach is to count the number of times each basic
+block is executed on a pair of execution paths (one through the target
+and one through the rewrite). We instrument each basic block with an
+extra instruction that counts the number times the block executes.
+In block $i$ of the target we use \shadow{} $n_i$ to represent its
+execution count, and $n_i'$ for basic block $i$ of the rewrite.
+
+It is often convenient to represent these counts as a vector. Given
+a path $P$ through the target and a path $Q$ through the rewrite, we
+define the \emph{vector representation of paths P,Q} or $v(P,Q)$ as
+the vector that encodes the number of times each basic block appears
+on the path as follows:
+
+$$v(P,Q) = <n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}'>$$
+
+\todo{do we need to say more here or illustrate some properties of
+this representation? e.g. n0 = 1 when starting at program entry}
 
 \subsection{Learning Linear Control Flow Relationships} \label{algstep1}
 
 In this step our goal is to learn relationships between the number of
 times basic blocks execute and to identify corresponding loops in the
-target and rewrite. For example, we might observe that a loop body
-in the target executes four times as often as a corresponding
-loop body in the rewrite. We instrument each basic block with an extra
-instruction that counts the number times the block executes. In block
-$i$ of the target we use \shadow{} $n_i$ to represent its execution
-count, and $n_i'$ for basic block $i$ of the rewrite.
-
-Throughout the algorithm, we represent the counts of each basic
-block in both program path as a vector.  Given a path $P$ through the
-target and a path $Q$ through the rewrite, we define the \emph{vector
-representation of paths P,Q} or $v(P,Q)$ as the vector that encodes
-the number of times each basic block appears on the path as follows:
-
-$$<1, n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}'>$$
+target and rewrite. For example, we might observe that a loop body in
+the target executes four times as often as a corresponding loop body
+in the rewrite.
 
 To learn the control flow relationships, we construct a
 matrix $\controlflowmatrix$ and compute its nullspace,
 $\nullsp{\controlflowmatrix}$. We run each test case $\tau_i$ on
-the target and rewrite programs. Each $\tau_i$ exhibits paths
-$P_i$ and $Q_i$. We construct $\controlflowmatrix$ by setting the
-$i$th row to $v(P_i, Q_i)$. Each vector in the generating set of
-$\nullsp{\controlflowmatrix}$ is a linear equality between basic block
-counts (either relating target basic block counts, rewrite basic block
-counts, or both).
+the target and rewrite programs. Each $\tau_i$ exhibits paths $P_i$
+and $Q_i$. We construct $\controlflowmatrix$ by setting the $i$th
+row to $v(P_i, Q_i)$. Each vector $w$ in the generating set of
+$\nullsp{\controlflowmatrix}$ satisfies $w \cdot v(P_i, Q_i) = 0$
+for each $i$. In essence, each $w$ corresponds to a linear equality
+between basic block counts; for example, one such $w$ might correspond
+to the linear equality $n_0 = n_0'$, which states that the entry block
+in the target is executed the same number of times as the entry block
+through the rewrite. The consequence is that given complete paths $P$
+and $Q$ through the target and the rewrite, we can test whether such
+paths are consistent with the provided test cases by computing $w\cdot
+v(P,Q)$ for each $w$ and checking if the results are 0. If so, then
+$P$ and $Q$ are consistent; if not, then $P$ and $Q$ are inconsistent
+with the test data.
 
-Armed with these linear equalities, we perform a search to identify
-corresponding loops. A naive approach is to check if any equality
-in $\nullsp{\controlflowmatrix}$ is of the form $n_i = k*n_j'$,
-however this will not reliably work as the generating set may instead
-include a relationship of the form $n_i + n_0 = k*n_j' + n_0'$ and
-$n_0 = n_0'$ separately. These two linear equalities encode the same
-information, but the information cannot be recovered by pattern
-matching on the linear equalities. Instead, we enumerate strongly
-connected components $C_1, C_2, \dotsc$ and $C_1', C_2', \dotsc$ of
-the control flow graphs of the target and rewrite. For each $C_i$ we
-pick a basic block to serve as the target's half of the \cutpoint{}
-and enumerate paths $SelfLoop(C_i)$ from the \cutpoint{} to itself
-up to some bound. For each $C_i$ and $C_j'$ we consider $SelfLoops =
+\note{There might be a nicer linear algebra approach to do this next
+bit} Armed with these linear equalities, we perform a search to
+identify corresponding loops. A naive approach is to check if any
+equality corresponding to a generator of $\nullsp{\controlflowmatrix}$
+is of the form $n_i = k*n_j'$; however, this will not reliably work
+as the generating set may instead include a relationship of the form
+$n_i + n_0 = k*n_j' + n_0'$ and $n_0 = n_0'$ separately. These two
+linear equalities both imply $n_i = k*n_j'$, but the information
+cannot be recovered by pattern matching on the linear equalities.
+Instead, we enumerate strongly connected components $C_1, C_2, \dotsc$
+and $C_1', C_2', \dotsc$ of the control flow graphs of the target and
+rewrite. For each $C_i$ we pick a basic block to serve as the target's
+half of the \cutpoint{} and enumerate paths $SelfLoop(C_i)$ from the
+\cutpoint{} to itself up to some bound \todo{we haven't explained
+cutpoints yet}. For each $C_i$ and $C_j'$ we consider $SelfLoops =
 SelfLoop(C_i) \times SelfLoop(C_j')$ and check to see if there exists
 $x \in SelfLoops$ where $v(x) \in \nullsp{\controlflowmatrix}$. If
 so, we have identified a corresponding pair of paths in the target
@@ -76,7 +96,7 @@ each pair of corresponding loops, we perform a search over every
 possible pair of program points that could be used as a \cutpoint.
 For each candidate cutpoint, we perform the above correspondence of
 loops, the invariant learning described in section \ref{algstep2} and
-section \ref{algstep 3} and use a heuristic to evaluate the quality of
+section \ref{algstep3} and use a heuristic to evaluate the quality of
 the learned invariants. The heuristic is to count the number of live
 variables constrained by learned invariants; more is better. We then
 use the \cutpoint{} that generated the best invariant.
@@ -183,4 +203,10 @@ equivalent.
 
 \subsection{Learning Non-Linear Invariants and Verifying Correctness} \label{algstep6}
 
-
+\begin{figure}
+\begin{eqnarray*}
+Inv &\rightarrow& \sum c_iv_i = c \hspace{2mm}\bigg|\hspace{2mm} \pm v_1 \pm v_2 \leq c \hspace{2mm}\bigg|\hspace{2mm} m_1 = m_2 \hspace{2mm}\bigg|\hspace{2mm} m = v\\
+v   &\rightarrow& Reg \hspace{2mm}\bigg|\hspace{2mm}  Reg[i:j]  \hspace{2mm}\bigg|\hspace{2mm} n_i\\
+\end{eqnarray*}
+\caption{The language of invariants.  Each $c$ represents a bitvector constant, $m$ represents a memory dereference, $n_i$ a count of basic block executions.  $Reg$ represents an \arch{} register and $Reg[i:j]$ represents a subregister.}
+\end{figure}

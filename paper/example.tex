@@ -1,32 +1,61 @@
-\section{Example}
+\section{Example}\label{example-sec}
 
-Consider
+Consider the pair of C programs in Figure~\ref{exampleListing}. These
+functions take as input an array of alphabetic characters and swap the
+case of each one. The program in Figure~\ref{exampleTarget}, known as
+the target, iterates over the characters one at a time. The rewrite
+program, shown in Figure~\ref{exampleRewrite}, shows a typical way
+such a program may be vectorized by modern compilers. The steady-state
+loop (basic block 3) reads and operates on 8 bytes at a time. The
+purpose of the warm-up loop (basic block 2) is to operate one byte at
+a time until the pointer is aligned to an 8-byte boundary; this step
+improves performance for memory reads and writes (and is necessary in
+the case of instructions that operate on aligned memory). Lastly, the
+cool-down loop (basic block 4) operates on any remaining bytes once
+the steady-state loop is finished.
 
-\begin{figure}
+\begin{figure}\label{exampleListing}
 \begin{lstlisting}[language=C]
-void swap_case(char* r, int len) {
-  for(int i = 0; i < len*8; i++,r++) {
-    *r ^= 0x20; 
+void swap_case(char* s, int len) {
+  for(int i = 0; i < len; i++,r++) {
+    // block 1
+    *s ^= 0x20;
   }
 }
 \end{lstlisting}
-\subcaption{Target}
+\subcaption{Target}\label{exampleTarget}
 \begin{lstlisting}[language=C]
-void swap_case(char* r, int len) {
-  int i = 0;
-  for(;i < len*8 && 
-       (uint64_t)(r) % 8 != 0; i++, r++) {
-    *r ^= 0x20 
+void swap_case(char* s, int len) {
+  // block 1
+  int i = 0;        
+  for(; i < len &&
+      (uintptr_t)s % 8 != 0; i++, s++) {
+    // block 2
+    *s ^= 0x20;                             
   }
-  for(;i < len*8; i+=8,r+=8) {
-    *((long*)r) ^= 0x2020202020202020
+  for(; i + 7 < len; i += 8, s += 8) {
+    // block 3
+    *((uint64_t*)s) ^= 0x2020202020202020;
+  }
+  for(; i < len; i++, s++) {
+    // block 4
+    *s ^= 0x20;            
   }
 }
 \end{lstlisting}
-\subcaption{Rewrite}
+\subcaption{Rewrite}\label{exampleRewrite}
 \end{figure}
 
+To the best of our knowledge, no existing automatic verification
+techniques exist to prove these two functions equivalent (unless the
+compiler is instrumented to generate verification conditions, as in
+the case of translation validation).
 
-an naive way of building a bisimulation relation would be to 
-
+One approach to proving equivalence based on the existing literature
+would be to show that 8 iterations of block 1 in the target are
+equivalent to 1 iteration of block 3 in the rewrite (and unrolling the
+warm-up and cool-down loops to reason about them in a bounded way).
+Then, we need to learn a loop invariant relating the machine states
+after each of these iterations. However, the invariant needed depends
+on the path taken to this pair of program points!  
 

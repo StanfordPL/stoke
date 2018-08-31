@@ -1,5 +1,55 @@
 \section{Related Work}
 
+The most similar work to ours is that of~\cite{Dahiya17ASPLAS}. The
+authors perform black-box equivalence checking across a variety of
+compiler optimizations. Their technique rests on the assumption that
+given a branch in the rewrite program that executes on condition $C$,
+there is a corresponding branch in the target program that executes
+with the same condition. This assumption holds for a variety of
+compiler optimizations, but it doesn't hold for many vectorization
+examples (such as that presented in Section~\ref{example-sec}). Also,
+it is asymmetric: with this technique, sometimes one can prove that a
+target is equivalent to a rewrite, but not the other way around.
+
+Work on equivalence checking is expansive and a complete summary is
+not possible; however, the following areas are most relevant:
+
+\textbf{Translation Validation.}  Translation validation seeks to verify the correctness of compiler optimizations.
+
+\textbf{Predicate Pairing}
+
+In many works there's an assumption that loop executions of the
+target are in one-to-one correspondence with loop executions of the
+rewrite, meaning that both programs execute each loop the same number
+of times. This assumption does not allow the verification of loop
+unpeeling, loop unrolling, nor vectorization optimizations. It's
+a helpful assumption for proving the concept behind verification
+techniques, especially when dealing with loops generally is an
+unsolved problem, but is not useful for most real-world optimization
+settings. Some examples include past work on data-driven equivalence
+checking~\cite{Sharma2013} and Necula's well-known translation
+validation work~\cite{Necula2000}.
+
+An alternative approach involves described in~\cite{Tristan2011}
+involves building value-graphs for a target and rewrite program,
+normalizing the graphs via a series of rewrite rules, and checking for
+equality. The effectiveness of this approach is limited by the ability
+to reason about a fixpoint operator that models loops; however, the
+authors haven't explained what loop optimizations it can and cannot
+handle\todo{re-read the paper and make very sure this is true}.
+
+Some works use manually-provided inputs to generate the control flow
+correspondence. For example, in~\cite{Kundu2009} the authors prove
+the correctness of some difficult compiler optimizations, such as
+loop interchange, by using programmer-supplied templates which imply
+a correspondence. Other works allow users to specify ``control flow
+synchronization points" to be placed manually by the user~\cite{Kiefer2016}.
+
+There is still a fruitful line of research in verifying the
+correctness of peephole optimizations without loops~\cite{Lopes2015},
+where authors make progress on problems such as modeling undefined
+behavior.
+
 \section{Background}
 
 \subsection{Bisimulation Relations}
