@@ -59,32 +59,51 @@ for each $i$. In essence, each $w$ corresponds to a linear equality
 between basic block counts; for example, one such $w$ might correspond
 to the linear equality $n_0 = n_0'$, which states that the entry block
 in the target is executed the same number of times as the entry block
-through the rewrite. The consequence is that given complete paths $P$
-and $Q$ through the target and the rewrite, we can test whether such
-paths are consistent with the provided test cases by computing $w\cdot
-v(P,Q)$ for each $w$ and checking if the results are 0. If so, then
-$P$ and $Q$ are consistent; if not, then $P$ and $Q$ are inconsistent
-with the test data.
+through the rewrite. The consequence is that given complete paths
+$P$ and $Q$ through the target and the rewrite, we can test whether
+such paths are \emph{consistent} with the provided test cases by computing
+$w\cdot v(P,Q)$ for each $w$ and checking if the results are 0. If
+so, then $P$ and $Q$ are consistent; if not, then $P$ and $Q$ are
+inconsistent with the test data. Equivalently, we can create a matrix
+$\controlflownullmatrix$ from the vectors $w$ and say that $P,Q$ are
+consistent with the test data if $\controlflownullmatrix v(P,Q) = 0$.
 
 \note{There might be a nicer linear algebra approach to do this next
 bit} Armed with these linear equalities, we perform a search to
 identify corresponding loops. A naive approach is to check if any
 equality corresponding to a generator of $\nullsp{\controlflowmatrix}$
-is of the form $n_i = k*n_j'$; however, this will not reliably work
-as the generating set may instead include a relationship of the form
-$n_i + n_0 = k*n_j' + n_0'$ and $n_0 = n_0'$ separately. These two
-linear equalities both imply $n_i = k*n_j'$, but the information
-cannot be recovered by pattern matching on the linear equalities.
-Instead, we enumerate strongly connected components $C_1, C_2, \dotsc$
-and $C_1', C_2', \dotsc$ of the control flow graphs of the target and
-rewrite. For each $C_i$ we pick a basic block to serve as the target's
-half of the \cutpoint{} and enumerate paths $SelfLoop(C_i)$ from the
-\cutpoint{} to itself up to some bound \todo{we haven't explained
-cutpoints yet}. For each $C_i$ and $C_j'$ we consider $SelfLoops =
-SelfLoop(C_i) \times SelfLoop(C_j')$ and check to see if there exists
-$x \in SelfLoops$ where $v(x) \in \nullsp{\controlflowmatrix}$. If
-so, we have identified a corresponding pair of paths in the target
-and rewrite programs. If no pairs are found, we double the bound. In
+is of the form $n_i = k*n_j'$; however, this will not reliably work as
+the generating set may instead include a relationship of the form $n_i
++ n_0 = k*n_j' + n_0'$ and $n_0 = n_0'$ separately. These two linear
+equalities both imply $n_i = k*n_j'$, but the information cannot be
+recovered by pattern matching on the linear equalities. 
+
+Instead, we make the following observation: consider corresponding
+self-loops $P$ and $Q$ in the target and rewrite that start and end
+at a \cutpoint. Also consider paths $P'$ and $Q'$ consistent with
+the test data that run through the entirety of the two programs,
+and pass through this cutpoint. We also expect that, if we inserted
+path $P$ into $P'$ and correspondingly $Q$ into $Q'$ to make new
+paths $P''$ and $Q''$, then $P''$ and $Q''$ should be consistent.
+Therefore, $\controlflownullmatrix v(P',Q') = \controlflownullmatrix
+v(P'',Q'') = 0$. However, we can also conclude that $v(P'',Q'')
+= v(P,Q) + v(P',Q')$ and by the linearity of the multiplication,
+$\controlflownullmatrix v(P,Q) = 0$. This tells us that we can test
+whether $P$ or $Q$ could be corresponding loops through the program
+and just the same way as checking whether complete executions are
+consistent with the test data: by checking $\controlflownullmatrix
+v(P,Q)$ is 0.  
+
+To identify the self-loops, we enumerate strongly connected components
+$C_1, C_2, \dotsc$ and $C_1', C_2', \dotsc$ of the control flow graphs
+of the target and rewrite. For each $C_i$ we pick a basic block to
+serve as the target's half of the \cutpoint{} and enumerate paths
+$SelfLoop(C_i)$ from the \cutpoint{} to itself up to some bound.
+For each $C_i$ and $C_j'$ we consider $SelfLoops = SelfLoop(C_i)
+\times SelfLoop(C_j')$ and check to see if there exists $x \in
+SelfLoops$ where $v(x) \in \nullsp{\controlflowmatrix}$. If so, we
+have identified a corresponding pair of paths in the target and
+rewrite programs. If no pairs are found, we double the bound. In
 practice, we initialize the bound to 1 and allow a maximum of 128.
 
 We use a search to choose the \cutpoint{} for each pair of
