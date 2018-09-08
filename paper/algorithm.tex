@@ -209,7 +209,7 @@ Second, we use the data from the test cases to ensure that the
 executes on paths $P$ and $Q$ through the rewrite, then the paths
 may be decomposed into $P = P_1P_2\dotsm P_k$ and $Q = Q_1Q_2\dotsm
 Q_k$ such that each $(P_i, Q_i)$ is an edge in the \bisimrep. To do
-so, we treat the \bisimrep as the graph of a nondeterministic finite
+so, we treat the \bisimrep{} as the graph of a nondeterministic finite
 automata whose transitions are labeled by pairs of program paths, and
 check that this automata accepts the input $(P, Q)$. 
 
@@ -218,11 +218,20 @@ corresponding to the execution of paths $P_1\dotsm P_i$ and $Q_1
 \dotsm Q_i$, which is data for some cutpoint $C$. We additionally
 check that, at each transition, the heap of the target matches the
 heap of the rewrite; if not, we know that we cannot prove the programs
-equivalent.
+equivalent. We use the program states to learn non-linear invariants
+as described in the next subsection.
 
 \subsection{Learning Non-Linear Invariants and Verifying Correctness} \label{algstep6}
 
-\begin{figure}
+In addition to the linear invariants at each cutpoint, we need other
+invariants to complete the proof of equivalence. The full language
+of invariants needed is shown in Figure~\ref{invlang}; it includes
+inequalities corresponding to the octagon abstract domain\todo{cite}
+and equalities over memory locations. The terms in each invariant
+may be a register, a sub-register, or one of the shadow registers
+representing the count of basic block executions.  
+
+\begin{figure}\label{invlang}
 \begin{eqnarray*}
 Inv &\rightarrow& \sum c_iv_i = c \hspace{2mm}\bigg|\hspace{2mm} \pm v_1 \pm v_2 \leq c \hspace{2mm}\bigg|\hspace{2mm} m_1 = m_2 \hspace{2mm}\bigg|\hspace{2mm} m = v\\
 v   &\rightarrow& Reg \hspace{2mm}\bigg|\hspace{2mm}  Reg[i:j]  \hspace{2mm}\bigg|\hspace{2mm} n_i\\
@@ -230,5 +239,32 @@ v   &\rightarrow& Reg \hspace{2mm}\bigg|\hspace{2mm}  Reg[i:j]  \hspace{2mm}\big
 \caption{The language of invariants.  Each $c$ represents a bitvector constant, $m$ represents a memory dereference, $n_i$ a count of basic block executions.  $Reg$ represents an \arch{} register and $Reg[i:j]$ represents a subregister.}
 \end{figure}
 
-\todo{explain verifying invariants}
-\todo{explain verifying correspondence}
+To learn the linear equalities, we use the matrix techniques from
+DDEC~\cite{Sharma2013}. For the inequalities and the equalities over
+memory, we guess a set of invariants using data, and then use an
+approach based on Houdini\todo{cite} to find a subset of them that
+hold over all invariants. To guess the initial set of inequalities,
+we consider each pair of variables $(v_1, v_2)$ (i.e. where $v_1$ and
+$v_2$ are registers, subregisters, or control flow counts) and look
+for the strongest lower and upper bound for each of $v_1 + v_2$, $v_1
+- v_2$, $-v_1 + v_2$ and $-v_1-v_2$. If a strongest bound across all
+the test cases is tight for at least 2 test cases, then we add the
+corresponding invariant to the set. To learn equalities over memory,
+we generate candidate equalities for all defined memory locations.
+If an equality holds over all execution traces, we add it to the
+candidate set.
+
+To verify the \bisimrep{} we perform to kinds of checks:
+
+\begin{enumerate}
+\item Invariant verification checks. Suppose $C$ is a cutpoint with
+candidate invariant $I = J_0 \wedge J_1 \wedge \dotsm J_k$ and $C'$ is
+a cutpoint with invariant $I'$, where either $C'$ is a predecessor of
+$C$ \emph{or} $C = C'$ for the inductive case. Then, for every edge
+in the \bisimrep{} corresponding to paths $P$ and $Q$ from $C'$ to
+$C$, we need to prove that if $I'$ holds at cutpoint $C'$ then each of
+$J_0,J_1,\dotsc,J_k$ holds at cutpoint $C$. If some $J_i$ fails, then
+we simply remove it from the invariant at cutpoint $C'$. We repeat
+these checks until we reach a fixed point.
+\item Control flow correspondence checks.
+\end{enumerate}

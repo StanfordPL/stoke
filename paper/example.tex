@@ -5,13 +5,15 @@ functions take as input an array of 32-bit integers and flip the bits
 in each ones. The target (Figure~\ref{exampleTarget}) iterates over
 each integer in the array. The rewrite (Figure~\ref{exampleRewrite})
 illustrates how a compiler might use 64-bit registers to ``vectorize''
-this program. While this example is contrived, it is representative of
-a number of challenges exhibited in more complex benchmarks. In the
-rewrite, basic block 3 is the steady-state loop. The branch preceding
-(block 2) is similar to a warm-up loop in real vectorized code; the
-purpose is to align the iterations of the steady state loop to a
-cache-line boundary. The branch following the loop (block 4) performs
-the computation on the last element of the array, if necessary.
+this program. While this example is contrived, it is representative
+of a number of challenges exhibited in complex benchmarks that arise
+naturally. In the rewrite, basic block 3 is the steady-state loop.
+The branch preceding (block 2) is similar to a warm-up loop in real
+vectorized code; the purpose is to align the iterations of the steady
+state loop to a cache-line boundary (in this example that the `array'
+input is 4-byte aligned, but we wish to align it to 8 bytes). The
+branch following the loop (block 4) performs the computation on the
+last element of the array, if necessary.
 
 \begin{figure}\label{exampleListing}
 \begin{lstlisting}[language=C]
@@ -59,21 +61,26 @@ let $n_i$ represent the number of times basic block $i$ is executed in
 the target and $n_i'$ represent the number of times basic block $j$
 is executed in the rewrite. We observe (Section~\ref{}) the following
 equality holds over all test cases: $n_1 = n_2' + 2*n_3' + n_4'$. From
-here, we conclude that one iteration of basic block 3 corresponds to
-two iterations of basic block 1.
+here, we conclude that one iteration of basic block 3 corresponds
+to two iterations of basic block 1. We identify three cutpoints
+relating the two programs; cutpoint $A$ corresponds to the entry of
+both, cutpoint $B$ corresponds to the head of basic block 1 of the
+target and the head of basic block 3 in the rewrite, and cutpiont $C$
+corresponds to the exit of both programs.
 
 At this point, one might try to use the data to learn an invariant
-relating the program states at the heads of both loops that holds on
-an initial iteration and also holds after corresponding iterations
-(two of the target and one of the rewrite). \todo{rewrite this using
-cutpoint terminology} For this example, that approach fails unless the
-invariant language includes disjunctions and reasons about modular
-arithmetic. More generally, in more complex examples, (i) it could be
-unclear which paths in the target correspond to which paths in the
-rewrite, and (ii) generating the correct invariants could require
-reasoning about arbitrary branch conditions.\todo{this needs further
-clarification, especially around point (i) which is the bigger
-problem}
+relating the program states at cutpoint $B$. For this example, that
+approach fails unless the invariant language includes disjunctions
+and reasons about modular arithmetic. More generally, there are two
+problems: (i) it could be unclear which paths in the target
+correspond to which paths in the rewrite, and (ii) generating the
+correct invariants could require reasoning about arbitrary branch
+conditions. The first of these problems is more significant; there
+are any unbounded number of paths from the entry cutpoint to an
+interior cutpoint because these paths may include loops.  As a result,
+identifying which paths in the target correspond to which in the
+rewrite is non-trivial -- especially if the branch conditions differ
+-- and different pairs of paths may yield different invariants.
 
 To see this, consider the invariant $i' - i = 0 \wedge array' - array
 = 0 \wedge len = len'$. This holds only if block 2 of the rewrite
@@ -93,14 +100,14 @@ Our solution involves three ideas:
 In this example, we observe that for any execution traces of the two
 programs that end at the cutpoint, the following relationships hold:
 $array' - array = 8n_3' + 4n_2' - 4n_1$ and $i' - i = 2*n_3' + n_2' -
-n_1$. We rearrange these invariants: $8n_3' - 4n_1 = array' - array
-- 4n_2'$ and $2n_3' - n_1' = i' - i - n_2'$. The key is that, after
-an iteration of the corresponding paths, the left hand side does not
+n_1$.  Most importantly, these hold \emph{regardless of the paths taken}.  We rearrange these invariants: $8n_3' - 4n_1 = array' - array
+- 4n_2'$ and $2n_3' - n_1' = i' - i - n_2'$.  Observe that, after
+an iteration of the corresponding loops, the left hand side does not
 change. Thus we can conclude that the appropriate invariant to use is
 of the form $array' - array - 4n_2' = k_1 \wedge i' - i - n_2' = k_2
 \wedge len = len'$ for some choice of $k_1$ and $k_2$. Looking at the
 paths from the program entries to the cutpoint, it's clear that $k_1
-= k_2 = 0$ is a suitable choice (but incidentally, other choices work
+= k_2 = 0$ is a suitable choice (but other choices may work
 too).
 
 Moreover, the choice of $k_1$ and $k_2$ above induce an equivalence

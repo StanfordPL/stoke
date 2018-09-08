@@ -1,16 +1,29 @@
 \section{Background}
 
+
 \subsection{Bisimulation Relations}
 
 The mathematical definition of a bisimulation relation specifies
 a correspondence between two state transition systems, and in the
 equivalence checking literature bisimulation relations are widely
-used to prove equivalence of programs. Many works model the program as
-a state transition system by treating one state as the combination of
-a program point with all live variables. In our setting, this model
-isn't sufficient; relating the machine state and current program point
-is not enough to prove equivalence in some examples because it forgets
-the past history of the execution which can encode vital knowledge
+used to prove equivalence of programs. \todo{say a little more here;
+perhaps provide definition of bisimulation relation}
+
+The basic technique for building a bisimulation relations between two
+programs is to identify a set of \emph{cutpoints}. A cutpoint is a
+program point in the target and a corresponding program point in the
+rewrite. The states in the transition system of each program consist
+of a pair $(C, \sigma)$ where $C$ is a cutpoint and $\sigma$ is a
+machine state encoding the values of all the registers and memory
+locations. A bisimulation relation is induced by choosing an invariant
+$I$ that relates the machine states at the two programs for each
+cutpoint. We say that states $(C, \sigma)$ and $(C, \sigma')$ are
+related if an only if $I(\sigma, \sigma')$ hold. \todo{cite pldi2000
+or Bansal's undef paper}. \todo{explain how bisimulation relations
+in the past encoded some assumptions about paths that reach program
+points}
+
+\todo{explain the graph structure we use}
 
 \subsection{Modules and $\Z{n}$}
 
@@ -31,10 +44,11 @@ not have the concept of linear independence. Rather, there is no
 well-defined notion of dimension for a module. As a result, when
 reading about modules, some of the traditional concepts from linear
 algebra over fields apply, but not all do. Note that linear algebra
-over $\mathbb{Z}$ is easier than linear algebra over $\Z{64}$ because
+over $\mathbb{Z}$ is easier than linear algebra over $\Z{n}$ because
 the integers form a \emph{principal integral domain} (PID), allowing
 the construction of the field of fractions $\mathbb{Q}$; however,
 $\Z{n}$ is not a PID and thus no field of fractions exists. For a
-systematic treatment of modules, please see \todo{citation needed}.
-
+systematic treatment of modules, please see \todo{citation needed}. In
+our work, we use SageMath~\cite{sagemath} (version 7.5.1)
+to perform the needed computations over $\Z{64}$.
 
