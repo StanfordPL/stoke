@@ -81,46 +81,50 @@ proving equivalence~\cite{Dahiya17HVC}.
 %   - total CPU-time for proof obligation discharge
 
 \begin{figure*}
-\begin{tabular}{|l|c|c|c|c|c|c|c|c|}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
 \hline
-Benchmark & Target LOC & Rewrite LOC & GCC & LLVM & Learn Time & Enumerate Time & Check Time & Matching\\ \hline \hline
-s000 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s1112 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s112 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s121 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s1221 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s122 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s1251 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s127 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s1281 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s1351 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s162 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s173 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s2244 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s243 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s251 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s3251 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s351 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s452 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-s453 & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-sum1d & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vdotr & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vpvpv & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vpv & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vpvts & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vpvtv & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vtv & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
-vtvtv & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+Benchmark & Target LOC & GCC LOC & GCC    & LLVM LOC & LLVM & Learn Time & Enumerate Time & Check Time & Matching\\ \hline \hline
+s000  & 14  & 18  & \checkmark       & 44  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1112 & 12  & 31  & \checkmark       & 59  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s112  & 14  & 55  & \checkmark       & 24  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s121  & 16  & 44  & \checkmark       & 48  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1221 & 14  & 24  & \checkmark       & 37  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s122  & 17  & 108 & $\checkmark^\ast$& 21  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1251 & 18  & 29  & \checkmark       & 60  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s127  & 22  & 82  & TO               & 31  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1281 & 21  & 30  & TO               & 66  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1351 & 12  & 17  & \checkmark       & 51  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s162  & 17  & 49  & TO               & 58  & TO         & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s173  & 17  & 56  & \checkmark       & 70  & $\checkmark^\ast$ & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s2244 & 19  & 56  & \checkmark       & 65  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s243  & 25  & 30  & \checkmark       & 68  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s251  & 16  & 27  & \checkmark       & 49  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s3251 & 22  & 149 & $\checkmark^\ast$& 26  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s351  & 29  & 130 & $\checkmark^\ast$& 24  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s452  & 22  & 27  & \checkmark       & 25  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s453  & 15  & 22  & \todo{X}         & 15  & \todo{X}          & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+sum1d & 15  & 28  & \checkmark       & 45  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vdotr & 17  & 28  & \checkmark       & 49  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvpv & 15  & 26  & \checkmark       & 38  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpv   & 13  & 25  & \checkmark       & 37  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvts & 14  & 30  & $\checkmark^\ast$& 54  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvtv & 14  & 26  & \checkmark       & 36  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vtv   & 14  & 25  & \checkmark       & 36  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vtvtv & 15  & 26  & \checkmark       & 51  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
 \end{tabular}
-\caption{Experimental data on \totalbench{} benchmarks. The
-``Target LOC" and ``Rewrite LOC'' shows the number of \arch{}
-instructions in each program. The GCC and LLVM columns indicate the
-result of verification efforts. ``Learn Time" is the time taken for
-learning control-flow relationships, linear flow-insensitive loop
-invariants, linear flow-insensitive loop invariants, and cutpoints.
-``Enumerate time" is the time to list all possible \bisimreps{} and
-perform the sanity checks. ``Check time" is the total CPU time spent
-learning non-linear invariants and discharging proof obligations.}
+\caption{Experimental data on \totalbench{} benchmarks. The ``Target
+LOC" and ``Rewrite LOC'' shows the number of \arch{} instructions
+in each program. The GCC and LLVM columns indicate the result of
+verification efforts. \checkmark represents successful verification;
+$\checkmark^\ast$ shows that the tool correctly reported the programs
+non-equivalent (generally because it could not prove that stack
+accesses did not alias with heap locations); and ``TO" represents a
+timeout. ``Learn Time" is the time taken for learning control-flow
+relationships, linear flow-insensitive loop invariants, linear
+flow-insensitive loop invariants, and cutpoints. ``Enumerate time"
+is the time to list all possible \bisimreps{} and perform the sanity
+checks. ``Check time" is the total CPU time spent learning non-linear
+invariants and discharging proof obligations.}
 \end{figure*}
 
 \subsection{Results}
