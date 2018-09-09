@@ -1,5 +1,30 @@
 \section{Background}
 
+\subsection{Program Equivalence}
+
+We use a particularly strict definition of program equivalence. We say
+that two \arch{} functions, the target and rewrite, are equivalent
+if, when run starting at identical machine states (registers, stack,
+heap), one of the following hold:
+
+\begin{itemize}
+\item both run to completion, with identical memory state (stack and heap) and identical output registers (usually, but not always, rax)
+\item both result in a run-time error
+\item both loop forever
+\end{itemize}
+
+According to this definition, two \arch{} functions are not equivalent
+if they alter the stack differently. This is not a fundamental
+assumption of our work, as many authors \todo{cite} demonstrate
+that the stack can be assumed not to alias with heap. However,
+optimizations that change the writes to the stack can cause buggy
+programs to break in unexpected ways. For example, a buggy software
+might run correctly as long as a certain function does not modify
+the stack; replacing such a function with an optimized version that
+uses the stack to store a temporary might unintentionally break the
+program. Thus, to ensure soundness, at the cost of ruling out some
+optimizations, we do not assume that heap pointers do not alias the
+stack when proving equivalence.
 
 \subsection{Bisimulation Relations}
 
