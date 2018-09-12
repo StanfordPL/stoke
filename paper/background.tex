@@ -8,47 +8,67 @@ if, when run starting at identical machine states (registers, stack,
 heap), one of the following hold:
 
 \begin{itemize}
-\item both run to completion, with identical memory state (stack and heap) and identical output registers (usually, but not always, rax)
+\item both run to completion, with identical memory state (stack and heap) and identical user-specified output registers (often, but not always, rax)
 \item both result in a run-time error
 \item both loop forever
 \end{itemize}
 
 According to this definition, two \arch{} functions are not equivalent
 if they alter the stack differently. This is not a fundamental
-assumption of our work, as many authors \todo{cite} demonstrate
+assumption of our work, and many authors \todo{cite} demonstrate
 that the stack can be assumed not to alias with heap. However,
-optimizations that change the writes to the stack can cause buggy
-programs to break in unexpected ways. For example, a buggy software
-might run correctly as long as a certain function does not modify
-the stack; replacing such a function with an optimized version that
-uses the stack to store a temporary might unintentionally break the
-program. Thus, to ensure soundness, at the cost of ruling out some
-optimizations, we do not assume that heap pointers do not alias the
-stack when proving equivalence.
+optimizations that change stack writes can cause buggy programs to
+break in unexpected ways. For example, a buggy software might run
+correctly as long as a certain function does not modify the stack;
+optimizing this function and making use of a stack-allocated temporary
+might unintentionally break the program. Thus, to ensure soundness, at
+the cost of ruling out some optimizations, we consider the possibility
+that heap pointers alias stack locations when proving equivalence.
 
-\subsection{Bisimulation Relations}
+A consequence of our definition's sensitivity to run-time errors and
+infinite loops is that we seek a bisimulation relation, rather than a
+simulation relation, to demonstrate equivalence.
 
-The mathematical definition of a bisimulation relation specifies
-a correspondence between two state transition systems, and in the
-equivalence checking literature bisimulation relations are widely
-used to prove equivalence of programs. \todo{say a little more here;
-perhaps provide definition of bisimulation relation}
+\subsection{Bisimulation Relations}\ref{sec:proofobl}
 
-The basic technique for building a bisimulation relations between two
-programs is to identify a set of \emph{cutpoints}. A cutpoint is a
-program point in the target and a corresponding program point in the
-rewrite. The states in the transition system of each program consist
-of a pair $(C, \sigma)$ where $C$ is a cutpoint and $\sigma$ is a
-machine state encoding the values of all the registers and memory
-locations. A bisimulation relation is induced by choosing an invariant
-$I$ that relates the machine states at the two programs for each
-cutpoint. We say that states $(C, \sigma)$ and $(C, \sigma')$ are
-related if an only if $I(\sigma, \sigma')$ hold. \todo{cite pldi2000
-or Bansal's undef paper}. \todo{explain how bisimulation relations
-in the past encoded some assumptions about paths that reach program
-points}
+\todo{bisimulation relation definition}
 
-\todo{explain the graph structure we use}
+Constructing a bisimulation relation for two programs starts by
+modeling the two programs as labeled transition systems over a set of
+states that capture both data and control flow. A common technique
+is to use \emph{cutpoints}. A cutpoint is a pair $(p,q)$ where $p$
+is a program point in the target and $q$ a program point in the
+rewrite. Each state in the transition system for each program is a
+pair $(C, \sigma)$ where $C$ is a cutpoint and $\sigma$ is a machine
+state encoding the values of all the registers and memory locations.
+The transitions correspond to paths between cutpoints in one of the
+programs.
+
+In our work we use a graph structure, called a \emph{\bisimrep}
+to describe a bisimulation. This is similar to, but varies from,
+similar graphs such as the ``joint transfer function graph"
+of~\cite{Dahiya17ASPLAS}. The \bisimrep{} is a directed graph where
+each node is a cutpoint. Each edge from cutpoint $C$ relating program
+points $(p,q)$ to cutpoint $C'$ relating program points $(p',q')$ is
+labeled by a path $P$ from $p$ to $p'$ and a path $Q$ from $q$ to
+$q'$. The only loops in the \bisimrep{} are self-loops. We label each
+cutpoint $C$ with an invariant $I_C$. This graph induces a relation on
+the state transition systems corresponding to the target and rewrite
+programs. That is, the states $(C, \sigma)$ and $(C', \sigma')$ are
+related if and only if $C = C'$ and $I_C(\sigma,\sigma')$ hold. When
+this relation is a bisimulation, we say that the \bisimrep{} is
+\emph{correct}.
+
+We can check the correctness of a \bisimrep{} by
+verifying the following proof obligations:
+
+\begin{itemize}
+\item For each edge labeled by paths $P$ and $Q$ from cutpoint $C =
+(p,q)$ to $C' = (p',q')$: if invariant $I_C$ holds for states $\sigma,
+\rho$ at $(p,q)$, then executing paths $P$ and $Q$ in the target and rewrite
+results in states $\sigma',\rho'$ which satisfy $I_{C'}$.
+\item For each cutpoint $C$, \todo{finish this -- it's subtle}
+\end{itemize}
 
 \subsection{Modules and $\Z{n}$}
 
@@ -65,7 +85,7 @@ spaces and modules, and we need not dwell on them at length. In both
 settings, we have the concept of a \emph{basis} or \emph{generating
 set} where linear combinations of a set of vectors generate an
 entire space. However, a key difference is that in modules we do
-not have the concept of linear independence. Rather, there is no
+not have the concept of linear independence. There is no
 well-defined notion of dimension for a module. As a result, when
 reading about modules, some of the traditional concepts from linear
 algebra over fields apply, but not all do. Note that linear algebra
