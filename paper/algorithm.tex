@@ -225,18 +225,19 @@ as described in the next subsection.
 
 In addition to the linear invariants at each cutpoint, we need other
 invariants to complete the proof of equivalence. The full language
-of invariants needed is shown in Figure~\ref{invlang}; it includes
+of invariants needed is shown in Figure~\ref{fig:invlang}; it includes
 inequalities corresponding to the octagon abstract domain\todo{cite}
 and equalities over memory locations. The terms in each invariant
 may be a register, a sub-register, or one of the shadow registers
 representing the count of basic block executions.  
 
-\begin{figure}\label{invlang}
+\begin{figure}
 \begin{eqnarray*}
 Inv &\rightarrow& \sum c_iv_i = c \hspace{2mm}\bigg|\hspace{2mm} \pm v_1 \pm v_2 \leq c \hspace{2mm}\bigg|\hspace{2mm} m_1 = m_2 \hspace{2mm}\bigg|\hspace{2mm} m = v\\
 v   &\rightarrow& Reg \hspace{2mm}\bigg|\hspace{2mm}  Reg[i:j]  \hspace{2mm}\bigg|\hspace{2mm} n_i\\
 \end{eqnarray*}
 \caption{The language of invariants.  Each $c$ represents a bitvector constant, $m$ represents a memory dereference, $n_i$ a count of basic block executions.  $Reg$ represents an \arch{} register and $Reg[i:j]$ represents a subregister.}
+\label{fig:invlang}
 \end{figure}
 
 To learn the linear equalities, we use the matrix techniques from

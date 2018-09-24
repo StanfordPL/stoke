@@ -27,8 +27,10 @@ input length.  We had to remove three classes of benchmarks from the
 original TSVC set:
 
 \begin{itemize}
-\item Benchmarks that could not be vectorized with either GCC 4.9.2 nor clang 3.4 using -msse4.2 and -O3. (90)
-\item Duplicate benchmarks where nearly identical assembly code was generated after compilation as another benchmark. (8)
+\item Benchmarks that could not be vectorized with either GCC 4.9.2
+nor clang 3.4 using -msse4.2 and -O3. (90)
+\item Duplicate benchmarks where nearly identical assembly code was
+generated after compilation as another benchmark. (8)
 \item Benchmark functions that contained calls to other methods. (6)
 \item Benchmarks that did not perform singly-nested iterations over
 one-dimensional arrays. This mainly included doubly-nested loops
@@ -41,11 +43,13 @@ extra indirection which would require a customized set of test cases.
 We had to remove duplicate benchmarks because some of the TSVC
 benchmarks were designed to see if a compiler could perform an
 analysis to verify an optimization was safe to perform; however,
-after compilation, the two programs would be the same. \totalbench{} benchmarks
-remained. Most of the benchmarks iterate over one or more arrays (up
-to 5), perform some computation (often adds and multiplies), and
-update the arrays. Some benchmarks process the array forwards, some
-backwards, and some with a stride.
+after compilation, the two programs would be the same. \totalbench{}
+benchmarks remained. Most of the benchmarks iterate over one or
+more arrays (up to 5), perform some computation (often adds and
+multiplies), and update the arrays. Some benchmarks process the array
+forwards, some backwards, and some with a stride. Some benchmarks have
+loop carried dependencies, others do not. No combination of these
+features hindered our ability to perform the verification task.
 
 \subsection{Discharging Proof Obligations}
 

@@ -1,6 +1,6 @@
 \section{Example}\label{example-sec}
 
-Consider the pair of C programs in Figure~\ref{exampleListing}. These
+Consider the pair of C programs in Figure~\ref{exampleListing}\todo{fix}. These
 functions take as input an array of 32-bit integers and flip the bits
 in each one. The target (Figure~\ref{exampleTarget}) iterates over
 each integer in the array. The rewrite (Figure~\ref{exampleRewrite})
@@ -15,7 +15,8 @@ input is already 4-byte aligned, but we wish to align it to 8 bytes). The
 branch following the loop (block 4) performs the computation on the
 last element of the array, if necessary.
 
-\begin{figure}\label{exampleListing}
+\begin{figure}
+\label{exampleListing}
 \begin{lstlisting}[language=C]
 void bitflip(int* array, int len) {
   for(int i = 0; i < len; i++) {
