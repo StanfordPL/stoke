@@ -1,4 +1,4 @@
-\section{Example}\label{example-sec}
+\section{Example}\label{sec:example}
 
 Consider the pair of C programs in Figure~\ref{exampleListing}\todo{fix}. These
 functions take as input an array of 32-bit integers and flip the bits
@@ -30,7 +30,7 @@ void bitflip(int* array, int len) {
 void bitflip(int* array, int len) {
   // block 1
   int i = 0;
-  if((uint_ptr_t)array % 8 == 0) {
+  if(len && (uint_ptr_t)array % 8 == 0) {
     // block 2
     *array ^= 0xffffffff;
     array++;
@@ -105,9 +105,9 @@ $array' - array = 8n_3' + 4n_2' - 4n_1$ and $i' - i = 2*n_3' + n_2'
 - n_1$. Most importantly, these hold \emph{regardless of the paths
 taken}. We could attempt to prove these control-flow insensitive
 invariants directly, however doing so in general is difficult. That's
-because one would need to fully reason about the execution of both
-program, without taking advantage of the correspondence with the other
-that illustrates the equality.
+because one would need to fully reason about the execution of each
+program independently, without taking advantage of the correspondence
+with the other that illustrates the equality.
 
 Instead, we rearrange these invariants: $8n_3' - 4n_1 = array' - array
 - 4n_2'$ and $2n_3' - n_1' = i' - i - n_2'$. Observe that, after an
@@ -138,7 +138,8 @@ $P$       & $Q$ & $n_2'$ & $i'-i$ & $k_1$ & $k_2$ \\ \hline  \hline
 11 & 133     &  0 & 2  & 8 & 2  \\
 11 & 1233    &  1 & 3  & 8 & 2  \\ \hline
 \end{tabular}
-\caption{Selected paths from the entry to the first cutpoint.}
+\caption{Selected paths from the entry to the first cutpoint. Two
+paths are equivalent if their values for $k_1$ and $k_2$ match.}
 \label{fig:egpaths}
 \end{figure}
 

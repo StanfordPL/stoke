@@ -7,7 +7,7 @@ given a branch in the rewrite program that executes on condition $C$,
 there exists a corresponding branch in the target program that executes
 with the same condition. This assumption holds for a variety of
 compiler optimizations, but it doesn't hold for many vectorization
-examples (such as that presented in Section~\ref{example-sec}). Also,
+examples (such as that presented in Section~\ref{sec:example}). Also,
 it is asymmetric: with this technique, sometimes one can prove that a
 target is equivalent to a rewrite, but not the other way around.
 
@@ -23,17 +23,18 @@ verifying optimizations performed manually (as in our case study of
 \libc{} strlen) where there is no compiler to instrument.
 
 In the literature of translation validation, equivalence checking,
-and relational verification\todo{and what else?}, many works assume
-that loop executions of the target are in one-to-one correspondence
-with loop executions of the rewrite, meaning that both programs
-execute each loop the same number of times. This assumption does
-not allow the verification of loop unpeeling, loop unrolling, nor
-vectorization optimizations. The assumption helps validate new
-verification techniques, especially when dealing with loops generally
-is an intractable problem, but is inapplicable in most real-world
-optimization settings. Some examples include past work on data-driven
-equivalence checking~\cite{Sharma2013} and Necula's well-known
-translation validation work~\cite{Necula2000}.\todo{cite more}
+and relational verification, many works assume that loop executions
+of the target are in one-to-one correspondence with loop executions
+of the rewrite, meaning that both programs execute each loop the same
+number of times. This assumption does not allow the verification of
+loop unpeeling, loop unrolling, nor vectorization optimizations.
+The assumption helps validate new verification techniques,
+especially when dealing with loops generally is an intractable
+problem, but is inapplicable in most real-world optimization
+settings. Some examples include past work on data-driven equivalence
+checking~\cite{Sharma2013}, Necula's well-known translation validation
+work~\cite{Necula2000}, and others~\cite{Fedykovich2015}. \todo{cite
+more}
 
 Some works instead use manually-provided inputs to generate the
 control flow correspondence. For example, in~\cite{Kundu2009}
@@ -43,7 +44,13 @@ templates which imply a correspondence. Other works allow users to
 specify ``control flow synchronization points" to be placed manually
 by the user~\cite{Kiefer2016}.
 
-\todo{Ask Rahul about predicate pairing}
+An alternative approach is to use powerful solvers, such as those for
+constrained Horn clauses, to fully reason about a pair of programs in
+question and to prove equivalence. This achieves equivalence checking,
+but does not explicitly construct a control flow correspondence
+between two programs. It is, however, limited by the ability of the
+solver to reason about possibly undecidable problems.\todo{learn more
+about this and cite}
 
 There are several other approaches that avoid creating an explicit
 control flow correspondence. One approach involves described

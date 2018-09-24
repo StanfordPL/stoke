@@ -70,6 +70,7 @@ results in states $\sigma',\rho'$ which satisfy $I_{C'}$.
 \item For each cutpoint $C$, \todo{finish this -- it's subtle}
 \end{itemize}
 
+
 \subsection{Modules and $\Z{n}$}
 
 On processors, arithmetic does not happen over $\mathbb{Z}$, but
@@ -83,17 +84,22 @@ algebra does not fully apply. Instead of \emph{vector spaces} we
 have \emph{$\Z{n}$-modules}. There are many parallels between vector
 spaces and modules, and we need not dwell on them at length. In both
 settings, we have the concept of a \emph{basis} or \emph{generating
-set} where linear combinations of a set of vectors generate an
-entire space. However, a key difference is that in modules we do
-not have the concept of linear independence. There is no
-well-defined notion of dimension for a module. As a result, when
-reading about modules, some of the traditional concepts from linear
-algebra over fields apply, but not all do. Note that linear algebra
-over $\mathbb{Z}$ is easier than linear algebra over $\Z{n}$ because
-the integers form a \emph{principal integral domain} (PID), allowing
-the construction of the field of fractions $\mathbb{Q}$; however,
-$\Z{n}$ is not a PID and thus no field of fractions exists. For a
-systematic treatment of modules, please see \todo{citation needed}. In
-our work, we use SageMath~\cite{sagemath} (version 7.5.1)
-to perform the needed computations over $\Z{64}$.
+set} where linear combinations of a set of vectors generate an entire
+space. However, a key difference is that in modules we do not have the
+concept of linear independence. There is no well-defined notion of
+dimension for a module. As a result, when reading about modules, some
+of the traditional concepts from linear algebra over fields apply,
+but not all do. Instead of a \emph{nullspace}, in the linear algebra
+setting, we work with \emph{kernels}. Note that linear algebra over
+$\mathbb{Z}$ is easier than linear algebra over $\Z{n}$ because the
+integers form a \emph{principal integral domain} (PID), allowing the
+construction of the field of fractions $\mathbb{Q}$; however, $\Z{n}$
+is not a PID and thus no field of fractions exists. For a systematic
+treatment of modules, please see \todo{citation needed}. In our work,
+we use SageMath~\cite{sagemath} (version 7.5.1) to perform the needed
+computations over $\Z{64}$.
 
+\subsection{Kernel}
+
+\todo{Describe the basic trick of mining linear relationships from
+data by computing the kernel of a matrix (i.e. the nullspace)}

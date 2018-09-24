@@ -35,10 +35,17 @@ define the \emph{vector representation of paths P,Q} or $v(P,Q)$ as
 the vector that encodes the number of times each basic block appears
 on the path as follows:
 
-$$v(P,Q) = <n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}'>$$
+$$v(P,Q) = \left( n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}' \right)$$
 
-\todo{do we need to say more here or illustrate some properties of
-this representation? e.g. n0 = 1 when starting at program entry}
+By convention, basic block 0 corresponds to an entry block that
+includes no instructions. $k$ and $k'$ are the counts of non-entry
+basic blocks in the target and the rewrite. Using the example from
+Section~\ref{sec:example}, we would have\\
+
+\begin{tabular}{RCCCCCCCC}
+v(P,Q)     & = & \left(\right.n_0, & n_1, & n_0', & n_1', & n_2', & n_3', & n_4'\left.\right)\\
+v(11,1233) & = & \left(\right.1,   & 2,   & 1,    & 1,    & 1,    & 2,    & 0\left.\right)\\
+\end{tabular}
 
 \subsection{Learning Linear Control Flow Relationships} \label{algstep1}
 
@@ -48,43 +55,83 @@ target and rewrite. For example, we might observe that a loop body in
 the target executes four times as often as a corresponding loop body
 in the rewrite.
 
-To learn the control flow relationships, we construct a
-matrix $\controlflowmatrix$ and compute its nullspace,
-$\nullsp{\controlflowmatrix}$. We run each test case $\tau_i$ on
-the target and rewrite programs. Each $\tau_i$ exhibits paths $P_i$
-and $Q_i$. We construct $\controlflowmatrix$ by setting the $i$th
-row to $v(P_i, Q_i)$. Each vector $w$ in the generating set of
-$\nullsp{\controlflowmatrix}$ satisfies $w \cdot v(P_i, Q_i) = 0$
-for each $i$. In essence, each $w$ corresponds to a linear equality
-between basic block counts; for example, one such $w$ might correspond
-to the linear equality $n_0 = n_0'$, which states that the entry block
-in the target is executed the same number of times as the entry block
-through the rewrite. The consequence is that given complete paths
-$P$ and $Q$ through the target and the rewrite, we can test whether
-such paths are \emph{consistent} with the provided test cases by computing
-$w\cdot v(P,Q)$ for each $w$ and checking if the results are 0. If
-so, then $P$ and $Q$ are consistent; if not, then $P$ and $Q$ are
-inconsistent with the test data. Equivalently, we can create a matrix
-$\controlflownullmatrix$ from the vectors $w$ and say that $P,Q$ are
-consistent with the test data if $\controlflownullmatrix v(P,Q) = 0$.
+We mine the control flow relationships from kernel of a matrix
+$\controlflowmatrix$, denoted $\nullsp{\controlflowmatrix}$. We
+construct $\controlflowmatrix$ as follows. For each test case $\tau_i$
+we run the target and rewrite programs. These executions exhibit
+paths $P_i$ and $Q_i$. We set the $i$th row of $\controlflowmatrix$
+to $v(P_i, Q_i)$. In effect, the $i,j$-th entry of this matrix
+represents the number of times a certain block (indexed by $j$) was
+executed when running the two programs on test case $\tau_i$. A
+possible $\controlflowmatrix$ for our running example is illustrated
+in Figure~\ref{fig:eg-controlflowmatrix}.
+
+\begin{figure}
+\begin{equation*}
+\begin{pmatrix}
+v(\epsilon, 1)\\
+v(1, 12)\\
+v(1, 14)\\
+v(11, 124)\\
+v(11, 13)\\
+v(111, 123)\\
+v(111, 134)\\
+v(1111, 1234)\\
+v(1111, 133)\\
+\end{pmatrix}
+=
+\begin{pmatrix}
+1 & 0 & 1 & 1 & 0 & 0 & 0 \\
+1 & 1 & 1 & 1 & 1 & 0 & 0 \\
+1 & 1 & 1 & 1 & 0 & 0 & 1 \\
+1 & 2 & 1 & 1 & 1 & 0 & 1 \\
+1 & 2 & 1 & 1 & 0 & 1 & 0 \\
+1 & 3 & 1 & 1 & 1 & 1 & 0 \\
+1 & 3 & 1 & 1 & 0 & 1 & 1 \\
+1 & 4 & 1 & 1 & 1 & 1 & 1 \\
+1 & 4 & 1 & 1 & 0 & 2 & 0 \\
+\end{pmatrix}
+\end{equation*}
+\caption{Possible $\controlflowmatrix$ for our running example. The
+$i$th row of the matrix corresponds to the paths executed for a given
+test case. $\epsilon$ denotes a path on which no basic blocks are
+executed except the entry. Observe that the second column equals the
+sum of the fifth, the seventh, and twice the value of the sixth.}
+\label{fig:eg-controlflowmatrix}
+\end{figure}
+
+Each vector $w$ in the generating set of $\nullsp{\controlflowmatrix}$
+satisfies $w \cdot v(P_i, Q_i) = 0$ for each $i$. In essence, each
+$w$ corresponds to a linear equality between basic block counts;
+for example, one such $w$ might correspond to the linear equality
+observed in the example from Section~\ref{sec:example}, $n_1 = n_2'
++ 2*n_3' + n_4'$, which can also be observed in $\controlflowmatrix$
+as described in the caption of Figure~\ref{fig:eg-controlflowmatrix}.
+The consequence is that given any paths $P$ and $Q$ through the target
+and the rewrite, we can test whether such paths are \emph{consistent}
+with the provided test cases by computing $w\cdot v(P,Q)$ for each
+$w$ and checking if the results are 0. If so, then $P$ and $Q$ are
+consistent; if not, then $P$ and $Q$ are inconsistent with the test
+data. Equivalently, we can create a matrix $\controlflownullmatrix$
+from the vectors $w$ and say that $P,Q$ are consistent with the test
+data if $\controlflownullmatrix v(P,Q) = 0$.
+
+ Armed with these linear equalities, we perform a search to identify
+corresponding loops. A naive approach is to check if any equality
+corresponding to a generator of $\nullsp{\controlflowmatrix}$ is of
+the form $n_i = k*n_j'$; however, even in our simple example this is
+insufficient as no such equality exists.
 
 \note{There might be a nicer linear algebra approach to do this next
-bit} Armed with these linear equalities, we perform a search to
-identify corresponding loops. A naive approach is to check if any
-equality corresponding to a generator of $\nullsp{\controlflowmatrix}$
-is of the form $n_i = k*n_j'$; however, this will not reliably work as
-the generating set may instead include a relationship of the form $n_i
-+ n_0 = k*n_j' + n_0'$ and $n_0 = n_0'$ separately. These two linear
-equalities both imply $n_i = k*n_j'$, but the information cannot be
-recovered by pattern matching on the linear equalities. 
-
+bit}
 Instead, we make the following observation: consider corresponding
-self-loops $P$ and $Q$ in the target and rewrite that start and end
-at a \cutpoint. Also consider paths $P'$ and $Q'$ consistent with
-the test data that run through the entirety of the two programs,
-and pass through this cutpoint. We also expect that, if we inserted
-path $P$ into $P'$ and correspondingly $Q$ into $Q'$ to make new
-paths $P''$ and $Q''$, then $P''$ and $Q''$ should be consistent.
+loops $P$ and $Q$ in the target and rewrite that start and end
+at a \cutpoint. Also consider paths $P'$ and $Q'$ consistent
+with the test data that run through the entirety of the two
+programs, and pass through this cutpoint. We also expect that, if
+we inserted path $P$ into $P'$ and correspondingly $Q$ into $Q'$
+to make new paths $P''$ and $Q''$ that execute one more iteration
+than $P'$ and $Q'$, then $P''$ and $Q''$ should be consistent.
 Therefore, $\controlflownullmatrix v(P',Q') = \controlflownullmatrix
 v(P'',Q'') = 0$. However, we can also conclude that $v(P'',Q'')
 = v(P,Q) + v(P',Q')$ and by the linearity of the multiplication,
@@ -92,19 +139,22 @@ $\controlflownullmatrix v(P,Q) = 0$. This tells us that we can test
 whether $P$ or $Q$ could be corresponding loops through the program
 and just the same way as checking whether complete executions are
 consistent with the test data: by checking $\controlflownullmatrix
-v(P,Q)$ is 0.  
+v(P,Q)$ is 0.
 
 To identify the self-loops, we enumerate strongly connected components
 $C_1, C_2, \dotsc$ and $C_1', C_2', \dotsc$ of the control flow graphs
 of the target and rewrite. For each $C_i$ we pick a basic block to
 serve as the target's half of the \cutpoint{} and enumerate paths
-$SelfLoop(C_i)$ from the \cutpoint{} to itself up to some bound.
-For each $C_i$ and $C_j'$ we consider $SelfLoops = SelfLoop(C_i)
-\times SelfLoop(C_j')$ and check to see if there exists $x \in
-SelfLoops$ where $v(x) \in \nullsp{\controlflowmatrix}$. If so, we
-have identified a corresponding pair of paths in the target and
-rewrite programs. If no pairs are found, we double the bound. In
-practice, we initialize the bound to 1 and allow a maximum of 128.
+$Loops(C_i)$ from the \cutpoint{} to itself up to some bound. For
+each $C_i$ and $C_j'$ we consider $LoopPairs = Loops(C_i) \times
+Loops(C_j')$ and check to see if there exists $x \in LoopPairs$
+where $v(x) \in \nullsp{\controlflowmatrix}$. If so, we have
+identified a corresponding pair of paths in the target and rewrite
+programs. If no pairs are found, we double the bound. In practice,
+we initialize the bound to 1 and allow a maximum of 128. For the
+example, $\controlflownullmatrix\cdot v(11,3) = 0$, thus giving the
+correspondence that two iterations of the target loop mimics one
+iteration of basic block 3 in the rewrite.
 
 We use a search to choose the \cutpoint{} for each pair of
 corresponding loops. In our early experiments, merely choosing the
@@ -120,52 +170,77 @@ the learned invariants. The heuristic is to count the number of live
 variables constrained by learned invariants; more is better. We then
 use the \cutpoint{} that generated the best invariant.
 
-Another option might be to preserve the values of
-clobbered registers in a \shadow{} and use these for computing
-invariants as well; however, this would increase the computational
-cost of invariant learning.
+%Another option might be to preserve the values of
+%clobbered registers in a \shadow{} and use these for computing
+%invariants as well; however, this would increase the computational
+%cost of invariant learning.
 
 \subsection{Learning Linear Flow-Insensitive Loop Invariants} \label{algstep2}
 
-For each test case $\tau_i$ we run the target and the rewrite
+Next, we wish to learn the invariants that hold regardless of the path taken to reach a cutpoint.
+The approach is similar to that of the previous section (\ref{algstep1}) with two key differences:
+
+\begin{itemize}
+\item Instead of considering paths through the entire program, we
+consider paths from entry up to a cutpoint.
+\item In addition to the number of times each basic block has
+executed, we consider the register values at the cutpoint. (One could
+also consider live memory values, but we found no need to do this in
+our experiments)
+\end{itemize}
+
+Thus, for each test case $\tau_i$ we run the target and the rewrite
 programs. At each selected program point of each program we record the
-register and \shadow{} values. This gives us a list of target data
-points $\alpha_1, \alpha_2, \dotsc, \alpha_N$ and a list of rewrite
-data points $\beta_1, \beta_2, \dotsc, \beta_M$. For each $1 \leq i
-\leq N, 1 \leq j \leq M$, we concatenate $\alpha_i$ and $\beta_j$
-and add this as a row in our matrix. We compute the nullspace of
-this matrix, and this yields a generating set for a $\Z{64}$-module of
-flow-insensitive invariants; we can take sums, differences, and scalar
-multiples of the generating set elements, and they will still hold across all
-the provided data.
+register values and basic block counts. We represent the outcome of
+the execution of each test case as a vector (similar to that of $v$ defined earlier, but with registers),
+
+$$\left( n_0, n_1, \dotsc, n_k, n_0', n_1', \dotsc, n_{k'}', rax, rdx, \dotsc, rax', rdx', \dotsc \right)$$
+
+Like before, we build a matrix $\fimatrix$ where the $i$th row of
+the matrix corresponds to the $i$th test case execution. The kernel,
+$\nullsp{\fimatrix}$ yields a generating set for a $\Z{64}$-module
+of flow-insensitive invariants; we can take sums, differences, and
+scalar multiples of the generating set elements, and they will still
+hold across all the provided data. In the example, the kernel includes
+these invariants:
+
+\begin{eqnarray*}
+array' - array &=& 8n_3' + 4n_2' - 4n_1\\
+i'-i &=& 2n_3' + n_2' - n_1\\
+\end{eqnarray*}
 
 \subsection{Identifying the Subspace of Linear Flow-Sensitive Loop Invariants} \label{algstep3}
 
-Suppose at a \cutpoint{} the generating set for the flow-insensitive invariants are as follows:
+The linear control flow invariants shown in the last section are
+generally difficult to prove because proving them would require
+reasoning about all paths a program could take to arrive at a
+\cutpoint. Instead, our goal is to create an explicit \bisim{}
+where a submodule of these invariants hold where two traces align
+at a \cutpoint. We need a new invariant $\phi$ that can be used in
+two ways. First, we need to prove that if $\phi$ holds, then after
+executing corresponding loop iterations, $\phi$ still holds. Second,
+we need to use $\phi$ to infer equivalence classes of paths to
+construct our bisimulation (see Section~\ref{algstep4}).  
 
-\begin{eqnarray*}
-a_{11}r_1 + a_{12}r_2 + \dotsm + a_{1n}r_n &=& b_{11}n_1 + b_{12}n_2 + \dotsm + b_{1m}n_m + c_1\\
-a_{21}r_1 + a_{22}r_2 + \dotsm + a_{2n}r_n &=& b_{21}n_1 + b_{22}n_2 + \dotsm + b_{2m}n_m + c_2\\
-\vdots &\vdots& \vdots\\
-a_{k1}r_1 + a_{k2}r_2 + \dotsm + a_{kn}r_n &=& b_{k1}n_1 + b_{k2}n_2 + \dotsm + b_{km}n_m + c_k
-\end{eqnarray*}
-
-Note that, in general, these invariants would be very difficult to
-prove because proving them would require reasoning about all paths
-a program could take to arrive at a \cutpoint. As a result, proving
-all of these invariants directly would be as hard as reasoning about
-each program individually, and then asserting equality at the end.
-Moreover, proving any one of these invariants might be very difficult,
-because each one may capture aspects of a complete execution run of
-one program or the other. \note{this will be more clear following the example}
-
-Instead, our goal is to create an explicit \bisim{} where a submodule
-of these invariants hold where two traces align at a \cutpoint.
-Suppose at this \cutpoint{} there is self-loop with paths $P, Q$.
-If the dot product of $v(P,Q)$ with the corresponding vector from
-the $i$th equation is non-zero, then this invariant cannot easily be
-proven inductively only considering this loop. Note that here the
-constant term of the invariant is ignored. \todo{explain this better}
+This means we require an invariant where the linear combinations
+of the control flow counts remain constant after an iteration of
+the loop. This is the case for the invariants listed at the end of
+Section~\ref{algstep2}. For example, suppose $8n_3' + 4n_2' - 4n_1 =
+k$. If we execute two iterations of basic block 1 in the target, and
+one iteration of basic block 3 in the rewrite, then the updated sum
+is $8(n_3'+1) + 4n_2' - 4(n_1+2) = k$. However, in general it might
+not be. Instead, we need to take linear combinations of the flow
+insensitive invariants to find those that satisfy this condition.
+To do so, for each flow insensitive invariant $I$, we introduce a
+variable $m_I$ and sum the invariants together: $\phi = \sum_I m_II$.
+Given a loop at this \cutpoint{} with paths $P, Q$, we can write a
+system of linear equations over the $m_I$ that is satisfied only when
+the sum of control flow counts in $\phi$ is unchanged by adding the
+blocks in $P$ and the blocks in $Q$. We use SageMath~\cite{sagemath}
+to solver this system over $\Z{64}$. The output is a generating set
+of vectors which each specify each $m_I$; for every element in this
+generating set, we compute the corresponding sum $\sum_I m_II$, and
+this is a flow-sensitive invariant for the loop.
 
 Now, we consider the paths the programs take between \cutpoints.
 
@@ -179,14 +254,14 @@ $i < j$. We use the flow-sensitive loop invariants to partition all
 pairs of paths into $C_i$ into equivalence classes. For class $C_i$
 we represent each equivalence class with a vector over $\Z{64}$,
 with one entry per flow-insensitive invariant in the generating set.
-The $i$th entry the vector corresponds to the difference between
-the unspecified constant term of the corresponding invariant. For
-a pair of paths $P, Q$ from $C_1$ to $C_i$ we take $v(P,Q)$ dotted
-with the invariant to determine the equivalence class. To prevent
-an exponential blowup in the number of paths to consider, when we
-consider pairs of paths from $C_j$ to $C_i$ we arbitrarily choose one
-representative path from $C_1$ to $C_j$ to represent the prefixes of
-all paths from $C_j$ to $C_i$.  
+The $i$th entry the vector corresponds to the sum of all the control
+flow terms in the invariant. For a pair of paths $P, Q$ from $C_1$ to
+$C_i$ we compute this sum to determine the equivalence class. This is
+illustrated in Figure~\ref{fig:egpaths}. To prevent an exponential
+blowup in the number of paths to consider, when we consider pairs of
+paths from $C_j$ to $C_i$ we arbitrarily choose one representative
+path from $C_1$ to $C_j$ to represent the prefixes of all paths from
+$C_j$ to $C_i$.
 
 To enumerate \bisimreps{} we consider every possible assignment of an
 equivalence class to each \cutpoint. For each assignment, we enumerate
