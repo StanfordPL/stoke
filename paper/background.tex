@@ -101,5 +101,19 @@ computations over $\Z{64}$.
 
 \subsection{Kernel}
 
-\todo{Describe the basic trick of mining linear relationships from
-data by computing the kernel of a matrix (i.e. the nullspace)}
+A useful technique exists in the data-driven equivalence checking
+literature to extract linear equalities from data~\cite{Sharma2013}.
+Suppose there are machine states $s_1, s_2, \dotsc, s_A$ and we
+wish to find linear equalities among registers $r_1, \dotsc, r_B$.
+We construct an $A \times B+1$ matrix $M$ where the $(i,j)$-entry
+contains the value of register $r_j$ in state $s_i$ for $j \leq B$ and
+the $B+1$st column contains 1s. We compute the kernel $\nullsp(M)$
+whose generating set will be given by vectors $t_1, t_2, \dotsc,
+t_C$. Each of these $t_i$ corresponds to a linear equality between
+the values contained in the registers that holds for each state.
+Moreover, linear combinations of these $t_i$ generate all such
+linear equalities that hold over all states. We use this technique
+in a number of settings to learn linear equalities as described in
+Section~\ref{sec:algorithm}. We perform all the computations over
+$\Z{64}$ to handle the particularities of \arch.
+
