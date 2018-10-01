@@ -216,8 +216,9 @@ void DualBuilder::next_frontier(const EquivalenceClassMap& handhold_class) {
           }
         } else {
 
-          /** Classify each path into an equivalence class to the destination node. */
-          /** If a path disagrees with an already established equivalence class for
+          /** Classify each path into an equivalence class to the destination
+           * node. */
+          /** If a path disagrees with the equivalence class for
             a node, then we throw it out. */
 
           /** If a path goes to a new node without any equvialence class, then we
