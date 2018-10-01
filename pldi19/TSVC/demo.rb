@@ -6,6 +6,7 @@
 }
 
 @default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 %rax %rbp %rsp %xmm0 %xmm1 %xmm2 %xmm3 %rbx %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 }\""
+@default_live_outs = "\"{ %rbx %rsp %rbp %r12 %r13 %r14 %r15 }\""
 
 def print_usage
   puts "usage: ./demo.rb verify [options] <compiler1> <compiler2> <benchmark>"
@@ -103,11 +104,11 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--heap_out",
     "--stack_out",
     "--max_jumps 129000",
-    "--live_out \"{ }\"",
+    "--live_out #{@default_live_outs}",
     "--def_in #{@default_def_ins}",
     "--target_bound #{@options[:target_bound]}",
     "--rewrite_bound #{@options[:rewrite_bound]}",
-    "--assume \"t_%rdi<=15\"",
+    "--assume \"(t_%rdi<=15)&(t_%rsp>8388608)\"",
   ]
 
   puts "Recording data in traces/#{name}"

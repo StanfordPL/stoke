@@ -28,7 +28,9 @@ class MemoryEqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  MemoryEqualityInvariant() {}
+  MemoryEqualityInvariant(size_t red_zone_size = 128) :
+    red_zone_size_(red_zone_size) {
+  }
 
   SymBool operator()(SymState& left, SymState& right, size_t& number) {
 
@@ -88,6 +90,8 @@ public:
 
 
 private:
+
+  size_t red_zone_size_;
 
 };
 

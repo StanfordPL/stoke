@@ -63,7 +63,8 @@ bool StateGen::get(CpuState& cs) {
   }
 
   // Map rsp to a high address
-  cs.gp[rsp].get_fixed_quad(0) = 0x700000000;
+  cs.gp[rsp].get_fixed_byte(0) = 0x00;
+  cs.gp[rsp].get_fixed_byte(8) = (gen_() % 250) + 1;
 
   // Generate default memory
   cs.stack.resize(cs.gp[rsp].get_fixed_quad(0) - stack_size_, stack_size_);
