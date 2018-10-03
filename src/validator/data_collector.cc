@@ -48,7 +48,15 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 }
 
 
-std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& cfg) {
+std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& cfg, const LineMap * const linemap) {
+
+  std::map<size_t, uint64_t> rip_map;
+  if(linemap != nullptr) {
+    for(auto pair : *linemap) {
+      rip_map[pair.first] = pair.second.rip_offset;
+      cout << "rip_map: " << pair.first << " -> " << pair.second.rip_offset << endl;
+    }
+  }
 
   vector<Trace> traces;
   //cout << "[get_detailed_trace] sandbox_.size() = " << sandbox_.size() << endl;
@@ -58,6 +66,9 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
     sandbox_.clear_callbacks();
     sandbox_.insert_function(cfg);
     sandbox_.set_entrypoint(label);
+
+    if(linemap != nullptr)
+      sandbox_.set_rip_map(rip_map);
 
     std::vector<CallbackParam*> to_free;
 
@@ -82,11 +93,11 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       }
     }
 
-    //cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
-    //cout << *sandbox_.get_input(testcase) << endl;
+    cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
+    cout << *sandbox_.get_input(testcase) << endl;
     sandbox_.run(testcase);
-    //cout << "[get_detailed_trace] output" << endl;
-    //cout << *sandbox_.get_output(testcase) << endl;
+    cout << "[get_detailed_trace] output" << endl;
+    cout << *sandbox_.get_output(testcase) << endl;
 
     for (auto it : to_free)
       delete it;

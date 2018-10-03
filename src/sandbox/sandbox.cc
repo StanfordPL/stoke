@@ -879,7 +879,12 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
       // Look up instruction and rip that points beyond this instruction
       const auto& f = cfg.get_function();
       const auto& instr = f.get_code()[i];
-      const auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
+      auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
+      if(rip_map_.size()) {
+        hex_offset = rip_map_[i];
+        cout << "i = " << i << " instr = " << instr << endl;
+        cout << "overriding hex_offset = " << hex_offset << endl;
+      }
 
       // Emit callbacks and instruction
       if (global_before_.first != nullptr || !before_.empty()) {

@@ -34,6 +34,7 @@
 #include "src/validator/filters/bound_away.h"
 #include "src/validator/handlers/combo_handler.h"
 
+#include "tools/args/in_out.inc"
 #include "tools/args/verifier.inc"
 #include "tools/gadgets/solver.h"
 
@@ -61,6 +62,7 @@ public:
     set_fixpoint_up(false);
     set_nacl(false);
     set_basic_block_ghosts(true);
+    set_separate_stack(!stack_out_arg.value());
 
     if(verify_nacl_arg.value())
       set_nacl(true);

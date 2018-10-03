@@ -33,6 +33,7 @@
 #include "src/symstate/memory/arm.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
+#include "src/validator/line_info.h"
 #include "src/validator/filters/default.h"
 #include "src/validator/filters/bound_away.h"
 #include "src/validator/obligation_checker.h"
@@ -94,15 +95,6 @@ private:
 
   /** Sandbox and Data Collector for working with test cases */
   Sandbox oc_sandbox_;
-
-  struct LineInfo {
-    size_t line_number;
-    uint64_t rip_offset;
-    DereferenceInfo deref;
-  };
-
-
-  typedef std::map<size_t,LineInfo> LineMap;
 
   /** Extract a CPU state from SMT solver */
   CpuState state_from_model(const std::string& name_suffix,

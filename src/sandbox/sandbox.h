@@ -52,6 +52,7 @@ public:
     set_stack_check(sb.stack_check_);
     set_max_jumps(sb.max_jumps_);
     set_use_child(sb.use_child_);
+    set_rip_map({});
 
     // Inputs
     for (size_t i = 0; i < sb.size(); ++i) {
@@ -95,6 +96,12 @@ public:
     max_jumps_ = jumps;
     return *this;
   }
+  /** Sets a mapping from line number to RIP offset for cases where the
+    default computation doesn't work.  line number -> rip offset */
+  Sandbox& set_rip_map(std::map<size_t, uint64_t> m) {
+    rip_map_ = m;
+    return *this;
+  }
 
   /** Resets the sandbox to a consistent state. Clears all inputs, functions and callbacks. */
   Sandbox& reset() {
@@ -102,6 +109,7 @@ public:
     clear_functions();
     clear_callbacks();
     clear_label_pools();
+    set_rip_map({});
     return *this;
   }
 
@@ -338,6 +346,9 @@ private:
 
   /** Auxiliary function source (saved in case recompilation is necessary). */
   std::unordered_map<x64asm::Label, Cfg*> fxns_src_;
+
+  /** RIP offset map to override default computation. */
+  std::map<size_t, uint64_t> rip_map_;
 
   /** Do setup in constructor. */
   void init();

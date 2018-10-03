@@ -310,11 +310,11 @@ struct CpuState {
   bool memory_from_map(std::unordered_map<uint64_t, cpputil::BitVector>& map);
 
   /** Get the memory address corresponding to a memory operand */
-  uint64_t get_addr(x64asm::Mem ref) const;
+  uint64_t get_addr(x64asm::Mem ref, uint64_t rip_offset = 0) const;
   /** Get the memory address corresponding to an instruction */
-  uint64_t get_addr(x64asm::Instruction instr) const;
+  uint64_t get_addr(x64asm::Instruction instr, uint64_t rip_offset = 0) const;
   /** Get the memory address corresponding to a memory operand (DEPRECATED) */
-  uint64_t get_addr(x64asm::M8 ref) const;
+  uint64_t get_addr(x64asm::M8 ref, uint64_t rip_offset = 0) const;
 
   /** The number of jumps last spent on this testcase */
   uint64_t jumps_seen;

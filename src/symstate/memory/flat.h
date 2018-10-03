@@ -28,18 +28,20 @@ class FlatMemory : public SymMemory {
 
 public:
 
-  FlatMemory(bool no_constraints = false) {
+  FlatMemory(bool separate_stack, bool no_constraints = false) : SymMemory(separate_stack) {
     variable_ = SymArray::tmp_var(64, 8);
+    stack_ = SymArray::tmp_var(64, 8);
     start_variable_ = variable_;
     heap_ = variable_;
     variable_up_to_date_ = true;
     no_constraints_ = no_constraints;
   }
 
-  FlatMemory(FlatMemory& other) {
+  FlatMemory(FlatMemory& other) : SymMemory(other.separate_stack_) {
     variable_ = other.variable_;
     start_variable_ = other.start_variable_;
     heap_ = other.heap_;
+    stack_ = other.stack_;
     variable_up_to_date_ = other.variable_up_to_date_;
     no_constraints_ = other.no_constraints_;
   }
@@ -81,6 +83,8 @@ public:
 
   /** The heap state */
   SymArray heap_;
+  /** The stack state */
+  SymArray stack_;
   /** Extra constraints needed to make everything work. */
   std::vector<SymBool> constraints_;
 

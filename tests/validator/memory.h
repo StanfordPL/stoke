@@ -327,4 +327,44 @@ TEST_F(ValidatorMemoryTest, PopRspIsSpecial) {
   assert_equiv();
 }
 
+TEST_F(ValidatorMemoryTest, HeapSensitiveStackInsensitiveEquiv) {
+
+  v_.set_heap_out(true);
+  oc_.set_separate_stack(true);
+
+  target_ << ".foo:" << std::endl;
+  target_ << "movq %rdx, (%rax)" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "pushq %rax" << std::endl;
+  rewrite_ << "decq %rax" << std::endl;
+  rewrite_ << "movq %rdx, 0x1(%rax)" << std::endl;
+  rewrite_ << "popq %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx + x64asm::rsp);
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, HeapSensitiveStackInsensitiveInequiv) {
+
+  v_.set_heap_out(true);
+  oc_.set_separate_stack(true);
+
+  target_ << ".foo:" << std::endl;
+  target_ << "movq %rdx, (%rax)" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "pushq %rax" << std::endl;
+  rewrite_ << "decq %rax" << std::endl;
+  rewrite_ << "movq %rdx, 0x8(%rax)" << std::endl;
+  rewrite_ << "popq %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx + x64asm::rsp);
+  assert_ceg();
+}
+
 } //namespace stoke
