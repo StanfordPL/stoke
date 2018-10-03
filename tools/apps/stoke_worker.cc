@@ -659,6 +659,8 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
          << qe.hash << endl;
     exit(1);
   }
+  
+  cout << "Testcases in obligation: " << oblig.testcases.size() << endl;
 
 
   if(debug_target_arg.has_been_provided()) {
@@ -1129,8 +1131,6 @@ bool debug_hash_obligation(string hash) {
     qe->id = 0;
     strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
     strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
-    strncpy(qe->strategy, alias_strategy_arg.value().c_str(), sizeof(qe->strategy)-1);
-
   }
 
   /** Do some parsing */
@@ -1140,9 +1140,17 @@ bool debug_hash_obligation(string hash) {
     strcpy(qe->solver, "z3");
   }
 
+  /** Do some parsing */
+  if(strategy_arg.value() == "arm") {
+    strcpy(qe->strategy, "arm");
+  } else {
+    strcpy(qe->strategy, "flat");
+  }
+
+
+
   cout << "Debugging problem with hash " << qe->hash
        << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;
-
 
   ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
 

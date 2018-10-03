@@ -16,6 +16,7 @@
 #ifndef _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 #define _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/symstate/bitvector.h"
 #include "src/symstate/dereference_info.h"
 
@@ -27,7 +28,7 @@ class SymMemory {
 
 public:
 
-  SymMemory() : state_(NULL) {}
+  SymMemory(bool separate_stack = false) : separate_stack_(separate_stack), state_(NULL) {}
 
   virtual ~SymMemory() { }
 
@@ -50,7 +51,12 @@ public:
 
 protected:
 
+  bool separate_stack_;
   SymState* state_;
+
+  bool is_stack_dereference(x64asm::Mem& mem) {
+    return mem.contains_base() && mem.get_base() == x64asm::rsp;
+  }
 
 };
 

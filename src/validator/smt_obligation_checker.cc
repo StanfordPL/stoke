@@ -410,12 +410,13 @@ void SmtObligationChecker::check(
   add_basic_block_ghosts(state_t, target, "1_INIT");
   add_basic_block_ghosts(state_r, rewrite, "2_INIT");
 
+  OBLIG_DEBUG(cout << "separate_stack_ = " << separate_stack_ << endl;)
   if (flat_model) {
-    state_t.memory = new FlatMemory();
-    state_r.memory = new FlatMemory();
+    state_t.memory = new FlatMemory(separate_stack_);
+    state_r.memory = new FlatMemory(separate_stack_);
   } else if (arm_model) {
-    state_t.memory = new ArmMemory(solver_);
-    state_r.memory = new ArmMemory(solver_);
+    state_t.memory = new ArmMemory(separate_stack_, solver_);
+    state_r.memory = new ArmMemory(separate_stack_, solver_);
   }
 
   // Build dereference map
@@ -438,21 +439,15 @@ void SmtObligationChecker::check(
       size_t tmp_invariant_lineno = 0;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
-      //cout << "[check_core] adding assume dereference map" << endl;
-      //cout << tc_pair.first << endl << endl;
-      //cout << tc_pair.second << endl << endl;
+      cout << "[check_core] adding assume dereference map" << endl;
+      cout << tc_pair.first << endl << endl;
+      cout << tc_pair.second << endl << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
-      //cout << "[check_core] debugging assume dereference map 1" << endl;
-      //cout << "deref_map size = " << deref_map.size() << endl;
-      //cout << "addr = " << &deref_map << endl;
-      //for(auto it : deref_map) {
-      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
-      //}
-      //cout << "[check_core] debugging assume dereference map 2" << endl;
-      //cout << "addr = " << &deref_maps[i] << endl;
-      //for(auto it : deref_maps[i]) {
-      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
-      //}
+      cout << "[check_core] debugging assume dereference map 1" << endl;
+      cout << "deref_map size = " << deref_map.size() << endl;
+      for(auto it : deref_map) {
+        cout << it.first.invariant_number << " -> " << it.second << endl; 
+      }
     }
   }
 
@@ -512,23 +507,25 @@ void SmtObligationChecker::check(
       auto& testcase = k ? testcases[0].second : testcases[0].first;
       auto& last = k ? last_rewrite : last_target;
       auto& linemap = k ? rewrite_line_map : target_line_map;
-      //cout << "[check_core] adding code dereferences k=" << k << endl;
+      cout << "[check_core] adding code dereferences is_rewrite=" << k << endl;
 
       Cfg unroll_cfg(unroll_code);
       oc_sandbox_.clear_inputs();
       oc_sandbox_.insert_input(testcase);
       DataCollector oc_data_collector(oc_sandbox_);
-      auto traces = oc_data_collector.get_detailed_traces(unroll_cfg);
+      auto traces = oc_data_collector.get_detailed_traces(unroll_cfg, &linemap);
 
-      //cout << "[check_core] traces.size() = " << traces.size() << endl;
+      cout << "[check_core] traces.size() = " << traces.size() << endl;
+      cout << "[check_core] traces[0].size() = " << traces[0].size() << endl;
+      cout << "[check_core] unroll_code.size() = " << unroll_code.size() << endl;
       for(size_t i = 0; i < traces[0].size(); ++i) {
         auto instr = unroll_code[i];
-        //cout << "[check_core] dereferences for " << instr << endl;
+        cout << "[check_core] dereferences for " << instr << endl;
         if(instr.is_memory_dereference()) {
           auto dri = linemap[i].deref;
           auto state = traces[0][i].cs;
-          auto addr = state.get_addr(instr);
-          //cout << "[check_core]     * found one!" << endl;
+          auto addr = state.get_addr(instr, linemap[i].rip_offset);
+          cout << "[check_core]     * found one!" << endl;
           deref_maps[0][dri] = addr;
         }
         last = traces[0][i].cs;
@@ -752,6 +749,9 @@ void SmtObligationChecker::check(
 
 }
 
+/** Construct an unrolled version of a Cfg for a given path, and populate the
+ * linemap data structure that maps lines of the unrolled CFG to those of the
+ * original program. */
 void SmtObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
   auto& function = cfg.get_function();
   auto& code = cfg.get_code();

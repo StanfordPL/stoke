@@ -42,7 +42,7 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
-  auto fm = new FlatMemory();
+  auto fm = new FlatMemory(false);
   fm->set_parent(this);
   memory = fm;
   delete_memory_ = true;
@@ -55,14 +55,17 @@ void SymState::build_from_cpustate(const CpuState& cs) {
     concrete_memories.push_back(it);
   }
 
+  bool is_stack = true;
   for (auto mem : concrete_memories) {
     for (uint64_t addr = mem.lower_bound(); mem.in_range(addr); ++addr) {
       uint8_t value = mem[addr];
       auto addr_bv = SymBitVector::constant(64, addr);
       auto val_bv = SymBitVector::constant(8, value);
       DereferenceInfo di; 
+      di.stack_dereference = is_stack;
       fm->write(addr_bv, val_bv, 8, di);
     }
+    is_stack = false;
   }
 
   sigbus = SymBool::_false();
@@ -144,7 +147,10 @@ SymBitVector SymState::lookup(const Operand o) const {
     //cout << "PERFORMING LOOKUP ON TYPICAL MEMORY size=" << size << endl;
     //cout << "memory = " << memory << endl;
     if (memory) {
-      auto p = memory->read(addr, size, deref_);
+      auto deref_copy = deref_;
+      deref_copy.stack_dereference = (m.contains_base() && m.get_base() == rsp);
+      //cout << "for " << m << " stack_deref = " << deref_copy.stack_dereference << endl;
+      auto p = memory->read(addr, size, deref_copy);
       //cout << "width in bits of result: " << p.first.width() << endl;
       //cout << "result: " << p.first << endl;
       return p.first;
@@ -246,8 +252,12 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
 
+    auto deref_copy = deref_;
+    deref_copy.stack_dereference = m.contains_base() && m.get_base() == rsp;
+
     if (memory) {
-      auto segv = memory->write(addr, bv, width, deref_);
+      //cout << "for " << m << " stack_deref = " << deref_copy.stack_dereference << endl;
+      auto segv = memory->write(addr, bv, width, deref_copy);
       set_sigsegv(segv);
     } else {
       set_sigsegv(SymBool::tmp_var());

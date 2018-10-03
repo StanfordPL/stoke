@@ -214,7 +214,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         if (edge.re.size())
           follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
 
-        // (X) perform a sanity check; memory states should be equal.
+        // (X) perform a sanity check; memory states should be equal (except maybe stack)
         //if(follow.target_current.stack != follow.rewrite_current.stack) {
         //  DEBUG_LEARN_STATE_DATA(cout << "    on this path stack states differ." << endl;)
         //  continue;

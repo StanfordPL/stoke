@@ -132,6 +132,7 @@ public:
     set_nacl(false);
     set_basic_block_ghosts(true);
     set_fixpoint_up(false);
+    set_separate_stack(false);
   }
 
   ObligationChecker(const ObligationChecker& oc) 
@@ -140,6 +141,7 @@ public:
     nacl_ = oc.nacl_;
     fixpoint_up_ = oc.fixpoint_up_;
     alias_strategy_ = oc.alias_strategy_;
+    separate_stack_ = oc.separate_stack_;
   }
 
   virtual ~ObligationChecker() {
@@ -153,6 +155,12 @@ public:
 
   AliasStrategy get_alias_strategy() {
     return alias_strategy_;
+  }
+
+  /** Set whether we are going to use separate stack. */
+  ObligationChecker& set_separate_stack(bool b) {
+    separate_stack_ = b;
+    return *this;
   }
 
   ObligationChecker& set_fixpoint_up(bool b) {
@@ -248,6 +256,7 @@ protected:
   bool basic_block_ghosts_;
   bool nacl_;
   bool fixpoint_up_;
+  bool separate_stack_;
 
 };
 

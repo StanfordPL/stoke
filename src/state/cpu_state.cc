@@ -25,7 +25,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-uint64_t CpuState::get_addr(Mem ref) const {
+uint64_t CpuState::get_addr(Mem ref, uint64_t rip_offset) const {
 
   uint64_t address = 0;
 
@@ -42,6 +42,10 @@ uint64_t CpuState::get_addr(Mem ref) const {
   // check if memory has base
   if (ref.contains_base()) {
     address = address + gp[ref.get_base()].get_fixed_quad(0);
+  }
+
+  if (ref.rip_offset()) {
+    address = address + rip_offset;
   }
 
   // check for index
@@ -78,7 +82,7 @@ uint64_t CpuState::get_addr(Mem ref) const {
 }
 
 /** Get the memory address corresponding to a memory operand */
-uint64_t CpuState::get_addr(M8 ref) const {
+uint64_t CpuState::get_addr(M8 ref, uint64_t rip_offset) const {
 
   uint64_t address = 0;
 
@@ -95,6 +99,10 @@ uint64_t CpuState::get_addr(M8 ref) const {
   // check if memory has base
   if (ref.contains_base()) {
     address = address + gp[ref.get_base()].get_fixed_quad(0);
+  }
+
+  if (ref.rip_offset()) {
+    address = address + rip_offset;
   }
 
   // check for index
@@ -130,11 +138,11 @@ uint64_t CpuState::get_addr(M8 ref) const {
 }
 
 /** Get the memory address corresponding to an instruction */
-uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
+uint64_t CpuState::get_addr(x64asm::Instruction instr, uint64_t rip_offset) const {
   assert(instr.is_memory_dereference());
 
   if (instr.is_explicit_memory_dereference()) {
-    return get_addr(instr.get_operand<M8>(instr.mem_index()));
+    return get_addr(instr.get_operand<M8>(instr.mem_index()), rip_offset);
   } else if (instr.is_push()) {
     size_t bytes = 2;
     switch (instr.get_opcode()) {

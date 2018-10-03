@@ -58,6 +58,12 @@ public:
     return mem_val.get_fixed_byte(0) == byte_;
   }
 
+  void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number) {
+    auto& state = is_rewrite_ ? rewrite : target;
+    auto di = get_di(number, is_rewrite_);
+    deref_map[di] = state.get_addr(m_);
+  };
+
   virtual std::vector<Variable> get_variables() const {
     std::vector<Variable> result;
     return result;

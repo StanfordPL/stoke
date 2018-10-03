@@ -21,6 +21,7 @@
 #include "src/validator/indexer.h"
 #include "src/validator/int_matrix.h"
 #include "src/validator/int_vector.h"
+#include "src/validator/line_info.h"
 
 #include <functional>
 #include <vector>
@@ -60,7 +61,8 @@ public:
 
   const std::vector<Trace>& get_traces(Cfg& target);
 
-  std::vector<Trace> get_detailed_traces(const Cfg& target);
+  std::vector<Trace> get_detailed_traces(const Cfg& target, 
+                      const LineMap * const linemap = nullptr);
 
   static CfgPath project_states(Trace& trace) {
     CfgPath p;

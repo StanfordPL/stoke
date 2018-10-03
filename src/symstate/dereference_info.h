@@ -14,6 +14,7 @@ class DereferenceInfo {
       is_invariant = false;
       is_rewrite = false;
       implicit_dereference = false;
+      stack_dereference = false;
     }
 
     size_t line_number;
@@ -21,6 +22,7 @@ class DereferenceInfo {
     bool is_invariant;
     bool is_rewrite;
     bool implicit_dereference;
+    bool stack_dereference;
 
     bool operator<(const DereferenceInfo& other) const {
 

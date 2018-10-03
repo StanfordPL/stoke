@@ -20,17 +20,26 @@ using namespace std;
 /** Updates the memory with a write. */
 SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo deref) {
 
+  // Ensure we don't bypass bounds
+  constraints_.push_back(address <= SymBitVector::constant(64, -0x3f - size/8));
+  constraints_.push_back(address >= SymBitVector::constant(64, 0x40));
+
+
+  if (separate_stack_ && deref.stack_dereference) {
+    //cout << "[flat] STACK WRITE" << endl;
+    for (size_t i = 0; i < size/8; ++i) {
+      stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
+    }
+    return SymBool::_false();
+  }
+
+  //cout << "[flat] HEAP WRITE" << endl;
   // Little Endian
   // The least significant bit of value (i.e. the lowest bits) go in the lowest addresses
 
   for (size_t i = 0; i < size/8; ++i) {
     heap_ = heap_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
   }
-
-  // Ensure we don't bypass bounds
-  constraints_.push_back(address <= SymBitVector::constant(64, -0x3f - size/8));
-  constraints_.push_back(address >= SymBitVector::constant(64, 0x40));
-
 
   // Update the access list
   auto access_var = SymBitVector::tmp_var(64);
@@ -51,12 +60,21 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 /** Reads from the memory.  Returns value and segv condition. */
 std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t size, DereferenceInfo deref) {
+
+  if (separate_stack_ && deref.stack_dereference) {
+    //cout << "[flat] STACK READ" << endl;
+    SymBitVector value = stack_[address];
+    for (size_t i = 1; i < size/8; ++i) {
+      value = stack_[address + SymBitVector::constant(64, i)] || value;
+    }
+    return pair<SymBitVector,SymBool>(value, SymBool::_false());
+  }
+
+  //cout << "[flat] HEAP READ" << endl;
   // Update the access list
   auto access_var = SymBitVector::tmp_var(64);
   constraints_.push_back(access_var == address);
   access_list_[access_var.ptr] = size;
-
-
 
   SymBitVector value = heap_[address];
 

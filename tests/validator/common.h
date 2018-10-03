@@ -36,8 +36,8 @@ public:
   StraightLineValidatorTest() : 
     handler_(), 
     filter_(handler_, 0x100, (uint64_t)(-0x100)),
-    oc_(s_, filter_), 
-    v_(make_validator()) 
+    oc_(s_, filter_),
+    v_(make_validator())
   {
     cfg_t_ = 0;
     cfg_r_ = 0;
@@ -705,8 +705,6 @@ private:
   ComboHandler handler_;
   BoundAwayFilter filter_;
   Sandbox sb_;
-  SmtObligationChecker oc_;
-  BoundedValidator v_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;
@@ -721,6 +719,10 @@ private:
   /** Should formulas be simplified? */
   bool do_simplify_;
 
+protected:
+
+  SmtObligationChecker oc_;
+  BoundedValidator v_;
 
 };
 
