@@ -502,7 +502,7 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
     RegSet target_regs, 
     RegSet rewrite_regs, 
     const vector<CpuState>& target_states, 
-    const vector<CpuState>& rewrite_states) const {
+    const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
 
@@ -523,6 +523,8 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
     }
   }
 
+  uniform_int_distribution<size_t> dis(0, 10);
+
   for(auto& v1 : variables) {
     for(auto& v2 : variables) {
       if(v1 == v2)
@@ -541,6 +543,12 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       uint64_t max_count = 0;
       uint64_t min_count = 0;
       for(size_t i = 0 ; i < target_states.size(); ++i) {
+
+
+        size_t choice = dis(gen_);
+        if(choice <= 2 && target_states.size() > 20)
+          continue;
+        
         auto a = v1.from_state(target_states[i], rewrite_states[i]);
         auto b = v2.from_state(target_states[i], rewrite_states[i]);
         uint64_t difference = b - a;
@@ -562,17 +570,13 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       //cout << "  min " << min_difference << endl;
 
       // i + constant <= j
-      if(min_count > 2) {
-        auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
-        outputs.push_back(inv);
-      }
+      auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
+      outputs.push_back(inv);
       //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
-      if(max_count > 2) {
-        auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
-        outputs.push_back(inv2);
-      }
+      auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
+      outputs.push_back(inv2);
       //cout << "  generating " << *inv2 << endl;
     }
   }
@@ -1194,7 +1198,9 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   if (enable_nonlinear_) {
     auto ineqs = build_inequality_with_constant_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
     for (auto ineq : ineqs) {
-      conj->add_invariant(ineq);
+      if(ineq->check(target_states, rewrite_states)) {
+        conj->add_invariant(ineq);
+      }
     }
   }
 
