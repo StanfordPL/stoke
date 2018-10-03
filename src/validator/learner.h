@@ -158,7 +158,7 @@ private:
     x64asm::RegSet target_regs, 
     x64asm::RegSet rewrite_regs, 
     const std::vector<CpuState>& target_states, 
-    const std::vector<CpuState>& rewrite_states) const;
+    const std::vector<CpuState>& rewrite_states);
 
   /** Create set of invariants of form x - y == c (mod N) that
    hold over given data. */
