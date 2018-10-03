@@ -152,6 +152,7 @@ private:
   /** Helper function for generate_constraints. */
   void generate_constraints_enumerate_cells();
   void generate_constraints_given_cells(ArmMemory*);
+  bool generate_constraints_given_one_cell(ArmMemory* am);
   void generate_constraints_offsets_nodata(std::vector<SymBool>&);
   void generate_constraints_offsets_data(std::vector<SymBool>&, DereferenceMap&);
 

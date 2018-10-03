@@ -20,7 +20,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { }
+#define DEBUG_ARM(X) { X }
 
 void ArmMemory::generate_constraints(
     ArmMemory* am, 
@@ -47,6 +47,7 @@ void ArmMemory::generate_constraints(
       cout << " --> " << pair.second << endl;
     } 
   }
+  cout << "Map done..." << endl;
   )
 
   all_accesses_.clear();
@@ -269,14 +270,86 @@ void ArmMemory::generate_constraints_enumerate_cells() {
 
 }
 
+bool ArmMemory::generate_constraints_given_one_cell(ArmMemory* am) {
+
+  if (stop_now_ && *stop_now_) return true;
+
+  /** Check if our strategy will work (todo: separate function) */
+  for (auto& access1 : all_accesses_) {
+    for(auto& access2 : all_accesses_) {
+      if(access1.cell_offset == access2.cell_offset) {
+        if(access1.size != access2.size) {
+          cout << "accesses of size " << access1.size << " and " << access2.size << " at offset " << access1.cell_offset << endl;
+          return false; 
+        } else {
+          continue;
+        }
+      }
+      if((uint64_t)access1.cell_offset + access1.size <= (uint64_t)access2.cell_offset)
+        continue;
+      if((uint64_t)access2.cell_offset + access2.size <= (uint64_t)access1.cell_offset)
+        continue;
+
+      return false;
+    }
+  }
+
+  /** Generate constraints */
+  if (stop_now_ && *stop_now_) return true;
+
+  std::map<uint64_t, SymBitVector> my_memory_locations;
+  std::map<uint64_t, SymBitVector> other_memory_locations;
+  for(auto& access : all_accesses_) {
+    auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
+    if(memloc.count(access.cell_offset) == 0) {
+      memloc[access.cell_offset] = SymBitVector::tmp_var(access.size);
+    }
+
+    if(access.write)
+      memloc[access.cell_offset] = access.value;
+    else
+      constraints_.push_back(memloc[access.cell_offset] == access.value);
+  }
+
+  /** Create heap */
+  if (stop_now_ && *stop_now_) return true;
+
+  auto cell_address = cells_[0].address;
+  for(auto& access : all_accesses_) {
+    auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
+    auto& heap = access.is_other ? am->heap_ : heap_;
+
+    for (size_t i = 0; i < access.size; ++i) {
+      heap = heap.update(SymBitVector::constant(64, access.cell_offset) + cell_address + SymBitVector::constant(64, i), memloc[access.cell_offset][i*8+7][i*8]);
+    }
+  }
+
+  /** Get a final heap variable for reading out a model */
+  constraints_.push_back(final_heap_ == heap_);
+  constraints_.push_back(am->final_heap_ == am->heap_);
+
+  return true;
+
+} 
+
 void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
 
+  if (stop_now_ && *stop_now_) return;
   // 3. Simulate execution
   //      ... each "cell" is like a cache.
   //      ... You don't write it unless you need to read from another cell.
   //      ... You don't read it unless another cell performed a write.
 
-  if (stop_now_ && *stop_now_) return;
+  /*
+  if(cells_.size() == 1) {
+    if(generate_constraints_given_one_cell(am)) {
+      cout << "ONE CELL WORKED" << endl;
+      return;
+    } else {
+      cout << "ONE CELL FAILED" << endl;
+    }
+  }*/
+
   // to setup, let's "cache" the result of each cell.
   for (auto& cell : cells_) {
     cell.cache = SymBitVector();
@@ -399,8 +472,6 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
     cout << "[arm] Adding constraints " << final_heap_ << " = " << heap_ << endl;
     cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
   )
-
-
 
 }
 
