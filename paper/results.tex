@@ -1,0 +1,167 @@
+\section{Evaluation}
+
+In this section we seek to answer the following questions,
+
+\begin{itemize}
+\item For a representative collection of vectorization optimizations, what proportion can we verify?
+\item How does our \bisim{} inference algorithm compare with other state-of-the-art techniques?
+\item How efficient is our algorithm to enumerate candidate \bisimreps{} for verification?
+\item Are the complexities of the algorithm necessary
+        - using equivalence classes
+        - how important / useful are the sanity checks
+  %% IDEA: look in POD and see if branch conditions are equal?
+\end{itemize}
+
+\subsection{Benchmarks}
+
+To evaluate \tool{} we construct a set of benchmarks for verifying
+vectorization optimizations. We started with the \emph{Test Suite
+for Vectorizing Compilers} (TSVC), which was developed ``to assess
+the vectorizing capabilities of compilers'' and ported to C in
+\cite{TSVC}. These benchmarks operated over arrays of floating point
+values of fixed size. However, because modern SMT solvers are limited
+in their ability to reason accurately about floats and our desire to
+demonstrate proving equivalence over unbounded programs, we rewrote
+the benchmarks to operate over integer arrays and parameterized the
+input length.  We had to remove three classes of benchmarks from the
+original TSVC set:
+
+\begin{itemize}
+\item Benchmarks that could not be vectorized with either GCC 4.9.2
+nor clang 3.4 using -msse4.2 and -O3. (90)
+\item Duplicate benchmarks where nearly identical assembly code was
+generated after compilation as another benchmark. (8)
+\item Benchmark functions that contained calls to other methods. (6)
+\item Benchmarks that did not perform singly-nested iterations over
+one-dimensional arrays. This mainly included doubly-nested loops
+(16) which often triggered out-of-scope optimizations such as loop
+interchange or tiling. Others either did not contain loops or had
+extra indirection which would require a customized set of test cases.
+(27 in total)
+\end{itemize}
+
+We had to remove duplicate benchmarks because some of the TSVC
+benchmarks were designed to see if a compiler could perform an
+analysis to verify an optimization was safe to perform; however,
+after compilation, the two programs would be the same. \totalbench{}
+benchmarks remained. Most of the benchmarks iterate over one or
+more arrays (up to 5), perform some computation (often adds and
+multiplies), and update the arrays. Some benchmarks process the array
+forwards, some backwards, and some with a stride. Some benchmarks have
+loop carried dependencies, others do not. No combination of these
+features hindered our ability to perform the verification task.
+
+\subsection{Discharging Proof Obligations}
+
+We constructed test cases by creating machine states containing input
+vectors of randomly-chosen bytes. This same set of test cases was
+sufficient to obtain code coverage over all these benchmarks. We
+also manually placed a bound on the input size to exclude overflow
+conditions and other undefined behavior; this is generally needed for
+proving equivalence~\cite{Dahiya17HVC}.
+
+
+
+\todo{discuss use of ARM and flat memory model}
+
+\todo{describe cloud infrastructure}
+
+\todo{add table of results}
+
+\todo{discuss failures and timeouts}
+
+\todo{add comparison with recent work}
+
+\todo{add straw-man comparison; try using wildcard equivalence class with bound 1}
+
+
+%% TODO: add table with 
+%   - benchmark
+%   - ASM LOC O1 / O3
+%   - equivalent / non-equivalent / timeout
+%   - linear algebra time
+%   - other enumeration time
+%   - total time for our algorithm
+%   - total CPU-time for proof obligation discharge
+
+\begin{figure*}
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark & Target LOC & GCC LOC & GCC    & LLVM LOC & LLVM & Learn Time & Enumerate Time & Check Time & Matching\\ \hline \hline
+s000  & 14  & 18  & \checkmark       & 44  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1112 & 12  & 31  & \checkmark       & 59  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s112  & 14  & 55  & \checkmark       & 24  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s121  & 16  & 44  & \checkmark       & 48  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1221 & 14  & 24  & \checkmark       & 37  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s122  & 17  & 108 & $\checkmark^\ast$& 21  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1251 & 18  & 29  & \checkmark       & 60  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s127  & 22  & 82  & TO               & 31  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1281 & 21  & 30  & TO               & 66  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s1351 & 12  & 17  & \checkmark       & 51  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s162  & 17  & 49  & TO               & 58  & TO         & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s173  & 17  & 56  & \checkmark       & 70  & $\checkmark^\ast$ & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s2244 & 19  & 56  & \checkmark       & 65  & \checkmark & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s243  & 25  & 30  & \checkmark       & 68  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s251  & 16  & 27  & \checkmark       & 49  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s3251 & 22  & 149 & $\checkmark^\ast$& 26  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s351  & 29  & 130 & $\checkmark^\ast$& 24  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s452  & 22  & 27  & \checkmark       & 25  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+s453  & 15  & 22  & \todo{X}         & 15  & \todo{X}          & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+sum1d & 15  & 28  & \checkmark       & 45  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vdotr & 17  & 28  & \checkmark       & 49  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvpv & 15  & 26  & \checkmark       & 38  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpv   & 13  & 25  & \checkmark       & 37  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvts & 14  & 30  & $\checkmark^\ast$& 54  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vpvtv & 14  & 26  & \checkmark       & 36  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vtv   & 14  & 25  & \checkmark       & 36  & \checkmark        & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+vtvtv & 15  & 26  & \checkmark       & 51  & TO                & \todo{X} & \todo{X} & \todo{X} & \todo{X}\\ \hline
+\end{tabular}
+\caption{Experimental data on \totalbench{} benchmarks. The ``Target
+LOC" and ``Rewrite LOC'' shows the number of \arch{} instructions
+in each program. The GCC and LLVM columns indicate the result of
+verification efforts. \checkmark represents successful verification;
+$\checkmark^\ast$ shows that the tool correctly reported the programs
+non-equivalent (generally because it could not prove that stack
+accesses did not alias with heap locations); and ``TO" represents a
+timeout. ``Learn Time" is the time taken for learning control-flow
+relationships, linear flow-insensitive loop invariants, linear
+flow-insensitive loop invariants, and cutpoints. ``Enumerate time"
+is the time to list all possible \bisimreps{} and perform the sanity
+checks. ``Check time" is the total CPU time spent learning non-linear
+invariants and discharging proof obligations.}
+\end{figure*}
+
+\subsection{Results}
+
+\subsection{strlen case study}
+
+GNU \libc{} contains widely-used functions, such as strlen, which are
+used frequently throughout userspace applications. In many cases,
+compilers are unable to vectorize performance-critical functions, and
+instead programmers perform the vectorization themselves. This is the
+case for the strlen function since \libc{} \todo{version number}. The
+handwritten C code uses clever bit-manipulation techniques to read
+up to 8 characters from the string at a time, check if any character
+contains a null byte, and to then either continue or terminate.
+Moreover, there is a clear desire to verify that the handwritten
+vectorized code is exactly equivalent to the naive, unvectorized
+implementation. There is a test case in the \libc{} test suite that
+runs both of these two programs on a series of random inputs, and
+checks that the outputs are equal. What our technique offers is more
+foolproof: we can prove that the two programs run identically on
+\emph{all} inputs.
+
+To the best of our knowledge, no other technique in the equivalence
+checking or translation validation literature is able to handle this
+example. Some of the complexity comes from the warm-up loop, which
+counts bytes one-at-a-time up to an 8-byte boundary. Then, the main
+loop reads 8-byte words and uses bit manipulation tricks to check
+for a null character. If a null character is present, it performs an
+8-way branch to identify the first null byte. Moreover, the comments
+in the source code suggest that the check for the null character is
+presumed to be sound, but not complete; it allegedly could report the
+false-positive presence of a null character as well. We have been able
+to show that the check is actually both complete and sound, which
+could allow further optimzation on some machines.\todo{check if we get
+a speedup on a few other processors}\todo{anything else to say about this case study?  include a CFG?}
+

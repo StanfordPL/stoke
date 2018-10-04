@@ -1,0 +1,147 @@
+@inproceedings{Churchill2017,
+ author = {Churchill, Berkeley and Sharma, Rahul and Bastien, JF and Aiken, Alex},
+ title = {Sound Loop Superoptimization for Google Native Client},
+ booktitle = {Proceedings of the Twenty-Second International Conference on Architectural Support for Programming Languages and Operating Systems},
+ series = {ASPLOS '17},
+ year = {2017},
+ isbn = {978-1-4503-4465-4},
+ location = {Xi'an, China},
+ pages = {313--326},
+ numpages = {14},
+ url = {http://doi.acm.org/10.1145/3037697.3037754},
+ doi = {10.1145/3037697.3037754},
+ acmid = {3037754},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {assembly, bounded verification, data-driven verification, equivalence checking, native client, superoptimization, verification, x86-64},
+} 
+
+@inproceedings{TSVC,
+ author = {Maleki, Saeed and Gao, Yaoqing and Garzar\'{a}n, Maria J. and Wong, Tommy and Padua, David A.},
+ title = {An Evaluation of Vectorizing Compilers},
+ booktitle = {Proceedings of the 2011 International Conference on Parallel Architectures and Compilation Techniques},
+ series = {PACT '11},
+ year = {2011},
+ isbn = {978-0-7695-4566-0},
+ pages = {372--382},
+ numpages = {11},
+ url = {http://dx.doi.org/10.1109/PACT.2011.68},
+ doi = {10.1109/PACT.2011.68},
+ acmid = {2121464},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA},
+} 
+@InProceedings{Dahiya17ASPLAS,
+  author="Dahiya, Manjeet and Bansal, Sorav",
+  title="Black-Box Equivalence Checking Across Compiler Optimizations",
+  booktitle="Asian Symposium on Programing Languages and Systems",
+  pages = { 127--147 },
+  year="2017",
+}
+@InProceedings{Dahiya17HVC,
+  author="Dahiya, Manjeet and Bansal, Sorav",
+  title="Modeling Undefined Behavior Semantics for Checking Equivalence Across Compiler Optimizations",
+  booktitle="Haifa Verification Conference",
+  year="2017"
+}
+
+%% Peephole optimization; handles undefined behavior well, but no loops.
+@inproceedings{Lopes2015,
+ author = {Lopes, Nuno P. and Menendez, David and Nagarakatte, Santosh and Regehr, John},
+ title = {Provably Correct Peephole Optimizations with Alive},
+ booktitle = {Proceedings of the 36th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+ series = {PLDI '15},
+ year = {2015},
+ pages = {22--32},
+} 
+
+%% not sure exactly what they can do with loops
+%% they essentially have rewrite rules on DAGs of expressions and try to unify them
+%% *BUT* they do have some rules that consider fixpoints, so they can do some stuff
+@inproceedings{Tristan2011,
+ author = {Tristan, Jean-Baptiste and Govereau, Paul and Morrisett, Greg},
+ title = {Evaluating Value-graph Translation Validation for LLVM},
+ booktitle = {Proceedings of the 32Nd ACM SIGPLAN Conference on Programming Language Design and Implementation},
+ series = {PLDI '11},
+ year = {2011},
+ pages = {295--305},
+} 
+
+%% Uses explicit template provided by a programmer that implies an alignment
+%% They handle challenging optimizations like loop interchange though
+@inproceedings{Kundu2009,
+ author = {Kundu, Sudipta and Tatlock, Zachary and Lerner, Sorin},
+ title = {Proving Optimizations Correct Using Parameterized Program Equivalence},
+ booktitle = {Proceedings of the 30th ACM SIGPLAN Conference on Programming Language Design and Implementation},
+ series = {PLDI '09},
+ year = {2009},
+ pages = {327--337},
+} 
+
+%% manually specify synchronization points
+@inproceedings{Kiefer2016,
+  title={Relational program reasoning using compiler IR},
+  author={Kiefer, Moritz and Klebanov, Vladimir and Ulbrich, Mattias},
+  booktitle={Working Conference on Verified Software: Theories, Tools, and Experiments},
+  pages={149--165},
+  year={2016},
+  organization={Springer}
+}
+
+%%
+@inproceedings{Sharma2013,
+ author = {Sharma, Rahul and Schkufza, Eric and Churchill, Berkeley and Aiken, Alex},
+ title = {Data-driven Equivalence Checking},
+ booktitle = {Proceedings of the 2013 ACM SIGPLAN International Conference on Object Oriented Programming Systems Languages \&\#38; Applications},
+ series = {OOPSLA '13},
+ year = {2013},
+ pages = {391--406},
+} 
+
+%% translation validation
+@inproceedings{Necula2000,
+ author = {Necula, George C.},
+ title = {Translation Validation for an Optimizing Compiler},
+ booktitle = {Proceedings of the ACM SIGPLAN 2000 Conference on Programming Language Design and Implementation},
+ series = {PLDI '00},
+ year = {2000},
+ pages = {83--94},
+} 
+
+@inproceedings{Massalin1987,
+ author = {Massalin, Henry},
+ title = {Superoptimizer: A Look at the Smallest Program},
+ booktitle = {Proceedings of the Second International Conference on Architectual Support for Programming Languages and Operating Systems},
+ series = {ASPLOS},
+ pages = {122--126},
+} 
+
+@article{Schkufza2013,
+ author = {Schkufza, Eric and Sharma, Rahul and Aiken, Alex},
+ title = {Stochastic Superoptimization},
+ journal = {SIGPLAN Not.},
+ issue_date = {April 2013},
+ volume = {48},
+ number = {4},
+ year = {2013},
+ pages = {305--316},
+} 
+
+@manual{sagemath,
+  Key          = {SageMath},
+  Author       = {{The Sage Developers}},
+  Title        = {{S}ageMath, the {S}age {M}athematics {S}oftware {S}ystem ({V}ersion 7.5.1)},
+  note         = {{\tt http://www.sagemath.org}},
+  Year         = {2017},
+}
+
+@InProceedings{Fedyukovich2015,
+author="Fedyukovich, Grigory
+and Gurfinkel, Arie
+and Sharygina, Natasha",
+title="Automated Discovery of Simulation Between Programs",
+booktitle="Logic for Programming, Artificial Intelligence, and Reasoning",
+year="2015",
+pages="606--621",
+}
+

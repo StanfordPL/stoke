@@ -1,0 +1,154 @@
+\section{Example}\label{sec:example}
+
+Consider the pair of C programs in Figure~\ref{exampleListing}\todo{fix}. These
+functions take as input an array of 32-bit integers and flip the bits
+in each one. The target (Figure~\ref{exampleTarget}) iterates over
+each integer in the array. The rewrite (Figure~\ref{exampleRewrite})
+illustrates how a compiler might use 64-bit registers to ``vectorize''
+this program. While this example is contrived, it is representative
+of a number of challenges exhibited in complex benchmarks that arise
+naturally. In the rewrite, basic block 3 is the steady-state loop.
+The preceding block (block 2) is similar to a warm-up loop in real
+vectorized code; the purpose is to align the iterations of the steady
+state loop to a cache-line boundary (in this example we assume that the `array'
+input is already 4-byte aligned, but we wish to align it to 8 bytes). The
+branch following the loop (block 4) performs the computation on the
+last element of the array, if necessary.
+
+\begin{figure}
+\label{exampleListing}
+\begin{lstlisting}[language=C]
+void bitflip(int* array, int len) {
+  for(int i = 0; i < len; i++) {
+    // block 1
+    array[i] ^= 0xffffffff;
+  }
+}
+\end{lstlisting}
+\subcaption{Target}\label{exampleTarget}
+\begin{lstlisting}[language=C]
+void bitflip(int* array, int len) {
+  // block 1
+  int i = 0;
+  if(len && (uint_ptr_t)array % 8 == 0) {
+    // block 2
+    *array ^= 0xffffffff;
+    array++;
+    i++;
+  } 
+  while(; i + 1 < len; i += 2) {
+    // block 3
+    *((long)array) ^= 0xffffffffffffffff;
+    array += 2;
+  }
+  if(i < len) {
+    // block 4
+    *array ^= 0xffffffff;
+  }
+}
+\end{lstlisting}
+\subcaption{Rewrite}\label{exampleRewrite}
+\end{figure}
+
+To the best of our knowledge, no existing automatic verification
+techniques exist to prove these two functions equivalent (unless the
+compiler is instrumented to generate verification conditions, as is
+sometimes the case of translation validation).
+
+In our technique, we provide a set of test cases. For this example,
+using random arrays of varying length located at different addresses
+modulo 8 would be sufficient. We run the programs with the test data,
+and make observations about the control flow. For a given test case,
+let $n_i$ represent the number of times basic block $i$ is executed in
+the target and $n_i'$ represent the number of times basic block $j$
+is executed in the rewrite. We observe the following
+equality holds over all test cases: $n_1 = n_2' + 2*n_3' + n_4'$. From
+here, we conclude that one iteration of basic block 3 corresponds
+to two iterations of basic block 1. We identify three cutpoints
+relating the two programs; cutpoint $A$ corresponds to the entry of
+both, cutpoint $B$ corresponds to the head of basic block 1 of the
+target and the head of basic block 3 in the rewrite, and cutpiont $C$
+corresponds to the exit of both programs.
+
+At this point, one might try to use the data to learn an invariant
+relating the program states at cutpoint $B$. For this example, that
+approach fails unless the invariant language includes disjunctions
+and reasons about modular arithmetic. More generally, there are two
+problems: (i) it could be unclear which paths in the target
+correspond to which paths in the rewrite, and (ii) generating the
+correct invariants could require reasoning about arbitrary branch
+conditions. The first of these problems is more significant; there
+are an unbounded number of paths from the entry cutpoint to an
+interior cutpoint because these paths may include loops.  As a result,
+identifying which paths in the target correspond to which in the
+rewrite is non-trivial -- especially if the branch conditions differ
+-- and different pairs of paths may yield different invariants.
+
+Consider the invariant $i' - i = 0 \wedge array' - array
+= 0 \wedge len = len'$. This holds only if block 2 of the rewrite
+never executes, namely when the array is stored at an 8-byte boundary.
+On the other hand, if the array is stored at an 8-byte boundary, the
+desired invariant is $i' - i = 1 \wedge array' - array = 4 \wedge len
+= len'$. Without introducing disjunctions, this approach won't work.
+
+Our solution involves three ideas:
+
+\begin{itemize}
+\item Parameterizing invariants by basic block counts
+\item Learning invariants that hold regardless of the control flow path(s) taken to reach a cutpoint
+\item Partitioning paths to a cutpoint 
+\end{itemize}
+
+In this example, we observe that for any execution traces of the two
+programs that end at the cutpoint, the following relationships hold:
+$array' - array = 8n_3' + 4n_2' - 4n_1$ and $i' - i = 2*n_3' + n_2'
+- n_1$. Most importantly, these hold \emph{regardless of the paths
+taken}. We could attempt to prove these control-flow insensitive
+invariants directly, however doing so in general is difficult. That's
+because one would need to fully reason about the execution of each
+program independently, without taking advantage of the correspondence
+with the other that illustrates the equality.
+
+Instead, we rearrange these invariants: $8n_3' - 4n_1 = array' - array
+- 4n_2'$ and $2n_3' - n_1' = i' - i - n_2'$. Observe that, after an
+iteration of the corresponding loops (i.e. 4 iterations of basic block
+1 in the target, and 1 iteration of basic block 3 in the rewrite),
+the left hand sides of both invariants remain constant. Thus we can
+conclude that the appropriate invariant to use is of the form $array'
+- array - 4n_2' = k_1 \wedge i' - i - n_2' = k_2 \wedge len = len'$
+for some choice of $k_1$ and $k_2$. The choice of $k_1$ and $k_2$
+induce an equivalence relation on paths from the entry of the two
+programs to $B$ cutpoint. Consider the pairs of paths $P$ and $Q$
+ending at this cutpoint shown in Figure~\ref{fig:egpaths} that include
+at most two iterations of each loop. For each path, we can compute the
+values of $k_1$ and $k_2$. Two paths are equivalent if their values
+for $k_1$ and $k_2$ match. We see that, in this selection of paths,
+there are four equivalence classes.
+
+\begin{figure}
+\begin{tabular}{|ll|cccc|}
+\hline
+$P$       & $Q$ & $n_2'$ & $i'-i$ & $k_1$ & $k_2$ \\ \hline  \hline
+1  & 13      &  0 & 1  & 4 & 1  \\
+1  & 123     &  1 & 2  & 4 & 1  \\
+1  & 133     &  0 & 3  & 12 & 3  \\
+1  & 1233    &  1 & 4  & 12 & 3  \\
+11 & 13      &  0 & 0  & 0 & 0  \\
+11 & 123     &  1 & 1  & 0 & 0  \\
+11 & 133     &  0 & 2  & 8 & 2  \\
+11 & 1233    &  1 & 3  & 8 & 2  \\ \hline
+\end{tabular}
+\caption{Selected paths from the entry to the first cutpoint. Two
+paths are equivalent if their values for $k_1$ and $k_2$ match.}
+\label{fig:egpaths}
+\end{figure}
+
+For any given equivalence class, we can construct a \bisimrep{} and
+check if it induces a bisimulation on the two programs. For example,
+take the class with $k_1 = 4$ and $k_2 = 1$. We start with the
+\bisimrep{} that contains 3 nodes, each corresponding to a cutpoint.
+Then we add edges $(1,13)$ and $(1,123)$ and the self-edge $(11,3)$.
+Lastly, we use the control flow relationships found at the beginning
+to identify edges from cutpoint $B$ to cutpoint $C$. \todo{compute
+this and create figure with full graph}. Finally, we verify the proof
+obligations described in Section~\ref{sec:proofobl}.
