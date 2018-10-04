@@ -187,6 +187,7 @@ SRC_OBJ=\
 	src/validator/flow_invariant_learner.o \
 	src/validator/forking_obligation_checker.o \
 	src/validator/handler.o \
+	src/validator/implication_graph.o \
 	src/validator/int_matrix.o \
 	src/validator/int_vector.o \
 	src/validator/invariant.o \

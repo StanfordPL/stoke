@@ -118,8 +118,6 @@ private:
 
   /** Add ghost variables into symbolic state for a CFG. */
   void add_basic_block_ghosts(SymState& ss, const Cfg& cfg, std::string suffix);
-  /** Get names of basic block ghosts for a CFG. */
-  std::vector<std::string> get_ghost_names(const Cfg& cfg);
 
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no, const LineMap& line_map, bool ignore_last_line);

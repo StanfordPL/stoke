@@ -901,6 +901,55 @@ ConjunctionInvariant* InvariantLearner::learn_constants(
   return conj;
 }
 
+void multiplication_update(uint64_t& col_i_value, uint64_t& col_j_value,
+                           bool& i_bigger, bool& found_prod, uint64_t& prod, bool& prod_match) {
+  if(prod_match == false)
+    return;
+
+  if(!found_prod) {
+    if(col_i_value != 0 && col_j_value != 0) {
+      auto tmp_diff = col_i_value / col_j_value;
+      if(tmp_diff * col_j_value == col_i_value) {
+        found_prod = true;
+        prod = tmp_diff;
+        i_bigger = true;
+        return;
+      } else {
+        tmp_diff = col_j_value / col_i_value;
+        if(tmp_diff*col_i_value == col_j_value) {
+          found_prod = true;
+          prod = tmp_diff;
+          i_bigger = false;
+          return;
+        } else {
+          prod_match = false;
+          return;
+        }
+      }
+    } else if (col_i_value == 0 && col_j_value != 0) {
+      prod_match = false;
+      return;
+    } else if (col_j_value == 0 && col_i_value != 0) {
+      prod_match = false;
+      return;
+    }
+  } else {
+    if(i_bigger) {
+      if(prod*col_j_value != col_i_value) {
+        prod_match = false;
+        return;
+      }
+    } else {
+      if(prod*col_i_value != col_j_value) {
+        prod_match = false;
+        return;
+      }
+    }
+  }
+
+}
+
+
 /** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
 ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
@@ -913,24 +962,56 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
 
   ConjunctionInvariant* conj = new ConjunctionInvariant();
 
+  vector<size_t> columns_to_erase;
   for (size_t i = 0; i < columns.size(); ++i) {
     for (size_t j = i+1; j < columns.size(); ++j) {
 
       // check if column i matches column j
-      LEARNER_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
-      bool match = true;
-      for (size_t k = 0; k < tc_count; ++k) {
-        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
-            columns[j].from_state(target_states[k], rewrite_states[k])) {
-          match = false;
-          break;
+      //LEARNER_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
+      bool diff_match = true;
+      bool prod_match = true;
+      bool found_prod = false;
+      bool i_bigger = false;
+      uint64_t prod; 
+
+      uint64_t diff = 0;
+      if(tc_count > 0) {
+        uint64_t col_i_start_value = columns[i].from_state(target_states[0], rewrite_states[0]);
+        uint64_t col_j_start_value = columns[j].from_state(target_states[0], rewrite_states[0]);
+        diff = col_i_start_value - col_j_start_value;
+        multiplication_update(col_i_start_value, col_j_start_value, i_bigger, found_prod, prod, prod_match);
+      }
+
+      for (size_t k = 1; k < tc_count; ++k) {
+        auto col_i_value = columns[i].from_state(target_states[k], rewrite_states[k]);
+        auto col_j_value = columns[j].from_state(target_states[k], rewrite_states[k]);
+
+        if(col_i_value - col_j_value != diff) {
+          diff_match = false;
         }
+
+        multiplication_update(col_i_value, col_j_value, i_bigger, found_prod, prod, prod_match);
+        
+        if(!diff_match && !prod_match)
+          break;
       }
       // add equality asserting column[i] matches column[j].
-      if (match) {
+      if (diff_match) {
         vector<Variable> terms;
         columns[i].coefficient = 1;
         columns[j].coefficient = -1;
+        terms.push_back(columns[i]);
+        terms.push_back(columns[j]);
+
+        auto ei = new EqualityInvariant(terms, diff);
+        conj->add_invariant(ei);
+        LEARNER_DEBUG(cout << "generating " << *ei << endl;)
+
+        columns_to_erase.push_back(j);
+      } else if (prod_match && found_prod) {
+        vector<Variable> terms;
+        columns[i].coefficient = i_bigger ? 1 : prod;
+        columns[j].coefficient = i_bigger ? -prod : -1;
         terms.push_back(columns[i]);
         terms.push_back(columns[j]);
 
@@ -938,10 +1019,19 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
         conj->add_invariant(ei);
         LEARNER_DEBUG(cout << "generating " << *ei << endl;)
 
-        columns.erase(columns.begin() + j);
-        j--;
+        columns_to_erase.push_back(j);
       }
     }
+  }
+
+  sort(columns_to_erase.begin(), columns_to_erase.end(), greater<size_t>());
+  size_t last = (size_t)(-1);
+  for(auto col : columns_to_erase) {
+    if(col == last)
+      continue;
+    last = col;
+
+    columns.erase(columns.begin() + col);
   }
 
   return conj;
@@ -1019,11 +1109,11 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   constant_inv->write_pretty(std::cout);
   cout << endl;
 
-  /** (B) check for two identical columns. */
+  /** (B) check for some equalities */
   auto equal_inv = learn_easy_equalities(columns, target_states, rewrite_states);
   conj->add_invariants(equal_inv);
 
-  cout << "EQUAL INVARIANTS" << endl;
+  cout << "EASY EQUALITIES" << endl;
   equal_inv->write_pretty(std::cout);
   cout << endl;
 
@@ -1032,7 +1122,7 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
     cout << columns[i] << endl;
   }
 
-  /** (C) sample columns; perform check; try again. */
+  /** (C) sample rows; perform check; try again. */
   auto tc_pairs = choose_tcs(target_states, rewrite_states);
   auto target_learn = tc_pairs.first;
   auto rewrite_learn = tc_pairs.second;
@@ -1041,25 +1131,23 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   ConjunctionInvariant* equalities;
   while (!done) {
     auto matrix = states_to_matrix(columns, target_learn, rewrite_learn);
-    cout << "VERIFYING MATRIX" << endl;
+    cout << "COMPUTING KERNEL OF THIS MATRIX " << matrix.rows() << " x " << matrix.cols() << endl;
     matrix.print();
 
     /*cout << "NULLSPACE" << endl; */
     auto nullspace = matrix.nullspace64();
 
-    cout << "NULLSPACE" << endl;
-    nullspace.print();
-
-    cout << "INVARIANTS" << endl;
+    cout << "INVARIANTS FROM KERNEL" << endl;
     equalities = matrix_to_invariant(columns, nullspace);
     equalities->write_pretty(std::cout);
 
     size_t new_states = 0;
     bool all_work = true;
+    vector<CpuState> target_bad;
+    vector<CpuState> rewrite_bad;
     for (size_t i = 0; i < target_states.size(); ++i) {
 
-      // don't add more than a fixed number of new states if the invariants don't work.
-      if (new_states > sample_tcs_)
+      if(new_states >= sample_tcs_)
         break;
 
       auto target_state = target_states[i];
@@ -1067,8 +1155,8 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
 
       for (size_t j = 0; j < equalities->size(); ++j) {
         if (!(*equalities)[j]->check(target_state, rewrite_state)) {
-          cout << "GOT A BAD INVARIANT" << endl;
-          cout << *(*equalities)[j] << endl;
+          //cout << "GOT A BAD INVARIANT" << endl;
+          //cout << *(*equalities)[j] << endl;
           target_learn.push_back(target_state);
           rewrite_learn.push_back(rewrite_state);
           new_states++;
@@ -1078,8 +1166,12 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
       }
     }
 
-    if (all_work)
+    if (all_work) {
+      cout << "All these invariants worked!" << endl;
       done = true;
+    } else {
+      cout << "Got bad invariants!" << endl;
+    }
   }
   conj->add_invariants(equalities);
 

@@ -301,30 +301,9 @@ void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpTy
 }
 
 
-
-
-vector<string> SmtObligationChecker::get_ghost_names(const Cfg& cfg) {
-  vector<string> outputs;
-  if(basic_block_ghosts_) {
-    for(size_t blk = cfg.get_entry(); blk < cfg.get_exit(); blk++) {
-      auto v = Variable::bb_ghost(blk, false).name;
-      outputs.push_back(v);
-    }
-  }
-  return outputs;
-}
-
 void SmtObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, string suffix) {
-
-  if(basic_block_ghosts_) {
-    auto names = get_ghost_names(cfg);
-    for(auto v : names) {
-      stringstream name;
-      name << v << "_" << suffix;
-      ss.shadow[v] = SymBitVector::var(64, name.str());
-    }
-  }
-
+  if (basic_block_ghosts_)
+    ss.add_basic_block_ghosts(cfg, suffix);
 }
 
 void SmtObligationChecker::return_error(Callback& callback, string& s, void* optional) const {
@@ -561,8 +540,8 @@ void SmtObligationChecker::check(
 
   add_basic_block_ghosts(state_t_final, target, "1_FINAL");
   add_basic_block_ghosts(state_r_final, rewrite, "2_FINAL");
-  auto target_ghost_names = get_ghost_names(target);
-  auto rewrite_ghost_names = get_ghost_names(rewrite);
+  auto target_ghost_names = SymState::get_ghost_names(target);
+  auto rewrite_ghost_names = SymState::get_ghost_names(rewrite);
 
   for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe(), target_ghost_names))
     constraints.push_back(it);

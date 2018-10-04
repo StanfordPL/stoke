@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/validator/flow_invariant_learner.h"
+#include "src/validator/implication_graph.h"
 #include "src/validator/local_class_checker.h"
 
 #include "src/validator/invariants/conjunction.h"
@@ -346,6 +347,9 @@ void LocalClassChecker::discharge_invariants(DualAutomata& dual) {
     }
 
     // STEP 1: visit all the self-edges (if any) until fixedpoint
+    auto conj = dual.get_invariant(current_state);
+    ImplicationGraph graph(dual.get_target(), dual.get_rewrite(), conj);
+
     cout << "[discharge_invariants] State " << current_state << " has " << self_edges.size() << " self edges." << endl;
     if(self_edges.size()) {
       bool update_required = true;

@@ -39,7 +39,7 @@ using namespace stoke;
 
 IntVector IntMatrix::operator*(IntVector& vect) const {
   auto& matrix = *this;
-  assert(matrix[0].size() == vect.size());
+  assert(matrix.size() == 0 || matrix[0].size() == vect.size());
   IntVector results;
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;
@@ -53,7 +53,7 @@ IntVector IntMatrix::operator*(IntVector& vect) const {
 
 IntMatrix IntMatrix::operator*(IntMatrix& other) const {
   auto& matrix = *this;
-  assert(matrix[0].size() == other.size());
+  assert(matrix.size() == 0 || matrix[0].size() == other.size());
 
   IntMatrix result(matrix.size(), other[0].size());
 
@@ -71,7 +71,7 @@ IntMatrix IntMatrix::operator*(IntMatrix& other) const {
 
 bool IntMatrix::in_nullspace(IntVector& vect) const {
   auto& matrix = *this;
-  assert(matrix[0].size() == vect.size());
+  assert(matrix.size() == 0 || matrix[0].size() == vect.size());
   for (size_t i = 0; i < matrix.size(); ++i) {
     int64_t sum = 0;
     for (size_t j = 0; j < vect.size(); ++j) {

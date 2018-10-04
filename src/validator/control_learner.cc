@@ -309,6 +309,7 @@ IntVector ControlLearner::goal_vector() {
 }
 
 IntVector ControlLearner::pair_vector(CfgPath tp, CfgPath rp) {
+
   IntVector test(total_block_indexes());
   for (auto it : tp) {
     if (target_.get_exit() == it)
