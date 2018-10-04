@@ -20,7 +20,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { X }
+#define DEBUG_ARM(X) { }
 
 void ArmMemory::generate_constraints(
     ArmMemory* am, 
@@ -279,7 +279,7 @@ bool ArmMemory::generate_constraints_given_one_cell(ArmMemory* am) {
     for(auto& access2 : all_accesses_) {
       if(access1.cell_offset == access2.cell_offset) {
         if(access1.size != access2.size) {
-          cout << "accesses of size " << access1.size << " and " << access2.size << " at offset " << access1.cell_offset << endl;
+          DEBUG_ARM(cout << "accesses of size " << access1.size << " and " << access2.size << " at offset " << access1.cell_offset << endl;)
           return false; 
         } else {
           continue;
