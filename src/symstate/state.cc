@@ -475,3 +475,26 @@ std::ostream& SymState::write_text(std::ostream& os) const {
   }
   return os;
 }
+
+vector<string> SymState::get_ghost_names(const Cfg& cfg) {
+  vector<string> outputs;
+  for(size_t blk = cfg.get_entry(); blk <= cfg.get_exit(); blk++) {
+    stringstream ss;
+    ss << "n" << blk;
+    outputs.push_back(ss.str());
+  }
+  return outputs;
+}
+
+
+
+void SymState::add_basic_block_ghosts(const Cfg& cfg, string suffix) {
+  auto names = get_ghost_names(cfg);
+  for(auto v : names) {
+    cout << "adding ghost " << v << endl;
+    stringstream name;
+    name << v << "_" << suffix;
+    shadow[v] = SymBitVector::var(64, name.str());
+  }
+
+}

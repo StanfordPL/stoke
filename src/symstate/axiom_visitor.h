@@ -140,8 +140,6 @@ public:
     (*this)(b->b_);
   }
 
-
-
   /** Visit a boolean TRUE */
   void visit(const SymBoolTrue * const b) override {
     return;
