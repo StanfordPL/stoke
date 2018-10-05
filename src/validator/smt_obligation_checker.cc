@@ -327,6 +327,7 @@ void SmtObligationChecker::check(
   Invariant& prove, 
   const vector<pair<CpuState, CpuState>>& testcases,
   Callback& callback,
+  bool override_separate_stack,
   void* optional) {
 
   auto start_time = system_clock::now();
@@ -389,13 +390,14 @@ void SmtObligationChecker::check(
   add_basic_block_ghosts(state_t, target, "1_INIT");
   add_basic_block_ghosts(state_r, rewrite, "2_INIT");
 
-  OBLIG_DEBUG(cout << "separate_stack_ = " << separate_stack_ << endl;)
+  bool separate_stack = separate_stack_ || override_separate_stack;
+  OBLIG_DEBUG(cout << "separate_stack = " << separate_stack << endl;)
   if (flat_model) {
-    state_t.memory = new FlatMemory(separate_stack_);
-    state_r.memory = new FlatMemory(separate_stack_);
+    state_t.memory = new FlatMemory(separate_stack);
+    state_r.memory = new FlatMemory(separate_stack);
   } else if (arm_model) {
-    state_t.memory = new ArmMemory(separate_stack_, solver_);
-    state_r.memory = new ArmMemory(separate_stack_, solver_);
+    state_t.memory = new ArmMemory(separate_stack, solver_);
+    state_r.memory = new ArmMemory(separate_stack, solver_);
   }
 
   // Build dereference map

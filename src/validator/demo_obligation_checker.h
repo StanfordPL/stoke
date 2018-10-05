@@ -40,6 +40,7 @@ public:
                      Invariant& assume, Invariant& prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
+                     bool separate_stack,
                      void* optional = NULL) {
     Result r;
     r.verified = false;

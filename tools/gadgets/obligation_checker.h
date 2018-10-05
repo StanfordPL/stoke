@@ -117,8 +117,9 @@ public:
                      Invariant& assume, Invariant& prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
+                     bool override_separate_stack,
                      void* optional = NULL) {
-    child_->check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases, callback, optional);
+    child_->check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases, callback, override_separate_stack, optional);
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */

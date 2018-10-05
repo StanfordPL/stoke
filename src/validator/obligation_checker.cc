@@ -94,6 +94,7 @@ ostream& ObligationChecker::Obligation::write_text(ostream& os) const {
   assume->serialize(os);
   prove->serialize(os);
   serialize<vector<pair<CpuState, CpuState>>>(os, testcases);
+  os << separate_stack << endl;
   return os;
 }
 
@@ -113,6 +114,8 @@ istream& ObligationChecker::Obligation::read_text(istream& is) {
   prove = Invariant::deserialize(is);
   CHECK_STREAM(is);
   testcases = deserialize<vector<pair<CpuState, CpuState>>>(is);
+  CHECK_STREAM(is);
+  is >> separate_stack;
   CHECK_STREAM(is);
   return is;
 }

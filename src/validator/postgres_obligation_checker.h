@@ -77,6 +77,7 @@ public:
                      Invariant& assume, Invariant& prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
+                     bool override_separate_stack,
                      void* optional = NULL);
 
   /** Blocks until all the checking has done and the callbacks have been called. */
