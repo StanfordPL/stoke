@@ -106,7 +106,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.assume = &assume;
   obligation.prove = &prove;
   obligation.testcases = testcases;
-  obligation.separate_stack = override_separate_stack;
+  obligation.separate_stack = separate_stack_ || override_separate_stack;
 
   stringstream ss;
   obligation.write_text(ss);

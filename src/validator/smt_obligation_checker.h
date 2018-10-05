@@ -80,7 +80,7 @@ public:
              const std::vector<std::pair<CpuState, CpuState>>& testcases,
              Callback& callback,
              bool override_separate_stack,
-             void* optional = NULL);
+             void* optional);
 
   Filter& get_filter() {
     return filter_;

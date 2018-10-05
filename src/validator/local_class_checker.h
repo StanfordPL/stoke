@@ -42,6 +42,7 @@ public:
   virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
+                     bool separate_stack,
                      void* optional = NULL);
 
   /** Blocks until all the checking has done and the callbacks have been called. */
@@ -77,16 +78,16 @@ private:
   ConjunctionInvariant* get_fail_invariant() const;
 
   /** Try and prove all the invariants we can, starting from the initial one. */
-  void discharge_invariants(DualAutomata&);
+  void discharge_invariants(DualAutomata&, bool separate_stack);
   /** Helper for discharge invariants that works on just one edge. */
-  void discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream* ss);
+  void discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, std::stringstream* ss, bool separate_stack);
   /** For running discharge_edge in a thread. */
-  void discharge_thread(DualAutomata&, DischargeState&, size_t);
+  void discharge_thread(DualAutomata&, DischargeState&, size_t, bool separate_stack);
   /** Start threads to discharge edges. */
-  void discharge_thread_run(DualAutomata&, DischargeState&);
+  void discharge_thread_run(DualAutomata&, DischargeState&, bool separate_stack);
 
   /** Verify that a dual automata is correct */
-  ClassChecker::Result verify_dual(DualAutomata& dual);
+  ClassChecker::Result verify_dual(DualAutomata& dual, bool separate_stack);
 
 
   ObligationChecker::Callback callback_;

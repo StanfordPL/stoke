@@ -55,6 +55,7 @@ public:
   virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
+                     bool separate_stack,
                      void* optional = nullptr);
 
   virtual void block_until_complete();

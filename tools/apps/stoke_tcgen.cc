@@ -198,7 +198,7 @@ void make_tc_different_memory(
     SmtObligationChecker oc(checker.get_solver(), filter);
 
     vector<pair<CpuState, CpuState>> testcases;
-    auto result = oc.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
+    auto result = oc.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases, false);
 
     if (result.has_ceg) {
       auto tc2 = result.target_ceg;
@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
     }
 
     vector<pair<CpuState, CpuState>> testcases;
-    auto result = checker.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases);
+    auto result = checker.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases, false);
 
     if (result.has_ceg) {
       auto tc = result.target_ceg;

@@ -78,7 +78,7 @@ public:
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      bool override_separate_stack,
-                     void* optional = NULL);
+                     void* optional);
 
   /** Blocks until all the checking has done and the callbacks have been called. */
   virtual void block_until_complete();
