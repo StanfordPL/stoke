@@ -83,6 +83,8 @@ auto& debug_target_arg = FileArg<TUnit, TUnitReader, TUnitWriter>::create("debug
                       .description("Alternate target");
 
 
+auto& force_separate_stack = FlagArg::create("separate_stack")
+                            .description("force the stack to be modeled separately");
 
 auto& verbose_arg = FlagArg::create("verbose")
                       .description("Output more details.");
@@ -700,6 +702,8 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
   auto handler = new ComboHandler();
   auto filter = new BoundAwayFilter(*handler, (uint64_t)0x100, (uint64_t)(-0x100));
   SmtObligationChecker oc(*solver, *filter);
+  if(force_separate_stack.value())
+    oc.set_separate_stack(true);
   if(strcmp(qe.strategy, "flat") == 0)
     oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
   else

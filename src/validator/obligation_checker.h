@@ -111,6 +111,7 @@ public:
     Invariant* assume;
     Invariant* prove;
     std::vector<std::pair<CpuState, CpuState>> testcases;
+    bool separate_stack;
 
     std::istream& read_text(std::istream& is);
     std::ostream& write_text(std::ostream& os) const;
@@ -223,12 +224,13 @@ public:
                      Invariant& assume, Invariant& prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
+                     bool override_separate_stack,
                      void* optional = NULL) = 0;
 
   void check(const Obligation& problem, Callback& callback, void* optional = NULL) {
     check(problem.target, problem.rewrite, problem.target_block, problem.rewrite_block,
           problem.P, problem.Q, *problem.assume, *problem.prove, problem.testcases,
-          callback, optional);
+          callback, problem.separate_stack, optional);
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */

@@ -93,6 +93,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
                    Invariant& assume, Invariant& prove,
                    const std::vector<std::pair<CpuState, CpuState>>& testcases,
                    Callback& callback,
+                   bool override_separate_stack,
                    void* optional) {
 
   Obligation obligation;
@@ -105,6 +106,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.assume = &assume;
   obligation.prove = &prove;
   obligation.testcases = testcases;
+  obligation.separate_stack = override_separate_stack;
 
   stringstream ss;
   obligation.write_text(ss);
