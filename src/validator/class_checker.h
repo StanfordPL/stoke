@@ -58,6 +58,7 @@ public:
     std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges;
     std::vector<Invariant*> extra_assumptions;
     std::vector<Invariant*> assume_always;
+    bool separate_stack;
 
     static Problem deserialize(std::istream& is);
     std::ostream& serialize(std::ostream& os) const;
@@ -67,14 +68,16 @@ public:
             size_t tb, size_t rb,
             const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng,
             const std::vector<Invariant*>& assume,
-            const std::vector<Invariant*>& always) : 
+            const std::vector<Invariant*>& always,
+            bool sstack) : 
       template_pod(da),
       equivalence_class(equ_class),
       target_bound(tb),
       rewrite_bound(rb),
       pointer_ranges(ptr_rng),
       extra_assumptions(assume),
-      assume_always(always)
+      assume_always(always),
+      separate_stack(sstack)
     {
 
     }
@@ -139,10 +142,11 @@ public:
   virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
+                     bool override_separate_stack,
                      void* optional = NULL) = 0;
 
   void check(const Problem& problem, Callback& callback, void* optional = NULL) {
-    check(problem.template_pod, problem.equivalence_class, callback, optional);
+    check(problem.template_pod, problem.equivalence_class, callback, problem.separate_stack, optional);
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */

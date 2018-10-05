@@ -55,6 +55,7 @@ ostream& ClassChecker::Problem::serialize(ostream& os) const {
   stoke::serialize<vector<pair<M8,M8>>>(os, pointer_ranges);
   stoke::serialize<vector<Invariant*>>(os, extra_assumptions);
   stoke::serialize<vector<Invariant*>>(os, assume_always);
+  os << separate_stack << endl;
   return os;
 }
 
@@ -67,7 +68,9 @@ ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is) {
   auto ptr_ranges = stoke::deserialize<vector<pair<M8,M8>>>(is);
   auto extras = stoke::deserialize<vector<Invariant*>>(is);
   auto always = stoke::deserialize<vector<Invariant*>>(is);
-  ClassChecker::Problem problem(template_pod, equiv_class_map, target_bound, rewrite_bound, ptr_ranges, extras, always);
+  bool separate_stack;
+  is >> separate_stack;
+  ClassChecker::Problem problem(template_pod, equiv_class_map, target_bound, rewrite_bound, ptr_ranges, extras, always, separate_stack);
   return problem;
 }
 

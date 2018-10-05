@@ -43,6 +43,7 @@ void ForkingObligationChecker::check(
            Invariant& assume, Invariant& prove,
            const std::vector<std::pair<CpuState, CpuState>>& testcases,
            Callback& callback,
+           bool override_separate_stack,
            void* optional) {
 
   vector<pid_t> friends;
@@ -111,7 +112,7 @@ void ForkingObligationChecker::check(
         }
       };
       child_checker->check(target, rewrite, target_block, rewrite_block,
-          p, q, assume, prove, testcases, callback, optional);
+          p, q, assume, prove, testcases, callback, override_separate_stack, optional);
       child_checker->block_until_complete();
       close(pipefd[1]);
       exit(0);

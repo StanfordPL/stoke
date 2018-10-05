@@ -103,10 +103,10 @@ void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite,
 
   bool equiv;
   vector<pair<CpuState, CpuState>> testcases;
-  if (heap_out_ || stack_out_) {
-    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases, callback, (void*)cd);
+  if (heap_out_) {
+    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove, testcases, callback, !stack_out_, (void*)cd);
   } else {
-    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases, callback, (void*)cd);
+    checker_.check(target, rewrite, target.get_entry(), rewrite.get_entry(), P, Q, assume, prove_state, testcases, callback, !stack_out_, (void*)cd);
   }
 
 }

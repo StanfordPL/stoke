@@ -194,7 +194,8 @@ public:
                     Cfg::id_type target_block, Cfg::id_type rewrite_block,
                     const CfgPath& p, const CfgPath& q,
                     Invariant& assume, Invariant& prove,
-                    const std::vector<std::pair<CpuState, CpuState>>& testcases) {
+                    const std::vector<std::pair<CpuState, CpuState>>& testcases,
+                    bool override_separate_stack) {
 
     Result await_result;
     
@@ -205,7 +206,7 @@ public:
 
     std::cout << "[check_wait] calling check" << std::endl;
     check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases,
-          callback, NULL);
+          callback, override_separate_stack, NULL);
 
     std::cout << "[check_wait] blocking" << std::endl;
     block_until_complete();
@@ -225,7 +226,7 @@ public:
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      bool override_separate_stack,
-                     void* optional = NULL) = 0;
+                     void* optional) = 0;
 
   void check(const Obligation& problem, Callback& callback, void* optional = NULL) {
     check(problem.target, problem.rewrite, problem.target_block, problem.rewrite_block,

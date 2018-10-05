@@ -59,7 +59,8 @@ public:
                      Invariant& assume, Invariant& prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
-                     void* optional = NULL);
+                     bool override_separate_stack,
+                     void* optional);
 
   /** Get the filter */
   Filter& get_filter() {

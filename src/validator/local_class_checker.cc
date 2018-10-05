@@ -49,6 +49,7 @@ int LocalClassChecker::check(
     const DualAutomata& template_pod,
     const DualBuilder::EquivalenceClassMap& equivalence_class,
     Callback& callback,
+    bool separate_stack,
     void* optional) {
 
   DualBuilder builder(template_pod, control_learner_);
@@ -67,7 +68,7 @@ int LocalClassChecker::check(
     return 0;
   }
 
-  Result r = verify_dual(*pod);
+  Result r = verify_dual(*pod, separate_stack);
   callback(r, optional);
   delete pod;
   return 0;
@@ -75,7 +76,7 @@ int LocalClassChecker::check(
 }
 
 
-ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
+ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool separate_stack) {
   Result r;
   r.verified = false;
   r.has_error = false;
@@ -134,7 +135,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
 
   /** Do the heavy lifting of the proof. */
   dual.print_all();
-  discharge_invariants(dual);
+  discharge_invariants(dual, separate_stack);
   dual.print_all();
 
   /** Check that there's no path to the failure state. */
@@ -150,7 +151,8 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual) {
   auto expected_final = get_final_invariant(dual);
   vector<pair<CpuState, CpuState>> testcases;
   auto result = obligation_checker_.check_wait(target, rewrite, end_state.ts, end_state.rs,
-                                    {}, {}, *actual_final, *expected_final, testcases);
+                                    {}, {}, *actual_final, *expected_final, testcases, 
+                                    separate_stack);
   if(result.has_error) {
     cout << "[verify_dual] Checker encountered error: " << result.error_message << endl;
     r.has_error = true;
@@ -246,7 +248,7 @@ ConjunctionInvariant* LocalClassChecker::get_fail_invariant() const {
 }
 
 /** returns true if everything was successful. */
-void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, stringstream* ss) {
+void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, stringstream* ss, bool separate_stack) {
 
   ConjunctionInvariant* start_inv = dual.get_invariant(edge.from);
   ConjunctionInvariant* start_inv_copy = new ConjunctionInvariant(*start_inv);
@@ -282,16 +284,17 @@ void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState&
   auto target = dual.get_target();
   auto rewrite = dual.get_rewrite();
   obligation_checker_.check(target, rewrite, edge.from.ts, edge.from.rs,
-                 edge.te, edge.re, *start_inv_copy, *partial_inv, testcases, callback_, (void*)info);
+                 edge.te, edge.re, *start_inv_copy, *partial_inv, testcases, 
+                 callback_, separate_stack, (void*)info);
 
 }
 
-void LocalClassChecker::discharge_thread_run(DualAutomata& dual, DischargeState& state) {
+void LocalClassChecker::discharge_thread_run(DualAutomata& dual, DischargeState& state, bool separate_stack) {
 
   callbacks_expected_ = 0;
   callbacks_count_ = 0;
 
-  discharge_thread(dual, state, 0);
+  discharge_thread(dual, state, 0, separate_stack);
   obligation_checker_.block_until_complete();
 
   if(callbacks_count_ < callbacks_expected_) {
@@ -305,7 +308,7 @@ void LocalClassChecker::block_until_complete() {
   return;
 }
 
-void LocalClassChecker::discharge_thread(DualAutomata& dual, DischargeState& discharge_state, size_t i) {
+void LocalClassChecker::discharge_thread(DualAutomata& dual, DischargeState& discharge_state, size_t i, bool separate_stack) {
   while(true) {
     //cout << "[discharge_thread " << i << "] getting another problem" << endl;
     auto problem = discharge_state.next_problem();
@@ -318,11 +321,11 @@ void LocalClassChecker::discharge_thread(DualAutomata& dual, DischargeState& dis
     }
     stringstream* ss = new stringstream();
     *ss << "[discharge_thread " << i << "]" ;
-    discharge_edge(dual, discharge_state, edge, conjunct, ss);
+    discharge_edge(dual, discharge_state, edge, conjunct, ss, separate_stack);
   }
 }
 
-void LocalClassChecker::discharge_invariants(DualAutomata& dual) {
+void LocalClassChecker::discharge_invariants(DualAutomata& dual, bool separate_stack) {
 
   auto sorted_states = dual.get_topological_sort();
   cout << "[discharge_invariants] Topological sort: ";
@@ -356,7 +359,7 @@ void LocalClassChecker::discharge_invariants(DualAutomata& dual) {
       while(update_required) {
         cout << "[discharge_invariants] Running self-loop threads" << endl;
         DischargeState discharge_loop(dual, self_edges);
-        discharge_thread_run(dual, discharge_loop);
+        discharge_thread_run(dual, discharge_loop, separate_stack);
         cout << "[discharge_invariants] self-loop threads done." << endl;
         update_required = discharge_loop.update_dual();
         cout << "[discharge_invariants] Update required = " << update_required << endl;
@@ -370,7 +373,7 @@ void LocalClassChecker::discharge_invariants(DualAutomata& dual) {
       cout << "[discharge_invariants] Running forward edge threads" << endl;
       DischargeState discharge_forward(dual, forward_edges);
       cout << "[discharge_invariants] discharge_forward created" << endl;
-      discharge_thread_run(dual, discharge_forward);
+      discharge_thread_run(dual, discharge_forward, separate_stack);
       cout << "[discharge_invariants] forward edge threads done" << endl;
       discharge_forward.update_dual();
       dual.print_all();

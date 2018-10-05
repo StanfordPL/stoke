@@ -129,6 +129,7 @@ int PostgresClassChecker::check(
                      const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
+                     bool separate_stack,
                      void* optional) {
   cout << "PostgresClassChecker::check()" << endl;
   Problem problem(
@@ -138,7 +139,8 @@ int PostgresClassChecker::check(
       rewrite_bound_, 
       pointer_ranges_, 
       extra_assumptions_,
-      assume_always_);
+      assume_always_,
+      separate_stack);
 
   stringstream ss;
   problem.serialize(ss);

@@ -85,8 +85,9 @@ public:
   virtual int check(const DualAutomata& template_pod,
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
+                     bool separate_stack,
                      void* optional = NULL) {
-    return child_->check(template_pod, equivalence_class, callback, optional);
+    return child_->check(template_pod, equivalence_class, callback, separate_stack, optional);
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */
