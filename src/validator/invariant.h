@@ -85,6 +85,8 @@ public:
 
   ConjunctionInvariant* AND(Invariant* other);
 
+  virtual Invariant* clone() const = 0;
+
 protected:
 
   void setup_di() {

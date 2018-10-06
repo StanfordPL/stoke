@@ -123,7 +123,7 @@ public:
   }
 
   /** Do the hard work of ARM and generate constraints needed to extract equality constraints */
-  void generate_constraints(ArmMemory* am, std::vector<SymBool>&, const DereferenceMaps& deref_map);
+  void generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints, std::vector<SymBool>& all_constraints, const DereferenceMaps& deref_map);
 
   /** Create a formula expressing these memory cells with another set. Also generates all the
     constraints needed for this contraint to make sense (retrievable through get_constraints().

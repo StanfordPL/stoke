@@ -72,10 +72,15 @@ public:
     return *this;
   }
 
+  StateGen& set_linemap(const LineMap& m) {
+    linemap_ = m;
+    return *this;
+  }
+
   /** Tries to generate a state that contains random register values; sensible rsp. */
   bool get(CpuState& cs);
   /** Tries to generate a state in which cfg can execute without signaling. */
-  bool get(CpuState& cs, const Cfg& cfg);
+  bool get(CpuState& cs, const Cfg& cfg, bool no_randomize = false);
 
   /** Returns the reason the last attempt to fix a dereference failed. */
   std::string get_error() const {
@@ -85,6 +90,7 @@ public:
 private:
   /** Sandbox */
   Sandbox* sb_;
+  LineMap linemap_;
 
   /** The minimum stack size. */
   size_t stack_size_;

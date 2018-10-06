@@ -50,25 +50,17 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 
 std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& cfg, const LineMap * const linemap) {
 
-  std::map<size_t, uint64_t> rip_map;
-  if(linemap != nullptr) {
-    for(auto pair : *linemap) {
-      rip_map[pair.first] = pair.second.rip_offset;
-      cout << "rip_map: " << pair.first << " -> " << pair.second.rip_offset << endl;
-    }
-  }
-
   vector<Trace> traces;
   //cout << "[get_detailed_trace] sandbox_.size() = " << sandbox_.size() << endl;
   for(size_t testcase = 0; testcase < sandbox_.size(); ++testcase) {
     size_t index;
     auto label = cfg.get_function().get_leading_label();
-    sandbox_.clear_callbacks();
     sandbox_.insert_function(cfg);
     sandbox_.set_entrypoint(label);
+    sandbox_.clear_callbacks();
 
     if(linemap != nullptr)
-      sandbox_.set_rip_map(rip_map);
+      sandbox_.set_linemap(*linemap);
 
     std::vector<CallbackParam*> to_free;
 
@@ -85,8 +77,8 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       cp->line_number = i;
 
       auto instr = code[i];
-      //cout << "[get_detailed_trace] instrumenting " << instr << endl;
-      if(instr.is_any_jump()) {
+      cout << "[get_detailed_trace] instrumenting " << instr << endl;
+      if(instr.is_any_jump() || collect_before_) {
         sandbox_.insert_before(label, i, callback, cp);
       } else {
         sandbox_.insert_after(label, i, callback, cp);

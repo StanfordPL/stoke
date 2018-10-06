@@ -105,6 +105,19 @@ private:
   bool build_testcase_flat_memory(CpuState&, SymArray variable,
                                   const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
+  /** Make test case for ARM, if possible. */
+  bool generate_arm_testcases(
+    const Cfg& target,
+    const Cfg& rewrite,
+    const x64asm::Code& target_unroll,
+    const x64asm::Code& rewrite_unroll,
+    const LineMap& target_linemap,
+    const LineMap& rewrite_linemap,
+    bool separate_stack,
+    const Invariant& assume,
+    std::vector<std::pair<CpuState,CpuState>>& testcases);
+
+
   /** Create a vector of line numbers with memory dereferences */
   std::vector<size_t> enumerate_accesses(const Cfg& cfg);
 

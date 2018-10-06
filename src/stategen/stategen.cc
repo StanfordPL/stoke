@@ -21,6 +21,7 @@
 #include "src/sandbox/state_callback.h"
 #include "src/state/regs.h"
 
+#define DEBUG_STATEGEN(X) { if(1) { X } }
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -64,7 +65,7 @@ bool StateGen::get(CpuState& cs) {
 
   // Map rsp to a high address
   cs.gp[rsp].get_fixed_byte(0) = 0x00;
-  cs.gp[rsp].get_fixed_byte(8) = (gen_() % 250) + 1;
+  cs.gp[rsp].get_fixed_byte(7) = (gen_() % 250) + 1;
 
   // Generate default memory
   cs.stack.resize(cs.gp[rsp].get_fixed_quad(0) - stack_size_, stack_size_);
@@ -80,15 +81,18 @@ void StateGen::cleanup() {
   sb_->clear_inputs();
 }
 
-bool StateGen::get(CpuState& cs, const Cfg& cfg) {
+bool StateGen::get(CpuState& cs, const Cfg& cfg, bool no_randomize) {
   // Insert callbacks before every instruction and compile
   size_t last_line_index;
   sb_->clear_callbacks();
   sb_->insert_before(callback, (void*)&last_line_index);
   sb_->compile(cfg);
 
-  // Generate a random state and keep checking for validity
-  get(cs);
+  // Generate a random state if requested
+  if(!no_randomize)
+    get(cs);
+
+  // now try to patch in the gaps
   tried_to_fix_misalign_ = false;
   for (int i = 0; i < (int)max_attempts_; ++i) {
     // Reset the sandbox state and try executing
@@ -123,6 +127,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     }
   }
 
+  error_message_ = "Max attempts exceeded.";
   cleanup();
   return false;
 }
@@ -298,6 +303,14 @@ bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Instr
 
 bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
 
+  DEBUG_STATEGEN(cout << "[fix] cs = " << endl;)
+  DEBUG_STATEGEN(cout << cs << endl;)
+
+  DEBUG_STATEGEN(cout << "[fix] fixed = " << endl;)
+  DEBUG_STATEGEN(cout << cs << endl;)
+
+
+
   auto instr = cfg.get_code()[line];
   // Clear the error message unless something bad happens.
   error_message_ = "";
@@ -315,50 +328,79 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
   const auto size = get_size(instr);
   auto addr = cs.get_addr(instr);
 
+  DEBUG_STATEGEN(cout << "[fix] called with " << addr << endl;)
+
   if (instr.mem_index() != -1) {
     auto mem = instr.get_operand<Mem>(instr.mem_index());
     if (mem.rip_offset()) {
       auto& fxn = cfg.get_function();
-      addr = mem.get_disp() + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);
+      uint64_t disp = mem.get_disp();
+
+      if (disp & 0x80000000)
+        disp |= 0xffffffff00000000;
+      else
+        disp &= 0x00000000ffffffff;
+
+      if(linemap_.size() && linemap_.count(line)) {
+        cout << "[fix] have rip offset of " << linemap_[line].rip_offset << endl;
+        cout << "[fix] (uint64_t)mem.get_disp() = " << (uint64_t)mem.get_disp() << endl;
+        cout << "[fix] disp = " << disp << endl;
+        addr = linemap_[line].rip_offset + disp;
+      } else {
+        addr = disp + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);
+      }
     }
   }
 
+  DEBUG_STATEGEN(cout << "[fix] FIXING @" << addr << " with size " << size << endl;)
+  DEBUG_STATEGEN(cout << "offending instruction: " << instr << " at line " << line << endl;)
 
   // We can't do anything about misaligned memory or pre-allocated memory
   if (is_misaligned(addr, size) && !allow_unaligned_) {
+    DEBUG_STATEGEN(cout << "this is misaligned." << endl;)
     return fix_misalignment(cs, fixed, instr);
-  } else if (already_allocated(fixed.stack, addr, size)) {
-    tried_to_fix_misalign_ = false;
-    error_message_ = "Memory was already allocated in stack.";
-    return false;
-  } else if (already_allocated(fixed.heap, addr, size)) {
-    tried_to_fix_misalign_ = false;
-    error_message_ = "Memory was already allocated in heap.";
-    return false;
-  }
-
-  // If we can't resize stack or heap, give up.
-  if (!resize_mem(fixed.stack, addr, size) && !resize_mem(fixed.heap, addr, size)) {
-    error_message_ = "Could not resize memory.";
-    return false;
-  }
-
-  // If stack and heap overlap now, give up. This memory is broken.
-  if (fixed.stack.lower_bound() <= fixed.heap.lower_bound()) {
-    uint64_t space = fixed.heap.lower_bound() - fixed.stack.lower_bound();
-    if (space < fixed.stack.size()) {
-      error_message_ = "Heap and stack overlap.";
-      return false;
-    }
-  } else {
-    uint64_t space = fixed.stack.lower_bound() - fixed.heap.lower_bound();
-    if (space < fixed.heap.size()) {
-      error_message_ = "Heap and stack overlap.";
+  } 
+  
+  vector<Memory> segments;
+  segments.push_back(fixed.stack);
+  segments.push_back(fixed.heap);
+  segments.insert(segments.begin(), fixed.segments.begin(), fixed.segments.end());
+  
+  for(auto& segment : segments) {
+    if(already_allocated(segment, addr, size)) {
+      tried_to_fix_misalign_ = false;
+      error_message_ = "Memory was already allocated in segment.";
       return false;
     }
   }
+  DEBUG_STATEGEN(cout << "[fix] Seems not to already be allocated here: " << endl;
+  for(auto& segment : segments) {
+    segment.write_text(cout);
+    cout << endl << endl;
+  })
 
-  // Look like we did something right. Return success.
+  /** See if we can resize one of the segments. */
+  for(auto& segment : segments) {
+    if(resize_mem(segment, addr, size)) {
+      fixed.stack = segments[0];
+      fixed.heap = segments[1];
+      segments.erase(segments.begin());
+      segments.erase(segments.begin());
+      fixed.segments = segments;
+      return true;
+    }
+  }
+
+  /* If not, create a new segment! */
+  Memory m;
+  bool b = resize_mem(m, addr, size);
+  assert(b);
+  segments.push_back(m);
+  fixed.segments = segments;
+  DEBUG_STATEGEN(cout << "[fix] Adding segment" << endl;)
+  DEBUG_STATEGEN(m.write_text(cout);)
+  DEBUG_STATEGEN(cout << endl;)
+  DEBUG_STATEGEN(cout << fixed << endl;)
   return true;
 }
 

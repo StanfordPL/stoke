@@ -72,6 +72,10 @@ public:
     is >> zero_bits_;
   }
 
+  Invariant* clone() const {
+    return new Mod2NInvariant(variable_, zero_bits_);
+  }
+
 private:
 
   Variable variable_;

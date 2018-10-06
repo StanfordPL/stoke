@@ -97,6 +97,11 @@ public:
     }
   }
 
+  Invariant* clone() const {
+    return new StateEqualityInvariant(rs_, ghost_variables_);
+  }
+
+
 private:
   x64asm::RegSet rs_;
 

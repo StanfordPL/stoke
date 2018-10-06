@@ -491,7 +491,7 @@ vector<string> SymState::get_ghost_names(const Cfg& cfg) {
 void SymState::add_basic_block_ghosts(const Cfg& cfg, string suffix) {
   auto names = get_ghost_names(cfg);
   for(auto v : names) {
-    cout << "adding ghost " << v << endl;
+    //cout << "adding ghost " << v << endl;
     stringstream name;
     name << v << "_" << suffix;
     shadow[v] = SymBitVector::var(64, name.str());

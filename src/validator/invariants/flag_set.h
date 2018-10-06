@@ -74,6 +74,10 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new FlagSetInvariant(flag_, is_rewrite_, invert_);
+  }
+
 
 private:
 

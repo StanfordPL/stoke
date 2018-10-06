@@ -86,6 +86,10 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new PointerRangeInvariant(begin_, end_);
+  }
+
 
 private:
 

@@ -167,6 +167,9 @@ public:
     }
   }
 
+  Invariant* clone() const {
+    return new InequalityInvariant(variable1_, variable2_, is_strict_, is_signed_, lhs_constant_);
+  }
 
 private:
 

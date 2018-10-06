@@ -65,6 +65,11 @@ public:
   }
 
 
+  Invariant* clone() const {
+    return new TopZeroInvariant(reg_, is_rewrite_);
+  }
+
+
 private:
 
   x64asm::R64 reg_;

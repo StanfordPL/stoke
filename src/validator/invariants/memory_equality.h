@@ -88,6 +88,9 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new MemoryEqualityInvariant();
+  }
 
 private:
 

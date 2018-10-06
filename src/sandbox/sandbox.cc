@@ -29,6 +29,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+#define DEBUG_SANDBOX(X) { if(0) { X } }
+
 namespace {
 
 set<Opcode> unsupported_ {{
@@ -841,6 +843,7 @@ void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* 
 
 bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(cfg.get_function().invariant_first_instr_is_label());
+  DEBUG_SANDBOX(cout << "[sandbox] emitting code at " << fxn->data() << endl;)
 
   assm_.start(*fxn);
 
@@ -861,7 +864,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Make a unique label in case we need to start in middle
   const auto middle = get_label();
   if (label == main_fxn_ && instr_offset_ != (uint64_t)(-1)) {
-    cout << "ADDING EXTRA JUMP " << endl;
+    DEBUG_SANDBOX(cout << "[sandbox] ADDING EXTRA JUMP " << endl;)
     assm_.jmp_1(middle);
   }
 
@@ -881,9 +884,10 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
       const auto& instr = f.get_code()[i];
       auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
       if(rip_map_.size()) {
-        hex_offset = rip_map_[i];
-        cout << "i = " << i << " instr = " << instr << endl;
-        cout << "overriding hex_offset = " << hex_offset << endl;
+        if(rip_map_.count(i))
+          hex_offset = rip_map_[i];
+        DEBUG_SANDBOX(cout << "[sandbox] i = " << i << " instr = " << instr << endl;)
+        DEBUG_SANDBOX(cout << "[sandbox] overriding hex_offset = " << hex_offset << endl;)
       }
 
       // Emit callbacks and instruction
@@ -893,6 +897,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
       if (label == main_fxn_ && i == instr_offset_) {
         assm_.bind(middle);
       }
+      DEBUG_SANDBOX(cout << "[sandbox] emitting " << instr << " at " << (fxn->data() + fxn->size()) << endl;)
       emit_instruction(instr, label, hex_offset, entry, exit);
       if (global_after_.first != nullptr || !after_.empty()) {
         emit_after(cfg.get_function().get_leading_label(), i);
@@ -915,9 +920,12 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 }
 
 void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
+  auto buffer = assm_.get_fxn();
+  DEBUG_SANDBOX(cout << "[sandbox] emitting callback at " << (buffer->data() + buffer->size()) << endl;)
   // Reload the STOKE %rsp, we're about to call some functions
   emit_load_stoke_rsp();
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_callback] fetching state at " << (buffer->data() + buffer->size()) << endl;)
   // Read the user's state without disturbing any state in the process
   assm_.push_1(rax);
   assm_.mov(rax, Moffs64(&cpu2out_));
@@ -925,6 +933,7 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& f
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_callback] heavy lifting at " << (buffer->data() + buffer->size()) << endl;)
   // rdi = callback function pointer
   assm_.mov(rdi, Imm64(cb.first));
   // rsi = pointer to current code
@@ -940,6 +949,7 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& f
   assm_.mov((R64)rax, Imm64(&callback_wrapper));
   assm_.call(rax);
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_callback] cleanup at " << (buffer->data() + buffer->size()) << endl;)
   // Restore the user's state
   // This leaves STOKE's %rsp in place, but that's what we want
   assm_.mov(rax, Moffs64(&out2cpu_));
@@ -1057,10 +1067,12 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   const auto mi = instr.mem_index();
   auto* temp = const_cast<Instruction*>(&instr);
   const auto old_op = temp->get_operand<M64>(mi);
+  auto fxn = assm_.get_fxn();
 
   // We'll be doing some function calls, and need some scratch, so load STOKE's rsp
   emit_load_stoke_rsp();
   // Backup some scratch values and the rflags register
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] emitting stack pushes at " << (fxn->data() + fxn->size()) << endl;)
   assm_.push_1(rax);
   assm_.push_1(rcx);
   assm_.push_1(rdx);
@@ -1076,6 +1088,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
 
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] emitting address computation at " << (fxn->data() + fxn->size()) << endl;)
   if (rip_offset) {
     int32_t disp = old_op.get_disp();
     int64_t sign_extend = (int64_t)disp;
@@ -1095,6 +1108,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   }
 
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] loading masks at " << (fxn->data() + fxn->size()) << endl;)
   switch (instr.type(mi)) {
   case Type::M_256:
     // Berkeley says that 256-bit values DON'T have to be aligned? Is this true?
@@ -1150,11 +1164,13 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
     assm_.mov(rdx, Imm64(0));
   }
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] invoking mapping function at " << (fxn->data() + fxn->size()) << endl;)
   // Invoke the mapping function, this will place a result in rax on return
   // SIGSEGV is trapped inside this function, no need to worry about it beyond here
   assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] saving address at " << (fxn->data() + fxn->size()) << endl;)
   // Find an unused register to hold the sandboxed address
   // Instructions that take Rh operands preclude the use of r8-15.
   // Fortunately, we know apriori that they only use ah-dh so it's easy to find a replacement.
@@ -1164,6 +1180,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   assm_.mov(M64(rdi), rx);
   assm_.mov(rx, rax);
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] restoring stack at " << (fxn->data() + fxn->size()) << endl;)
   // Restore the scratch space
   assm_.popfq();
   assm_.pop_1(rsi);
@@ -1174,6 +1191,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   // Along with the user's rsp
   emit_load_user_rsp();
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] emitting temporary instruction at " << (fxn->data() + fxn->size()) << endl;)
   // Assemble the instruction using the temp operand instead
   // (Check that we've generated a correct instruction in place of the original)
   temp->set_operand(mi, M8(rx));
@@ -1181,8 +1199,10 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   assm_.assemble(*temp);
   temp->set_operand(mi, old_op);
 
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] final cleanup at " << (fxn->data() + fxn->size()) << endl;)
   // Restore rx
   assm_.mov(rx, Imm64(&scratch_[rx]));
+  DEBUG_SANDBOX(cout << "[sandbox][emit_memory_instruction] final cleanup2 at " << (fxn->data() + fxn->size()) << endl;)
   assm_.mov(rx, M64(rx));
 }
 

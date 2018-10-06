@@ -20,11 +20,13 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { }
+#define DEBUG_ARM(X) { X }
+
 
 void ArmMemory::generate_constraints(
     ArmMemory* am, 
     std::vector<SymBool>& initial_constraints,
+    std::vector<SymBool>& all_constraints,
     const DereferenceMaps& deref_maps) {
 
   DereferenceMap deref_map;
@@ -128,7 +130,7 @@ void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_
       auto check = !(i_access.address + SymBitVector::constant(64, diff) == j_access.address);
       initial_constraints.push_back(check);
       if (stop_now_ && *stop_now_) return;
-      bool works = !solver_.is_sat(initial_constraints);
+      bool works = !solver_.is_sat(initial_constraints) && !solver_.has_error();
       initial_constraints.pop_back();
       if (works) {
         access_offsets_[i][j] = diff;
@@ -424,11 +426,11 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
     /** if a dirty cell got written into the heap, read out this cell */
     if (stop_now_ && *stop_now_) return;
     if (needs_update) {
-      DEBUG_ARM(cout << "Heap updated with dirty cells flushed: " << heap << endl;)
+      //DEBUG_ARM(cout << "Heap updated with dirty cells flushed: " << heap << endl;)
       cache = SymBitVector();
       for (size_t i = 0; i < cell.size; ++i)
         cache = cache || heap[cell.address + SymBitVector::constant(64, cell.size - i - 1)];
-      DEBUG_ARM(cout << "Updated cell " << cell.index << " cache: " << cache;)
+      //DEBUG_ARM(cout << "Updated cell " << cell.index << " cache: " << cache;)
 
       debug_state();
     }
@@ -452,8 +454,8 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
       constraints_.push_back(access.value ==
                              cache[access.cell_offset*8+access.size-1][access.cell_offset*8]);
       DEBUG_ARM(
-        cout << "==================== PERFORMED READ "  << endl;
-        cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;)
+        cout << "==================== PERFORMED READ "  << endl;)
+        //cout << access.value << " : " << cache[access.cell_offset*8+access.size-1][access.cell_offset*8] << endl;)
     }
   }
 
@@ -468,10 +470,12 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
   constraints_.push_back(final_heap_ == heap_);
   constraints_.push_back(am->final_heap_ == am->heap_);
 
+  /*
   DEBUG_ARM(
     cout << "[arm] Adding constraints " << final_heap_ << " = " << heap_ << endl;
     cout << "[arm] Adding constraint " << am->final_heap_ << " = " << am->heap_ << endl;
   )
+  */
 
 }
 

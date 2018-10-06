@@ -77,6 +77,10 @@ public:
 
   }
 
+  Invariant* clone() const {
+    return new RangeInvariant(variable_, min_, max_);
+  }
+
 
 private:
 
