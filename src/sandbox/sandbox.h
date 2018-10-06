@@ -27,6 +27,7 @@
 #include "src/sandbox/output_iterator.h"
 #include "src/sandbox/state_callback.h"
 #include "src/state/cpu_state.h"
+#include "src/validator/line_info.h"
 
 namespace stoke {
 
@@ -52,7 +53,6 @@ public:
     set_stack_check(sb.stack_check_);
     set_max_jumps(sb.max_jumps_);
     set_use_child(sb.use_child_);
-    set_rip_map({});
 
     // Inputs
     for (size_t i = 0; i < sb.size(); ++i) {
@@ -97,9 +97,12 @@ public:
     return *this;
   }
   /** Sets a mapping from line number to RIP offset for cases where the
-    default computation doesn't work.  line number -> rip offset */
-  Sandbox& set_rip_map(std::map<size_t, uint64_t> m) {
-    rip_map_ = m;
+    default computation doesn't work. */ 
+  Sandbox& set_linemap(const LineMap& m) {
+    rip_map_.clear();
+    for(auto pair : m) {
+      rip_map_[pair.first] = pair.second.rip_offset;
+    }
     return *this;
   }
 
@@ -109,7 +112,7 @@ public:
     clear_functions();
     clear_callbacks();
     clear_label_pools();
-    set_rip_map({});
+    rip_map_.clear();
     return *this;
   }
 

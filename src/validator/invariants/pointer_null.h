@@ -86,6 +86,9 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new PointerNullInvariant(variable_, size_);
+  }
 
 private:
 

@@ -43,7 +43,7 @@ public:
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      bool separate_stack,
-                     void* optional = NULL);
+                     void* optional);
 
   /** Blocks until all the checking has done and the callbacks have been called. */
   virtual void block_until_complete();

@@ -67,6 +67,13 @@ public:
     CHECK_STREAM(is);
   }
 
+
+  Invariant* clone() const {
+    return new NotInvariant(a_->clone());
+  }
+
+
+
 private:
 
   Invariant* a_;

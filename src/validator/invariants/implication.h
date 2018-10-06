@@ -84,6 +84,10 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new ImplicationInvariant(a_->clone(), b_->clone());
+  }
+
 private:
 
   Invariant* a_;

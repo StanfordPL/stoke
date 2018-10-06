@@ -16,6 +16,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/stategen/stategen.h"
 #include "src/symstate/memory/arm.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/error.h"
@@ -24,13 +25,14 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+#include "src/validator/path_unroller.h"
 #include "src/validator/smt_obligation_checker.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/memory_manager.h"
 
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { X }
 #define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) {  }
 #define DEBUG_MAP_TC(X) {}
@@ -316,6 +318,97 @@ void SmtObligationChecker::return_error(Callback& callback, string& s, void* opt
   callback(result, optional);
 }
 
+
+bool SmtObligationChecker::generate_arm_testcases(
+  const Cfg& target,
+  const Cfg& rewrite,
+  const Code& target_unroll,
+  const Code& rewrite_unroll,
+  const LineMap& target_linemap,
+  const LineMap& rewrite_linemap,
+  bool separate_stack,
+  const Invariant& assume,
+  std::vector<std::pair<CpuState,CpuState>>& testcases) {
+
+  cout << "uh-oh.  attempting stategen." << endl;
+    
+  SymState state_t("1");
+  SymState state_r("2");
+  add_basic_block_ghosts(state_t, target, "1");
+  add_basic_block_ghosts(state_r, rewrite, "2");
+  FlatMemory target_flat(separate_stack);
+  FlatMemory rewrite_flat(separate_stack);
+  state_t.memory = &target_flat;
+  state_r.memory = &rewrite_flat;
+  size_t dummy = 0;
+  auto my_assume = assume.clone();
+  auto assumption = (*my_assume)(state_t, state_r, dummy);
+  delete my_assume; //todo leak, deep free
+
+  CpuState target_tc;
+  CpuState rewrite_tc;
+
+  bool assumption_sat = solver_.is_sat({assumption});
+  bool ok = true;
+  if(solver_.has_error() || !assumption_sat) {
+    cout << "couldn't get satisfying assignment for assumption" << endl;
+    return false; 
+  } else {
+    cout << "... extracting model" << endl;
+    target_tc = state_from_model("_1", SymState::get_ghost_names(target));
+    rewrite_tc = state_from_model("_2", SymState::get_ghost_names(rewrite));
+
+    vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+    other_maps.push_back(target_flat.get_access_list());
+    other_maps.push_back(rewrite_flat.get_access_list());
+    auto other_map = append_maps(other_maps);
+
+    // doesn't really matter if these fail or not...
+    build_testcase_flat_memory(target_tc, target_flat.get_start_variable(), other_map);
+    build_testcase_flat_memory(rewrite_tc, rewrite_flat.get_start_variable(), other_map);
+
+    cout << "... running sandbox / statgen for target" << endl;
+    Sandbox sb1;
+    sb1.set_abi_check(false);
+    sb1.set_stack_check(false);
+    StateGen sg1(&sb1);
+    cout << target_unroll << endl;
+    sb1.set_linemap(target_linemap);
+    sg1.set_linemap(target_linemap);
+    sg1.set_max_attempts(target_unroll.size());
+    ok = sg1.get(target_tc, Cfg(target_unroll, target.def_ins(), target.live_outs()), true);
+    if(!ok) {
+      cout << "SG1 failed: " << sg1.get_error() << endl;
+      return false;
+    }
+
+    cout << "... running sandbox / statgen for rewrite" << endl;
+    Sandbox sb2;
+    sb2.set_abi_check(false);
+    sb2.set_stack_check(false);
+    StateGen sg2(&sb2);
+    cout << rewrite_unroll << endl;
+    sb2.set_linemap(rewrite_linemap);
+    sg2.set_linemap(rewrite_linemap);
+    sg2.set_max_attempts(rewrite_unroll.size());
+    ok = sg2.get(rewrite_tc, Cfg(rewrite_unroll, rewrite.def_ins(), rewrite.live_outs()), true);
+
+    if(!ok) {
+      cout << "SG2 failed: " << sg2.get_error() << endl;
+      return false;
+    }
+
+    cout << "stategen target tc: " << endl;
+    cout << target_tc << endl;
+    cout << "stategen rewrite tc: " << endl;
+    cout << rewrite_tc << endl;
+    cout << "stategen worked!" << endl;
+    testcases.push_back(std::pair<CpuState,CpuState>(target_tc, rewrite_tc));
+    return true;
+  }
+  return false;
+}
+
 void SmtObligationChecker::check(
 	const Cfg& target, 
   const Cfg& rewrite, 
@@ -325,28 +418,14 @@ void SmtObligationChecker::check(
   const CfgPath& Q, 
   Invariant& assume, 
   Invariant& prove, 
-  const vector<pair<CpuState, CpuState>>& testcases,
+  const vector<pair<CpuState, CpuState>>& given_testcases,
   Callback& callback,
   bool override_separate_stack,
   void* optional) {
 
   auto start_time = system_clock::now();
 
-  /*
-  cout << "== PROBLEM ==" << endl;
-  Obligation ob;
-  ob.target = target;
-  ob.rewrite = rewrite;
-  ob.target_block = target_block;
-  ob.rewrite_block = rewrite_block;
-  ob.P = P;
-  ob.Q = Q;
-  ob.assume = &assume;
-  ob.prove = &prove;
-  ob.testcases = testcases;
-  ob.write_text(cout);
-  cout << "END" << endl;
-  */
+  auto testcases = given_testcases;
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   number_queries_++;
@@ -369,7 +448,7 @@ void SmtObligationChecker::check(
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
   //cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
-  //OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
+  OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -398,14 +477,7 @@ void SmtObligationChecker::check(
   } else if (arm_model) {
     state_t.memory = new ArmMemory(separate_stack, solver_);
     state_r.memory = new ArmMemory(separate_stack, solver_);
-  }
-
-  // Build dereference map
-  DereferenceMaps deref_maps;
-  for(const auto& tc : testcases) {
-    DereferenceMap deref_map;
-    deref_maps.push_back(deref_map);
-    break;
+    oc_sandbox_.reset();
   }
 
   // Add given assumptions
@@ -414,32 +486,15 @@ void SmtObligationChecker::check(
   constraints.push_back(assumption);
   invariant_lineno++;
 
-  // Update dereference maps for the assumption if ARM
-  if(arm_testcases) {
-    for(size_t i = 0; i < deref_maps.size(); ++i) {
-      size_t tmp_invariant_lineno = 0;
-      auto& deref_map = deref_maps[i];
-      const auto& tc_pair = testcases[i];
-      cout << "[check_core] adding assume dereference map" << endl;
-      cout << tc_pair.first << endl << endl;
-      cout << tc_pair.second << endl << endl;
-      assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
-      cout << "[check_core] debugging assume dereference map 1" << endl;
-      cout << "deref_map size = " << deref_map.size() << endl;
-      for(auto it : deref_map) {
-        cout << it.first.invariant_number << " -> " << it.second << endl; 
-      }
-    }
-  }
-
 
   // Generate line maps
   LineMap target_line_map;
   LineMap rewrite_line_map;
   Code target_unroll;
   Code rewrite_unroll;
-  generate_linemap(target, P, target_line_map, false, target_unroll);
-  generate_linemap(rewrite, Q, rewrite_line_map, true, rewrite_unroll);
+  PathUnroller::generate_linemap(target, P, target_line_map, false, target_unroll);
+  PathUnroller::generate_linemap(rewrite, Q, rewrite_line_map, true, rewrite_unroll);
+
 
   // Build the circuits
   if (P.size() > 0) {
@@ -473,14 +528,72 @@ void SmtObligationChecker::check(
     return;
   }
 
-
-
   constraints.insert(constraints.end(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.end(), state_r.constraints.begin(), state_r.constraints.end());
 
 
-  // Update dereference maps for the code if ARM and we have testcases
+  if(testcases.size() == 0) {
+    // this is an expensive road, so let's do a sanity check first
+    // also it seems unlikely this path is feasible given that nobody gave us
+    // a test case for it...
+    auto sat_start = system_clock::now();
+    if(!solver_.is_sat(constraints) && !solver_.has_error()) {
+      cout << "We've finished early without modeling memory!" << endl;
+      /** we're done, yo. */
+      uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
+      uint64_t gen_duration = duration_cast<microseconds>(sat_start - start_time).count();
+
+      ObligationChecker::Result result;
+      result.solver = solver_.get_enum();
+      result.strategy = alias_strategy_;
+      result.smt_time_microseconds = smt_duration;
+      result.gen_time_microseconds = gen_duration;
+      result.source_version = string(version_info);
+      result.comments = "No memory short circuit";
+      result.verified = true;
+      result.has_ceg = false;
+      result.has_error = false;
+      result.error_message = "";
+      callback(result, optional);
+      return;
+    }
+
+  }
+
+  // Try to generate ARM testcase if needed
+  if(arm_model && (testcases.size() == 0)) {
+    generate_arm_testcases(target, rewrite, target_unroll, rewrite_unroll,
+                           target_line_map, rewrite_line_map, separate_stack,
+                           assume, testcases);
+    arm_testcases = arm_model && (testcases.size() > 0);
+  }
+
+  DereferenceMaps deref_maps;
   if(arm_testcases) {
+    // Build dereference map
+    for(const auto& tc : testcases) {
+      DereferenceMap deref_map;
+      deref_maps.push_back(deref_map);
+      break;
+    }
+
+    // Update dereference maps for the assumption if ARM
+    for(size_t i = 0; i < deref_maps.size(); ++i) {
+      size_t tmp_invariant_lineno = 0;
+      auto& deref_map = deref_maps[i];
+      const auto& tc_pair = testcases[i];
+      cout << "[check_core] adding assume dereference map" << endl;
+      cout << tc_pair.first << endl << endl;
+      cout << tc_pair.second << endl << endl;
+      assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      cout << "[check_core] debugging assume dereference map 1" << endl;
+      cout << "deref_map size = " << deref_map.size() << endl;
+      for(auto it : deref_map) {
+        cout << it.first.invariant_number << " -> " << it.second << endl; 
+      }
+    }
+
+    // Update dereference maps for the code if ARM and we have testcases
     CpuState last_target;
     CpuState last_rewrite;
     for(size_t k = 0; k < 2; ++k) {
@@ -491,11 +604,16 @@ void SmtObligationChecker::check(
       cout << "[check_core] adding code dereferences is_rewrite=" << k << endl;
 
       Cfg unroll_cfg(unroll_code);
+      oc_sandbox_.set_abi_check(false);
+      oc_sandbox_.set_stack_check(false);
+      oc_sandbox_.reset();
       oc_sandbox_.clear_inputs();
       oc_sandbox_.insert_input(testcase);
       DataCollector oc_data_collector(oc_sandbox_);
+      oc_data_collector.set_collect_before(true);
       auto traces = oc_data_collector.get_detailed_traces(unroll_cfg, &linemap);
 
+      cout << "Unroll code: " << endl << unroll_code << endl;
       cout << "[check_core] traces.size() = " << traces.size() << endl;
       cout << "[check_core] traces[0].size() = " << traces[0].size() << endl;
       cout << "[check_core] unroll_code.size() = " << unroll_code.size() << endl;
@@ -507,6 +625,10 @@ void SmtObligationChecker::check(
           auto state = traces[0][i].cs;
           auto addr = state.get_addr(instr, linemap[i].rip_offset);
           cout << "[check_core]     * found one!" << endl;
+          cout << "                 addr = " << addr << endl;
+          for(auto r : r64s) {
+            cout << "                         " << r << " = " << state[r] << endl;
+          }
           deref_maps[0][dri] = addr;
         }
         last = traces[0][i].cs;
@@ -563,10 +685,12 @@ void SmtObligationChecker::check(
                        rewrite_con.begin(),
                        rewrite_con.end());
   } else if (arm_model) {
+
     auto target_arm = static_cast<ArmMemory*>(state_t.memory);
     auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
 
-    target_arm->generate_constraints(rewrite_arm, constraints, deref_maps);
+    vector<SymBool> initial_assumptions = { assumption };
+    target_arm->generate_constraints(rewrite_arm, initial_assumptions, constraints, deref_maps);
 
     auto target_con = target_arm->get_constraints();
     auto rewrite_con = rewrite_arm->get_constraints();
@@ -730,47 +854,7 @@ void SmtObligationChecker::check(
 
 }
 
-/** Construct an unrolled version of a Cfg for a given path, and populate the
- * linemap data structure that maps lines of the unrolled CFG to those of the
- * original program. */
-void SmtObligationChecker::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
-  auto& function = cfg.get_function();
-  auto& code = cfg.get_code();
 
-  size_t line_no = 0;
-  for (auto node : p) {
-    if (cfg.num_instrs(node) == 0)
-      continue;
-
-    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
-    size_t end_index = start_index + cfg.num_instrs(node);
-    for (size_t i = start_index; i < end_index; ++i) {
-
-      /** build derefernece info */
-      DereferenceInfo deref;
-      deref.line_number = line_no;
-      deref.is_rewrite = is_rewrite;
-      deref.is_invariant = false;
-      deref.implicit_dereference = false;
-
-      LineInfo li;
-      li.line_number = i;
-      li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
-      li.deref = deref;
-      to_populate[line_no++] = li;
-
-      auto& instr = code[i];
-      if(!instr.is_any_jump())
-        unrolled.push_back(instr);
-      else
-        unrolled.push_back(Instruction(Opcode::NOP));
-      assert(line_no == unrolled.size());
-
-    }
-  }
-  unrolled.push_back(Instruction(Opcode::RET));
-
-}
 
 CpuState SmtObligationChecker::state_from_model(const string& name_suffix,
                                     vector<string> shadow_vars) {

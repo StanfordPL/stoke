@@ -110,6 +110,10 @@ public:
     m_ = *static_cast<x64asm::Mem*>(&m8);
   }
 
+  Invariant* clone() const {
+    return new MemoryNullInvariant(m_, is_rewrite_, is_null_);
+  }
+
 private:
 
   x64asm::Mem m_;

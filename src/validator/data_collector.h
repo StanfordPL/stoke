@@ -57,6 +57,7 @@ public:
 
   /** Setup a sandbox (along with test cases) to use to extract data. */
   DataCollector(Sandbox& sandbox) : sandbox_(sandbox) {
+    set_collect_before(false);
   }
 
   const std::vector<Trace>& get_traces(Cfg& target);
@@ -74,6 +75,11 @@ public:
 
   void serialize(std::ostream& os) const;
   static DataCollector deserialize(std::istream& is);
+
+  const DataCollector& set_collect_before(bool b) {
+    collect_before_ = b;
+    return *this;
+  }
 
   const Sandbox& get_sandbox() {
     return sandbox_;
@@ -104,6 +110,8 @@ private:
 
   /** The callback used for gathering data from each of the cutpoints */
   static void callback(const StateCallbackData& data, void* arg);
+
+  bool collect_before_;
 
 };
 

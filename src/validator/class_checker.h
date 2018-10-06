@@ -143,9 +143,9 @@ public:
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      bool override_separate_stack,
-                     void* optional = NULL) = 0;
+                     void* optional) = 0;
 
-  void check(const Problem& problem, Callback& callback, void* optional = NULL) {
+  void check(const Problem& problem, Callback& callback, void* optional) {
     check(problem.template_pod, problem.equivalence_class, callback, problem.separate_stack, optional);
   }
 

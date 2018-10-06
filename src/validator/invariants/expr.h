@@ -132,6 +132,11 @@ public:
     }
   }
 
+  Invariant* clone() const {
+    return new ExprInvariant(expr_, original_);
+  }
+
+
 private:
 
   static std::pair<x64asm::Operand, bool> parse_variable(const std::string& s) {

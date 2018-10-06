@@ -49,6 +49,9 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new TrueInvariant();
+  }
 };
 
 } // namespace stoke

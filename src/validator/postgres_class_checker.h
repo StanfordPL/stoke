@@ -56,7 +56,7 @@ public:
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      bool separate_stack,
-                     void* optional = nullptr);
+                     void* optional);
 
   virtual void block_until_complete();
 

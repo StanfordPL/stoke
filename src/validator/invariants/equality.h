@@ -151,6 +151,9 @@ public:
     }
   }
 
+  Invariant* clone() const {
+    return new EqualityInvariant(terms_, constant_, modulus_);
+  }
 
 private:
 

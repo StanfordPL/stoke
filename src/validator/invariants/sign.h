@@ -81,6 +81,9 @@ public:
   }
 
 
+  Invariant* clone() const {
+    return new SignInvariant(variable_, positive_);
+  }
 
 private:
 

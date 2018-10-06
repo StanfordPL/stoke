@@ -38,8 +38,11 @@
 
 #include "src/serialize/serialize.h"
 #include "src/state/cpu_states.h"
+#include "src/stategen/stategen.h"
 #include "src/validator/class_checker.h"
+#include "src/validator/line_info.h"
 #include "src/validator/local_class_checker.h"
+#include "src/validator/path_unroller.h"
 
 #define MAX_JOB_COUNT 256
 #define MAX_WORKER_COUNT 128
@@ -818,7 +821,7 @@ void discharge_problem(const ClassQueueEntry& qe, ClassChecker::Callback& callba
   cout << endl << endl;
 
   // Run the checker
-  lcc.check(prob.template_pod, prob.equivalence_class, callback, NULL);
+  lcc.check(prob.template_pod, prob.equivalence_class, callback, prob.separate_stack, nullptr);
   lcc.block_until_complete();
 
 }
@@ -1138,20 +1141,15 @@ bool debug_hash_obligation(string hash) {
   }
 
   /** Do some parsing */
-  if(solver_arg.value() == Solver::CVC4) {
+  if(solver_arg.has_been_provided() && solver_arg.value() == Solver::CVC4) {
     strcpy(qe->solver, "cvc4");
-  } else {
+  } else if(solver_arg.has_been_provided()) {
     strcpy(qe->solver, "z3");
   }
 
-  /** Do some parsing */
-  if(strategy_arg.value() == "arm") {
-    strcpy(qe->strategy, "arm");
-  } else {
-    strcpy(qe->strategy, "flat");
+  if(alias_strategy_arg.has_been_provided()) {
+    strcpy(qe->strategy, alias_strategy_arg.value().c_str());
   }
-
-
 
   cout << "Debugging problem with hash " << qe->hash
        << " using solver " << qe->solver << " and strategy " << qe->strategy << endl;

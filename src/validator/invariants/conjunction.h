@@ -147,6 +147,13 @@ public:
     }
   }
 
+  Invariant* clone() const {
+    std::vector<Invariant*> new_invs;
+    for(auto inv : invariants_)
+      new_invs.push_back(inv->clone());
+    return new ConjunctionInvariant(new_invs);
+  }
+
 private:
 
   std::vector<Invariant*> invariants_;

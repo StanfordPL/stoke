@@ -463,7 +463,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto ji = new JobInfo();
     ji->number = 10;
     ji->m = handhold_class;
-    class_checker_.check(template_pod, handhold_class, callback, (void*)ji);
+    class_checker_.check(template_pod, handhold_class, callback, !stack_out_, (void*)ji);
   } else {
     /** Run all the checks */
     verified_ = 0;
@@ -476,7 +476,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto ji = new JobInfo();
       ji->m = cls;
       ji->number = (size_t)-1;
-      size_t jobid = (size_t)class_checker_.check(template_pod, cls, callback, (void*)ji);
+      size_t jobid = (size_t)class_checker_.check(template_pod, cls, callback, !stack_out_, (void*)ji);
       // WARNING: at this point, ji may already be deleted by the callback.
       cout << "Class for checker job " << jobid << endl;
       stoke::serialize(cout, cls);

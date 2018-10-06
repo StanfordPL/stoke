@@ -94,6 +94,10 @@ public:
     byte_ = (uint8_t)byte;
   }
 
+  Invariant* clone() const {
+    return new MemoryConstantInvariant(m_, is_rewrite_, byte_);
+  }
+
 private:
 
   x64asm::M8 m_;

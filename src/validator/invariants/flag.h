@@ -105,6 +105,10 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new FlagInvariant(predicate_, is_rewrite_, fallthrough_);
+  }
+
 
 private:
 

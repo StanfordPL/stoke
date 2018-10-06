@@ -77,6 +77,10 @@ public:
     CHECK_STREAM(is);
   }
 
+  Invariant* clone() const {
+    return new NonzeroInvariant(variable_, negate_);
+  }
+
 
 private:
 

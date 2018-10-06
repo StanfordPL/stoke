@@ -36,7 +36,7 @@ uint64_t CpuState::get_addr(Mem ref, uint64_t rip_offset) const {
   if (displacement & 0x80000000) {
     address = 0xffffffff00000000 | (uint64_t)displacement;
   } else {
-    address = (uint64_t) displacement;
+    address = 0x00000000ffffffff & (uint64_t)displacement;
   }
 
   // check if memory has base
