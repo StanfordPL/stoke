@@ -40,6 +40,7 @@ public:
     final_heap_ = SymArray::tmp_var(64, 8);
     finalize_ = false;
     set_interrupt_var(NULL);
+    unsound_ = false;
   }
 
   ArmMemory(ArmMemory& other) : SymMemory(other.separate_stack_), solver_(other.solver_) {
@@ -151,8 +152,8 @@ private:
 
   /** Helper function for generate_constraints. */
   void generate_constraints_enumerate_cells();
-  void generate_constraints_given_cells(ArmMemory*);
-  bool generate_constraints_given_one_cell(ArmMemory* am);
+  void generate_constraints_given_cells(ArmMemory*, const std::vector<SymBool>& constraints);
+  bool generate_constraints_given_no_cell_overlap(ArmMemory* am);
   void generate_constraints_offsets_nodata(std::vector<SymBool>&);
   void generate_constraints_offsets_data(std::vector<SymBool>&, DereferenceMap&);
 
@@ -219,6 +220,7 @@ private:
     * recursively fill in the assignment of accesses to cells. */
   void recurse_cell_assignment(size_t access_index);
 
+  bool unsound_;
 };
 
 };

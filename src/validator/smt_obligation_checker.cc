@@ -556,9 +556,18 @@ void SmtObligationChecker::check(
       result.error_message = "";
       callback(result, optional);
       return;
+    } else {
+      cout << "Couldn't take short-circuit option without memory." << endl;
     }
 
   }
+
+  // Build inequality constraint
+  auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
+
+  constraints.push_back(prove_constraint);
+
+
 
   // Try to generate ARM testcase if needed
   if(arm_model && (testcases.size() == 0)) {
@@ -587,6 +596,12 @@ void SmtObligationChecker::check(
       cout << tc_pair.second << endl << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
       cout << "[check_core] debugging assume dereference map 1" << endl;
+      cout << "deref_map size = " << deref_map.size() << endl;
+      for(auto it : deref_map) {
+        cout << it.first.invariant_number << " -> " << it.second << endl; 
+      }
+      prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      cout << "[check_core] debugging prove dereference map 1" << endl;
       cout << "deref_map size = " << deref_map.size() << endl;
       for(auto it : deref_map) {
         cout << it.first.invariant_number << " -> " << it.second << endl; 
@@ -652,11 +667,6 @@ void SmtObligationChecker::check(
     target_arm->finalize_heap();
     rewrite_arm->finalize_heap();
   }
-
-  // Build inequality constraint
-  auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
-
-  constraints.push_back(prove_constraint);
 
   // Extract the final states of target/rewrite
   SymState state_t_final("1_FINAL");
