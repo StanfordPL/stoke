@@ -105,7 +105,7 @@ void ArmMemory::generate_constraints(
 
   // 2. get the cells and enumerate constraints
   generate_constraints_enumerate_cells();
-  generate_constraints_given_cells(am);
+  generate_constraints_given_cells(am, initial_constraints);
 }
 
 void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_constraints,
@@ -258,6 +258,7 @@ void ArmMemory::generate_constraints_enumerate_cells() {
   for (auto& cell : cells_) {
   cout << "Cell " << cell.index << " has size " << cell.size << endl;
   cout << "   tmp_min_offset " << cell.tmp_min_offset << " max " << cell.tmp_max_offset << endl;
+  cout << "   address " << cell.address << endl;
   for (auto& access : all_accesses_) {
       if (access.cell != cell.index)
         continue;
@@ -272,57 +273,39 @@ void ArmMemory::generate_constraints_enumerate_cells() {
 
 }
 
-bool ArmMemory::generate_constraints_given_one_cell(ArmMemory* am) {
+bool ArmMemory::generate_constraints_given_no_cell_overlap(ArmMemory* am) {
 
   if (stop_now_ && *stop_now_) return true;
 
-  /** Check if our strategy will work (todo: separate function) */
-  for (auto& access1 : all_accesses_) {
-    for(auto& access2 : all_accesses_) {
-      if(access1.cell_offset == access2.cell_offset) {
-        if(access1.size != access2.size) {
-          DEBUG_ARM(cout << "accesses of size " << access1.size << " and " << access2.size << " at offset " << access1.cell_offset << endl;)
-          return false; 
-        } else {
-          continue;
-        }
-      }
-      if((uint64_t)access1.cell_offset + access1.size <= (uint64_t)access2.cell_offset)
-        continue;
-      if((uint64_t)access2.cell_offset + access2.size <= (uint64_t)access1.cell_offset)
-        continue;
-
-      return false;
-    }
-  }
-
-  /** Generate constraints */
-  if (stop_now_ && *stop_now_) return true;
-
-  std::map<uint64_t, SymBitVector> my_memory_locations;
-  std::map<uint64_t, SymBitVector> other_memory_locations;
+  std::map<uint64_t, std::map<uint64_t, SymBitVector>> my_memory_locations;
+  std::map<uint64_t, std::map<uint64_t, SymBitVector>> other_memory_locations;
   for(auto& access : all_accesses_) {
     auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
-    if(memloc.count(access.cell_offset) == 0) {
-      memloc[access.cell_offset] = SymBitVector::tmp_var(access.size);
+    for(size_t i = 0; i < access.size/8; ++i) {
+      if(memloc[access.cell].count(access.cell_offset + i) == 0) {
+        memloc[access.cell][access.cell_offset + i] = SymBitVector::tmp_var(8);
+      }
     }
 
-    if(access.write)
-      memloc[access.cell_offset] = access.value;
-    else
-      constraints_.push_back(memloc[access.cell_offset] == access.value);
+    if(access.write) 
+      for(size_t i = 0; i < access.size/8; ++i) 
+        memloc[access.cell][access.cell_offset + i] = access.value[8*i+7][8*i];
+    else 
+      for(size_t i = 0; i < access.size/8; ++i)
+        constraints_.push_back(memloc[access.cell][access.cell_offset + i] == access.value[8*i+7][8*i]);
   }
 
   /** Create heap */
   if (stop_now_ && *stop_now_) return true;
 
-  auto cell_address = cells_[0].address;
-  for(auto& access : all_accesses_) {
-    auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
-    auto& heap = access.is_other ? am->heap_ : heap_;
+  for(size_t k = 0; k < 2; ++k) {
+    auto& memloc = k ? other_memory_locations : my_memory_locations;
+    auto& heap = k ? am->heap_ : heap_;
 
-    for (size_t i = 0; i < access.size; ++i) {
-      heap = heap.update(SymBitVector::constant(64, access.cell_offset) + cell_address + SymBitVector::constant(64, i), memloc[access.cell_offset][i*8+7][i*8]);
+    for(auto pair : memloc) {
+      auto cell = cells_[pair.first];
+      for(auto pair2 : pair.second)
+        heap = heap.update(SymBitVector::constant(64, pair2.first) + cell.address, pair2.second);
     }
   }
 
@@ -334,7 +317,7 @@ bool ArmMemory::generate_constraints_given_one_cell(ArmMemory* am) {
 
 } 
 
-void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
+void ArmMemory::generate_constraints_given_cells(ArmMemory* am, const vector<SymBool>& initial_constraints) {
 
   if (stop_now_ && *stop_now_) return;
   // 3. Simulate execution
@@ -342,15 +325,42 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am) {
   //      ... You don't write it unless you need to read from another cell.
   //      ... You don't read it unless another cell performed a write.
 
-  /*
-  if(cells_.size() == 1) {
-    if(generate_constraints_given_one_cell(am)) {
-      cout << "ONE CELL WORKED" << endl;
+  if(cells_.size() == 1 || unsound_) {
+    generate_constraints_given_no_cell_overlap(am);
+    return;
+  }
+
+  if(cells_.size() == 2) {
+    // todo make this more general
+    auto cell1 = cells_[0];
+    auto cell2 = cells_[1];
+
+    auto cell1below = cell1.address + SymBitVector::constant(64, cell1.size) <= cell2.address;
+    vector<SymBool> constraints = initial_constraints;
+    constraints.push_back(!cell1below);
+    cout << "Checking if cell 1 below cell 2" << endl;
+    for(auto it : constraints)
+      cout << it << endl;
+    if(!solver_.is_sat(constraints) && !solver_.has_error()) {
+      generate_constraints_given_no_cell_overlap(am);
       return;
     } else {
-      cout << "ONE CELL FAILED" << endl;
+      cout << "cell1 not always below cell2" << endl;
     }
-  }*/
+
+    auto cell2below = cell2.address + SymBitVector::constant(64, cell2.size) <= cell1.address;
+    constraints = initial_constraints;
+    constraints.push_back(!cell2below);
+    cout << "Checking if cell 2 below cell 1" << endl;
+    for(auto it : constraints)
+      cout << it << endl;
+    if(!solver_.is_sat(constraints) && !solver_.has_error()) {
+      generate_constraints_given_no_cell_overlap(am);
+      return;
+    } else {
+      cout << "cell2 not always below cell1" << endl;
+    }
+  }
 
   // to setup, let's "cache" the result of each cell.
   for (auto& cell : cells_) {

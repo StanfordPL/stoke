@@ -36,7 +36,7 @@
 #include "src/validator/learner.h"
 #include "src/validator/null.h"
 
-#define LEARNER_DEBUG(X) { X }
+#define DEBUG_LEARNER(X) { if(1) { X } }
 
 using namespace std;
 using namespace stoke;
@@ -111,6 +111,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
   set<x64asm::Mem> memory_operands;
   vector<const Cfg*> programs = {&target, &rewrite};
   for (const Cfg* prog : programs) {
+    bool has_stack = false;
     for (auto instr : prog->get_code()) {
       //cout << "  processing instr " << instr << endl;
       if (instr.is_explicit_memory_dereference()) {
@@ -118,17 +119,25 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
         //cout << "     - considering operand " << mem 
         //     << " of size " << mem.size() << " type " << mem.type() << endl;
         memory_operands.insert(mem);
+      } else if (instr.is_push() || instr.is_pop()) {
+        has_stack = true;
+      }
+    }
+
+    if(has_stack) {
+      for(int32_t i = 0; i > -16; i -= 4) {
+        M64 m(rsp, Imm32(i));
+        memory_operands.insert(m);
       }
     }
   }
 
-  /*
+  DEBUG_LEARNER(
   cout << "Inserted operands include: " << endl;
   for(auto mem : memory_operands) {
     cout << "     - considering operand " << mem 
          << " of size " << mem.size() << " type " << mem.type() << endl;
-  }
-  */
+  })
 
   for(size_t k = 0; k < 2; ++k) {
 
@@ -714,8 +723,8 @@ vector<Invariant*> build_flag_invariants(
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
 
-  LEARNER_DEBUG(cout << "target_regs: " << target_regs << endl;)
-  LEARNER_DEBUG(cout << "rewrite_regs: " << rewrite_regs << endl;)
+  DEBUG_LEARNER(cout << "target_regs: " << target_regs << endl;)
+  DEBUG_LEARNER(cout << "rewrite_regs: " << rewrite_regs << endl;)
 
   vector<Invariant*> inv;
 
@@ -967,7 +976,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
     for (size_t j = i+1; j < columns.size(); ++j) {
 
       // check if column i matches column j
-      //LEARNER_DEBUG(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
+      //DEBUG_LEARNER(cout << " - Checking if column " << columns[i] << " matches " << columns[j] << endl;)
       bool diff_match = true;
       bool prod_match = true;
       bool found_prod = false;
@@ -1005,7 +1014,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
 
         auto ei = new EqualityInvariant(terms, diff);
         conj->add_invariant(ei);
-        LEARNER_DEBUG(cout << "generating " << *ei << endl;)
+        DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
         columns_to_erase.push_back(j);
       } else if (prod_match && found_prod) {
@@ -1017,7 +1026,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
 
         auto ei = new EqualityInvariant(terms, 0);
         conj->add_invariant(ei);
-        LEARNER_DEBUG(cout << "generating " << *ei << endl;)
+        DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
         columns_to_erase.push_back(j);
       }
@@ -1176,7 +1185,7 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   conj->add_invariants(equalities);
 
   // Extract the data from the nullspace
-  LEARNER_DEBUG(cout << "Column count: " << dec << num_columns << endl;)
+  DEBUG_LEARNER(cout << "Column count: " << dec << num_columns << endl;)
 
   return conj;
 
@@ -1225,7 +1234,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
           if (nz->check(target_states, rewrite_states)) {
             conj->add_invariant(nz);
           } else {
-            LEARNER_DEBUG(cout << "GOT BAD INVARIANT " << *nz << endl;)
+            DEBUG_LEARNER(cout << "GOT BAD INVARIANT " << *nz << endl;)
             delete nz;
           }
         }
@@ -1337,13 +1346,13 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   if (enable_nonlinear_) {
     for (auto ghost : ghosts_) {
       auto pointer_null = new PointerNullInvariant(ghost, 1);
-      LEARNER_DEBUG(cout << "testing ptr " << *pointer_null << endl;)
+      DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
       if (pointer_null->check(target_states, rewrite_states)) {
         conj->add_invariant(pointer_null);
-        LEARNER_DEBUG(cout << "  * accepted" << endl;)
+        DEBUG_LEARNER(cout << "  * accepted" << endl;)
       } else {
         delete pointer_null;
-        LEARNER_DEBUG(cout << "  * rejected" << endl;)
+        DEBUG_LEARNER(cout << "  * rejected" << endl;)
       }
     }
   }
@@ -1366,14 +1375,14 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   // Define columns that will be used to learn equalities
   vector<Variable> columns;
 
-  LEARNER_DEBUG(cout << "[learner] enable_shadow_ = " << enable_shadow_ << endl;)
+  DEBUG_LEARNER(cout << "[learner] enable_shadow_ = " << enable_shadow_ << endl;)
   if(enable_shadow_) {
     /** get all shadow registers from target/rewrite states. */
     for(size_t k = 0; k < 2; ++k) {
       auto& states = k ? rewrite_states : target_states;
       set<string> names;
 
-      LEARNER_DEBUG(cout << "[learner] getting shadow variables from " << states.size() << " states." << endl;)
+      DEBUG_LEARNER(cout << "[learner] getting shadow variables from " << states.size() << " states." << endl;)
       for(auto& s : states) {
         for(auto pair : s.shadow) {
           names.insert(pair.first);
@@ -1411,12 +1420,12 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
     // add variable to columns
     for (auto var : mem_vars) {
-      LEARNER_DEBUG(cout << "Checking mem var: " << var << endl;)
+      DEBUG_LEARNER(cout << "Checking mem var: " << var << endl;)
       if (var.size <= 8) {
-        LEARNER_DEBUG(cout << " * size <= 8 :)" << endl;)
+        DEBUG_LEARNER(cout << " * size <= 8 :)" << endl;)
         columns.push_back(var);
       } else {
-        LEARNER_DEBUG(cout << " * size " << var.size << endl;)
+        DEBUG_LEARNER(cout << " * size " << var.size << endl;)
       }
     }
   }
@@ -1426,12 +1435,12 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   /*
   for (auto var : mem_vars) {
     auto inv = new NonzeroInvariant(var);
-    LEARNER_DEBUG(cout << "Checking if " << *inv << " holds..." << endl;)
+    DEBUG_LEARNER(cout << "Checking if " << *inv << " holds..." << endl;)
     add_or_delete_inv(conj, inv, target_states, rewrite_states);
   }
   */
 
-  LEARNER_DEBUG(
+  DEBUG_LEARNER(
     cout << "Columns" << endl;
   for (auto it : columns) {
   cout << it << endl;
