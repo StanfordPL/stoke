@@ -33,8 +33,8 @@ void ImplicationGraph::compute() {
 
       // setup symbolic states
 
-      SymState ts;
-      SymState rs;
+      SymState ts("TARGET");
+      SymState rs("REWRITE");
 
       ts.add_basic_block_ghosts(target_, "TARGET");
       rs.add_basic_block_ghosts(rewrite_, "REWRITE");

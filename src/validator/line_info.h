@@ -25,6 +25,7 @@ namespace stoke {
 
 struct LineInfo {
   size_t line_number;
+  size_t block_number;
   uint64_t rip_offset;
   DereferenceInfo deref;
 };

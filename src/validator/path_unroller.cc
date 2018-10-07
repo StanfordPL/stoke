@@ -44,6 +44,7 @@ void PathUnroller::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& t
 
      LineInfo li;
      li.line_number = i;
+     li.block_number = node;
      li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
      li.deref = deref;
      to_populate[line_no++] = li;
