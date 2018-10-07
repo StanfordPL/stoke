@@ -25,6 +25,7 @@ using namespace x64asm;
 void PathUnroller::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& to_populate, bool is_rewrite, Code& unrolled) {
  auto& function = cfg.get_function();
  auto& code = cfg.get_code();
+ bool first = true;
 
  size_t line_no = 0;
  for (auto node : p) {
@@ -50,6 +51,17 @@ void PathUnroller::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& t
      to_populate[line_no++] = li;
 
      auto& instr = code[i];
+
+     /** insert an extra label if there isn't one already. */
+     // TODO: bug here / leaky abstraction.  
+     // if the first basic block in the sequence has only one instruction, then we'll miscount
+     // the number of times this basic block was executed down the road...
+     if(first && !instr.is_label_defn()) {
+       unrolled.push_back(Instruction(Opcode::LABEL_DEFN, { Label(".anonymous_function") }));
+       to_populate[line_no++] = li;
+     }
+     first = false;
+
      if(instr.is_label_defn()) {
        if(unrolled.size() == 0)
          unrolled.push_back(instr);
@@ -65,5 +77,6 @@ void PathUnroller::generate_linemap(const Cfg& cfg, const CfgPath& p, LineMap& t
    }
  }
  unrolled.push_back(Instruction(Opcode::RET));
+ cout << "[generate_linemap] unrolled has size " << unrolled.size() << " linemap has size " << to_populate.size() << endl;
 
 }
