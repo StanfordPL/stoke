@@ -79,8 +79,20 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       if(linemap != nullptr) {
         if(i == code.size() - 1)
           continue;
-        cp->block_id = linemap->at(i).block_number;
-        cp->line_number = linemap->at(i).line_number;
+        if(linemap->count(i) == 0) {
+          // this error case is a bug but it shouldn't be catastrophic.
+          // this only affects checking counterexamples, if the result
+          // is wrong, then we know the counterexample is wrong, which
+          // is probably what we want in this case
+          // ...... make something up. 
+          cout << "BUG BUG BUG at " << __FILE__ << ":" << __LINE__ << endl;
+          cout << "linemap is missing entries!" << endl;
+          cp->block_id = 1;
+          cp->line_number = 1;
+        } else {
+          cp->block_id = linemap->at(i).block_number;
+          cp->line_number = linemap->at(i).line_number;
+        }
       }
 
       auto instr = code[i];

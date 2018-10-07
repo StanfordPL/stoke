@@ -85,6 +85,64 @@ uint64_t Variable::from_state(const CpuState& target, const CpuState& rewrite) c
     value = value << 8;
     value = value | vector.get_fixed_byte(i);
   }
+  if(size < 8) {
+    //sign extend
+    uint64_t check_mask;
+    uint64_t negative_mask;
+    uint64_t positive_mask;
+    
+    // faster ways? of course
+    // more obviously correct ways? few
+    switch(size) {
+      case 1:
+        check_mask    = 0x0000000000000080;
+        negative_mask = 0xffffffffffffff00;
+        positive_mask = 0x00000000000000ff;
+        break;
+      case 2:
+        check_mask    = 0x0000000000008000;
+        negative_mask = 0xffffffffffff0000;
+        positive_mask = 0x000000000000ffff;
+        break;
+      case 3:
+        check_mask    = 0x0000000000800000;
+        negative_mask = 0xffffffffff000000;
+        positive_mask = 0x0000000000ffffff;
+        break;
+      case 4:
+        check_mask    = 0x0000000080000000;
+        negative_mask = 0xffffffff00000000;
+        positive_mask = 0x00000000ffffffff;
+        break;
+      case 5:
+        check_mask    = 0x0000008000000000;
+        negative_mask = 0xffffff0000000000;
+        positive_mask = 0x000000ffffffffff;
+        break;
+      case 6:
+        check_mask    = 0x0000800000000000;
+        negative_mask = 0xffff000000000000;
+        positive_mask = 0x0000ffffffffffff;
+        break;
+      case 7:
+        check_mask    = 0x0080000000000000;
+        negative_mask = 0xff00000000000000;
+        positive_mask = 0x00ffffffffffffff;
+        break;
+      default:
+        // how strange... do nothing!
+        check_mask    = 0;
+        negative_mask = 0x0000000000000000;
+        positive_mask = 0xffffffffffffffff;
+        break;
+    }
+
+    if(check_mask & value)
+      return negative_mask | value;
+    else
+      return positive_mask & value;
+
+  }
   return value;
 }
 

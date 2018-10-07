@@ -198,12 +198,15 @@ bool SmtObligationChecker::check_counterexample(
     const CpuState& ceg_r_expected,
     bool separate_stack) {
 
+  CpuState target_output;
+  CpuState rewrite_output;
   for(size_t k = 0; k < 2; ++k) {
     const CpuState& start = k ? ceg_r : ceg_t;
     CpuState expected = k ? ceg_r_expected : ceg_t_expected;
     const Cfg& program = k ? rewrite : target;
     const Code& unroll = k ? rewrite_unroll : target_unroll;
     const LineMap& linemap = k ? rewrite_linemap : target_linemap;
+    CpuState& output = k ? rewrite_output : target_output;
     string name = k ? "rewrite" : "target";
     Cfg cfg(unroll, program.def_ins(), program.live_outs());
 
@@ -220,8 +223,16 @@ bool SmtObligationChecker::check_counterexample(
     assert(traces.size() > 0);
     auto trace = traces[0];
 
+    auto last_state = *sb.get_output(0);
+    if(last_state.code != ErrorCode::NORMAL) {
+      cout << "  (Counterexample fails in sandbox for " << name << ".)" << endl;
+      cout << "  START STATE " << endl << start << endl << endl;
+      cout << "  EXPECTED STATE " << endl << expected << endl << endl;
+      return false;
+    }
+
     /** Get output */
-    CpuState output = traces[0].back().cs;
+    output = traces[0].back().cs;
 
     /** Count basic blocks... */
     std::map<size_t, size_t> basic_block_counts;
@@ -247,7 +258,9 @@ bool SmtObligationChecker::check_counterexample(
       output.shadow[v] += pair.second;
     }
 
-    /** If using a seprate stack we don't get this data back in the counterexample, so ignore it. */
+    /** If using a seprate stack we don't get this data back in the counterexample, so ignore it for the sake of making a comparison. */
+    Memory expected_stack = expected.stack;
+    Memory output_stack = output.stack;
     if(separate_stack) { 
       Memory m;
       expected.stack = m;
@@ -262,8 +275,10 @@ bool SmtObligationChecker::check_counterexample(
       cout << "  ACTUAL STATE " << endl << output << endl << endl;
       cout << diff_states(expected, output, false, true, x64asm::RegSet::universe());
       cout << "  CODE " << endl << unroll << endl << endl;
-      return false;
     }
+
+    expected.stack = expected_stack;
+    output.stack = output_stack;
   }
 
   // First, the counterexample has to pass the invariant.
@@ -278,7 +293,8 @@ bool SmtObligationChecker::check_counterexample(
     return false;
   }
 
-  if(prove.check(ceg_t_expected, ceg_r_expected)) {
+  // Check the sandbox-provided output states to see if they fail the 'prove' invariant
+  if(prove.check(target_output, rewrite_output)) {
     cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;
     return false;
   }
@@ -698,6 +714,9 @@ void SmtObligationChecker::check(
       oc_sandbox_.insert_input(testcase);
       DataCollector oc_data_collector(oc_sandbox_);
       oc_data_collector.set_collect_before(true);
+
+      assert(linemap.size() == unroll_code.size() - 1);
+
       auto traces = oc_data_collector.get_detailed_traces(unroll_cfg, &linemap);
 
       cout << "Unroll code: " << endl << unroll_code << endl;
