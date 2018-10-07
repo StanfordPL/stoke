@@ -251,22 +251,42 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
     max_addr = address+size;
   }
 
-  // If there's no segment corresponding to the stack, create one.
-  switch (my_segments.size()) {
-  default:
-  case 3:
-    data = my_segments[2];
-  case 2:
-    stack = my_segments[1];
-  case 1:
-    heap = my_segments[0];
-  case 0:
-    break;
+  // identify a segment that serves as the stack
+  auto stack_address = (*this)[rsp];
+  cout << "[memory_from_map] stack_address = " << stack_address << endl;
+  size_t segment_for_stack = (size_t)(-1);
+  int segments_placed = 0;
+  for(size_t i = 0; i < my_segments.size(); ++i) {
+    auto segment = my_segments[i];
+    if(segment.in_range(stack_address)) {
+      cout << "[memory_from_map] found stack mapping" << endl;
+      segment_for_stack = i;
+      stack = segment;
+      segments_placed++;
+      break;
+    }
   }
 
+  // place the rest of the segments into the test case
   segments.clear();
-  for (size_t i = 3; i < my_segments.size(); ++i) {
-    segments.push_back(my_segments[i]);
+  
+  for(size_t i = 0; i < my_segments.size(); ++i) {
+    if(i == segment_for_stack)
+      continue;
+    if(segments_placed == 0) {
+      cout << "[memory_from_map] placing stack" << endl;
+      stack = my_segments[i];
+    } else if (segments_placed == 1) {
+      cout << "[memory_from_map] placing heap" << endl;
+      heap = my_segments[i];
+    } else if (segments_placed == 2) {
+      cout << "[memory_from_map] placing data" << endl;
+      data = my_segments[i];
+    } else {
+      cout << "[memory_from_map] placing other" << endl;
+      segments.push_back(my_segments[i]);
+    }
+    segments_placed++;
   }
 
   return true;

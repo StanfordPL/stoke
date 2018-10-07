@@ -102,8 +102,9 @@ private:
                             std::vector<std::string> shadow_vars);
 
 
-  bool build_testcase_flat_memory(CpuState&, SymArray variable,
-                                  const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
+  bool build_testcase_from_array(CpuState&, SymArray variable,
+                            const std::map<const SymBitVectorAbstract*, uint64_t>& others,
+                            bool separate_stack) const;
 
   /** Make test case for ARM, if possible. */
   bool generate_arm_testcases(
@@ -148,11 +149,14 @@ private:
   }
 
   /** Check if a counterexample actually works. */
-  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
-                            const CfgPath& Q, Invariant& assume,
-                            Invariant& prove, 
+  bool check_counterexample(const Cfg& target, const Cfg& rewrite, 
+                            const x64asm::Code& target_unroll, 
+                            const x64asm::Code& rewrite_unroll,
+                            const LineMap& target_linemap, const LineMap& rewrite_linemap,
+                            const Invariant& assume, const Invariant& prove, 
                             const CpuState& ceg, const CpuState& ceg2,
-                            const CpuState& ceg_expected, const CpuState& ceg_expected2);
+                            const CpuState& ceg_expected, const CpuState& ceg_expected2,
+                            bool separate_stack);
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);

@@ -30,11 +30,12 @@
 #include "src/solver/z3solver.h"
 #include "src/symstate/memory_manager.h"
 
+#include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) {  }
+#define BUILD_TC_DEBUG(X) { if(1) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -108,7 +109,7 @@ Invariant* SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start
 }
 
 
-bool SmtObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
+bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others, bool separate_stack) const {
   auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
   assert(symvar != NULL);
   auto str = symvar->name_;
@@ -143,6 +144,25 @@ bool SmtObligationChecker::build_testcase_flat_memory(CpuState& ceg, SymArray va
     }
   }
 
+  cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;
+  if(separate_stack) {
+    // allocate some space on the stack, say, 64 bytes, and zero it (unless precluded)
+    uint64_t rsp_loc = ceg[rsp];
+    cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;
+    BitVector zero_bv(8);
+    if(rsp_loc > 64) {
+      for(uint64_t i = rsp_loc; i > rsp_loc - 64; i--) {
+        if(!mem_map.count(i))
+          mem_map[i] = zero_bv;
+      }
+    } else {
+      for(uint64_t i = 0; i < 64; ++i) {
+        if(!mem_map.count(i))
+          mem_map[i] = zero_bv;
+      }
+    }
+  }
+
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
   for (auto it : mem_map) {
@@ -166,52 +186,104 @@ CpuState SmtObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath
 bool SmtObligationChecker::check_counterexample(
     const Cfg& target, 
     const Cfg& rewrite, 
-    const CfgPath& P, 
-    const CfgPath& Q, 
-    Invariant& assume, 
-    Invariant& prove, 
-    const CpuState& ceg, 
-    const CpuState& ceg2, 
-    const CpuState& ceg_expected, 
-    const CpuState& ceg_expected2) {
+    const Code& target_unroll,
+    const Code& rewrite_unroll,
+    const LineMap& target_linemap,
+    const LineMap& rewrite_linemap,
+    const Invariant& assume, 
+    const Invariant& prove, 
+    const CpuState& ceg_t, 
+    const CpuState& ceg_r, 
+    const CpuState& ceg_t_expected, 
+    const CpuState& ceg_r_expected,
+    bool separate_stack) {
 
-  /*
-  CEG_DEBUG(
-      // TODO: this is totally broken.
-  // Next, we run only the relevant blocks of the target/rewrite.
-    CpuState target_output = run_sandbox_on_path(target, P, ceg);
-    CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
+  for(size_t k = 0; k < 2; ++k) {
+    const CpuState& start = k ? ceg_r : ceg_t;
+    CpuState expected = k ? ceg_r_expected : ceg_t_expected;
+    const Cfg& program = k ? rewrite : target;
+    const Code& unroll = k ? rewrite_unroll : target_unroll;
+    const LineMap& linemap = k ? rewrite_linemap : target_linemap;
+    string name = k ? "rewrite" : "target";
+    Cfg cfg(unroll, program.def_ins(), program.live_outs());
 
-  // Lastly, we check that the final states do not satisfy the invariant
-    cout << "  TARGET (actual) END state:" << endl << target_output << endl;
-    cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;
+    /** Setup Sandbox */
+    Sandbox sb;
+    sb.set_abi_check(false);
+    sb.set_stack_check(false);
+    sb.set_linemap(linemap);
+    sb.insert_input(start);
 
-    if(target_output != ceg_expected) {
-      cout << "  WARNING!!! Got a different counterexample from sandbox than from validator." << endl;
+    /** Run Sandbox */
+    DataCollector dc(sb);
+    auto traces = dc.get_detailed_traces(cfg, &linemap);
+    assert(traces.size() > 0);
+    auto trace = traces[0];
+
+    /** Get output */
+    CpuState output = traces[0].back().cs;
+
+    /** Count basic blocks... */
+    std::map<size_t, size_t> basic_block_counts;
+    for(auto point : trace) {
+      // if point is at the last line of a basic block in the original program
+      cout << "POINT" << endl;
+      auto line = point.line_number;
+      cout << "  line " << line << endl;
+      auto location = program.get_loc(line);
+      auto block = location.first;
+      auto index_in_block = location.second;
+      cout << "  block " << block << " index " << index_in_block << " size " << program.num_instrs(block) << endl;
+      if(index_in_block == program.num_instrs(block) - 1) {
+        cout << "  adding to " << block << endl;
+        basic_block_counts[block]++;
+      }
     }
-    if(rewrite_output != ceg_expected2) {
-      cout << "  WARNING!!! Got a different counterexample from sandbox than from validator." << endl;
+
+    /** Adjust output */
+    for(auto pair : basic_block_counts) {
+      auto v = Variable::bb_ghost(pair.first, false).name;
+      cout << "INCREMENTING " << v << " by " << pair.second << endl;
+      output.shadow[v] += pair.second;
     }
 
-  )*/
+    /** If using a seprate stack we don't get this data back in the counterexample, so ignore it. */
+    if(separate_stack) { 
+      Memory m;
+      expected.stack = m;
+      output.stack = m;
+    }
+
+    /** Compare */
+    if(output != expected) {
+      cout << "  (Counterexample execution differs in sandbox for " << name << ".)" << endl;
+      cout << "  START STATE " << endl << start << endl << endl;
+      cout << "  EXPECTED STATE " << endl << expected << endl << endl;
+      cout << "  ACTUAL STATE " << endl << output << endl << endl;
+      cout << diff_states(expected, output, false, true, x64asm::RegSet::universe());
+      cout << "  CODE " << endl << unroll << endl << endl;
+      return false;
+    }
+  }
 
   // First, the counterexample has to pass the invariant.
-  if (!assume.check(ceg, ceg2)) {
-    cout << "  (Counterexample does not meet assumed invariant.)  P=" << P << " Q=" << Q << " Prove=" << prove << endl;
-    auto conj = static_cast<ConjunctionInvariant&>(assume);
+  if (!assume.check(ceg_t, ceg_r)) {
+    cout << "  (Counterexample does not meet assumed invariant.)" << endl;
+    auto conj = static_cast<const ConjunctionInvariant&>(assume);
     for(size_t i = 0; i < conj.size(); ++i) {
       auto inv = conj[i];
-      if(!inv->check(ceg, ceg2))
-        cout << "    " << *inv << endl;
+      if(!inv->check(ceg_t, ceg_r))
+        cout << "     " << *inv << endl;
     }
     return false;
   }
 
-  if(prove.check(ceg_expected, ceg_expected2)) {
-    cout << "  (Counterexample satisfies desired invariant; it shouldn't)  P=" << P << " Q=" << Q << " Prove=" << prove << endl;
+  if(prove.check(ceg_t_expected, ceg_r_expected)) {
+    cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;
     return false;
   }
 
+  cout << "  (Counterexample verified in sandbox)" << endl;
   return true;
 }
 
@@ -364,8 +436,8 @@ bool SmtObligationChecker::generate_arm_testcases(
     auto other_map = append_maps(other_maps);
 
     // doesn't really matter if these fail or not...
-    build_testcase_flat_memory(target_tc, target_flat.get_start_variable(), other_map);
-    build_testcase_flat_memory(rewrite_tc, rewrite_flat.get_start_variable(), other_map);
+    build_testcase_from_array(target_tc, target_flat.get_start_variable(), other_map, separate_stack);
+    build_testcase_from_array(rewrite_tc, rewrite_flat.get_start_variable(), other_map, separate_stack);
 
     cout << "... running sandbox / statgen for target" << endl;
     Sandbox sb1;
@@ -488,12 +560,12 @@ void SmtObligationChecker::check(
 
 
   // Generate line maps
-  LineMap target_line_map;
-  LineMap rewrite_line_map;
+  LineMap target_linemap;
+  LineMap rewrite_linemap;
   Code target_unroll;
   Code rewrite_unroll;
-  PathUnroller::generate_linemap(target, P, target_line_map, false, target_unroll);
-  PathUnroller::generate_linemap(rewrite, Q, rewrite_line_map, true, rewrite_unroll);
+  PathUnroller::generate_linemap(target, P, target_linemap, false, target_unroll);
+  PathUnroller::generate_linemap(rewrite, Q, rewrite_linemap, true, rewrite_unroll);
 
 
   // Build the circuits
@@ -514,10 +586,10 @@ void SmtObligationChecker::check(
   size_t line_no = 0;
   try {
     for (size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_line_map, i == P.size() - 1);
+      build_circuit(target, P[i], is_jump(target,target_block,P,i), state_t, line_no, target_linemap, i == P.size() - 1);
     line_no = 0;
     for (size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_line_map, i == Q.size() - 1);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,rewrite_block,Q,i), state_r, line_no, rewrite_linemap, i == Q.size() - 1);
   } catch (validator_error e) {
     stringstream message;
     message << e.get_file() << ":" << e.get_line() << ": " << e.get_message();
@@ -572,7 +644,7 @@ void SmtObligationChecker::check(
   // Try to generate ARM testcase if needed
   if(arm_model && (testcases.size() == 0)) {
     generate_arm_testcases(target, rewrite, target_unroll, rewrite_unroll,
-                           target_line_map, rewrite_line_map, separate_stack,
+                           target_linemap, rewrite_linemap, separate_stack,
                            assume, testcases);
     arm_testcases = arm_model && (testcases.size() > 0);
   }
@@ -615,7 +687,7 @@ void SmtObligationChecker::check(
       auto& unroll_code = k ? rewrite_unroll : target_unroll;
       auto& testcase = k ? testcases[0].second : testcases[0].first;
       auto& last = k ? last_rewrite : last_target;
-      auto& linemap = k ? rewrite_line_map : target_line_map;
+      auto& linemap = k ? rewrite_linemap : target_linemap;
       cout << "[check_core] adding code dereferences is_rewrite=" << k << endl;
 
       Cfg unroll_cfg(unroll_code);
@@ -771,10 +843,10 @@ void SmtObligationChecker::check(
       other_maps.push_back(rewrite_flat->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_flat_memory(ceg_t, target_flat->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_r, rewrite_flat->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_tf, target_flat->get_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_rf, rewrite_flat->get_variable(), other_map);
+      ok &= build_testcase_from_array(ceg_t, target_flat->get_start_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_r, rewrite_flat->get_start_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_tf, target_flat->get_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), other_map, separate_stack);
     } else if (arm_model) {
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
@@ -784,10 +856,10 @@ void SmtObligationChecker::check(
       other_maps.push_back(rewrite_arm->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_flat_memory(ceg_t, target_arm->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_r, rewrite_arm->get_start_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_tf, target_arm->get_variable(), other_map);
-      ok &= build_testcase_flat_memory(ceg_rf, rewrite_arm->get_variable(), other_map);
+      ok &= build_testcase_from_array(ceg_t, target_arm->get_start_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_r, rewrite_arm->get_start_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_tf, target_arm->get_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), other_map, separate_stack);
     }
 
     if (!ok) {
@@ -814,7 +886,7 @@ void SmtObligationChecker::check(
     // doesn't work right now because 
     // (1) it doesn't get ghost variables in ceg
     // (2) it doesn't run code on correct path */
-    if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf)) {
+    if (check_counterexample(target, rewrite, target_unroll, rewrite_unroll, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
     } else {
       ok = false;

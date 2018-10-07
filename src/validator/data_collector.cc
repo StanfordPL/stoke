@@ -76,6 +76,13 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       cp->trace = &trace;
       cp->line_number = i;
 
+      if(linemap != nullptr) {
+        if(i == code.size() - 1)
+          continue;
+        cp->block_id = linemap->at(i).block_number;
+        cp->line_number = linemap->at(i).line_number;
+      }
+
       auto instr = code[i];
       cout << "[get_detailed_trace] instrumenting " << instr << endl;
       if(instr.is_any_jump() || collect_before_) {
