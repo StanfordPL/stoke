@@ -391,27 +391,155 @@ bool DdecValidator::class_checker_callback(const ClassChecker::Result& result, v
   return false;
 }
 
+vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
+  //cout << "Searching for disciminator constants at " << target_point << " / " << rewrite_point << " with " << inv << endl;
+  vector<uint64_t> constants;
+
+  assert(target_traces_.size() == rewrite_traces_.size());
+
+  bool first_trace = true;
+  size_t last_size = 0;
+  size_t last_size_run = 0;
+  for(size_t i = 0; i < target_traces_.size(); ++i) {
+    //cout << "  * Processing trace " << i << endl;
+    set<uint64_t> my_constants;
+    vector<CpuState> target_states;
+    vector<CpuState> rewrite_states;
+
+
+    //cout << "      - Collecting state data" << endl;
+    for(size_t k = 0; k < 2; ++k) {
+
+      auto& traces = k ? rewrite_traces_[i] : target_traces_[i];
+      auto& states = k ? rewrite_states : target_states;
+      auto cutpoint = k ? rewrite_point : target_point;
+      size_t bound = k ? rewrite_bound_ : target_bound_;
+      size_t j = 0;
+      for(auto point : traces) {
+        if(point.block_id == cutpoint) {
+          states.push_back(point.cs);
+          j++;
+          if(j > bound)
+            break;
+        } 
+      }
+    }
+
+    //cout << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;
+    if(target_states.size() > 2 && rewrite_states.size() > 2) {
+      for(auto ts : target_states) {
+        for(auto rs : rewrite_states) {
+          auto value = inv.calculate_lhs(ts, rs);
+          my_constants.insert(value);
+        }
+      }
+
+      vector<uint64_t> my_constants_vector;
+      my_constants_vector.insert(my_constants_vector.begin(), my_constants.begin(), my_constants.end());
+
+
+      if(first_trace) {
+        constants = my_constants_vector;
+        first_trace = false;
+      } else {
+        vector<uint64_t> intersection;
+        set_intersection(constants.begin(), constants.end(), my_constants_vector.begin(), my_constants_vector.end(), back_inserter(intersection));
+        constants = intersection;
+      }
+
+      if(constants.size() == 0)
+        break;
+
+      if(constants.size() == last_size) {
+        last_size_run++;
+        if(last_size_run == 10)
+          break;
+      } else {
+        last_size_run = 0;
+      }
+      last_size = constants.size();
+
+      //cout << "constants.size() = " << constants.size() << endl;
+    }
+
+
+    /*
+    cout << "   on trace " << i << " got ";
+    for(auto i : constants) {
+      cout << i << "  ";
+    }
+    cout << endl;
+    */
+  }
+
+  return constants;
+}
+
+DualAutomata DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
+  cout << "[build_dual_for_discriminator] cutpoint " << target_point << " / " << rewrite_point
+       << " expression " << inv << endl;
+  DualAutomata dual(target_, rewrite_);
+  return dual;
+}
+
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   target_ = init_target;
   rewrite_ = init_rewrite;
 
-  /** STEP 1: Find inductive paths and initial invariants in a template */
-  flow_invariant_learner_ = new FlowInvariantLearner(data_collector_, invariant_learner_);
-  flow_invariant_learner_->initialize(target_, rewrite_);
-  control_learner_ = new ControlLearner(target_, rewrite_, sandbox_);
-  control_learner_->compute();
-  DualAutomata template_pod = learn_inductive_paths();
+  target_traces_ = data_collector_.get_traces(target_);
+  rewrite_traces_ = data_collector_.get_traces(rewrite_);
 
-  // free all that memory :)
-  delete flow_invariant_learner_;
-  flow_invariant_learner_ = NULL;
+  CfgSccs target_sccs(target_);
+  CfgSccs rewrite_sccs(rewrite_);
 
-  /** Debug POD */
-  cout << endl;
-  template_pod.print_all();
-  cout << endl;
+  for(size_t target_cutpoint = target_.get_entry(); target_cutpoint < target_.get_exit(); ++target_cutpoint) {
+    if(!target_sccs.in_scc(target_cutpoint))
+      continue;
 
+    for(size_t rewrite_cutpoint = rewrite_.get_entry(); rewrite_cutpoint < rewrite_.get_exit(); ++rewrite_cutpoint) {
+      if(!rewrite_sccs.in_scc(rewrite_cutpoint))
+        continue;
+
+      auto target_defined_registers = target_.def_outs(target_cutpoint);
+      auto rewrite_defined_registers = rewrite_.def_outs(rewrite_cutpoint);
+
+      for(auto target_reg = target_defined_registers.gp_begin();
+               target_reg != target_defined_registers.gp_end();
+               ++target_reg) {
+
+        for(auto rewrite_reg = rewrite_defined_registers.gp_begin();
+                 rewrite_reg != rewrite_defined_registers.gp_end();
+                 ++rewrite_reg) {
+
+          size_t power2bound = 5;
+          for(size_t i = 0; i < power2bound*2-1; ++i) {
+            Variable v1(*target_reg, false);
+            Variable v2(*rewrite_reg, true);
+            if(i < power2bound) {
+              v1.coefficient = (1 << i);
+              v2.coefficient = -1;
+            } else {
+              v1.coefficient = 1;
+              v2.coefficient = -(1 << (i-power2bound+1));
+            }
+            EqualityInvariant inv({v1, v2}, 0);
+
+            auto constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
+
+            for(auto constant : constants) {
+              EqualityInvariant specific(inv.get_terms(), constant);
+              auto dual = build_dual_for_discriminator(target_cutpoint, rewrite_cutpoint, specific);
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+
+  /*
   cout << "[DdecValidator::verify()] debugging equivalence classes to try" << endl;
   auto states = template_pod.get_inductive_states();
   for(auto state : states) {
@@ -431,10 +559,13 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << endl;
     }
   }
+  */
 
+  /*
   bool have_classes = init_class_enumeration(template_pod);
   if(!have_classes)
     return false;
+  */
 
   /** Setup class checker */
   ClassChecker::Callback callback = [&] (const ClassChecker::Result& r, void* optional) {
@@ -457,36 +588,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     cout << "    " << *it << endl;
   }
 
-  if(use_handhold_) {
-    /** Run handhold check */
-    auto handhold_class = DualBuilder::get_handhold_class();
-    auto ji = new JobInfo();
-    ji->number = 10;
-    ji->m = handhold_class;
-    class_checker_.check(template_pod, handhold_class, callback, !stack_out_, (void*)ji);
-  } else {
-    /** Run all the checks */
-    verified_ = 0;
-    while(has_next_class()) {
-      auto cls = next_class(template_pod);
-      cout << "Next class to try " << endl;
-      stoke::serialize(cout, cls);
-      cout << endl;
-
-      auto ji = new JobInfo();
-      ji->m = cls;
-      ji->number = (size_t)-1;
-      size_t jobid = (size_t)class_checker_.check(template_pod, cls, callback, !stack_out_, (void*)ji);
-      // WARNING: at this point, ji may already be deleted by the callback.
-      cout << "Class for checker job " << jobid << endl;
-      stoke::serialize(cout, cls);
-      cout << endl;
-
-      // happy to abort early at this point
-      if(verified_ > 0)
-        return true;
-    }
-  }
+  //class_checker_.check(template_pod, handhold_class, callback, !stack_out_, (void*)ji);
 
   /** Finish it off. */
   class_checker_.block_until_complete();

@@ -32,6 +32,7 @@
 
 namespace stoke {
 
+
 class DdecValidator : public Validator {
 
 public:
@@ -154,12 +155,19 @@ private:
   );
 
 
+  DualAutomata build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
+  std::vector<uint64_t> find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
+
   /** Invariants assumed to hold at any point. */
   std::vector<Invariant*> assume_always_;
 
   /** Bound */
   size_t target_bound_;
   size_t rewrite_bound_;
+
+  /** Traces */
+  std::vector<DataCollector::Trace> target_traces_;
+  std::vector<DataCollector::Trace> rewrite_traces_;
 
   /** Try to sign extend values? */
   bool try_sign_extend_;
