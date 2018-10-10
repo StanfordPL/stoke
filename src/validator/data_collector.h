@@ -39,6 +39,7 @@ public:
     Cfg::id_type block_id;
     CpuState cs;
     size_t line_number;
+    size_t index;
 
     bool operator==(const TracePoint& other) const {
       return block_id == other.block_id;

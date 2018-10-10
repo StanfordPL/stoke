@@ -391,8 +391,29 @@ bool DdecValidator::class_checker_callback(const ClassChecker::Result& result, v
   return false;
 }
 
+void DdecValidator::get_states_at_cutpoint(size_t i, size_t target_point, size_t rewrite_point, vector<DataCollector::TracePoint>& target_states, vector<DataCollector::TracePoint>& rewrite_states) const {
+  //cout << "      - Collecting state data" << endl;
+  for(size_t k = 0; k < 2; ++k) {
+
+    auto& traces = k ? rewrite_traces_[i] : target_traces_[i];
+    auto& states = k ? rewrite_states : target_states;
+    auto cutpoint = k ? rewrite_point : target_point;
+    size_t bound = k ? rewrite_bound_ : target_bound_;
+    size_t j = 0;
+    for(auto point : traces) {
+      if(point.block_id == cutpoint) {
+        states.push_back(point);
+        j++;
+        if(j > bound)
+          break;
+      } 
+    }
+  }
+}
+
+
 vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
-  //cout << "Searching for disciminator constants at " << target_point << " / " << rewrite_point << " with " << inv << endl;
+  cout << "Searching for disciminator constants at " << target_point << " / " << rewrite_point << " with " << inv << endl;
   vector<uint64_t> constants;
 
   assert(target_traces_.size() == rewrite_traces_.size());
@@ -403,33 +424,17 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   for(size_t i = 0; i < target_traces_.size(); ++i) {
     //cout << "  * Processing trace " << i << endl;
     set<uint64_t> my_constants;
-    vector<CpuState> target_states;
-    vector<CpuState> rewrite_states;
 
+    vector<DataCollector::TracePoint> target_states;
+    vector<DataCollector::TracePoint> rewrite_states;
 
-    //cout << "      - Collecting state data" << endl;
-    for(size_t k = 0; k < 2; ++k) {
+    get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states);
 
-      auto& traces = k ? rewrite_traces_[i] : target_traces_[i];
-      auto& states = k ? rewrite_states : target_states;
-      auto cutpoint = k ? rewrite_point : target_point;
-      size_t bound = k ? rewrite_bound_ : target_bound_;
-      size_t j = 0;
-      for(auto point : traces) {
-        if(point.block_id == cutpoint) {
-          states.push_back(point.cs);
-          j++;
-          if(j > bound)
-            break;
-        } 
-      }
-    }
-
-    //cout << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;
+    cout << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;
     if(target_states.size() > 2 && rewrite_states.size() > 2) {
       for(auto ts : target_states) {
         for(auto rs : rewrite_states) {
-          auto value = inv.calculate_lhs(ts, rs);
+          auto value = inv.calculate_lhs(ts.cs, rs.cs);
           my_constants.insert(value);
         }
       }
@@ -475,11 +480,30 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   return constants;
 }
 
-DualAutomata DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
+bool DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv, DualAutomata& dual) {
   cout << "[build_dual_for_discriminator] cutpoint " << target_point << " / " << rewrite_point
        << " expression " << inv << endl;
-  DualAutomata dual(target_, rewrite_);
-  return dual;
+
+  for(size_t i = 0; i < target_traces_.size(); ++i) {
+    if(i > 10)
+      break;
+
+    auto& target_trace = target_traces_[i];
+    auto& rewrite_trace = rewrite_traces_[i];
+
+    vector<DataCollector::TracePoint> target_states;
+    vector<DataCollector::TracePoint> rewrite_states;
+
+    get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states);
+
+    // edges from entry to first iteration
+
+    // edges from first iteration to second
+
+    // TODO: future: entry to other cutpoints, other cutpoints to other cutpoints, other cutpoints to us
+  }
+
+  return false;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -529,7 +553,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
             for(auto constant : constants) {
               EqualityInvariant specific(inv.get_terms(), constant);
-              auto dual = build_dual_for_discriminator(target_cutpoint, rewrite_cutpoint, specific);
+              DualAutomata dual(target_, rewrite_);
+              bool success = build_dual_for_discriminator(target_cutpoint, rewrite_cutpoint, specific, dual);
             }
           }
         }
