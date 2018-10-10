@@ -146,6 +146,7 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
       tp.block_id = block;
       tp.cs = *sandbox_.get_input(testcase);
       tp.line_number = 0;
+      tp.index = trace.size();
       trace.push_back(tp);
 
     } else if (has_jump) {
@@ -185,6 +186,7 @@ void DataCollector::callback(const StateCallbackData& data, void* arg) {
   tp.cs = data.state;
   tp.block_id = args->block_id;
   tp.line_number = args->line_number;
+  tp.index = args->trace->size();
 
   args->trace->push_back(tp);
 }
