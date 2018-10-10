@@ -391,7 +391,7 @@ bool DdecValidator::class_checker_callback(const ClassChecker::Result& result, v
   return false;
 }
 
-void DdecValidator::get_states_at_cutpoint(size_t i, size_t target_point, size_t rewrite_point, vector<DataCollector::TracePoint>& target_states, vector<DataCollector::TracePoint>& rewrite_states) const {
+void DdecValidator::get_states_at_cutpoint(size_t i, size_t target_point, size_t rewrite_point, vector<DataCollector::TracePoint>& target_states, vector<DataCollector::TracePoint>& rewrite_states, bool boundit) const {
   //cout << "      - Collecting state data" << endl;
   for(size_t k = 0; k < 2; ++k) {
 
@@ -404,7 +404,7 @@ void DdecValidator::get_states_at_cutpoint(size_t i, size_t target_point, size_t
       if(point.block_id == cutpoint) {
         states.push_back(point);
         j++;
-        if(j > bound)
+        if(boundit && j > bound)
           break;
       } 
     }
@@ -428,7 +428,7 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
     vector<DataCollector::TracePoint> target_states;
     vector<DataCollector::TracePoint> rewrite_states;
 
-    get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states);
+    get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states, true);
 
     cout << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;
     if(target_states.size() > 2 && rewrite_states.size() > 2) {
@@ -480,61 +480,63 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   return constants;
 }
 
-bool DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv, DualAutomata& dual) {
-  cout << "[build_dual_for_discriminator] cutpoint " << target_point << " / " << rewrite_point
-       << " expression " << inv << endl;
+bool DdecValidator::build_dual_for_discriminator(EqualityInvariant inv, DualAutomata& dual) {
+  cout << "[build_dual_for_discriminator] expression " << inv << endl;
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
-    if(i > 10)
+    if(i > 20)
       break;
 
     auto& target_trace = target_traces_[i];
     auto& rewrite_trace = rewrite_traces_[i];
+
+    if(target_trace.size() < 2 || rewrite_trace.size() < 2)
+      continue;
+
     auto target_trace_path = DataCollector::project_states(target_trace);
-    auto rewrite_trace_path = DataCollector::project_states(target_trace);
+    auto rewrite_trace_path = DataCollector::project_states(rewrite_trace);
 
-    vector<DataCollector::TracePoint> target_states;
-    vector<DataCollector::TracePoint> rewrite_states;
+    set<pair<DataCollector::TracePoint, DataCollector::TracePoint>> matching_pairs;
+    matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace[0], rewrite_trace[0]));
+    matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace.back(), rewrite_trace.back()));
 
-    get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states);
-
-    vector<std::pair<DataCollector::TracePoint, DataCollector::TracePoint>> entry_pairs;
     // edges from entry to first iteration
-    for(auto ts : target_states) {
-      for(auto rs : rewrite_states) {
+    for(auto ts : target_trace) {
+      for(auto rs : rewrite_trace) {
         if(inv.check(ts.cs,rs.cs)) {
-          auto target_index = ts.index;
-          auto rewrite_index = rs.index;
-
-          CfgPath target_path;
-          CfgPath rewrite_path;
-
-          target_path.insert(target_path.begin(), target_trace_path.begin()+1, target_trace_path.begin() + target_index+1);
-          rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+1, rewrite_trace_path.begin() + rewrite_index+1);
-
-          cout << "FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
-          DualAutomata::Edge e(DualAutomata::State(0,0), target_path, rewrite_path);
-          bool new_edge = dual.add_edge(e);
-          if(new_edge) {
-            entry_pairs.push_back(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
-          }
+          /*cout << "ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
+               << "  trace indexes " << ts.index << " / " << rs.index << endl;*/
+          matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
         }
       }
     }
 
     // edges from first iteration to second
-    for(auto first_entry_pair : entry_pairs) {
-      for(auto second_entry_pair : entry_pairs) {
-        auto& first_target = first_entry_pair.first;
-        auto& first_rewrite = first_entry_pair.second;
-        auto& second_target = second_entry_pair.first;
-        auto& second_rewrite = second_entry_pair.second;
+    for(auto first_pair : matching_pairs) {
+      for(auto second_pair : matching_pairs) {
+        auto& first_target = first_pair.first;
+        auto& first_rewrite = first_pair.second;
+        auto& second_target = second_pair.first;
+        auto& second_rewrite = second_pair.second;
 
-        if(first_target.index >= second_target.index)
+        /*
+        cout << "Considering pairs:" << endl;
+        cout << "First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
+             << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
+        cout << "Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
+             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; */
+
+        if(second_target.index <= first_target.index)
           continue;
-        if(first_rewrite.index >= second_rewrite.index)
+        if(second_target.index - first_target.index > target_bound_)
           continue;
+        if(second_rewrite.index <= first_rewrite.index)
+          continue;
+        if(second_rewrite.index - first_rewrite.index > rewrite_bound_)
+          continue;
+
+        //cout << "NOT SKIPPING THESE" << endl;
 
         CfgPath target_path;
         CfgPath rewrite_path;
@@ -542,14 +544,11 @@ bool DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rew
         target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
         rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
 
-        cout << "FOUND CORRESPONDING (LOOP) PATHS " << target_path << " / " << rewrite_path << endl;
-        DualAutomata::Edge e(DualAutomata::State(target_point, rewrite_point), target_path, rewrite_path);
+        //cout << "FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
+        DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
         dual.add_edge(e);
-        found_loop = true;
       }
     }
-
-    // TODO other cutpoints to us
   }
 
   return found_loop;
@@ -603,7 +602,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             for(auto constant : constants) {
               EqualityInvariant specific(inv.get_terms(), constant);
               DualAutomata dual(target_, rewrite_);
-              bool success = build_dual_for_discriminator(target_cutpoint, rewrite_cutpoint, specific, dual);
+              bool success = build_dual_for_discriminator(specific, dual);
+              dual.print_all();
             }
           }
         }

@@ -42,7 +42,7 @@ public:
     size_t index;
 
     bool operator==(const TracePoint& other) const {
-      return block_id == other.block_id;
+      return index == other.index;
     }
 
     bool operator!=(const TracePoint& other) const {
@@ -50,7 +50,7 @@ public:
     }
 
     bool operator<(const TracePoint& other) const {
-      return block_id < other.block_id;
+      return index < other.index;
     }
   };
 

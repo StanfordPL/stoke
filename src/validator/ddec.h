@@ -155,9 +155,9 @@ private:
   );
 
 
-  bool build_dual_for_discriminator(size_t target_point, size_t rewrite_point, EqualityInvariant inv, DualAutomata&);
+  bool build_dual_for_discriminator(EqualityInvariant inv, DualAutomata&);
   std::vector<uint64_t> find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
-  void get_states_at_cutpoint(size_t trace, size_t target_point, size_t rewrite_point, std::vector<DataCollector::TracePoint>& target_states, std::vector<DataCollector::TracePoint>& rewrite_states) const;
+  void get_states_at_cutpoint(size_t trace, size_t target_point, size_t rewrite_point, std::vector<DataCollector::TracePoint>& target_states, std::vector<DataCollector::TracePoint>& rewrite_states, bool bound) const;
 
   /** Invariants assumed to hold at any point. */
   std::vector<Invariant*> assume_always_;

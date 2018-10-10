@@ -164,6 +164,14 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
 
   sandbox_.run(testcase);
 
+  TracePoint tp;
+  tp.block_id = cfg.get_exit();
+  tp.cs = *sandbox_.get_output(testcase);
+  tp.line_number = cfg.get_code().size()-1;
+  tp.index = trace.size();
+  trace.push_back(tp);
+
+
   for (auto it : to_free)
     delete it;
 
