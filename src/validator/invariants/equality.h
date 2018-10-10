@@ -79,6 +79,16 @@ public:
 
   /** Check if this invariant holds over a concrete state. */
   bool check(const CpuState& target, const CpuState& rewrite) const {
+    auto sum = calculate_lhs(target, rewrite);
+
+    if(modulus_ == 0)
+      return sum == (uint64_t)constant_;
+    else
+      return ((uint64_t)constant_ - sum) % modulus_ == 0;
+  }
+
+  /** Calculate the sum of terms on the left hand side. */
+  uint64_t calculate_lhs(const CpuState& target, const CpuState& rewrite) const {
     uint64_t sum = 0;
 
     // TODO: properly handle invariants of more than 64 bits
@@ -87,10 +97,7 @@ public:
       sum = sum + term.coefficient*value64;
     }
 
-    if(modulus_ == 0)
-      return sum == (uint64_t)constant_;
-    else
-      return ((uint64_t)constant_ - sum) % modulus_ == 0;
+    return sum;
   }
 
   std::ostream& write(std::ostream& os) const {
@@ -153,6 +160,10 @@ public:
 
   Invariant* clone() const {
     return new EqualityInvariant(terms_, constant_, modulus_);
+  }
+
+  std::vector<Variable> get_terms() const {
+    return terms_;
   }
 
 private:
