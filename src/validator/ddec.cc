@@ -484,26 +484,75 @@ bool DdecValidator::build_dual_for_discriminator(size_t target_point, size_t rew
   cout << "[build_dual_for_discriminator] cutpoint " << target_point << " / " << rewrite_point
        << " expression " << inv << endl;
 
+  bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
     if(i > 10)
       break;
 
     auto& target_trace = target_traces_[i];
     auto& rewrite_trace = rewrite_traces_[i];
+    auto target_trace_path = DataCollector::project_states(target_trace);
+    auto rewrite_trace_path = DataCollector::project_states(target_trace);
 
     vector<DataCollector::TracePoint> target_states;
     vector<DataCollector::TracePoint> rewrite_states;
 
     get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states);
 
+    vector<std::pair<DataCollector::TracePoint, DataCollector::TracePoint>> entry_pairs;
     // edges from entry to first iteration
+    for(auto ts : target_states) {
+      for(auto rs : rewrite_states) {
+        if(inv.check(ts.cs,rs.cs)) {
+          auto target_index = ts.index;
+          auto rewrite_index = rs.index;
+
+          CfgPath target_path;
+          CfgPath rewrite_path;
+
+          target_path.insert(target_path.begin(), target_trace_path.begin()+1, target_trace_path.begin() + target_index+1);
+          rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+1, rewrite_trace_path.begin() + rewrite_index+1);
+
+          cout << "FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
+          DualAutomata::Edge e(DualAutomata::State(0,0), target_path, rewrite_path);
+          bool new_edge = dual.add_edge(e);
+          if(new_edge) {
+            entry_pairs.push_back(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
+          }
+        }
+      }
+    }
 
     // edges from first iteration to second
+    for(auto first_entry_pair : entry_pairs) {
+      for(auto second_entry_pair : entry_pairs) {
+        auto& first_target = first_entry_pair.first;
+        auto& first_rewrite = first_entry_pair.second;
+        auto& second_target = second_entry_pair.first;
+        auto& second_rewrite = second_entry_pair.second;
 
-    // TODO: future: entry to other cutpoints, other cutpoints to other cutpoints, other cutpoints to us
+        if(first_target.index >= second_target.index)
+          continue;
+        if(first_rewrite.index >= second_rewrite.index)
+          continue;
+
+        CfgPath target_path;
+        CfgPath rewrite_path;
+
+        target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
+        rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
+
+        cout << "FOUND CORRESPONDING (LOOP) PATHS " << target_path << " / " << rewrite_path << endl;
+        DualAutomata::Edge e(DualAutomata::State(target_point, rewrite_point), target_path, rewrite_path);
+        dual.add_edge(e);
+        found_loop = true;
+      }
+    }
+
+    // TODO other cutpoints to us
   }
 
-  return false;
+  return found_loop;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
