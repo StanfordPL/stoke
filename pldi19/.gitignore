@@ -5,3 +5,6 @@ sage_*
 */*time*
 */*.pdf 
 */opt*
+*/testcases*
+tcs/*
+tcs

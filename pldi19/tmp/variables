@@ -1,0 +1,10 @@
+
+TARGET_BOUND=4
+REWRITE_BOUND=4
+NAME=myfunction
+TARGET=opt1/f1.s
+REWRITE=opt1/f2.s
+DEF_INS="{ %rdi }"
+LIVE_OUTS="{ %rax }"
+
+

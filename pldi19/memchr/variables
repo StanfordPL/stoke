@@ -1,0 +1,10 @@
+
+TARGET_BOUND=9
+REWRITE_BOUND=2
+NAME=memchr
+TARGET=opt1/my_memchr.s
+REWRITE=opt1/libc_memchr.s
+DEF_INS="{ %rdi %rsi %rdx }"
+LIVE_OUTS="{ %rax }"
+
+
