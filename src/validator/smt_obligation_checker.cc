@@ -35,7 +35,7 @@
 
 #define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { if(1) { X } }
+#define BUILD_TC_DEBUG(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -194,15 +194,15 @@ bool SmtObligationChecker::check_counterexample(
     const Invariant& prove, 
     const CpuState& ceg_t, 
     const CpuState& ceg_r, 
-    const CpuState& ceg_t_expected, 
-    const CpuState& ceg_r_expected,
+    CpuState& ceg_t_expected, 
+    CpuState& ceg_r_expected,
     bool separate_stack) {
 
   CpuState target_output;
   CpuState rewrite_output;
   for(size_t k = 0; k < 2; ++k) {
     const CpuState& start = k ? ceg_r : ceg_t;
-    CpuState expected = k ? ceg_r_expected : ceg_t_expected;
+    CpuState& expected = k ? ceg_r_expected : ceg_t_expected;
     const Cfg& program = k ? rewrite : target;
     const Code& unroll = k ? rewrite_unroll : target_unroll;
     const LineMap& linemap = k ? rewrite_linemap : target_linemap;
@@ -279,6 +279,9 @@ bool SmtObligationChecker::check_counterexample(
 
     expected.stack = expected_stack;
     output.stack = output_stack;
+
+    // prefer the sandbox answer over SMT solver for getting counterexample
+    expected = output;
   }
 
   // First, the counterexample has to pass the invariant.
@@ -535,8 +538,7 @@ void SmtObligationChecker::check(
   bool arm_model = alias_strategy_ == AliasStrategy::ARM;
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
-  //cout << "[check_core] Got " << testcases.size() << " testcases!" << endl;
-  OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
+  //OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
   microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
@@ -558,7 +560,7 @@ void SmtObligationChecker::check(
   add_basic_block_ghosts(state_r, rewrite, "2_INIT");
 
   bool separate_stack = separate_stack_ || override_separate_stack;
-  OBLIG_DEBUG(cout << "separate_stack = " << separate_stack << endl;)
+  //OBLIG_DEBUG(cout << "separate_stack = " << separate_stack << endl;)
   if (flat_model) {
     state_t.memory = new FlatMemory(separate_stack);
     state_r.memory = new FlatMemory(separate_stack);
@@ -864,8 +866,9 @@ void SmtObligationChecker::check(
 
       ok &= build_testcase_from_array(ceg_t, target_flat->get_start_variable(), other_map, separate_stack);
       ok &= build_testcase_from_array(ceg_r, rewrite_flat->get_start_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_tf, target_flat->get_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), other_map, separate_stack);
+      build_testcase_from_array(ceg_tf, target_flat->get_variable(), other_map, separate_stack);
+      build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), other_map, separate_stack);
+
     } else if (arm_model) {
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
       auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
@@ -877,8 +880,8 @@ void SmtObligationChecker::check(
 
       ok &= build_testcase_from_array(ceg_t, target_arm->get_start_variable(), other_map, separate_stack);
       ok &= build_testcase_from_array(ceg_r, rewrite_arm->get_start_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_tf, target_arm->get_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), other_map, separate_stack);
+      build_testcase_from_array(ceg_tf, target_arm->get_variable(), other_map, separate_stack);
+      build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), other_map, separate_stack);
     }
 
     if (!ok) {
@@ -901,10 +904,7 @@ void SmtObligationChecker::check(
     CEG_DEBUG(print_m.unlock();)
 
 
-    // TODO FIXME
-    // doesn't work right now because 
-    // (1) it doesn't get ghost variables in ceg
-    // (2) it doesn't run code on correct path */
+    /** Checks ceg with sandbox.  Updates ceg_tf, ceg_rf to match sandbox data */
     if (check_counterexample(target, rewrite, target_unroll, rewrite_unroll, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
       CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
     } else {

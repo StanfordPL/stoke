@@ -23,8 +23,7 @@
 #include "src/validator/flow_invariant_learner.h"
 #include "src/validator/indexer.h"
 #include "src/validator/null.h"
-#include "src/validator/invariants/conjunction.h"
-#include "src/validator/invariants/equality.h"
+#include "src/validator/invariants.h"
 #include "src/validator/local_class_checker.h"
 
 #include <chrono>
@@ -480,11 +479,12 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   return constants;
 }
 
-bool DdecValidator::build_dual_for_discriminator(EqualityInvariant inv, DualAutomata& dual) {
+bool DdecValidator::build_dual_for_discriminator(Invariant* inv, DualAutomata& dual) {
   cout << "[build_dual_for_discriminator] expression " << inv << endl;
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
+    cout << "TRACE " << i << endl;
     if(i > 20)
       break;
 
@@ -502,14 +502,25 @@ bool DdecValidator::build_dual_for_discriminator(EqualityInvariant inv, DualAuto
     matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace.back(), rewrite_trace.back()));
 
     // edges from entry to first iteration
+    bool found_false = false;
     for(auto ts : target_trace) {
       for(auto rs : rewrite_trace) {
-        if(inv.check(ts.cs,rs.cs)) {
-          /*cout << "ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
-               << "  trace indexes " << ts.index << " / " << rs.index << endl;*/
+        if(inv->check(ts.cs,rs.cs)) {
+          cout << " - ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
+               << "  trace indexes " << ts.index << " / " << rs.index << endl;
+          //cout << "STATES" << endl;
+          //cout << ts.cs << endl;
+          //cout << rs.cs << endl;
           matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
+        } else {
+          found_false = true;
         }
       }
+    }
+
+    if(!found_false) {
+      cout << "  found_false: " << found_false;
+      return false;
     }
 
     // edges from first iteration to second
@@ -520,18 +531,19 @@ bool DdecValidator::build_dual_for_discriminator(EqualityInvariant inv, DualAuto
         auto& second_target = second_pair.first;
         auto& second_rewrite = second_pair.second;
 
-        /*
-        cout << "Considering pairs:" << endl;
-        cout << "First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
+        cout << " - Considering pairs:" << endl;
+        cout << "     First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
              << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
-        cout << "Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
-             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; */
+        cout << "     Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
+             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; 
 
-        if(second_target.index <= first_target.index)
+        if(second_target.index == first_target.index && second_rewrite.index == first_rewrite.index)
+          continue;
+        if(second_target.index < first_target.index)
           continue;
         if(second_target.index - first_target.index > target_bound_)
           continue;
-        if(second_rewrite.index <= first_rewrite.index)
+        if(second_rewrite.index < first_rewrite.index)
           continue;
         if(second_rewrite.index - first_rewrite.index > rewrite_bound_)
           continue;
@@ -544,14 +556,170 @@ bool DdecValidator::build_dual_for_discriminator(EqualityInvariant inv, DualAuto
         target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
         rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
 
-        //cout << "FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
+        cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
         DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
         dual.add_edge(e);
       }
     }
   }
 
-  return found_loop;
+  return true;
+}
+
+bool DdecValidator::verify_dual(DualAutomata& dual) {
+
+  dual.remove_prefixes();
+  dual.print_all();
+
+  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_);
+  if (!learning_successful) {
+    cout << "[verify_dual] Learning invariants failed!" << endl;
+    return false;
+  }
+
+  auto edge_reachable = dual.get_edge_reachable_states();
+  for (auto state : edge_reachable) {
+    if (state == dual.start_state() || state == dual.exit_state() || state == dual.fail_state())
+      continue;
+    auto inv = dual.get_invariant(state);
+    if (inv->size() < 2) {
+      cout << "[verify_dual] Could not learn invariant at state " << state << endl;
+      cout << "[verify_dual] Aboring." << endl;
+      return false;
+    }
+  }
+
+  cout << "[verify_dual] Compute Failure Edges" << endl;
+  auto failure_edges = dual.compute_failure_edges(target_, rewrite_);
+  for(auto it : failure_edges) {
+    dual.add_edge(it);
+  } 
+
+  /** Configure invariants. */
+  auto start_state = dual.start_state();
+  auto end_state = dual.exit_state();
+  auto fail_state = dual.fail_state();
+  dual.set_invariant(start_state, get_initial_invariant(dual));
+  dual.set_invariant(end_state, get_final_invariant(dual));
+  dual.set_invariant(fail_state, get_fail_invariant());
+
+  /** Add NoSignals invariant everywhere */
+  auto ns_invariant = new NoSignalsInvariant();
+  auto reachable = dual.get_edge_reachable_states();
+  for (auto rs : reachable) {
+    auto orig_inv = dual.get_invariant(rs);
+    orig_inv->add_invariant(ns_invariant);
+    dual.set_invariant(rs, orig_inv);
+  }
+
+  /** Do the heavy lifting of the proof. */
+  map<DualAutomata::State, bool> state_needs_update;
+  state_needs_update[start_state] = true;
+  bool fixpoint = false;
+  while(!fixpoint) {
+    fixpoint = true;
+    for(auto state_updateneeded_pair : state_needs_update) {
+      if(state_updateneeded_pair.second == true) {
+
+        auto state = state_updateneeded_pair.first;
+
+        cout << "[verify_dual] working on state " << state << endl;
+
+        state_needs_update[state] = false;
+        auto edges = dual.next_edges(state);
+        auto source_inv = dual.get_invariant(state);
+
+        for(auto e : edges) {
+          cout << "[verify_dual] working from " << state << " edge=" << e << endl;
+          auto target = e.to;
+          ConjunctionInvariant* target_inv = dual.get_invariant(target);
+          auto target_testcases = dual.get_target_data(e);
+          auto rewrite_testcases = dual.get_rewrite_data(e);
+          vector<pair<CpuState,CpuState>> testcases;
+          if(target_testcases.size() && rewrite_testcases.size())
+            testcases.push_back(pair<CpuState,CpuState>(target_testcases[0], rewrite_testcases[0]));
+          set<size_t> conjuncts_to_delete;
+          for(size_t i = 0; i < target_inv->size(); ++i) {
+            if(conjuncts_to_delete.count(i))
+              continue;
+
+            auto conjunct = (*target_inv)[i];
+            cout << "[verify_dual] testing conjunct " << i << " : " << *conjunct << endl;
+            auto result = checker_.check_wait(
+                                    target_, rewrite_, 
+                                    state.ts, state.rs,
+                                    e.te, e.re, 
+                                    *source_inv, *conjunct,
+                                    testcases, true);
+
+            cout << "   verified=" << result.verified << endl;
+            if(!result.verified) {
+
+              conjuncts_to_delete.insert(i);
+
+              if(target == fail_state) {
+                //we're done here.
+                cout << "[verify_dual] Path to fail state is feasible: " << e << endl;
+                return false;
+              }
+              if(target == end_state) {
+                //we're done here.
+                cout << "[verify_dual] Conjunct in final state failed. " << endl;
+                cout << "e=" << e << endl;
+                cout << "invariant=" << *conjunct << endl;
+                return false;
+              }
+
+              // See if we can use counterexample to throw out any others
+              if(result.has_ceg) {
+                cout << "[verify_dual] Using counterexample to remove other conjuncts." << endl;
+                CpuState target_out = result.target_final_ceg;
+                CpuState rewrite_out = result.rewrite_final_ceg;
+                cout << "TARGET TC" << endl << target_out << endl;
+                cout << "REWRITE TC" << endl << rewrite_out << endl;
+
+                for(size_t j = 0; j < target_inv->size(); ++j) {
+                  auto alt_conjunct = (*target_inv)[j];
+                  if(!alt_conjunct->check(target_out, rewrite_out)) {
+                    cout << "[verify_dual] * Woohoo removing conjunct " << j << " : " << *alt_conjunct << endl;
+                    conjuncts_to_delete.insert(j);
+                  }
+                }
+              }
+            }
+          }
+
+          // remove the conjuncts that we know are bad.
+          if(conjuncts_to_delete.size()) {
+            state_needs_update[target] = true;
+            fixpoint = false;
+            for(auto i = conjuncts_to_delete.rbegin(); i != conjuncts_to_delete.rend(); ++i) {
+              target_inv->remove(*i);
+            }
+          }
+
+          cout << "[verify_dual] UPDATING EDGES FOR STATE " << state;
+          fixpoint = false;
+        }
+
+        break; // find another state that needs an update
+      }
+    }
+  }
+
+  /** Perform the final check. */
+  auto actual_final = dual.get_invariant(end_state);
+  auto expected_final = get_final_invariant(dual);
+  bool last_check = actual_final->size() == expected_final->size();
+  if(!last_check) {
+    cout << "Final invariant insufficient" << endl;
+    return false;
+  }
+
+  /** All done :) */
+  cout << " ===== PROOF COMPLETE ===== " << endl;
+  dual.print_all();
+  return true;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
@@ -564,6 +732,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
+
+  MemoryEqualityInvariant memequ;
 
   for(size_t target_cutpoint = target_.get_entry(); target_cutpoint < target_.get_exit(); ++target_cutpoint) {
     if(!target_sccs.in_scc(target_cutpoint))
@@ -597,13 +767,31 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             }
             EqualityInvariant inv({v1, v2}, 0);
 
-            auto constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
+            //auto constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
+            vector<uint64_t> constants;
+            constants.push_back(0);
 
             for(auto constant : constants) {
               EqualityInvariant specific(inv.get_terms(), constant);
+              ConjunctionInvariant conj;
+              conj.add_invariant(&specific);
+              conj.add_invariant(&memequ);
+
               DualAutomata dual(target_, rewrite_);
-              bool success = build_dual_for_discriminator(specific, dual);
-              dual.print_all();
+              bool success = build_dual_for_discriminator(&conj, dual);
+              if(success) {
+                dual.print_all();
+                dual.simplify();
+                cout << "SIMPLIFIED!!" << endl;
+                dual.print_all();
+                bool b = verify_dual(dual);
+                if(b) {
+                  cout << "PROOF SUCCEEDED!" << endl;
+                  return true;
+                }
+              }
+              else
+                cout << "Making graph failed" << endl;
             }
           }
         }
@@ -876,4 +1064,74 @@ DualBuilder::EquivalenceClassMap DdecValidator::build_classmap_from_descriptor()
   return output;
 }
 
+ConjunctionInvariant* DdecValidator::get_initial_invariant(DualAutomata& dual) const {
+  auto initial_invariant = new ConjunctionInvariant();
 
+  /** set all shadow block variables to 0 */
+  auto target = dual.get_target();
+  auto rewrite = dual.get_rewrite();
+  auto shadow_target = FlowInvariantLearner::get_shadow_vars(target, false);
+  auto shadow_rewrite = FlowInvariantLearner::get_shadow_vars(rewrite, true);
+  auto shadows = shadow_target;
+  shadows.insert(shadows.begin(), shadow_rewrite.begin(), shadow_rewrite.end());
+  for(auto it : shadows) {
+    it.coefficient = 1;
+    auto init_zero = new EqualityInvariant({ it }, 0);
+    initial_invariant->add_invariant(init_zero);
+  }
+
+  auto sei = new StateEqualityInvariant(target.def_ins());
+  initial_invariant->add_invariant(sei);
+  initial_invariant->add_invariant(new MemoryEqualityInvariant());
+  initial_invariant->add_invariant(new NoSignalsInvariant());
+
+  for(auto span : pointer_ranges_) {
+    auto begin = span.first;
+    auto end = span.second;
+    auto pri = new PointerRangeInvariant(begin, end);
+    initial_invariant->add_invariant(pri);
+  }
+
+  for(auto assumption : extra_assumptions_) {
+    initial_invariant->add_invariant(assumption);
+  }
+
+  /*
+    for (auto r : string_params_) {
+      // rsi_start = rsi (for example)
+      Variable start_var(string_ghost_start(r), false);
+      Variable string_reg(r, false);
+      string_reg.coefficient = -1;
+      auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+      initial_invariant->add_invariant(equiv);
+
+      // rsi_end = 0 (for example)
+      Variable end_var(string_ghost_end(r), false);
+      auto end_mem = new PointerNullInvariant(end_var, 1);
+      initial_invariant->add_invariant(end_mem);
+    }
+  */
+
+  //initial_invariant->add_invariant(get_fixed_invariant());
+
+  return initial_invariant;
+}
+
+ConjunctionInvariant* DdecValidator::get_final_invariant(DualAutomata& dual) const {
+  auto target = dual.get_target();
+  auto final_invariant = new ConjunctionInvariant();
+  auto sei = new StateEqualityInvariant(target.live_outs());
+  final_invariant->add_invariant(sei);
+  final_invariant->add_invariant(new MemoryEqualityInvariant());
+
+  //final_invariant->add_invariant(get_fixed_invariant());
+
+  return final_invariant;
+}
+
+ConjunctionInvariant* DdecValidator::get_fail_invariant() const {
+  auto fail_invariant = new ConjunctionInvariant();
+  fail_invariant->add_invariant(new FalseInvariant());
+
+  return fail_invariant;
+}

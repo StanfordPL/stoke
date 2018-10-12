@@ -75,7 +75,7 @@ public:
         return false;
     }
     return target.heap == rewrite.heap &&
-           target.stack == rewrite.stack &&
+    /*       target.stack == rewrite.stack && */
            target.data == rewrite.data;
   }
 

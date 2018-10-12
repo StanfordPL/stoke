@@ -101,7 +101,8 @@ DEPS=\
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a \
-	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread -lboost_iostreams \
+  -Wl,--no-as-needed -ldl  \
+  -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread -lboost_iostreams \
 	-lcln \
 	-liml -lgmp \
 	-L src/ext/z3/build -lz3 \

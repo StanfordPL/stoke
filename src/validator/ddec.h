@@ -154,8 +154,16 @@ private:
     ConjunctionInvariant* invariant
   );
 
+  /** Compute the initial invariant */
+  ConjunctionInvariant* get_initial_invariant(DualAutomata&) const;
+  ConjunctionInvariant* get_final_invariant(DualAutomata&) const;
+  ConjunctionInvariant* get_fail_invariant() const;
 
-  bool build_dual_for_discriminator(EqualityInvariant inv, DualAutomata&);
+  /** Verify that a dual automata is correct */
+  bool verify_dual(DualAutomata& dual);
+
+
+  bool build_dual_for_discriminator(Invariant* inv, DualAutomata&);
   std::vector<uint64_t> find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
   void get_states_at_cutpoint(size_t trace, size_t target_point, size_t rewrite_point, std::vector<DataCollector::TracePoint>& target_states, std::vector<DataCollector::TracePoint>& rewrite_states, bool bound) const;
 
