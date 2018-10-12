@@ -2,3 +2,4 @@ envvars
 credentials
 postgres
 blobs
+tcgen_*

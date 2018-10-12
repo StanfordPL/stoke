@@ -1,0 +1,100 @@
+Testcase 0:
+
+SIGNAL 0 [normal exit]
+
+%rax     78 4f d6 db e8 10 98 48
+%rcx     32 d3 7a 62 14 72 22 5f
+%rdx     d0 95 eb a6 dc 96 7e c8
+%rbx     0d 32 46 4c 36 29 09 59
+%rsp     26 6f 84 60 1e 46 6b 00
+%rbp     1e 9e 2c 10 2e b1 de b5
+%rsi     5c 5c 19 b4 51 b6 01 5e
+%rdi     00 00 00 00 00 00 00 00
+%r8      12 e7 e3 5e 30 1e 87 5d
+%r9      fe 1f cf e3 8f 31 9d 91
+%r10     bf 11 38 ca c0 d2 ff 5e
+%r11     c7 89 50 c1 e2 13 5b 87
+%r12     5a 65 d7 33 47 f5 8b f5
+%r13     34 ca 1b 89 f1 f4 8c e4
+%r14     75 65 f4 0e bd 76 e7 33
+%r15     52 24 cf b5 d7 5b 75 c3
+
+%ymm0    ec e1 1e 68 b5 28 6c f5 1f 53 f1 c9 2d ea 0b 50 7f 7e e4 bd 20 a2 6c a4 b3 4f 6a 13 c3 f1 06 6f
+%ymm1    a9 c2 c8 d8 3f 1e 9d a9 1a 1b d5 9b db 25 55 64 be 15 55 43 53 90 dc 28 9e 8d 1b 29 12 c3 ad 1d
+%ymm2    bb 55 fe 4f 08 f8 d3 fe 19 d1 5a 51 14 af 4b 87 6b 29 b0 10 80 a2 ab 0b 0d 1f b6 ed 1c ff e1 a6
+%ymm3    44 ed 68 08 3e 19 0e 68 0d 2b da 09 a4 07 bb b8 ba 5d 61 86 2a fc 50 cf 8f 00 cb 01 77 6a a5 1f
+%ymm4    c1 f8 6c 81 dd a4 21 33 19 55 b5 79 3c da 58 e7 8a 00 b5 8a a9 67 55 2a f0 11 30 1e da 4d e4 59
+%ymm5    e4 1f 5e f7 fb cf 48 b1 9e 51 59 a0 b8 7e 9f e8 5a de 28 0c e8 5e 30 cd f4 b9 66 18 0b a9 8c 54
+%ymm6    0b 2d dd 35 81 23 62 02 15 79 5a fa 02 71 20 56 b8 f7 35 50 a8 3c 85 c5 e8 39 82 0c 17 4b d5 32
+%ymm7    0d 4a 9c cd 7e 1f 99 87 5c d8 4a bd 74 08 85 72 e4 f2 0f f3 7a 35 7b 80 81 62 cd a3 61 48 91 8a
+%ymm8    6f 4d 2e 2d 51 e3 e1 25 43 a1 89 cb 4a d5 f9 46 3b 05 5c 60 87 f8 bf 50 5c d6 f3 f9 c0 de 71 0b
+%ymm9    93 09 e4 20 7c 28 8f 44 04 d7 e5 e2 89 e3 14 85 e8 69 2d 9b e8 09 9c b6 88 c9 02 17 e1 23 6b a3
+%ymm10   dd f6 8d 22 67 70 6a f1 95 2c e7 0b 27 ee 03 0c eb 28 23 5b 35 93 cb 2c 7d d1 c5 cd d3 97 41 5f
+%ymm11   a5 42 b4 fa 90 1c c3 ae 8f 08 51 37 92 8e 07 15 41 a4 cc 42 25 1a 58 d4 ed 69 ec 29 b9 b3 8d d9
+%ymm12   98 96 55 22 7c dd ba f4 f3 13 ec 66 10 a5 0b ee b5 76 d2 c2 3b 76 59 0e fc 54 b0 89 f3 80 1f d5
+%ymm13   7b af dd 14 17 fb 64 d5 12 04 ee fb 27 a5 f9 23 92 4b eb 71 a4 04 45 a9 0c e6 01 cc 8f f9 60 b2
+%ymm14   31 88 68 6e 08 9c 75 2c 6c f8 39 50 58 7e 3a 53 b9 74 06 ab f2 c5 69 5f 22 e8 95 b5 ba 78 63 9b
+%ymm15   04 28 f9 ca 8f 0f 1a 30 5f 86 77 fa 4e 7e d6 38 0a 95 a6 b2 6a 3f 12 89 c9 fc b3 18 a9 7d a1 c4
+
+%cf      1 
+%1       1 
+%pf      1 
+%0       0 
+%af      1 
+%0       0 
+%zf      1 
+%sf      1 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ 00000002 00000000 - 00000002 00000000 ]
+[ 0 valid rows shown ]
+
+[ 00000001 00000000 - 00000001 00000000 ]
+[ 0 valid rows shown ]
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+2 more segment(s)
+
+
+[ 00000000 00601ca0 - 00000000 00601c80 ]
+[ 2 valid rows shown ]
+
+00000000 00601c88   v v v v v v v v   00 00 00 01 00 00 00 01 
+00000000 00601c80   v v v v v v v v   00 00 00 01 00 00 00 01 
+
+[ 00000000 00601e80 - 00000000 00601a80 ]
+[ 17 valid rows shown ]
+
+00000000 00601b00   v v v v v v v v   00 00 00 00 00 00 00 00 
+00000000 00601af8   v v v v v v v v   00 00 00 00 00 00 00 00 
+00000000 00601af0   v v v v v v v v   00 00 00 00 00 00 00 00 
+00000000 00601ae8   v v v v v v v v   00 00 00 00 00 00 00 00 
+00000000 00601ae0   v v v v v v v v   00 00 00 00 00 00 00 00 
+00000000 00601ad8   v v v v v v v v   00 00 00 02 00 00 00 02 
+00000000 00601ad0   v v v v v v v v   00 00 00 02 00 00 00 02 
+00000000 00601ac8   v v v v v v v v   00 00 00 08 00 00 00 08 
+00000000 00601ac0   v v v v v v v v   00 00 00 08 00 00 00 08 
+00000000 00601ab8   v v v v v v v v   00 00 00 06 00 00 00 04 
+00000000 00601ab0   v v v v v v v v   00 00 00 02 00 00 00 00 
+00000000 00601aa8   v v v v v v v v   00 00 00 04 00 00 00 04 
+00000000 00601aa0   v v v v v v v v   00 00 00 04 00 00 00 04 
+00000000 00601a98   v v v v v v v v   00 00 00 03 00 00 00 02 
+00000000 00601a90   v v v v v v v v   00 00 00 01 00 00 00 00 
+00000000 00601a88   v v v v v v v v   00 00 00 01 00 00 00 01 
+00000000 00601a80   v v v v v v v v   00 00 00 01 00 00 00 01 
+

@@ -1,0 +1,33 @@
+        section     manual vect.    inv classes work notes
+strlen    5.3          yes          yes
+strnlen   5.3          yes
+memset    5.4          yes          think so
+memcpy    5.7          yes                            looks hard
+memchr    5.9          yes          think so          looks interesting!
+strchr    5.9          yes                            also interesting!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+non-examples
+
+memcpy - uses page copying
+5.5 - these use other functions
+5.6 - these use other functions (would be good to double check -- not totally sure)
+5.7 - strcmp not vectorized  
+5.8 -- not sure, have to investigate macros
+5.10 - don't look vectorized
+5.11 - uses memset
+5.12 - no vectorization, uses randomness
+5.13 - no vectorization
+5.14, 5.15 - not vectorized

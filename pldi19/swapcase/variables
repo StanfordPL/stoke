@@ -1,0 +1,10 @@
+
+TARGET_BOUND=9
+REWRITE_BOUND=2
+NAME=swapcase
+TARGET=opt1/swapcase.s
+REWRITE=opt1/swapcase_vec.s
+DEF_INS="{ %rdi %rsi }"
+LIVE_OUTS="{ }"
+
+
