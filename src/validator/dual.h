@@ -300,6 +300,9 @@ public:
     return rewrite_;
   }
 
+  /** Remove edges that aren't needed. */
+  void simplify();
+
   void serialize(std::ostream& os) const;
   static DualAutomata deserialize(std::istream& is);
 

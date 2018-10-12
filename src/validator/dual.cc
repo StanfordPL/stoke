@@ -9,7 +9,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { X }
+#define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
 #define DEBUG_IS_PREFIX(X) { }
 #define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
 
@@ -124,6 +124,8 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
   auto rewrite_trace = orig_rewrite_trace;
   target_trace.erase(target_trace.begin());
   rewrite_trace.erase(rewrite_trace.begin());
+  target_trace.erase(target_trace.end() - 1);
+  rewrite_trace.erase(rewrite_trace.end() - 1);
 
   /** Setup initial state */
   TraceState initial;
@@ -196,7 +198,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         // check if edge's rewrite path is prefix of tr_state's rewrite path
         if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
           DEBUG_LEARN_STATE_DATA(cout << "     rewrite prefix fail" << endl;)
-          DEBUG_LEARN_STATE_DATA(cout << "     edge.re: " << edge.re << endl;)
           continue;
         }
 
@@ -205,8 +206,14 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         TraceState follow = tr_state;
         follow.state = edge.to;
 
-        CpuState target_start = follow.target_trace[0].cs;
-        CpuState rewrite_start = follow.rewrite_trace[0].cs;
+        CpuState target_start;
+        CpuState rewrite_start;
+        bool add_target_state = follow.target_trace.size();
+        bool add_rewrite_state = follow.rewrite_trace.size();
+        if(add_target_state)
+          target_start = follow.target_trace[0].cs;
+        if(add_rewrite_state)
+          rewrite_start = follow.rewrite_trace[0].cs;
 
         // (2) update the CpuStates
         if (edge.te.size())
@@ -242,8 +249,10 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         // (4) record the CpuState in the right place
         target_state_data_[edge.to].push_back(follow.target_current);
         rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
-        target_edge_data_[edge].push_back(target_start);
-        rewrite_edge_data_[edge].push_back(rewrite_start);
+        if(add_target_state)
+          target_edge_data_[edge].push_back(target_start);
+        if(add_rewrite_state)
+          rewrite_edge_data_[edge].push_back(rewrite_start);
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
@@ -680,6 +689,36 @@ DualAutomata DualAutomata::deserialize(std::istream& is) {
   pod.invariants_ = stoke::deserialize<map<State, ConjunctionInvariant*>>(is);
   pod.topological_sort_ = stoke::deserialize<vector<State>>(is);
   return pod;
+}
+
+/** Remove edges that aren't needed. */
+void DualAutomata::simplify() {
+
+  auto states = get_edge_reachable_states();
+  for(auto s : states) {
+    // check for any edges which are the prefix of another 
+    auto edges = next_edges_[s];
+    set<Edge> edges_to_remove;
+
+    for(size_t i = 0; i < edges.size(); ++i) {
+      for(size_t j = 0; j < edges.size(); ++j) {
+        if(i == j)
+          continue;
+
+        auto first = edges[i];
+        auto second = edges[j];
+
+        if(CfgPaths::is_prefix(first.te, second.te) &&
+           CfgPaths::is_prefix(first.re, second.re)) {
+          // remove 'second'
+          edges_to_remove.insert(second);
+        }
+      }
+    }
+
+    for(auto e : edges_to_remove)
+      remove_edge(e);
+  }
 }
 
 

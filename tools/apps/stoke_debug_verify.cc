@@ -14,6 +14,10 @@
 
 #include <iostream>
 
+#include <dlfcn.h>
+#include <stdio.h>
+#include <unistd.h>
+
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
@@ -63,8 +67,22 @@ void print_machine_output(bool verified, string error, string counterexample, bo
   f.close();
 }
 
+
+//https://stackoverflow.com/questions/10205543/saving-gmon-out-before-killing-a-process
+void sigUsr1Handler(int sig)
+{
+    fprintf(stderr, "Exiting on SIGUSR1\n");
+    void (*_mcleanup)(void);
+    _mcleanup = (void (*)(void))dlsym(RTLD_DEFAULT, "_mcleanup");
+    if (_mcleanup == NULL)
+         fprintf(stderr, "Unable to find gprof exit hook\n");
+    else _mcleanup();
+    _exit(0);
+}
+
 int main(int argc, char** argv) {
 
+  signal(SIGUSR1, sigUsr1Handler);
   cout << "VERSION: " << version_info << endl;
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();

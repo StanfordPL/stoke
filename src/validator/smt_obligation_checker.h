@@ -148,14 +148,15 @@ private:
     return os.str();
   }
 
-  /** Check if a counterexample actually works. */
+  /** Check if a counterexample actually works.  Updates the output states
+    (ceg_expected, ceg_expected2) with data from the sandbox. */
   bool check_counterexample(const Cfg& target, const Cfg& rewrite, 
                             const x64asm::Code& target_unroll, 
                             const x64asm::Code& rewrite_unroll,
                             const LineMap& target_linemap, const LineMap& rewrite_linemap,
                             const Invariant& assume, const Invariant& prove, 
                             const CpuState& ceg, const CpuState& ceg2,
-                            const CpuState& ceg_expected, const CpuState& ceg_expected2,
+                            CpuState& ceg_expected, CpuState& ceg_expected2,
                             bool separate_stack);
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */

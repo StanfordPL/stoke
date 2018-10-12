@@ -1,5 +1,6 @@
 *.o
 bin/stoke_*
+bin/tcgen_tsvc
 src/tags
 *.swp
 tags
