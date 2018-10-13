@@ -19,6 +19,8 @@
 #include "src/state/cpu_state.h"
 #include "src/symstate/memory.h"
 
+#define DEBUG_MEMORY_FROM_MAP(X) { if(0) { X } }
+
 using namespace cpputil;
 using namespace std;
 using namespace x64asm;
@@ -253,13 +255,13 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
 
   // identify a segment that serves as the stack
   auto stack_address = (*this)[rsp];
-  cout << "[memory_from_map] stack_address = " << stack_address << endl;
+  DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] stack_address = " << stack_address << endl;)
   size_t segment_for_stack = (size_t)(-1);
   int segments_placed = 0;
   for(size_t i = 0; i < my_segments.size(); ++i) {
     auto segment = my_segments[i];
     if(segment.in_range(stack_address)) {
-      cout << "[memory_from_map] found stack mapping" << endl;
+      DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] found stack mapping" << endl;)
       segment_for_stack = i;
       stack = segment;
       segments_placed++;
@@ -274,16 +276,16 @@ bool CpuState::memory_from_map(std::unordered_map<uint64_t, BitVector>& concrete
     if(i == segment_for_stack)
       continue;
     if(segments_placed == 0) {
-      cout << "[memory_from_map] placing stack" << endl;
+      DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] placing stack" << endl;)
       stack = my_segments[i];
     } else if (segments_placed == 1) {
-      cout << "[memory_from_map] placing heap" << endl;
+      DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] placing heap" << endl;)
       heap = my_segments[i];
     } else if (segments_placed == 2) {
-      cout << "[memory_from_map] placing data" << endl;
+      DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] placing data" << endl;)
       data = my_segments[i];
     } else {
-      cout << "[memory_from_map] placing other" << endl;
+      DEBUG_MEMORY_FROM_MAP(cout << "[memory_from_map] placing other" << endl;)
       segments.push_back(my_segments[i]);
     }
     segments_placed++;

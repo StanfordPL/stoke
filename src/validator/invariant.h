@@ -83,6 +83,10 @@ public:
     return true;
   }
 
+  virtual bool is_critical() {
+    return false;
+  }
+
   ConjunctionInvariant* AND(Invariant* other);
 
   virtual Invariant* clone() const = 0;

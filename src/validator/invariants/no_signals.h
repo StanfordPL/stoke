@@ -60,6 +60,10 @@ public:
     return new NoSignalsInvariant();
   }
 
+  virtual bool is_critical() {
+    return true;
+  }
+
 
 private:
 

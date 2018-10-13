@@ -328,6 +328,8 @@ private:
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_edge_prefix(const CfgPath& tr1, const CfgPath& tr2);
+  /** Is a node contained in an SCC? */
+  bool in_scc(State) const;
 
   /** Get fringe states of single CFG. */
   std::set<CfgPath> get_cfg_fringe(const Cfg& cfg, State state, bool is_rewrite) const;

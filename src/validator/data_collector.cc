@@ -17,6 +17,7 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 #define DEBUG_CUTPOINTS(X) { }
+#define DEBUG_DETAILED_TRACE(X) { if(0) { X } }
 
 
 using namespace std;
@@ -51,7 +52,8 @@ const std::vector<DataCollector::Trace>& DataCollector::get_traces(Cfg& cfg) {
 std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& cfg, const LineMap * const linemap) {
 
   vector<Trace> traces;
-  //cout << "[get_detailed_trace] sandbox_.size() = " << sandbox_.size() << endl;
+  DEBUG_DETAILED_TRACE(
+  cout << "[get_detailed_trace] sandbox_.size() = " << sandbox_.size() << endl;)
   for(size_t testcase = 0; testcase < sandbox_.size(); ++testcase) {
     size_t index;
     auto label = cfg.get_function().get_leading_label();
@@ -96,7 +98,7 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       }
 
       auto instr = code[i];
-      cout << "[get_detailed_trace] instrumenting " << instr << endl;
+      DEBUG_DETAILED_TRACE(cout << "[get_detailed_trace] instrumenting " << instr << endl;)
       if(instr.is_any_jump() || collect_before_) {
         sandbox_.insert_before(label, i, callback, cp);
       } else {
@@ -104,11 +106,13 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       }
     }
 
+    DEBUG_DETAILED_TRACE(
     cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
-    cout << *sandbox_.get_input(testcase) << endl;
+    cout << *sandbox_.get_input(testcase) << endl;)
     sandbox_.run(testcase);
+    DEBUG_DETAILED_TRACE(
     cout << "[get_detailed_trace] output" << endl;
-    cout << *sandbox_.get_output(testcase) << endl;
+    cout << *sandbox_.get_output(testcase) << endl;)
 
     for (auto it : to_free)
       delete it;

@@ -607,6 +607,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   auto ns_invariant = new NoSignalsInvariant();
   auto reachable = dual.get_edge_reachable_states();
   for (auto rs : reachable) {
+    if(rs == start_state || rs == end_state || rs == fail_state)
+      continue;
     auto orig_inv = dual.get_invariant(rs);
     orig_inv->add_invariant(ns_invariant);
     dual.set_invariant(rs, orig_inv);
@@ -628,6 +630,11 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
         state_needs_update[state] = false;
         auto edges = dual.next_edges(state);
         auto source_inv = dual.get_invariant(state);
+        ConjunctionInvariant source_and_always(source_inv);
+
+        for(auto inv : assume_always_) {
+          source_and_always.add_invariant(inv);
+        }
 
         for(auto e : edges) {
           cout << "[verify_dual] working from " << state << " edge=" << e << endl;
@@ -649,7 +656,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
                                     target_, rewrite_, 
                                     state.ts, state.rs,
                                     e.te, e.re, 
-                                    *source_inv, *conjunct,
+                                    source_and_always, *conjunct,
                                     testcases, true);
 
             cout << "   verified=" << result.verified << endl;
@@ -657,14 +664,20 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
               conjuncts_to_delete.insert(i);
 
+              if(conjunct->is_critical()) {
+                //we're done here.
+                cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
+                return false;
+
+              }
               if(target == fail_state) {
                 //we're done here.
-                cout << "[verify_dual] Path to fail state is feasible: " << e << endl;
+                cout << "[verify_dual] Failure. Path to fail state is feasible: " << e << endl;
                 return false;
               }
               if(target == end_state) {
                 //we're done here.
-                cout << "[verify_dual] Conjunct in final state failed. " << endl;
+                cout << "[verify_dual] Failure. Conjunct in final state failed. " << endl;
                 cout << "e=" << e << endl;
                 cout << "invariant=" << *conjunct << endl;
                 return false;
@@ -683,6 +696,13 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
                   if(!alt_conjunct->check(target_out, rewrite_out)) {
                     cout << "[verify_dual] * Woohoo removing conjunct " << j << " : " << *alt_conjunct << endl;
                     conjuncts_to_delete.insert(j);
+                    if(alt_conjunct->is_critical()) {
+                      //we're done here.
+                      cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
+                      return false;
+
+                    }
+
                   }
                 }
               }
@@ -691,14 +711,15 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
           // remove the conjuncts that we know are bad.
           if(conjuncts_to_delete.size()) {
+            cout << "[verify_dual] Removing conjuncts from target " << target << endl;
             state_needs_update[target] = true;
             fixpoint = false;
             for(auto i = conjuncts_to_delete.rbegin(); i != conjuncts_to_delete.rend(); ++i) {
               target_inv->remove(*i);
             }
+            dual.print_all();
           }
 
-          cout << "[verify_dual] UPDATING EDGES FOR STATE " << state;
           fixpoint = false;
         }
 
@@ -707,12 +728,17 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     }
   }
 
+  cout << "[verify_dual] Finished discharging obligations." << endl;
+  dual.print_all();
+
   /** Perform the final check. */
   auto actual_final = dual.get_invariant(end_state);
   auto expected_final = get_final_invariant(dual);
   bool last_check = actual_final->size() == expected_final->size();
   if(!last_check) {
-    cout << "Final invariant insufficient" << endl;
+    cout << "Failure. Final invariant insufficient" << endl;
+    cout << "Actual final invariant: " << *actual_final << endl;
+    cout << "Expected final invariant: " << *expected_final << endl;
     return false;
   }
 
@@ -767,9 +793,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             }
             EqualityInvariant inv({v1, v2}, 0);
 
-            //auto constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
             vector<uint64_t> constants;
-            constants.push_back(0);
+            constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
 
             for(auto constant : constants) {
               EqualityInvariant specific(inv.get_terms(), constant);
@@ -788,6 +813,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                 if(b) {
                   cout << "PROOF SUCCEEDED!" << endl;
                   return true;
+                } else {
+                  cout << "Dual failed to verify... trying something else." << endl;
                 }
               }
               else
@@ -1123,6 +1150,7 @@ ConjunctionInvariant* DdecValidator::get_final_invariant(DualAutomata& dual) con
   auto sei = new StateEqualityInvariant(target.live_outs());
   final_invariant->add_invariant(sei);
   final_invariant->add_invariant(new MemoryEqualityInvariant());
+  final_invariant->add_invariant(new NoSignalsInvariant());
 
   //final_invariant->add_invariant(get_fixed_invariant());
 

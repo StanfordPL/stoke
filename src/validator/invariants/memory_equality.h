@@ -92,6 +92,12 @@ public:
     return new MemoryEqualityInvariant();
   }
 
+  virtual bool is_critical() {
+    return true;
+  }
+
+
+
 private:
 
   size_t red_zone_size_;

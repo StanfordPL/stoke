@@ -1,5 +1,6 @@
 
 #include <fstream>
+#include <queue>
 
 #include "src/serialize/serialize.h"
 #include "src/state/cpu_states.h"
@@ -10,8 +11,9 @@ using namespace stoke;
 using namespace std;
 
 #define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
-#define DEBUG_IS_PREFIX(X) { }
-#define DEBUG_CFG_FRINGE(X) { cout << "[cfg_fringe] " << X; }
+#define DEBUG_IS_PREFIX(X) { if(0) { X } }
+#define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
+#define DEBUG_IN_SCC(X) { if(1) { X } }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (ts != other.ts)
@@ -691,9 +693,85 @@ DualAutomata DualAutomata::deserialize(std::istream& is) {
   return pod;
 }
 
+bool DualAutomata::in_scc(State s) const {
+  DEBUG_IN_SCC(cout << "[in_scc] called for " << s << endl;)
+  map<State, bool> visited;
+  visited[s] = true;
+  queue<State> worklist;
+  worklist.push(s);
+
+  while(worklist.size()) {
+    State t = worklist.front();
+    worklist.pop();
+    DEBUG_IN_SCC(cout << "[in_scc] visiting " << t << endl;)
+    auto next = next_states(t);
+    for(auto u : next) {
+      DEBUG_IN_SCC(cout << "[in_scc]     next is " << u << endl;)
+      if(u == s) {
+        DEBUG_IN_SCC(cout << "[in_scc] returning true for " << s << endl;)
+        return true;
+      }
+      if(!visited[u]) {
+        worklist.push(u);
+        visited[u] = true;
+      }
+    }
+  }
+
+  DEBUG_IN_SCC(cout << "[in_scc] returning false for " << s << endl;)
+  return false;
+}
+
 /** Remove edges that aren't needed. */
 void DualAutomata::simplify() {
 
+  /** Step 1: remove nodes that are not contained in a strongly connected component. */
+  auto start = start_state();
+  auto end = exit_state();
+
+  bool fixpoint = false;
+  while(!fixpoint) {
+    fixpoint = true;
+    auto edge_reachable = get_edge_reachable_states();
+    for(auto s : edge_reachable) {
+      if(s == start)
+        continue;
+      if(s == end)
+        continue;
+      if(in_scc(s))
+        continue;
+
+      cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
+      auto edges_in = prev_edges(s); 
+      auto edges_out = next_edges(s);
+
+      for(auto in : edges_in) {
+        for(auto out : edges_out) {
+          Edge e = in;
+          e.to = out.to;
+          e.te.insert(e.te.end(), out.te.begin(), out.te.end());
+          e.re.insert(e.re.end(), out.re.begin(), out.re.end());
+          add_edge(e);
+          cout << "[simplify] adding edge " << e << endl;
+        }
+      }
+
+      for(auto in : edges_in) {
+        cout << "[simplify] removing edge " << in << endl;
+        remove_edge(in);
+      }
+      for(auto out : edges_out) {
+        cout << "[simplify] removing edge " << out << endl;
+        remove_edge(out);
+      }
+      fixpoint = false;
+      break;
+    }
+  }
+
+  cout << "[simplify] proceeding to second step" << endl;
+
+  /** Step 2: Remove edges where another edge is a prefix. */
   auto states = get_edge_reachable_states();
   for(auto s : states) {
     // check for any edges which are the prefix of another 
@@ -719,6 +797,7 @@ void DualAutomata::simplify() {
     for(auto e : edges_to_remove)
       remove_edge(e);
   }
+
 }
 
 

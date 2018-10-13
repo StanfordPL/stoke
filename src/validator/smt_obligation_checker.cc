@@ -35,6 +35,7 @@
 
 #define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { }
+#define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
@@ -144,11 +145,11 @@ bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray var
     }
   }
 
-  cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;
+  DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;)
   if(separate_stack) {
     // allocate some space on the stack, say, 64 bytes, and zero it (unless precluded)
     uint64_t rsp_loc = ceg[rsp];
-    cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;
+    DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;)
     BitVector zero_bv(8);
     if(rsp_loc > 64) {
       for(uint64_t i = rsp_loc; i > rsp_loc - 64; i--) {
@@ -238,15 +239,15 @@ bool SmtObligationChecker::check_counterexample(
     std::map<size_t, size_t> basic_block_counts;
     for(auto point : trace) {
       // if point is at the last line of a basic block in the original program
-      cout << "POINT" << endl;
+      //cout << "POINT" << endl;
       auto line = point.line_number;
-      cout << "  line " << line << endl;
+      //cout << "  line " << line << endl;
       auto location = program.get_loc(line);
       auto block = location.first;
       auto index_in_block = location.second;
-      cout << "  block " << block << " index " << index_in_block << " size " << program.num_instrs(block) << endl;
+      //cout << "  block " << block << " index " << index_in_block << " size " << program.num_instrs(block) << endl;
       if(index_in_block == program.num_instrs(block) - 1) {
-        cout << "  adding to " << block << endl;
+        //cout << "  adding to " << block << endl;
         basic_block_counts[block]++;
       }
     }
@@ -254,7 +255,7 @@ bool SmtObligationChecker::check_counterexample(
     /** Adjust output */
     for(auto pair : basic_block_counts) {
       auto v = Variable::bb_ghost(pair.first, false).name;
-      cout << "INCREMENTING " << v << " by " << pair.second << endl;
+      //cout << "INCREMENTING " << v << " by " << pair.second << endl;
       output.shadow[v] += pair.second;
     }
 
