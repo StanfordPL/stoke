@@ -98,7 +98,11 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       }
 
       auto instr = code[i];
+<<<<<<< HEAD
       DEBUG_DETAILED_TRACE(cout << "[get_detailed_trace] instrumenting " << instr << endl;)
+=======
+      cout << "[get_detailed_trace] instrumenting " << instr << endl;
+>>>>>>> 9f9123f98e427cfea96b5c6cf94092c1e596a823
       if(instr.is_any_jump() || collect_before_) {
         sandbox_.insert_before(label, i, callback, cp);
       } else {
@@ -106,6 +110,7 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
       }
     }
 
+<<<<<<< HEAD
     DEBUG_DETAILED_TRACE(
     cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
     cout << *sandbox_.get_input(testcase) << endl;)
@@ -113,6 +118,13 @@ std::vector<DataCollector::Trace> DataCollector::get_detailed_traces(const Cfg& 
     DEBUG_DETAILED_TRACE(
     cout << "[get_detailed_trace] output" << endl;
     cout << *sandbox_.get_output(testcase) << endl;)
+=======
+    cout << "[get_detailed_trace] running sandbox with testcase=" << testcase << endl;
+    cout << *sandbox_.get_input(testcase) << endl;
+    sandbox_.run(testcase);
+    cout << "[get_detailed_trace] output" << endl;
+    cout << *sandbox_.get_output(testcase) << endl;
+>>>>>>> 9f9123f98e427cfea96b5c6cf94092c1e596a823
 
     for (auto it : to_free)
       delete it;
