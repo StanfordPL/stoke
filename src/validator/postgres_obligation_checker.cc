@@ -167,7 +167,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   cout << "Dispatching hash " << hash << endl;
 
   dispatches_++;
-  if(dispatches_ % 50 == 0) {
+  if(dispatches_ % 20 == 0) {
     cout << "Waiting on pipeline..." << endl;
     pipeline_->complete();
     cout << "Closing up nontransaction..." << endl;
@@ -176,12 +176,19 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
     delete pipeline_tx_;
     pipeline_ = NULL;
     pipeline_tx_ = NULL;
+    // see if anyone is done
+    poll_database();
   }
 
 }
 
 
 void PostgresObligationChecker::poll_database() {
+
+  if(outstanding_jobs.size() == 0)
+    return;
+
+  cout << "[poll_database] querying for " << outstanding_jobs.size() << " jobs." << endl;
 
   nontransaction tx(connection_);
   stringstream sql;
@@ -213,7 +220,7 @@ void PostgresObligationChecker::poll_database() {
 
   for(auto row : r) {
     auto hash = row["hash"].as<string>();
-    //cout << "Processing row with hash = " << hash << endl;
+    cout << "[poll_database] Processing row with hash = " << hash << endl;
 
     // check if job has already been processed
     if(outstanding_jobs.count(hash) == 0) {
@@ -236,7 +243,6 @@ void PostgresObligationChecker::poll_database() {
       //cout << "  * recording an error for this row" << endl;
     } else {
       // invoke callback
-      // TODO: add counterexample info
       Result r;
       r.verified = row["verified"].as<bool>();
       r.has_error = false;
@@ -247,7 +253,6 @@ void PostgresObligationChecker::poll_database() {
       r.solver = (row["solver"].as<string>() == "z3" ? Solver::Z3 : Solver::CVC4);
       r.strategy = (row["strategy"].as<string>() == "flat" ? ObligationChecker::AliasStrategy::FLAT :
                                                ObligationChecker::AliasStrategy::ARM);
-      //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
 
       if(has_ceg) {
         r.has_ceg = true;
@@ -270,6 +275,7 @@ void PostgresObligationChecker::poll_database() {
         r.has_ceg = false;
       }
 
+      //cout << "  * invoking callback for this row.  verified = " << r.verified << endl;
       job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);

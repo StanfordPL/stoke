@@ -26,6 +26,8 @@
 #include "src/validator/invariants.h"
 #include "src/validator/local_class_checker.h"
 
+#include "tools/io/state_diff.h"
+
 #include <chrono>
 #include <algorithm>
 #include <set>
@@ -578,6 +580,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   }
 
   auto edge_reachable = dual.get_edge_reachable_states();
+
   for (auto state : edge_reachable) {
     if (state == dual.start_state() || state == dual.exit_state() || state == dual.fail_state())
       continue;
@@ -603,10 +606,9 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.set_invariant(end_state, get_final_invariant(dual));
   dual.set_invariant(fail_state, get_fail_invariant());
 
-  /** Add NoSignals invariant everywhere */
+  /** Add NoSignals invariant everywhere.  This is to handle exceptions. */
   auto ns_invariant = new NoSignalsInvariant();
-  auto reachable = dual.get_edge_reachable_states();
-  for (auto rs : reachable) {
+  for (auto rs : edge_reachable) {
     if(rs == start_state || rs == end_state || rs == fail_state)
       continue;
     auto orig_inv = dual.get_invariant(rs);
@@ -614,30 +616,141 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     dual.set_invariant(rs, orig_inv);
   }
 
-  /** Do the heavy lifting of the proof. */
-  map<DualAutomata::State, bool> state_needs_update;
-  state_needs_update[start_state] = true;
+  struct CallbackParam {
+    DualAutomata::Edge edge;
+    size_t conjunct;
+    bool ignore_errors;
+  };
+
+  /** Start the fixpoint computation.  There are two rounds.  In the first round, we ignore
+    timeouts/errors, and focus on getting counterexamples that can remove clauses.  In the
+    second round, we pay attention to errors/timeouts again and remove these clauses too, so
+    that everything is verified. */
+  vector<CallbackParam*> pointers_to_delete;
+  map<DualAutomata::State, set<size_t>> conjuncts_to_delete;
   bool fixpoint = false;
-  while(!fixpoint) {
-    fixpoint = true;
-    for(auto state_updateneeded_pair : state_needs_update) {
-      if(state_updateneeded_pair.second == true) {
+  bool failure = false;
 
-        auto state = state_updateneeded_pair.first;
 
-        cout << "[verify_dual] working on state " << state << endl;
+  /** Whenever the SMT solver gives us back an answer (there could be multiple problems in-flight at a given time, the following callback
+    is invoked.  When we find out that a conjunct failed, mark it as such, and also mark other conjuncts if invalidated by the
+    counterexample. */
+  ObligationChecker::Callback callback = [&](ObligationChecker::Result r, void* param) {
+    CallbackParam data = *static_cast<CallbackParam*>(param);
+    auto target_state = data.edge.to;
+    auto target_invariant = dual.get_invariant(target_state);
 
-        state_needs_update[state] = false;
-        auto edges = dual.next_edges(state);
-        auto source_inv = dual.get_invariant(state);
-        ConjunctionInvariant source_and_always(source_inv);
 
-        for(auto inv : assume_always_) {
-          source_and_always.add_invariant(inv);
+    cout << "[verify_dual] received callback edge=" << data.edge << endl;
+    cout << "              conjunct " << data.conjunct << ": " << *(*target_invariant)[data.conjunct] << endl;
+    cout << "              verified= " << r.verified << " error=" << r.has_error << " ceg=" << r.has_ceg << endl;
+
+    // we mark this clause is bad in any of the three following situations
+    // (i)   we've found a counterexample
+    bool found_ceg = r.has_ceg;
+    // (ii)  in the first round, there's no counterexample and no error, but couldn't be verified
+    bool round1_noerror = !r.verified && !r.has_error;
+    // (iii) in the second round it's not verified
+    bool round2_unverified = !data.ignore_errors && !r.verified;
+
+    if(found_ceg || round1_noerror || round2_unverified) {
+      cout << "              invalidating this conjunct" << endl;
+      conjuncts_to_delete[data.edge.to].insert(data.conjunct);
+
+      fixpoint = false;
+
+      // check if we've found something terrible
+      auto conjunct = (*target_invariant)[data.conjunct];
+      if(conjunct->is_critical()) {
+        //we're done here.
+        cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
+        failure = true;
+        return;
+      }
+      if(target_state == fail_state) {
+        //we're done here.
+        cout << "[verify_dual] Failure. Path to fail state is feasible: " << data.edge << endl;
+        failure = true;
+        return;
+      }
+      if(target_state == end_state) {
+        //we're done here.
+        cout << "[verify_dual] Failure. Conjunct in final state failed. " << endl;
+        cout << "e=" << data.edge << endl;
+        cout << "invariant=" << *conjunct << endl;
+        failure = true;
+        return;
+      }
+
+      // we want to *right away* identify any conjuncts that don't need to be processed
+      if(r.has_ceg) {
+        cout << "[verify_dual]      counterexample details" << endl;
+        cout << "[verify_dual]      TARGET START STATE" << endl << endl << r.target_ceg << endl;
+        cout << "[verify_dual]      REWRITE START STATE" << endl << endl << r.rewrite_ceg << endl;
+        cout << "[verify_dual]      TARGET END STATE" << endl << endl << r.target_final_ceg << endl;
+        cout << "[verify_dual]      REWRITE END STATE" << endl << endl << r.rewrite_final_ceg << endl;
+        cout << "[verify_dual]      TARGET/REWRITE start state differences..." << endl;
+        cout << diff_states(r.target_ceg, r.rewrite_ceg, false, true, RegSet::universe()) << endl;
+        cout << "[verify_dual]      TARGET/REWRITE end state differences..." << endl;
+        cout << diff_states(r.target_final_ceg, r.rewrite_final_ceg, false, true, RegSet::universe()) << endl;
+        cout << "[verify_dual]      Target START/END state differences..." << endl;
+        cout << diff_states(r.target_ceg, r.target_final_ceg, false, true, RegSet::universe()) << endl;
+        cout << "[verify_dual]      Rewrite START/END state differences..." << endl;
+        cout << diff_states(r.rewrite_ceg, r.rewrite_final_ceg, false, true, RegSet::universe()) << endl;
+
+
+        cout << "[verify_dual]      looking for conjuncts to discard..." << endl;
+        auto& state_delete_list = conjuncts_to_delete[target_state];
+        for(size_t i = 0; i < target_invariant->size(); ++i) {
+          if(state_delete_list.count(i))
+            continue;
+
+          auto conjunct = (*target_invariant)[i];
+          if(!conjunct->check(r.target_final_ceg, r.rewrite_final_ceg)) {
+            cout << "[verify_dual] discarding conjunct " << i << ": " << *conjunct << endl;
+            state_delete_list.insert(i);
+
+            if(conjunct->is_critical()) {
+              //we're done here.
+              cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
+              failure = true;
+            }
+          }
         }
 
+        cout << "[verify_dual]      callback done." << endl;
+      }
+    } 
+  };
+  
+
+  // We do the fixpoint iteration twice.  The first time we only care when we find counterexamples
+  // where we can guarantee the conjuncts must be smaller.  The second round
+  vector<DualAutomata::State> states;
+  states.insert(states.begin(), edge_reachable.begin(), edge_reachable.end());
+
+  for(size_t round = 0; round < 2; round++) {
+
+    fixpoint = false;
+
+    while(!fixpoint) {
+      cout << "[verify_dual] starting fixpoint iteration; round=" << round << endl;
+
+      // reset state
+      checker_.delete_all(); //just-in-case
+      pointers_to_delete.clear();
+      conjuncts_to_delete.clear();
+      fixpoint = true;
+
+      // check every hoare triple for entire graph, and throw out conjuncts that we're
+      // sure won't hold.
+      for(auto state : states) {
+        cout << "[verify_dual] dispatching hoare triples for state " << state << endl;
+        auto edges = dual.next_edges(state);
+        auto source_inv = dual.get_invariant(state);
+
         for(auto e : edges) {
-          cout << "[verify_dual] working from " << state << " edge=" << e << endl;
+          cout << "[verify_dual] dispatching hoare triples for edge " << e << endl;
           auto target = e.to;
           ConjunctionInvariant* target_inv = dual.get_invariant(target);
           auto target_testcases = dual.get_target_data(e);
@@ -645,86 +758,81 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
           vector<pair<CpuState,CpuState>> testcases;
           if(target_testcases.size() && rewrite_testcases.size())
             testcases.push_back(pair<CpuState,CpuState>(target_testcases[0], rewrite_testcases[0]));
-          set<size_t> conjuncts_to_delete;
+
           for(size_t i = 0; i < target_inv->size(); ++i) {
-            if(conjuncts_to_delete.count(i))
+            if(conjuncts_to_delete[target].count(i))
               continue;
 
+            // create callback parameter
+            CallbackParam* cbp = new CallbackParam();
+            cbp->edge = e;
+            cbp->conjunct = i;
+            cbp->ignore_errors = (round == 0);  // in only the first round do we ignore errors
+            pointers_to_delete.push_back(cbp);
             auto conjunct = (*target_inv)[i];
-            cout << "[verify_dual] testing conjunct " << i << " : " << *conjunct << endl;
-            auto result = checker_.check_wait(
-                                    target_, rewrite_, 
-                                    state.ts, state.rs,
-                                    e.te, e.re, 
-                                    source_and_always, *conjunct,
-                                    testcases, true);
 
-            cout << "   verified=" << result.verified << endl;
-            if(!result.verified) {
+            // construct source invariant
+            ConjunctionInvariant new_source_invariant;
+            const auto& conjuncts_to_ignore = conjuncts_to_delete[state];
+            for(size_t i = 0; i < source_inv->size(); ++i) {
+              if(!conjuncts_to_ignore.count(i))
+                new_source_invariant.add_invariant((*source_inv)[i]);
+            }
+            for(auto inv : assume_always_) {
+              new_source_invariant.add_invariant(inv);
+            }
 
-              conjuncts_to_delete.insert(i);
+            // dispatch the check
+            cout << "[verify_dual]      dispatching conjunct " << i << ": " << *conjunct << endl;
+            checker_.check(target_, rewrite_, state.ts, state.rs, e.te, e.re, 
+                           new_source_invariant, *conjunct, testcases, callback, true, (void*)cbp);
 
-              if(conjunct->is_critical()) {
-                //we're done here.
-                cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
-                return false;
-
-              }
-              if(target == fail_state) {
-                //we're done here.
-                cout << "[verify_dual] Failure. Path to fail state is feasible: " << e << endl;
-                return false;
-              }
-              if(target == end_state) {
-                //we're done here.
-                cout << "[verify_dual] Failure. Conjunct in final state failed. " << endl;
-                cout << "e=" << e << endl;
-                cout << "invariant=" << *conjunct << endl;
-                return false;
-              }
-
-              // See if we can use counterexample to throw out any others
-              if(result.has_ceg) {
-                cout << "[verify_dual] Using counterexample to remove other conjuncts." << endl;
-                CpuState target_out = result.target_final_ceg;
-                CpuState rewrite_out = result.rewrite_final_ceg;
-                cout << "TARGET TC" << endl << target_out << endl;
-                cout << "REWRITE TC" << endl << rewrite_out << endl;
-
-                for(size_t j = 0; j < target_inv->size(); ++j) {
-                  auto alt_conjunct = (*target_inv)[j];
-                  if(!alt_conjunct->check(target_out, rewrite_out)) {
-                    cout << "[verify_dual] * Woohoo removing conjunct " << j << " : " << *alt_conjunct << endl;
-                    conjuncts_to_delete.insert(j);
-                    if(alt_conjunct->is_critical()) {
-                      //we're done here.
-                      cout << "[verify_dual] Failure. Critical invariant failed. " << endl;
-                      return false;
-
-                    }
-
-                  }
-                }
-              }
+            // see if we've received any callbacks that end it all
+            if(failure) {
+              checker_.delete_all();
+              for(auto it : pointers_to_delete)
+                delete it;
+              return false;
             }
           }
 
-          // remove the conjuncts that we know are bad.
-          if(conjuncts_to_delete.size()) {
-            cout << "[verify_dual] Removing conjuncts from target " << target << endl;
-            state_needs_update[target] = true;
-            fixpoint = false;
-            for(auto i = conjuncts_to_delete.rbegin(); i != conjuncts_to_delete.rend(); ++i) {
-              target_inv->remove(*i);
-            }
-            dual.print_all();
+          // invoke callback for any jobs that are already finished
+          checker_.check_for_callbacks();
+          if(failure) {
+            checker_.delete_all();
+            for(auto it : pointers_to_delete)
+              delete it;
+            return false;
           }
-
-          fixpoint = false;
         }
-
-        break; // find another state that needs an update
       }
+
+      checker_.block_until_complete();
+      if(failure) {
+        checker_.delete_all();
+        for(auto it : pointers_to_delete)
+          delete it;
+        return false;
+      }
+
+      // iterate through conjuncts that need to be removed
+      cout << "[verify_dual] removing conjuncts from this round." << endl;
+      for(auto state_set : conjuncts_to_delete) {
+        auto& to_delete = state_set.second;
+        ConjunctionInvariant* inv = dual.get_invariant(state_set.first);
+
+        cout << "[verify_dual] removing conjuncts from state " << state_set.first << endl;
+        for(auto i = to_delete.rbegin(); i != to_delete.rend(); ++i) {
+          cout << "[verify_dual] removing conjunct " << *i << ": " << *(*inv)[*i] << endl;
+          inv->remove(*i); 
+        }
+      }
+      dual.print_all();
+
+      // clean up memory
+      for(auto it : pointers_to_delete)
+        delete it;
+      pointers_to_delete.clear();
     }
   }
 

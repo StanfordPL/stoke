@@ -83,6 +83,23 @@ public:
   /** Blocks until all the checking has done and the callbacks have been called. */
   virtual void block_until_complete();
 
+  /** Checks to see if we can make any callbacks now. */
+  virtual void check_for_callbacks() {
+    poll_database();
+  }
+
+  /** Forget about everything that has been started. */
+  virtual void delete_all() {
+    dispatches_ = 0;
+    outstanding_jobs.clear();
+    delete pipeline_;
+    delete pipeline_tx_;
+    pipeline_ = NULL;
+    pipeline_tx_ = NULL;
+  }
+
+
+
   /** Get the filter */
   virtual Filter& get_filter() {
     return filter_;

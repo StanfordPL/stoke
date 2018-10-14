@@ -73,6 +73,9 @@ public:
   std::string get_last_hash() {
     return last_hash_;
   }
+  std::string get_last_text() {
+    return last_text_;
+  }
 #endif
 
   /** Check if a query is satisfiable given constraints */
@@ -131,6 +134,7 @@ private:
 
 #ifdef STOKE_Z3_DEBUG_LAST_HASH
   std::string last_hash_;
+  std::string last_text_;
 #endif
 
   /** This class converts symbolic bit-vectors into Z3's format. */

@@ -88,6 +88,11 @@ public:
     return new ImplicationInvariant(a_->clone(), b_->clone());
   }
 
+  virtual bool is_critical() {
+    return b_->is_critical();
+  }
+
+
 private:
 
   Invariant* a_;

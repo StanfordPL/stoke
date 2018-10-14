@@ -234,8 +234,18 @@ public:
           callback, problem.separate_stack, optional);
   }
 
+  /** Check to see if anything is finished for us to look at. */
+  virtual void check_for_callbacks() {
+    return;
+  }
+
   /** Blocks until all the checking has done and the callbacks have been called. */
   virtual void block_until_complete() {
+    return;
+  }
+
+  /** Forget about everything that has been started. */
+  virtual void delete_all() {
     return;
   }
 

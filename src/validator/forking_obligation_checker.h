@@ -73,6 +73,22 @@ public:
   /** Blocks until all the checking has done and the callbacks have been called. */
   void block_until_complete();
 
+  /** Check to see if anything is finished for us to look at. */
+  virtual void check_for_callbacks() {
+    poll_and_read(false);
+  }
+
+  /** Forget about everything that has been started. */
+  virtual void delete_all() {
+    for(auto pi : process_info_) {
+      kill(pi.pid, SIGKILL);
+    }
+    process_info_.clear();
+    return;
+  }
+
+
+
 private:
 
   // Operations:

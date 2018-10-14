@@ -164,6 +164,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 #ifdef STOKE_Z3_DEBUG_LAST_HASH
   string smt = solver_.to_smt2();
   last_hash_ = md5(smt);
+  last_text_ = smt;
 #endif
 
     auto result = solver_.check();

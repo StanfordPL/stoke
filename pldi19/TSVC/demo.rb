@@ -94,8 +94,8 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
 
   stoke_args = [
     "--strategy ddec",
-#    "--obligation_checker postgres",
-#    "--postgres ~/stoke/bin/postgres",
+    "--obligation_checker postgres",
+    "--postgres ~/stoke/bin/postgres",
     "--solver z3",
     "--alias_strategy flat",
     "--target #{compiler1}/#{benchmark}.s",
@@ -110,7 +110,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--def_in #{@default_def_ins}",
     "--target_bound #{@options[:target_bound]}",
     "--rewrite_bound #{@options[:rewrite_bound]}",
-    "--assume \"(t_%rdi<=15)&(t_%rsp>8388608)\"",
+    "--assume \"(t_%rdi<=15)\"",
   ]
 
   puts "Recording data in traces/#{name}"

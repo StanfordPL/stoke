@@ -150,6 +150,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
   vector<TraceState> current;
   vector<TraceState> next;
   next.push_back(initial);
+  data_reachable_states_.clear();
   data_reachable_states_.insert(initial.state);
 
   auto exit = exit_state();

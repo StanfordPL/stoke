@@ -881,7 +881,8 @@ pid_t spawn_worker(T* item) {
             Z3Solver* z3 = static_cast<Z3Solver*>(optional);
             string last_hash = z3->get_last_hash();
             stringstream comments;
-            comments << "z3hash: " << last_hash;
+            comments << "z3hash: " << last_hash << endl;
+            comments << z3->get_last_text() << endl;
             result.comments = comments.str();
             cout << "  " << result.comments << endl;
           }
