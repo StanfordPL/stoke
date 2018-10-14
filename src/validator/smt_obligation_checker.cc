@@ -33,8 +33,8 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(0) { X } }
-#define CONSTRAINT_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { if(1) { X } }
+#define CONSTRAINT_DEBUG(X) { if(1) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}
@@ -331,6 +331,10 @@ void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpTy
     line_no++;
     auto instr = cfg.get_code()[i];
 
+    /*cout << "ABOUT TO SYMBOLICALLY EXECUTE " << instr << endl;
+    cout << "STATE IS " << endl;
+    cout << state << endl << endl;*/
+
     if (instr.is_jcc()) {
       if (ignore_last_line)
         continue;
@@ -389,7 +393,7 @@ void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpTy
 
       if (filter_.has_error()) {
         error_ = filter_.error();
-      }
+      } 
     }
   }
 }
@@ -601,6 +605,7 @@ void SmtObligationChecker::check(
     constraints.push_back(conj);
   }
 
+  error_ = "";
 
   size_t line_no = 0;
   try {
@@ -616,6 +621,11 @@ void SmtObligationChecker::check(
     return_error(callback, str, optional);
     delete state_t.memory;
     delete state_r.memory;
+    return;
+  }
+
+  if(error_ != "") {
+    return_error(callback, error_, optional);
     return;
   }
 

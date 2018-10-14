@@ -473,6 +473,10 @@ std::ostream& SymState::write_text(std::ostream& os) const {
   for (size_t i = 0; i < 16; ++i) {
     cout << r64s[i] << "    " << gp[i] << endl;
   }
+  for (size_t i = 0; i < 16; ++i) {
+    cout << ymms[i] << "    " << sse[i] << endl;
+  }
+
   return os;
 }
 
