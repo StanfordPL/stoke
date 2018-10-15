@@ -33,8 +33,8 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(1) { X } }
-#define CONSTRAINT_DEBUG(X) { if(1) { X } }
+#define OBLIG_DEBUG(X) { if(0) { X } }
+#define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}

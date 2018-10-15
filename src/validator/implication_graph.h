@@ -22,7 +22,7 @@ class ImplicationGraph {
     if(has_replacements(inv))
       return replacements_[inv];
     else
-      return set<Invariant*>();
+      return std::set<Invariant*>();
   }
 
   bool has_replacements(Invariant* inv) {
@@ -48,7 +48,7 @@ class ImplicationGraph {
     return current_set;
   }
 
-  /** Add an invariant to the class. */
+  /** Add an invariant to the current class. */
   void add_invariant(Invariant* inv) {
     invariant_sets_[current_set].insert(inv);
   }

@@ -36,6 +36,12 @@ public:
       add_invariant((*invs)[i]);
     return *this;
   }
+  ConjunctionInvariant& add_invariants(std::vector<Invariant*> invs) {
+    for (auto inv : invs)
+      add_invariant(inv);
+    return *this;
+  }
+
   ConjunctionInvariant& add_invariant(Invariant* inv) {
     invariants_.push_back(inv);
     return *this;

@@ -141,7 +141,10 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant_inner(Cfg::id_type tar
     return ci;
   }
 
-  return invariant_learner_.learn_equalities(columns, target_states, rewrite_states);
+  auto ci = new ConjunctionInvariant();
+  auto invs = invariant_learner_.learn_equalities(columns, target_states, rewrite_states);
+  ci->add_invariants(invs);
+  return ci;
 }
 
 ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvariant* conj,

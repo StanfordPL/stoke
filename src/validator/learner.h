@@ -103,7 +103,7 @@ public:
     );
 
   /** Learn linear equalities over some columns of data */
-  ConjunctionInvariant* learn_equalities(
+  std::vector<Invariant*> learn_equalities(
     std::vector<Variable>,
     const std::vector<CpuState>&,
     const std::vector<CpuState>&);
@@ -129,14 +129,14 @@ private:
 
   /** Learn that a variable is constant over many states, AND,
     remove the variable from the referenced set of columns. */
-  ConjunctionInvariant* learn_constants(
+  std::vector<Invariant*> learn_constants(
     std::vector<Variable>& columns,
     const std::vector<CpuState>& target_states,
     const std::vector<CpuState>& rewrite_states);
 
   /** Learn that two variables are equal over many states, AND,
     remove the variable from the referenced set of columns. */
-  ConjunctionInvariant* learn_easy_equalities(
+  std::vector<Invariant*> learn_easy_equalities(
     std::vector<Variable>& columns,
     const std::vector<CpuState>& target_states,
     const std::vector<CpuState>& rewrite_states);

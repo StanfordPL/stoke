@@ -896,7 +896,7 @@ ConjunctionInvariant* InvariantLearner::learn(
 
 /** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
-ConjunctionInvariant* InvariantLearner::learn_constants(
+vector<Invariant*> InvariantLearner::learn_constants(
   vector<Variable>& columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -904,7 +904,7 @@ ConjunctionInvariant* InvariantLearner::learn_constants(
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
 
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
+  vector<Invariant*> invariants;
 
   for (size_t i = 0; i < columns.size(); ++i) {
 
@@ -922,7 +922,7 @@ ConjunctionInvariant* InvariantLearner::learn_constants(
       vector<Variable> terms;
       terms.push_back(columns[i]);
       auto ei = new EqualityInvariant(terms, value);
-      conj->add_invariant(ei);
+      invariants.push_back(ei);
 
       cout << "generating " << *ei << endl;
       columns.erase(columns.begin() + i);
@@ -930,7 +930,7 @@ ConjunctionInvariant* InvariantLearner::learn_constants(
     }
   }
 
-  return conj;
+  return invariants;
 }
 
 void multiplication_update(uint64_t& col_i_value, uint64_t& col_j_value,
@@ -984,7 +984,7 @@ void multiplication_update(uint64_t& col_i_value, uint64_t& col_j_value,
 
 /** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
-ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
+vector<Invariant*> InvariantLearner::learn_easy_equalities(
   vector<Variable>& columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -992,7 +992,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
 
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
+  vector<Invariant*> invariants;
 
   vector<size_t> columns_to_erase;
   for (size_t i = 0; i < columns.size(); ++i) {
@@ -1036,7 +1036,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
         terms.push_back(columns[j]);
 
         auto ei = new EqualityInvariant(terms, diff);
-        conj->add_invariant(ei);
+        invariants.push_back(ei);
         DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
         columns_to_erase.push_back(j);
@@ -1048,7 +1048,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
         terms.push_back(columns[j]);
 
         auto ei = new EqualityInvariant(terms, 0);
-        conj->add_invariant(ei);
+        invariants.push_back(ei);
         DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
         columns_to_erase.push_back(j);
@@ -1066,7 +1066,7 @@ ConjunctionInvariant* InvariantLearner::learn_easy_equalities(
     columns.erase(columns.begin() + col);
   }
 
-  return conj;
+  return invariants;
 }
 
 IntMatrix InvariantLearner::states_to_matrix(
@@ -1122,7 +1122,7 @@ ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
 }
 
 
-ConjunctionInvariant* InvariantLearner::learn_equalities(
+vector<Invariant*> InvariantLearner::learn_equalities(
   vector<Variable> columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -1130,24 +1130,27 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
 
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
+  vector<Invariant*> invariants;
 
   /** First do some checks to make things faster. */
   /** (A) check for constant columns. */
-  auto constant_inv = learn_constants(columns, target_states, rewrite_states);
-  conj->add_invariants(constant_inv);
+  auto constant_invs = learn_constants(columns, target_states, rewrite_states);
+  invariants.insert(invariants.begin(), constant_invs.begin(), constant_invs.end());
 
+  /*
   cout << "CONSTANT INVARIANTS" << endl;
   constant_inv->write_pretty(std::cout);
-  cout << endl;
+  cout << endl;*/
 
   /** (B) check for some equalities */
-  auto equal_inv = learn_easy_equalities(columns, target_states, rewrite_states);
-  conj->add_invariants(equal_inv);
+  auto equal_invs = learn_easy_equalities(columns, target_states, rewrite_states);
+  invariants.insert(invariants.begin(), equal_invs.begin(), equal_invs.end());
 
+  /*
   cout << "EASY EQUALITIES" << endl;
   equal_inv->write_pretty(std::cout);
   cout << endl;
+  */
 
   cout << "REMAINING COLS" << endl;
   for (size_t i = 0; i < columns.size(); ++i) {
@@ -1205,12 +1208,13 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
       cout << "Got bad invariants!" << endl;
     }
   }
-  conj->add_invariants(equalities);
+  for(size_t i = 0; i < equalities->size(); ++i)
+    invariants.push_back((*equalities)[i]);
 
   // Extract the data from the nullspace
   DEBUG_LEARNER(cout << "Column count: " << dec << num_columns << endl;)
 
-  return conj;
+  return invariants;
 
 }
 
@@ -1400,8 +1404,8 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     vector_columns.insert(vector_columns.begin(), vector_vars_target.begin(), vector_vars_target.end());
     vector_columns.insert(vector_columns.begin(), vector_vars_rewrite.begin(), vector_vars_rewrite.end());
     auto easy_constants = learn_constants(vector_columns, target_states, rewrite_states);
-    auto easy_equality = learn_easy_equalities(vector_columns, target_states, rewrite_states);
-    conj->add_invariants(easy_equality);
+    auto easy_equalities = learn_easy_equalities(vector_columns, target_states, rewrite_states);
+    conj->add_invariants(easy_equalities);
   }
 
 
@@ -1479,8 +1483,13 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   cout << it << endl;
 }
 );
-  auto equality_conj = learn_equalities(columns, target_states, rewrite_states);
-  conj->add_invariants(equality_conj);
+  auto equality_invs = learn_equalities(columns, target_states, rewrite_states);
+  size_t equality_class = graph.new_class();
+  for(auto inv : equality_invs) {
+    conj->add_invariant(inv);
+    graph.add_invariant(inv);
+  }
+  graph.compute(equality_class, equality_class);
 
 
   /*
