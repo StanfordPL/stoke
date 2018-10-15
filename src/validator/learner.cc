@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+
 #include "src/state/cpu_state.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/disjunction.h"
@@ -349,7 +351,7 @@ vector<EqualityInvariant*> InvariantLearner::build_memory_register_equalities(Re
 }
 
 /** Return a set of possible inequality invariants. */
-vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) const {
+vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs, ImplicationGraph& graph) const {
 
   vector<InequalityInvariant*> inequalities;
 
@@ -363,10 +365,16 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
       if ((*i).size() == 64) {
         for (auto ghost : ghosts_) {
           Variable v(*i, k);
-          inequalities.push_back(new InequalityInvariant(v, ghost, false, false));
-          inequalities.push_back(new InequalityInvariant(v, ghost, true, false));
-          inequalities.push_back(new InequalityInvariant(ghost, v, false, false));
-          inequalities.push_back(new InequalityInvariant(ghost, v, true, false));
+          auto a = new InequalityInvariant(v, ghost, false, false); // v <= ghost (replacement)
+          auto b = new InequalityInvariant(v, ghost, true, false);  // v < ghost
+          auto c = new InequalityInvariant(ghost, v, false, false); // ghost <= v (replacement)
+          auto d = new InequalityInvariant(ghost, v, true, false);  // ghost < v  
+          inequalities.push_back(a);
+          inequalities.push_back(b);
+          inequalities.push_back(c);
+          inequalities.push_back(d);
+          graph.add_replacement(b, a);
+          graph.add_replacement(d, c);
         }
       }
 
@@ -380,8 +388,12 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
           Variable v1(*i, k);
           Variable v2(*j, k);
 
-          inequalities.push_back(new InequalityInvariant(v1, v2, false, false));
-          inequalities.push_back(new InequalityInvariant(v1, v2, true, false));
+          auto a = new InequalityInvariant(v1, v2, false, false);
+          auto b = new InequalityInvariant(v1, v2, true, false);
+          inequalities.push_back(a);
+          inequalities.push_back(b);
+          graph.add_replacement(b, a);
+
         } else if ((*i).size() == 64) {
           Variable v1(*i, k);
           Variable v2(*j, k);
@@ -389,12 +401,18 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
           Variable v1_32(r32s[*i], k);
           Variable v2_32(r32s[*j], k);
 
-          inequalities.push_back(new InequalityInvariant(v1, v2, false, false));
-          inequalities.push_back(new InequalityInvariant(v1, v2, true, false));
+          auto a = new InequalityInvariant(v1, v2, false, false);
+          auto b = new InequalityInvariant(v1, v2, true, false);
 
-          inequalities.push_back(new InequalityInvariant(v1_32, v2_32, false, false));
-          inequalities.push_back(new InequalityInvariant(v1_32, v2_32, true, false));
+          auto c = new InequalityInvariant(v1_32, v2_32, false, false);
+          auto d = new InequalityInvariant(v1_32, v2_32, true, false);
 
+          inequalities.push_back(a);
+          inequalities.push_back(b);
+          inequalities.push_back(c);
+          inequalities.push_back(d);
+          graph.add_replacement(b, a);
+          graph.add_replacement(d, c);
         }
       }
     }
@@ -532,7 +550,7 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
     }
   }
 
-  uniform_int_distribution<size_t> dis(0, 10);
+  uniform_int_distribution<size_t> dis(0, 100);
 
   for(auto& v1 : variables) {
     for(auto& v2 : variables) {
@@ -555,7 +573,7 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
 
 
         size_t choice = dis(gen_);
-        if(choice <= 2 && target_states.size() > 20)
+        if(choice <= 10 && target_states.size() > 20)
           continue;
         
         auto a = v1.from_state(target_states[i], rewrite_states[i]);
@@ -785,6 +803,7 @@ ConjunctionInvariant* InvariantLearner::learn(
   x64asm::RegSet rewrite_regs,
   const std::vector<CpuState>& states,
   const std::vector<CpuState>& states2,
+  ImplicationGraph& graph,
   string target_cc,
   string rewrite_cc) {
 
@@ -814,7 +833,7 @@ ConjunctionInvariant* InvariantLearner::learn(
     condition_invariants.push_back(inv);
     condition_invariants.push_back(inv2);
   } else {
-    return learn_simple(target_regs, rewrite_regs, target_states, rewrite_states);
+    return learn_simple(target_regs, rewrite_regs, target_states, rewrite_states, graph);
   }
 
   // identify the flag invariants we care about
@@ -857,11 +876,15 @@ ConjunctionInvariant* InvariantLearner::learn(
     if (lhs_vector.size() == 0) {
       final_inv->add_invariant(new ImplicationInvariant(condition_invariants[i], new FalseInvariant()));
     } else {
-      auto inv = learn_simple(target_regs, rewrite_regs, lhs_vector, rhs_vector);
+      auto inv = learn_simple(target_regs, rewrite_regs, lhs_vector, rhs_vector, graph);
       for (size_t j = 0; j < inv->size(); ++j) {
         auto curr = (*inv)[j];
         auto impl = new ImplicationInvariant(condition_invariants[i], curr);
         final_inv->add_invariant(impl);
+        for(auto it : graph.get_replacements(curr)) {
+          auto new_replacement = new ImplicationInvariant(condition_invariants[i], it);
+          graph.add_replacement(impl, new_replacement);
+        }
       }
     }
   }
@@ -1195,7 +1218,8 @@ ConjunctionInvariant* InvariantLearner::learn_equalities(
 ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const vector<CpuState>& target_states,
-    const vector<CpuState>& rewrite_states) {
+    const vector<CpuState>& rewrite_states,
+    ImplicationGraph& graph) {
 
   assert(target_states.size() == rewrite_states.size());
 
@@ -1214,29 +1238,29 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
 
   // NonZero invariants
-  if (enable_nonlinear_) {
-    for (size_t k = 0; k < 2; ++k) {
-      auto& states = k ? rewrite_states : target_states;
-      auto& regs = k ? rewrite_regs : target_regs;
+  auto class_nonzero = graph.new_class();
+  for (size_t k = 0; k < 2; ++k) {
+    auto& states = k ? rewrite_states : target_states;
+    auto& regs = k ? rewrite_regs : target_regs;
 
-      for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
-        bool all_nonzero = true;
+    for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
+      bool all_nonzero = true;
 
-        for (auto state : states) {
-          if (state.gp[*it].get_fixed_quad(0) == 0) {
-            all_nonzero = false;
-          }
+      for (auto state : states) {
+        if (state.gp[*it].get_fixed_quad(0) == 0) {
+          all_nonzero = false;
         }
+      }
 
-        if (all_nonzero) {
-          Variable v(r64s[*it], k);
-          auto nz = new NonzeroInvariant(v);
-          if (nz->check(target_states, rewrite_states)) {
-            conj->add_invariant(nz);
-          } else {
-            DEBUG_LEARNER(cout << "GOT BAD INVARIANT " << *nz << endl;)
-            delete nz;
-          }
+      if (all_nonzero) {
+        Variable v(r64s[*it], k);
+        auto nz = new NonzeroInvariant(v);
+        if (nz->check(target_states, rewrite_states)) {
+          conj->add_invariant(nz);
+          graph.add_invariant(nz);
+        } else {
+          DEBUG_LEARNER(cout << "GOT BAD INVARIANT " << *nz << endl;)
+          delete nz;
         }
       }
     }
@@ -1257,103 +1281,112 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   */
 
   // sign invariants
-  if (enable_nonlinear_) {
-    auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
-    for (auto sign : potential_sign) {
-      if (sign->check(target_states, rewrite_states)) {
-        conj->add_invariant(sign);
-      } else {
-        delete sign;
-      }
+  auto class_sign = graph.new_class();
+  auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
+  for (auto sign : potential_sign) {
+    if (sign->check(target_states, rewrite_states)) {
+      conj->add_invariant(sign);
+      graph.add_invariant(sign);
+    } else {
+      delete sign;
     }
   }
 
   // Memory-Register equalities
-  if (enable_nonlinear_) {
-    cout << "Learning Memory-Register Equalities" << endl;
-    auto potential_equalities = build_memory_register_equalities(target_regs, rewrite_regs);
-    for (auto ineq : potential_equalities) {
-      if (ineq->check(target_states, rewrite_states)) {
-        cout << "Using " << *ineq << endl;
-        conj->add_invariant(ineq);
-      } else {
-        cout << "Discarding " << *ineq << endl;
-        delete ineq;
-      }
+  cout << "Learning Memory-Register Equalities" << endl;
+  auto class_memreg_equ = graph.new_class();
+  auto potential_equalities = build_memory_register_equalities(target_regs, rewrite_regs);
+  for (auto ineq : potential_equalities) {
+    if (ineq->check(target_states, rewrite_states)) {
+      cout << "Using " << *ineq << endl;
+      conj->add_invariant(ineq);
+      graph.add_invariant(ineq);
+    } else {
+      cout << "Discarding " << *ineq << endl;
+      delete ineq;
     }
   }
+  size_t memreg_equ_count = graph.compute(class_memreg_equ, class_memreg_equ);
+  cout << "FOUND " << memreg_equ_count << " IMPLICATIONS AMONG THE REGISTER-MEMORY EQUALITIES" << endl;
 
   // Inequality invariants
-  if (enable_nonlinear_) {
-    auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
-    for (auto ineq : potential_inequalities) {
-      if (ineq->check(target_states, rewrite_states)) {
-        conj->add_invariant(ineq);
-      } else {
-        delete ineq;
-      }
+  /*
+  auto class_reg_reg_ineq = graph.new_class();
+  auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs, graph);
+  for (auto ineq : potential_inequalities) {
+    if (ineq->check(target_states, rewrite_states)) {
+      conj->add_invariant(ineq);
+      graph.add_invariant(ineq);
+    } else {
+      delete ineq;
     }
   }
+  */
 
   // Inequality invariants with constant
-  if (enable_nonlinear_) {
-    auto ineqs = build_inequality_with_constant_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
-    for (auto ineq : ineqs) {
-      if(ineq->check(target_states, rewrite_states)) {
-        conj->add_invariant(ineq);
-      }
+  auto inequalities_with_constants = build_inequality_with_constant_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+  auto class_ineq_const = graph.new_class();
+  for (auto ineq : inequalities_with_constants) {
+    if(ineq->check(target_states, rewrite_states)) {
+      conj->add_invariant(ineq);
+      graph.add_invariant(ineq);
     }
   }
 
   // Modulo invariants
-  if (enable_nonlinear_) {
-    auto modulos = build_modulo_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
-    for(auto it : modulos)
-      conj->add_invariant(it);
+  auto class_modulo = graph.new_class();
+  auto modulos = build_modulo_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+  for(auto it : modulos) {
+    conj->add_invariant(it);
+    graph.add_invariant(it);
   }
 
   // Modulo invariants
-  if (enable_nonlinear_) {
-    auto ranges = build_range_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
-    for(auto it : ranges)
-      conj->add_invariant(it);
+  auto class_bound = graph.new_class();
+  auto ranges = build_range_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+  for(auto it : ranges) {
+    conj->add_invariant(it);
+    graph.add_invariant(it);
   }
 
 
 
   // flag invariants
-  if (enable_nonlinear_) {
-    auto potential_flags = build_flag_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
-    for (auto it : potential_flags)
-      conj->add_invariant(it);
+  // no need to add these to graph
+  auto potential_flags = build_flag_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
+  for (auto it : potential_flags)
+    conj->add_invariant(it);
 
-    if(enable_memory_) {
-      auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs);
-      for (auto mem_null : potential_memory_nulls) {
-        cout << "[learner] Testing " << *mem_null << endl;
-        if (mem_null->check(target_states, rewrite_states) &&
-            mem_null->is_valid(target_states, rewrite_states)) {
-          cout << " * pass" << endl;
-          conj->add_invariant(mem_null);
-        } else {
-          cout << " * fail" << endl;
-          delete mem_null;
-        }
+  auto class_mem_null = graph.new_class();
+  if(enable_memory_) {
+
+    auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs);
+    for (auto mem_null : potential_memory_nulls) {
+      cout << "[learner] Testing " << *mem_null << endl;
+      if (mem_null->check(target_states, rewrite_states) &&
+          mem_null->is_valid(target_states, rewrite_states)) {
+        cout << " * pass" << endl;
+        conj->add_invariant(mem_null);
+        graph.add_invariant(mem_null);
+      } else {
+        cout << " * fail" << endl;
+        delete mem_null;
       }
     }
+
+    size_t mem_null_count = graph.compute(class_mem_null, class_mem_null);
+    cout << "FOUND " << mem_null_count << " IMPLICATIONS AMONG THE MEMORY-NULL EQUALITIES" << endl;
   }
 
-  if (enable_nonlinear_) {
-    for (auto ghost : ghosts_) {
-      auto pointer_null = new PointerNullInvariant(ghost, 1);
-      DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
-      if (pointer_null->check(target_states, rewrite_states)) {
-        conj->add_invariant(pointer_null);
-        DEBUG_LEARNER(cout << "  * accepted" << endl;)
-      } else {
-        delete pointer_null;
-        DEBUG_LEARNER(cout << "  * rejected" << endl;)
-      }
+  for (auto ghost : ghosts_) {
+    auto pointer_null = new PointerNullInvariant(ghost, 1);
+    DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
+    if (pointer_null->check(target_states, rewrite_states)) {
+      conj->add_invariant(pointer_null);
+      DEBUG_LEARNER(cout << "  * accepted" << endl;)
+    } else {
+      delete pointer_null;
+      DEBUG_LEARNER(cout << "  * rejected" << endl;)
     }
   }
 
@@ -1448,6 +1481,58 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 );
   auto equality_conj = learn_equalities(columns, target_states, rewrite_states);
   conj->add_invariants(equality_conj);
+
+
+  /*
+  auto test = [&](string s, size_t class1, size_t class2) {
+    cout << "TESTING IMPLICATIONS: " << s << endl;
+    auto start = chrono::system_clock::now();
+    size_t count = graph.compute(class1, class2);
+    auto end = chrono::system_clock::now();
+    auto diff = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+    cout << "GOT " << count << " IN " << diff << " MS" << endl;
+  };
+  */
+
+  //test("ineqconst-regineq", class_ineq_const, class_reg_reg_ineq);
+  /*
+  test("memreg-memreg", class_memreg_equ, class_memreg_equ);      //good
+  test("memnull-memnull", class_mem_null, class_mem_null);        // good
+  test("bound-nonzero", class_bound, class_nonzero);              // ok...
+  test("regineq-nonzero",class_reg_reg_ineq, class_nonzero);      // better than previous one...
+  test("ineqconst-bound", class_ineq_const, class_bound);          // totally useless
+  test("ineqconst-nonzero", class_ineq_const, class_nonzero);      // also totally useless
+  test("regregineq-regregineq", class_reg_reg_ineq, class_reg_reg_ineq);  //best to automate this
+  */
+
+  // LESSON OF THE DAY
+  // - good to check for implications within classes
+  // - pretty useless beyond that
+
+  /*
+  class_sign
+  class_memreg_equ
+  class_modulo 
+
+  class_nonzero
+  class_bound
+  class_reg_reg_ineq
+  class_ineq_const
+  */
+
+  /** Have implication graph do its thing */
+  graph.print();
+  vector<size_t> to_delete;
+  for(size_t i = 0; i < conj->size(); ++i) {
+    if(graph.is_superseded((*conj)[i]))
+      to_delete.insert(to_delete.begin(), i);
+  }
+  for(auto it : to_delete) {
+    cout << "Removing conjunct " << *(*conj)[it] << endl;
+    conj->remove(it);
+  }
+
+
 
   return conj;
 }

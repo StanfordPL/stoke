@@ -18,18 +18,19 @@
 using namespace std;
 using namespace stoke;
 
-void ImplicationGraph::compute() {
+size_t ImplicationGraph::compute(size_t i1, size_t i2) {
 
-  size_t inv_count = inv_.size();
+  auto set1 = invariant_sets_[i1];
+  auto set2 = invariant_sets_[i2];
+
   size_t dummy;
+  size_t success = 0;
+  size_t failures = 0;
 
-  for(size_t i = 0; i < inv_count; ++i) {
-    for(size_t j = 0; j < inv_count; ++j) {
-      if(i == j)
+  for(auto inv1 : set1) {
+    for(auto inv2 : set2) {
+      if(inv1 == inv2)
         continue;
-
-      auto inv1 = inv_[i];
-      auto inv2 = inv_[j];
 
       // setup symbolic states
 
@@ -48,19 +49,36 @@ void ImplicationGraph::compute() {
 
       cout << "( " << *inv1 << " ) ==> ( " << *inv2 << " )" << endl; 
       auto test = (*inv1)(ts, rs, dummy) & !(*inv2)(ts, rs, dummy);
-      cout << "INV1: " <<  (*inv1)(ts, rs, dummy) << endl;
-      cout << "INV2: " << (*inv2)(ts, rs, dummy) << endl;
-      cout << "CONJ: " << test << endl;
+      //cout << "INV1: " <<  (*inv1)(ts, rs, dummy) << endl;
+      //cout << "INV2: " << (*inv2)(ts, rs, dummy) << endl;
+      //cout << "CONJ: " << test << endl;
 
+      bool worked;
       if(smt_.is_sat({test})) {
-        implication_table_[i][j] = false;
+        failures++;
+        worked = false;
       } else {
-        implication_table_[i][j] = true;
+        superseded_.insert(inv2);
+        replacements_[inv1].insert(inv2);
+        success++;
+        worked = true;
       }
 
-      cout << "  OUTCOME: " << implication_table_[i][j] << endl;
+      cout << "  OUTCOME: " << worked << endl;
     }
   }
+
+  cout << "SUCCESS : " << success << "  FAILURE : " << failures << endl;
+  return success;
 }
 
 
+void ImplicationGraph::print() {
+  cout << "[implication_graph] REPLACEMENTS" << endl;
+  for(auto it : replacements_) {
+    cout << "   " << *(it.first) << endl;
+    for(auto rep : it.second) {
+      cout << "         " << *rep << endl;
+    }
+  }
+}

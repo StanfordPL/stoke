@@ -24,6 +24,7 @@
 #include "src/validator/invariants/range.h"
 
 #include "src/validator/int_matrix.h"
+#include "src/validator/implication_graph.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
@@ -96,8 +97,10 @@ public:
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
     const std::vector<CpuState>& states2,
+    ImplicationGraph& graph,
     std::string target_cc = "",
-    std::string rewrite_cc = "");
+    std::string rewrite_cc = ""
+    );
 
   /** Learn linear equalities over some columns of data */
   ConjunctionInvariant* learn_equalities(
@@ -143,11 +146,13 @@ private:
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
-    const std::vector<CpuState>& states2);
+    const std::vector<CpuState>& states2,
+    ImplicationGraph& graph);
 
   /** Overapproximate set of possible inequality invariants. */
   std::vector<InequalityInvariant*> build_inequality_invariants
-  (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+  (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs,
+   ImplicationGraph& graph) const;
 
   /** Overapproximate set of possible memory-register equality invariants. */
   std::vector<EqualityInvariant*> build_memory_register_equalities

@@ -21,6 +21,7 @@
 
 #include "src/validator/obligation_checker.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/validator/smt_obligation_checker.h"
 
 namespace stoke {
 
@@ -28,14 +29,17 @@ class PostgresObligationChecker : public ObligationChecker {
 
 public:
 
-  PostgresObligationChecker(std::string connection_string) : 
+  PostgresObligationChecker(std::string connection_string, SmtObligationChecker& smt_checker) : 
     handler_(), filter_(handler_), connection_string_(connection_string),
-    connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL), dispatches_(0)
+    connection_(connection_string.c_str()), pipeline_(NULL), pipeline_tx_(NULL), 
+    dispatches_(0),
+    smt_checker_(smt_checker)
   {
     enable_z3(true);
     enable_cvc4(true);
     enable_flat(true);
     enable_arm(true);
+    enable_shortcircuit(50);
 
     if(!connection_.is_open()) {
       std::cerr << "Failed to open connection to database." << std::endl;
@@ -68,6 +72,12 @@ public:
 
   PostgresObligationChecker& enable_arm(bool b) {
     enable_arm_ = b;
+    return *this;
+  }
+
+  PostgresObligationChecker& enable_shortcircuit(size_t milliseconds) {
+    shortcircuit_ = milliseconds;
+    smt_checker_.get_solver().set_timeout(milliseconds);
     return *this;
   }
 
@@ -125,6 +135,10 @@ private:
   bool enable_flat_;
   bool enable_arm_;
 
+  /** For quick obligations. */
+  size_t shortcircuit_;
+  SmtObligationChecker smt_checker_;
+
   /** Make the tables we need, if they don't already exist. */
   void make_tables();
   /** Poll the database for callbacks */
@@ -153,6 +167,7 @@ private:
 
   /** A list of the jobs we don't have results for. */
   std::map<std::string, Job> outstanding_jobs;
+  std::map<std::string, Result> local_cache_;
 
 };
 

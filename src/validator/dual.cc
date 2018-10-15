@@ -274,7 +274,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 }
 
 
-bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner) {
+bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner, ImplicationGraph& graph) {
 
 
   data_reachable_states_.clear();
@@ -355,7 +355,7 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
 
     // TODO: if there aren't enough states here, sound a warning
     auto inv = learner.learn(target_.def_outs(state.ts), rewrite_.def_outs(state.rs),
-                             target_state_data_[state], rewrite_state_data_[state],
+                             target_state_data_[state], rewrite_state_data_[state], graph,
                              target_cc, rewrite_cc);
     invariants_[state] = inv;
     cout << "[learn_invariants] Invariant at " << state << ": " << *inv << endl;

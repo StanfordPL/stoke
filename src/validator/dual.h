@@ -8,6 +8,7 @@
 
 #include "src/cfg/sccs.h"
 #include "src/validator/data_collector.h"
+#include "src/validator/implication_graph.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/learner.h"
@@ -221,7 +222,7 @@ public:
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
   /** Learn invariants.  Returns 'true' if no error. */
-  bool learn_invariants(DataCollector&, InvariantLearner&);
+  bool learn_invariants(DataCollector&, InvariantLearner&, ImplicationGraph&);
 
   /** Get invariant at state. */
   ConjunctionInvariant* get_invariant(const State& state) const {

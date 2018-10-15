@@ -112,6 +112,24 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.write_text(ss);
   auto hash = md5(ss.str());
 
+  if(local_cache_.count(hash)) {
+    // this lightens the load on the database, and maybe even the local solver
+    cout << "[check] found answer in cache!" << endl;
+    callback(local_cache_[hash], optional);
+    return;
+  }
+
+  if(shortcircuit_ > 0) {
+    // if we can quickly perform the SMT check ourselves, don't go to the database
+    auto r = smt_checker_.check_wait(target, rewrite, target_block, rewrite_block,
+                                     p, q, assume, prove, testcases, override_separate_stack);
+    if(r.verified || r.has_ceg) {
+      local_cache_[hash] = r;
+      callback(r, optional);
+      return;
+    }     
+  }
+
   if(pipeline_ == NULL) {
     pipeline_tx_ = new nontransaction(connection_);
     pipeline_ = new pipeline(*pipeline_tx_);
@@ -298,6 +316,7 @@ void PostgresObligationChecker::poll_database() {
       r.error_message = "At least 4 solvers encountered error; e.g. " + error_message.at(hash);
       r.source_version = error_version.at(hash);
       r.info = hash;
+      local_cache_[hash] = r;
       job.invoke_callbacks(r);
       job.completed = true;
       outstanding_jobs.erase(hash);

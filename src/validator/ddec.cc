@@ -573,11 +573,15 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.remove_prefixes();
   dual.print_all();
 
-  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_);
+  ImplicationGraph graph(target_, rewrite_);
+  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, graph);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     return false;
   }
+  cout << "FINAL IMPLICATION GRAPH" << endl;
+  graph.print();
+  cout << endl << endl;
 
   auto edge_reachable = dual.get_edge_reachable_states();
 
@@ -627,7 +631,9 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     second round, we pay attention to errors/timeouts again and remove these clauses too, so
     that everything is verified. */
   vector<CallbackParam*> pointers_to_delete;
+  map<DualAutomata::State, vector<pair<CpuState, CpuState>>> reachable_examples_for_state;
   map<DualAutomata::State, set<size_t>> conjuncts_to_delete;
+  map<DualAutomata::State, bool> update_needed;
   bool fixpoint = false;
   bool failure = false;
 
@@ -684,6 +690,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
       // we want to *right away* identify any conjuncts that don't need to be processed
       if(r.has_ceg) {
+        reachable_examples_for_state[data.edge.to].push_back(pair<CpuState,CpuState>(r.target_final_ceg, r.rewrite_final_ceg));
+
         cout << "[verify_dual]      counterexample details" << endl;
         cout << "[verify_dual]      TARGET START STATE" << endl << endl << r.target_ceg << endl;
         cout << "[verify_dual]      REWRITE START STATE" << endl << endl << r.rewrite_ceg << endl;
@@ -726,8 +734,12 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   // We do the fixpoint iteration twice.  The first time we only care when we find counterexamples
   // where we can guarantee the conjuncts must be smaller.  The second round
-  vector<DualAutomata::State> states;
-  states.insert(states.begin(), edge_reachable.begin(), edge_reachable.end());
+
+  CfgSccs target_sccs(target_);
+  CfgSccs rewrite_sccs(rewrite_);
+  dual.compute_topological_sort(target_sccs, rewrite_sccs);
+  auto states = dual.get_topological_sort();
+  update_needed[start_state] = true;
 
   for(size_t round = 0; round < 2; round++) {
 
@@ -742,9 +754,22 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
       conjuncts_to_delete.clear();
       fixpoint = true;
 
+      vector<DualAutomata::State> states_to_update;
+      cout << "[verify_dual] states that need updating are: ";
+      for(auto state : states)
+        if(update_needed[state]) {
+          cout << state << "   ";
+          states_to_update.push_back(state);
+        }
+      cout << endl;
+      update_needed.clear();
+
+
+
       // check every hoare triple for entire graph, and throw out conjuncts that we're
       // sure won't hold.
-      for(auto state : states) {
+      for(auto state : states_to_update) {
+
         cout << "[verify_dual] dispatching hoare triples for state " << state << endl;
         auto edges = dual.next_edges(state);
         auto source_inv = dual.get_invariant(state);
@@ -772,12 +797,15 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
             auto conjunct = (*target_inv)[i];
 
             // construct source invariant
-            ConjunctionInvariant new_source_invariant;
-            const auto& conjuncts_to_ignore = conjuncts_to_delete[state];
-            for(size_t i = 0; i < source_inv->size(); ++i) {
-              if(!conjuncts_to_ignore.count(i))
-                new_source_invariant.add_invariant((*source_inv)[i]);
-            }
+            ConjunctionInvariant new_source_invariant(*source_inv);
+
+            // we don't want to just remove these conjuncts because they may imply others which do hold
+            // (we can however, remove them, if we add in the others also)
+            //const auto& conjuncts_to_ignore = conjuncts_to_delete[state];
+            //for(size_t i = 0; i < source_inv->size(); ++i) {
+              //if(!conjuncts_to_ignore.count(i))
+            //  new_source_invariant.add_invariant((*source_inv)[i]);
+            //}
             for(auto inv : assume_always_) {
               new_source_invariant.add_invariant(inv);
             }
@@ -819,11 +847,50 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
       cout << "[verify_dual] removing conjuncts from this round." << endl;
       for(auto state_set : conjuncts_to_delete) {
         auto& to_delete = state_set.second;
+        update_needed[state_set.first] = true;
         ConjunctionInvariant* inv = dual.get_invariant(state_set.first);
 
         cout << "[verify_dual] removing conjuncts from state " << state_set.first << endl;
         for(auto i = to_delete.rbegin(); i != to_delete.rend(); ++i) {
-          cout << "[verify_dual] removing conjunct " << *i << ": " << *(*inv)[*i] << endl;
+
+          auto conjunct = (*inv)[*i];
+          cout << "[verify_dual] removing conjunct " << *i << ": " << *conjunct << endl;
+
+          if(graph.has_replacements(conjunct)) {
+
+            // consider each replacement
+            for(auto replacement : graph.get_replacements(conjunct)) {
+              bool works = true;
+              // (i) if it doesn't pass test cases, discard
+              for(auto example_pair : reachable_examples_for_state[state_set.first]) {
+                auto target_tc = example_pair.first;
+                auto rewrite_tc = example_pair.second;
+                if(!replacement->check(target_tc, rewrite_tc)) {
+                  // we definitely can't prove this is true -- ignore it.
+                  cout << "[verify_dual]     NOT replacing with " << *replacement << " (fails tests)" << endl;
+                  works = false;
+                  break;
+                }
+              }
+              if(!works)
+                continue;
+              // (ii) if it is already present in conjunction, discard
+              // otherwise add to end of conjunction
+              for(size_t i = 0; i < inv->size(); ++i) {
+                auto it = (*inv)[i];
+                if(it == replacement) {
+                  cout << "[verify_dual]     NOT replacing with " << *replacement << " (already present)" << endl;
+                  works = false;
+                  break;
+                }
+              }
+              if(!works)
+                continue;
+              cout << "[verify_dual]     replacing with " << *replacement << endl;
+              inv->add_invariant(replacement);
+            }
+          }
+
           inv->remove(*i); 
         }
       }

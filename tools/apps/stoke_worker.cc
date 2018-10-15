@@ -696,10 +696,10 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
 
   // Setup the solver
   SMTSolver* solver; 
-  if(strcmp(qe.solver, "z3") == 0) 
-    solver = static_cast<SMTSolver*>(new Z3Solver());
-  else
+  if(strcmp(qe.solver, "cvc4") == 0) 
     solver = static_cast<SMTSolver*>(new Cvc4Solver());
+  else
+    solver = static_cast<SMTSolver*>(new Z3Solver());
   
   // Setup the obligation checker
   auto handler = new ComboHandler();
@@ -707,10 +707,11 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
   SmtObligationChecker oc(*solver, *filter);
   if(force_separate_stack.value())
     oc.set_separate_stack(true);
-  if(strcmp(qe.strategy, "flat") == 0)
-    oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
-  else
+
+  if(strcmp(qe.strategy, "arm") == 0)
     oc.set_alias_strategy(ObligationChecker::AliasStrategy::ARM);
+  else
+    oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
 
   // Run the checker
   static_cast<ObligationChecker*>(&oc)->check(oblig, callback, solver);
@@ -806,7 +807,11 @@ void discharge_problem(const ClassQueueEntry& qe, ClassChecker::Callback& callba
   ControlLearner control_learner(target, rewrite, sandbox);
   size_t target_bound = prob.target_bound;
   size_t rewrite_bound = prob.rewrite_bound;
-  PostgresObligationChecker poc(postgres_arg.value());
+  Z3Solver z3;
+  ComboHandler ch;
+  BoundAwayFilter filter(ch, (uint64_t)0x1000, (uint64_t)(-0x1000));
+  SmtObligationChecker smt_checker(z3, filter);
+  PostgresObligationChecker poc(postgres_arg.value(), smt_checker);
   InvariantLearner learner(target, rewrite);
   LocalClassChecker lcc(data_collector, control_learner, target_bound, rewrite_bound, poc, learner);
 
@@ -1167,6 +1172,11 @@ bool debug_hash_obligation(string hash) {
         string last_hash = z3->get_last_hash();
         stringstream comments;
         comments << "z3hash: " << last_hash;
+
+        ofstream myfile("z3.txt");
+        myfile << z3->get_last_text() << endl;
+        myfile.close();
+
         result.comments = comments.str();
         cout << "  " << result.comments << endl;
       }

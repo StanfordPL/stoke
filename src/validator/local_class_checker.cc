@@ -87,7 +87,12 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
   dual.remove_prefixes();
   dual.print_all();
 
-  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_);
+
+  auto target = dual.get_target();
+  auto rewrite = dual.get_rewrite();
+
+  ImplicationGraph ig(target, rewrite);
+  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, ig);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     r.error_message = "Learning state data/invariants failed";
@@ -107,8 +112,6 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
     }
   }
 
-  auto target = dual.get_target();
-  auto rewrite = dual.get_rewrite();
 
   cout << "[verify_dual] Compute Failure Edges" << endl;
   auto failure_edges = dual.compute_failure_edges(target, rewrite);
@@ -351,7 +354,6 @@ void LocalClassChecker::discharge_invariants(DualAutomata& dual, bool separate_s
 
     // STEP 1: visit all the self-edges (if any) until fixedpoint
     auto conj = dual.get_invariant(current_state);
-    ImplicationGraph graph(dual.get_target(), dual.get_rewrite(), conj);
 
     cout << "[discharge_invariants] State " << current_state << " has " << self_edges.size() << " self edges." << endl;
     if(self_edges.size()) {
