@@ -352,12 +352,16 @@ std::string StrataHandler::strata_path_;
 void StrataHandler::init() {
 
   if (strata_path_ == "") {
-    // initialize the strata path once
+     // initialize the strata path once
     char buf[1000];
-    if (readlink("/proc/self/exe", buf, 999) > 0) {
+    size_t n = readlink("/proc/self/exe", buf, 999);
+    buf[n] = '\0';
+    if (n > 0) {
       strata_path_ = string(buf);
     } else {
-      if (readlink("/proc/curproc/file", buf, 999) > 0) {
+      n = readlink("/proc/curproc/file", buf, 999);
+      buf[n] = '\0';
+      if (n > 0) {
         strata_path_ = string(buf);
       }
     }
@@ -778,6 +782,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       ifstream file(candidate_file);
       TUnit t;
       file >> t;
+      file.close();
 
       if (failed(file)) {
         cerr << "INTERNAL STOKE ERROR, please report" << endl;

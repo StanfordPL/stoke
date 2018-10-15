@@ -54,7 +54,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
   error_ = "";
 
-  if (!get_support(instr)) {
+  if (get_support(instr) == Handler::NONE) {
     error_ = "Instruction not supported.";
     return;
   }

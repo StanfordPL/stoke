@@ -42,7 +42,7 @@ void ComboHandler::build_circuit(const Instruction& instr, SymState& ss) {
   if (level == Handler::NONE) {
     error_ = "Instruction not supported";
   } else {
-    assert(h != 0);
+    assert(h != nullptr);
     h->build_circuit(instr, ss);
     if (h->has_error()) {
       error_ = h->error();
@@ -54,7 +54,7 @@ void ComboHandler::build_circuit(const Instruction& instr, SymState& ss) {
 Handler* ComboHandler::get_handler(const Instruction& instr, Handler::SupportLevel& sl) {
 
   /* Find the best handler for this instruction */
-  Handler* best_handler = NULL;
+  Handler* best_handler = nullptr;
   sl = Handler::SupportLevel::NONE;
   for (auto h : handlers_) {
     auto cur_level = h->get_support(instr);
