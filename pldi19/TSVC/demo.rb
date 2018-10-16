@@ -114,11 +114,11 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   ]
 
   puts "Recording data in traces/#{name}"
-  io = "2> traces/#{name}.err | tee traces/#{name}"
+  io = "2> misc/#{name}.err | tee traces/#{name}"
   stoke_cmd = "stoke_debug_verify #{stoke_args.join(" ")}"
   time_cmd = "/usr/bin/time -o times/#{name} #{stoke_cmd} #{io}"
 
-  File.open("traces/#{name}.cmd", 'w') do |file|
+  File.open("misc/#{name}.cmd", 'w') do |file|
     file.write(stoke_cmd)
   end
 

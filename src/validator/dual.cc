@@ -10,7 +10,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
+#define DEBUG_LEARN_STATE_DATA(X) { if(1) { X } }
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(1) { X } }
@@ -150,7 +150,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
   vector<TraceState> current;
   vector<TraceState> next;
   next.push_back(initial);
-  data_reachable_states_.clear();
   data_reachable_states_.insert(initial.state);
 
   auto exit = exit_state();
@@ -260,6 +259,11 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
         DEBUG_LEARN_STATE_DATA(std::cout << "   - REACHABLE: " << follow.state << std::endl;)
+        cout << "drs: ";
+        for(auto it : data_reachable_states_) {
+          cout << it << "    ";
+        }
+        cout << endl;
       }
 
       if (!found_matching_edge) {
@@ -320,7 +324,15 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
   target_.recompute();
   rewrite_.recompute();
 
+  cout << "drs: ";
+  for(auto it : data_reachable_states_) {
+    cout << it << "    ";
+  }
+  cout << endl;
+
+
   for (auto state : data_reachable_states_) {
+    cout << "[learn_invariants] Learning invariants at " << state << endl;
     if (state == exit_state() || state == start_state() || state == fail_state())
       continue;
 
@@ -354,6 +366,11 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
       rewrite_file.close();)
 
     // TODO: if there aren't enough states here, sound a warning
+    auto target_state_count = target_state_data_[state].size();
+    auto rewrite_state_count = rewrite_state_data_[state].size();
+    cout << "[learn_invariants] learning over " << target_state_count << " target states and " 
+         << rewrite_state_count << " rewrite states" << endl;
+
     auto inv = learner.learn(target_.def_outs(state.ts), rewrite_.def_outs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state], graph,
                              target_cc, rewrite_cc);

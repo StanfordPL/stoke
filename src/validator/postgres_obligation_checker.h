@@ -39,7 +39,7 @@ public:
     enable_cvc4(true);
     enable_flat(true);
     enable_arm(true);
-    enable_shortcircuit(50);
+    enable_shortcircuit(0);
 
     if(!connection_.is_open()) {
       std::cerr << "Failed to open connection to database." << std::endl;

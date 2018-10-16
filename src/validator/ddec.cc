@@ -585,16 +585,21 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   auto edge_reachable = dual.get_edge_reachable_states();
 
+  // Took out the following check because it fails when there's dead code
+  // (and I've never seen a useful true-positive for this)
+  /* 
   for (auto state : edge_reachable) {
+    cout << "[verify_dual] edge reachable state " << state << endl;
     if (state == dual.start_state() || state == dual.exit_state() || state == dual.fail_state())
       continue;
     auto inv = dual.get_invariant(state);
+    cout << "             got invariant " << *inv << endl;
     if (inv->size() < 2) {
       cout << "[verify_dual] Could not learn invariant at state " << state << endl;
-      cout << "[verify_dual] Aboring." << endl;
+      cout << "              Aboring." << endl;
       return false;
     }
-  }
+  }*/
 
   cout << "[verify_dual] Compute Failure Edges" << endl;
   auto failure_edges = dual.compute_failure_edges(target_, rewrite_);
