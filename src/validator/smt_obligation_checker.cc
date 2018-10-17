@@ -745,9 +745,9 @@ void SmtObligationChecker::check(
           auto addr = state.get_addr(instr, linemap[i].rip_offset);
           //cout << "[check_core]     * found one!" << endl;
           //cout << "                 addr = " << addr << endl;
-          for(auto r : r64s) {
+          //for(auto r : r64s) {
             //cout << "                         " << r << " = " << state[r] << endl;
-          }
+          //}
           deref_maps[0][dri] = addr;
         }
         last = traces[0][i].cs;
