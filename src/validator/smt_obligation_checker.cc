@@ -692,21 +692,21 @@ void SmtObligationChecker::check(
       size_t tmp_invariant_lineno = 0;
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
-      cout << "[check_core] adding assume dereference map" << endl;
-      cout << tc_pair.first << endl << endl;
-      cout << tc_pair.second << endl << endl;
+      //cout << "[check_core] adding assume dereference map" << endl;
+      //cout << tc_pair.first << endl << endl;
+      //cout << tc_pair.second << endl << endl;
       assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
-      cout << "[check_core] debugging assume dereference map 1" << endl;
-      cout << "deref_map size = " << deref_map.size() << endl;
-      for(auto it : deref_map) {
-        cout << it.first.invariant_number << " -> " << it.second << endl; 
-      }
+      //cout << "[check_core] debugging assume dereference map 1" << endl;
+      //cout << "deref_map size = " << deref_map.size() << endl;
+      //for(auto it : deref_map) {
+      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
+      //}
       prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
       cout << "[check_core] debugging prove dereference map 1" << endl;
-      cout << "deref_map size = " << deref_map.size() << endl;
-      for(auto it : deref_map) {
-        cout << it.first.invariant_number << " -> " << it.second << endl; 
-      }
+      //cout << "deref_map size = " << deref_map.size() << endl;
+      //for(auto it : deref_map) {
+      //  cout << it.first.invariant_number << " -> " << it.second << endl; 
+      //}
     }
 
     // Update dereference maps for the code if ARM and we have testcases
@@ -717,7 +717,7 @@ void SmtObligationChecker::check(
       auto& testcase = k ? testcases[0].second : testcases[0].first;
       auto& last = k ? last_rewrite : last_target;
       auto& linemap = k ? rewrite_linemap : target_linemap;
-      cout << "[check_core] adding code dereferences is_rewrite=" << k << endl;
+      //cout << "[check_core] adding code dereferences is_rewrite=" << k << endl;
 
       Cfg unroll_cfg(unroll_code);
       oc_sandbox_.set_abi_check(false);
@@ -732,21 +732,21 @@ void SmtObligationChecker::check(
 
       auto traces = oc_data_collector.get_detailed_traces(unroll_cfg, &linemap);
 
-      cout << "Unroll code: " << endl << unroll_code << endl;
-      cout << "[check_core] traces.size() = " << traces.size() << endl;
-      cout << "[check_core] traces[0].size() = " << traces[0].size() << endl;
-      cout << "[check_core] unroll_code.size() = " << unroll_code.size() << endl;
+      //cout << "Unroll code: " << endl << unroll_code << endl;
+      //cout << "[check_core] traces.size() = " << traces.size() << endl;
+      //cout << "[check_core] traces[0].size() = " << traces[0].size() << endl;
+      //cout << "[check_core] unroll_code.size() = " << unroll_code.size() << endl;
       for(size_t i = 0; i < traces[0].size(); ++i) {
         auto instr = unroll_code[i];
-        cout << "[check_core] dereferences for " << instr << endl;
+        //cout << "[check_core] dereferences for " << instr << endl;
         if(instr.is_memory_dereference()) {
           auto dri = linemap[i].deref;
           auto state = traces[0][i].cs;
           auto addr = state.get_addr(instr, linemap[i].rip_offset);
-          cout << "[check_core]     * found one!" << endl;
-          cout << "                 addr = " << addr << endl;
+          //cout << "[check_core]     * found one!" << endl;
+          //cout << "                 addr = " << addr << endl;
           for(auto r : r64s) {
-            cout << "                         " << r << " = " << state[r] << endl;
+            //cout << "                         " << r << " = " << state[r] << endl;
           }
           deref_maps[0][dri] = addr;
         }
