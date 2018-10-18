@@ -876,6 +876,7 @@ pid_t spawn_worker(T* item) {
         lock.unlock();
         cond.notify_one();
 
+        /*
 #ifdef STOKE_Z3_DEBUG_LAST_HASH
         // Report last hash
         cout << "Checking last hash" << endl;
@@ -892,7 +893,7 @@ pid_t spawn_worker(T* item) {
             cout << "  " << result.comments << endl;
           }
         }
-#endif
+#endif */
 
         // Report result to DB
         cout << getpid() << ": got answer!" << endl;
@@ -1162,6 +1163,7 @@ bool debug_hash_obligation(string hash) {
 
   ObligationChecker::Callback callback = [&] (ObligationChecker::Result& result, void* optional) {
 
+    /*
 #ifdef STOKE_Z3_DEBUG_LAST_HASH
     // Report last hash
     cout << "Checking last hash" << endl;
@@ -1182,6 +1184,7 @@ bool debug_hash_obligation(string hash) {
       }
     }
 #endif
+*/
 
     cout << "verified=" << result.verified << endl;
     cout << "has_ceg=" << result.has_ceg << endl;
