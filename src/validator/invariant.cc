@@ -35,27 +35,27 @@ void Invariant::get_dereference_map(DereferenceMap& deref_map,
   vector<Variable> memory_variables;
 
   for(auto var : vars) {
-    cout << "Looking at " << var << endl;
+    //cout << "Looking at " << var << endl;
     if(var.is_dereference()) {
-      cout << "  Memory dereference!" << endl;
+      //cout << "  Memory dereference!" << endl;
       memory_variables.push_back(var);
     } else {
-      cout << "  Not memory dereference!" << endl;
+      //cout << "  Not memory dereference!" << endl;
     }
   }
 
   assert(memory_variables.size() < 2);
   if(memory_variables.size() > 0) {
     auto var = memory_variables[0];
-    cout << "Processing variable " << var << " number=" << number << endl;
+    //cout << "Processing variable " << var << " number=" << number << endl;
     //if(var.is_valid(target, rewrite)) {
     auto value = var.get_addr(target, rewrite);
-    cout << "  * value = " << value << endl;
+    //cout << "  * value = " << value << endl;
     auto di = get_di(number, var.is_rewrite);
     deref_map[di] = value;
-    cout << "  * adding to dereference map" << endl;
-    cout << "  * deref_map = " << &deref_map << endl;
-    cout << "  * deref_map.size() = " << deref_map.size() << endl;
+    //cout << "  * adding to dereference map" << endl;
+    //cout << "  * deref_map = " << &deref_map << endl;
+    //cout << "  * deref_map.size() = " << deref_map.size() << endl;
     //} else {
     //  cout << "  * invalid" << endl;
     //}

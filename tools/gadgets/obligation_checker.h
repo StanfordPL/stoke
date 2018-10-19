@@ -142,10 +142,19 @@ public:
     child_->block_until_complete();
   }
 
+  virtual void check_for_callbacks() {
+    child_->check_for_callbacks();
+  }
+
+  virtual void delete_all() {
+    child_->delete_all();
+  }
+
   /** Get the filter */
   virtual Filter& get_filter() {
     return child_->get_filter();
   }
+
 
 private:
 
