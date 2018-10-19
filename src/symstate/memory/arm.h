@@ -220,6 +220,7 @@ private:
     * recursively fill in the assignment of accesses to cells. */
   void recurse_cell_assignment(size_t access_index);
 
+  bool check_nonoverlapping(ArmMemory* am, const std::vector<SymBool>& initial_constraints);
   bool unsound_;
 };
 

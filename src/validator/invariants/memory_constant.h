@@ -98,6 +98,10 @@ public:
     return new MemoryConstantInvariant(m_, is_rewrite_, byte_);
   }
 
+  virtual bool is_postponable() const override {
+    return true;
+  }
+
 private:
 
   x64asm::M8 m_;

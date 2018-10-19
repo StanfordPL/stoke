@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <iomanip>
+#include <utility>
 
 #include "src/symstate/memory/arm.h"
 #include "src/unionfind/unionfind.h"
@@ -273,6 +274,84 @@ void ArmMemory::generate_constraints_enumerate_cells() {
 
 }
 
+bool ArmMemory::check_nonoverlapping(ArmMemory* am, const vector<SymBool>& initial_constraints) {
+
+
+  /** Map from cell ID to a union find.  The union find builds equivalence classes
+    of ranges of cell offsets that are consecutive. */
+  std::map<size_t, UnionFind<uint64_t>> runs;
+
+  for(const auto& access : all_accesses_) {
+    auto& uf = runs[access.cell];
+    for(size_t i = 0; i < access.size/8; ++i) {
+      uint64_t offset = access.cell_offset + i;
+      uf.add(offset);
+      if(uf.contains(offset-1)) {
+        uf.join(offset, offset-1);
+      }
+      if(uf.contains(offset+1)) {
+        uf.join(offset, offset+1);
+      }
+    }
+  }
+
+  /** Now, for each cell and each component we add a range. */
+  map<size_t, vector<pair<SymBitVector, SymBitVector>>> ranges;
+
+  for(auto pair : runs) {
+    auto cellid = pair.first;
+    auto& uf = pair.second;
+    auto components = uf.components();
+    for(auto component : components) {
+      uint64_t low = component;
+      uint64_t high = uf.max_value(component);
+
+      auto low_addr = cells_[cellid].address + SymBitVector::constant(64, low);
+      auto high_addr = cells_[cellid].address + SymBitVector::constant(64, high);
+      auto range = make_pair(low_addr, high_addr);
+      ranges[cellid].push_back(range);
+      DEBUG_ARM(cout << "[check_nonoverlapping] Cell " << cellid << " has range " << low << " -> " << high << " with addrs " << low_addr << " to " << high_addr << endl;)
+    }
+  }
+
+  /** For each pair of cells, for each pair of ranges, we check that they're disjoint. */
+  auto constraints = initial_constraints;
+  for(size_t i = 0; i < cells_.size(); ++i) {
+    for(size_t j = 0; j < cells_.size(); ++j) {
+      if(i == j)
+        continue;
+
+      auto ranges_i = ranges[i];
+      auto ranges_j = ranges[j];
+
+      for(auto range_i : ranges_i) {
+        for(auto range_j : ranges_j) {
+
+
+          DEBUG_ARM(cout << "[check_nonoverlapping] Checking cell " << i << " , " << j
+                         << " with ranges " << range_i.first << " to " << range_i.second << " AND " 
+                         << range_j.first << " to " << range_j.second << endl;)
+
+          // check that range_i.first > range_j.second OR range_i.second < range_j.first
+          auto check = (range_i.first > range_j.second) | (range_i.second < range_j.first);
+          constraints.push_back(!check);
+          bool passes = !solver_.is_sat(constraints) && !solver_.has_error();
+          DEBUG_ARM(
+              if(solver_.has_error())
+                cout << "SOLVER ERROR: " << solver_.get_error() << endl;)
+          DEBUG_ARM(cout << "   PASSES: " << passes << endl;)
+          constraints.pop_back();
+          if(!passes)
+            return false;
+        }
+      }
+    }
+  }  
+
+
+  return true;
+}
+
 bool ArmMemory::generate_constraints_given_no_cell_overlap(ArmMemory* am) {
 
   if (stop_now_ && *stop_now_) return true;
@@ -325,7 +404,7 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am, const vector<Sym
   //      ... You don't write it unless you need to read from another cell.
   //      ... You don't read it unless another cell performed a write.
 
-  if(cells_.size() == 1 || unsound_) {
+  if(cells_.size() == 1 || unsound_ || check_nonoverlapping(am, initial_constraints)) {
     generate_constraints_given_no_cell_overlap(am);
     return;
   }

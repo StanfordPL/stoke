@@ -88,8 +88,12 @@ public:
     return new ImplicationInvariant(a_->clone(), b_->clone());
   }
 
-  virtual bool is_critical() {
+  virtual bool is_critical() override {
     return b_->is_critical();
+  }
+
+  virtual bool is_postponable() const override {
+    return b_->is_postponable();
   }
 
 

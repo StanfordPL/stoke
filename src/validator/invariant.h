@@ -87,6 +87,10 @@ public:
     return false;
   }
 
+  virtual bool is_postponable() const {
+    return false;
+  }
+
   ConjunctionInvariant* AND(Invariant* other);
 
   virtual Invariant* clone() const = 0;

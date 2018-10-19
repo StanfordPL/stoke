@@ -251,10 +251,10 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         // (4) record the CpuState in the right place
         target_state_data_[edge.to].push_back(follow.target_current);
         rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
-        if(add_target_state)
+        if(add_target_state && add_rewrite_state) {
           target_edge_data_[edge].push_back(target_start);
-        if(add_rewrite_state)
           rewrite_edge_data_[edge].push_back(rewrite_start);
+        }
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
