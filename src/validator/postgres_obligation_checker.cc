@@ -96,6 +96,18 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
                    bool override_separate_stack,
                    void* optional) {
 
+  /** Sample test cases */
+  vector<pair<CpuState,CpuState>> sampled_testcases;
+  if(testcases.size() > 5) {
+    // TODO: sample randomly if needed
+    for(size_t i = 0; i < testcases.size(); i += testcases.size()/5) {
+      sampled_testcases.push_back(testcases[i]);
+    }
+  } else {
+    sampled_testcases = testcases;
+  }
+
+  /** Create Proof Oblgiation to put in DB */
   Obligation obligation;
   obligation.target = target;
   obligation.rewrite = rewrite;
@@ -105,7 +117,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.Q = q;
   obligation.assume = &assume;
   obligation.prove = &prove;
-  obligation.testcases = testcases;
+  obligation.testcases = sampled_testcases;
   obligation.separate_stack = separate_stack_ || override_separate_stack;
 
   stringstream ss;

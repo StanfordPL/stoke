@@ -155,7 +155,7 @@ private:
   void generate_constraints_given_cells(ArmMemory*, const std::vector<SymBool>& constraints);
   bool generate_constraints_given_no_cell_overlap(ArmMemory* am);
   void generate_constraints_offsets_nodata(std::vector<SymBool>&);
-  void generate_constraints_offsets_data(std::vector<SymBool>&, DereferenceMap&);
+  void generate_constraints_offsets_data(std::vector<SymBool>&, const DereferenceMaps&);
 
   std::atomic<bool>* stop_now_;
 

@@ -33,11 +33,11 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(1) { X } }
+#define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
-#define DEBUG_ARM(X) { if(1) { X } }
+#define DEBUG_ARM(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -530,6 +530,7 @@ void SmtObligationChecker::check(
 #endif
 
   // TEMPORARY -- for debugging
+  /*
   auto assume_conj = static_cast<ConjunctionInvariant*>(&assume);
   vector<size_t> is_postponable;
   for(size_t i = 0 ; i < assume_conj->size(); ++i) {
@@ -542,8 +543,8 @@ void SmtObligationChecker::check(
     }
   }
   for(auto i : is_postponable) {
-    assume_conj->remove(i);
-  }
+    //assume_conj->remove(i);
+  }*/
 
   static mutex print_m;
   OBLIG_DEBUG(print_m.lock();)

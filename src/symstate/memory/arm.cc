@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { if(1) { X } }
+#define DEBUG_ARM(X) { if(0) { X } }
 
 
 void ArmMemory::generate_constraints(
@@ -29,11 +29,6 @@ void ArmMemory::generate_constraints(
     std::vector<SymBool>& initial_constraints,
     std::vector<SymBool>& all_constraints,
     const DereferenceMaps& deref_maps) {
-
-  DereferenceMap deref_map;
-
-  if(deref_maps.size() > 0)
-    deref_map = deref_maps[0];
 
   DEBUG_ARM(cout << "=========== PRINTING DEREFERENCE MAPS WOHOOOOOOOOOO =============" << endl;)
   DEBUG_ARM(
@@ -81,16 +76,19 @@ void ArmMemory::generate_constraints(
       cout << " ACCESS " << i << ":" << endl;
       auto access = all_accesses_[i];  
       auto di = access.deref;
-      bool have_info = deref_map.count(di) > 0;
       cout << "      address = " << access.address << endl;
       cout << "      di.is_rewrite = " << (di.is_rewrite ? "true" : "false") << endl;
       cout << "      di.is_invariant = " << (di.is_invariant ? "true" : "false") << endl;
       cout << "      di.implicit = " << (di.implicit_dereference ? "true" : "false") << endl;
       cout << "      di.line_number = " << di.line_number << endl;
       cout << "      di.invariant_number = " << di.invariant_number << endl;
-      if(have_info) {
-        auto addr = deref_map[di];
-        cout << "      addr = " << addr << endl;
+      for(auto deref_map : deref_maps) {
+        if(deref_map.count(di) > 0) {
+          auto addr = deref_map[di];
+          cout << "      addr = " << addr << endl;
+        } else {
+          cout << "      ~~ addr missing from deref map ~~ " << endl;
+        }
       }
     }
   )
@@ -99,7 +97,7 @@ void ArmMemory::generate_constraints(
 
   // 1. figure out relationships between offsets
   if(deref_maps.size() > 0) {
-    generate_constraints_offsets_data(initial_constraints, deref_map);
+    generate_constraints_offsets_data(initial_constraints, deref_maps);
   } else {
     generate_constraints_offsets_nodata(initial_constraints);
   }
@@ -110,30 +108,68 @@ void ArmMemory::generate_constraints(
 }
 
 void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_constraints,
-                                                  DereferenceMap& deref_map) {
+                                                  const DereferenceMaps& deref_maps) {
   UnionFind<size_t> unionfind;
+
+  const auto& deref_map = deref_maps[0];
 
   for(size_t i = 0; i < all_accesses_.size(); ++i) {
     auto i_access = all_accesses_[i];
     auto i_di = i_access.deref;
-    auto i_addr = deref_map[i_di];
+
+    if(deref_map.count(i_di) == 0) {
+      DEBUG_ARM(cout << "-> Initial deref map has nothing for access " << i << endl;)
+      continue;
+    }
+
+    auto i_addr = deref_map.at(i_di);
     auto components = unionfind.components();
     unionfind.add(i);
 
     for(auto j : components) {
       auto j_access = all_accesses_[j];
       auto j_di = j_access.deref;
-      auto j_addr = deref_map[j_di];
+
+      if(deref_map.count(j_di) == 0) {
+        DEBUG_ARM(cout << "-> Initial deref map has nothing for access " << j << endl;)
+        continue;
+      }
+
+      auto j_addr = deref_map.at(j_di);
       auto diff = (j_addr - i_addr);
+
+      bool works = true;
+      for(size_t k = 1; k < deref_maps.size(); ++k) {
+        auto& test_map = deref_maps[k];
+
+        // skip any test cases that look inconclusive
+        if(!test_map.count(j_di) || !test_map.count(i_di))
+          continue;
+
+        // if the test case looks legit, see if it matches the first one
+        auto j_addr_test = test_map.at(j_di);
+        auto i_addr_test = test_map.at(i_di);
+        auto diff_test = (j_addr_test - i_addr_test);
+        if(diff_test != diff) {
+          works = false;
+          break;
+        }
+      }
+
+      if(!works) {
+        DEBUG_ARM(cout << "-> No fixed relationship between accesses " << i << " , " << j << endl;)
+        continue;
+      }
+
       DEBUG_ARM(cout << "-> CONJECTURE: accesses " << i << " , " << j << " are offset by " << diff << endl;)
 
       /** Try to prove that the address of deref i is always a fixed offset of deref j */
       auto check = !(i_access.address + SymBitVector::constant(64, diff) == j_access.address);
       initial_constraints.push_back(check);
       if (stop_now_ && *stop_now_) return;
-      bool works = !solver_.is_sat(initial_constraints) && !solver_.has_error();
+      bool correct = !solver_.is_sat(initial_constraints) && !solver_.has_error();
       initial_constraints.pop_back();
-      if (works) {
+      if (correct) {
         access_offsets_[i][j] = diff;
         access_offsets_[j][i] = -diff;
         unionfind.join(i,j);

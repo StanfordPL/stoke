@@ -785,9 +785,11 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
           ConjunctionInvariant* target_inv = dual.get_invariant(target);
           auto target_testcases = dual.get_target_data(e);
           auto rewrite_testcases = dual.get_rewrite_data(e);
+          assert(target_testcases.size() == rewrite_testcases.size());
           vector<pair<CpuState,CpuState>> testcases;
-          if(target_testcases.size() && rewrite_testcases.size())
-            testcases.push_back(pair<CpuState,CpuState>(target_testcases[0], rewrite_testcases[0]));
+          for(size_t i = 0; i < target_testcases.size(); ++i) {
+            testcases.push_back(make_pair(target_testcases[i], rewrite_testcases[i])); 
+          }
 
           for(size_t i = 0; i < target_inv->size(); ++i) {
             if(conjuncts_to_delete[target].count(i))
