@@ -1397,6 +1397,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
   // Learn easy equalities over a really huge set of (sub) registers
   cout << "enable_vector_vars_ = " << enable_vector_vars_ << endl;
+  size_t equality_class = graph.new_class();
   if(enable_vector_vars_) {
     vector<Variable> vector_columns;
     auto vector_vars_target = sub_registers_for_regset(target_regs, false);
@@ -1406,6 +1407,9 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     auto easy_constants = learn_constants(vector_columns, target_states, rewrite_states);
     auto easy_equalities = learn_easy_equalities(vector_columns, target_states, rewrite_states);
     conj->add_invariants(easy_equalities);
+    conj->add_invariants(easy_constants);
+    graph.add_invariant(easy_equalities);
+    graph.add_invariant(easy_constants);
   }
 
 
@@ -1484,7 +1488,6 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 }
 );
   auto equality_invs = learn_equalities(columns, target_states, rewrite_states);
-  size_t equality_class = graph.new_class();
   for(auto inv : equality_invs) {
     conj->add_invariant(inv);
     graph.add_invariant(inv);

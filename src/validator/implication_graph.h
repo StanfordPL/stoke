@@ -52,6 +52,12 @@ class ImplicationGraph {
   void add_invariant(Invariant* inv) {
     invariant_sets_[current_set].insert(inv);
   }
+  /** Add an invariant to the current class. */
+  void add_invariant(const std::vector<Invariant*>& inv) {
+    for(auto i : inv)
+      add_invariant(i);
+  }
+
 
   /** Compute implications between classes and add replacements to datastructure. */
   size_t compute(size_t class1, size_t class2);

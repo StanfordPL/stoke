@@ -194,6 +194,7 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
     delete pipeline_tx_;
     pipeline_ = NULL;
     pipeline_tx_ = NULL;
+    dispatches_ = 0;
     // see if anyone is done
     poll_database();
   }
@@ -202,6 +203,14 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
 
 
 void PostgresObligationChecker::poll_database() {
+
+  if(dispatches_ > 0) {
+    cout << "Waiting on pipeline..." << endl;
+    pipeline_->complete();
+    cout << "Closing up nontransaction..." << endl;
+    pipeline_tx_->commit();
+  }
+
 
   if(outstanding_jobs.size() == 0)
     return;

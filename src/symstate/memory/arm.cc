@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { if(0) { X } }
+#define DEBUG_ARM(X) { if(1) { X } }
 
 
 void ArmMemory::generate_constraints(
@@ -407,38 +407,6 @@ void ArmMemory::generate_constraints_given_cells(ArmMemory* am, const vector<Sym
   if(cells_.size() == 1 || unsound_ || check_nonoverlapping(am, initial_constraints)) {
     generate_constraints_given_no_cell_overlap(am);
     return;
-  }
-
-  if(cells_.size() == 2) {
-    // todo make this more general
-    auto cell1 = cells_[0];
-    auto cell2 = cells_[1];
-
-    auto cell1below = cell1.address + SymBitVector::constant(64, cell1.size) <= cell2.address;
-    vector<SymBool> constraints = initial_constraints;
-    constraints.push_back(!cell1below);
-    cout << "Checking if cell 1 below cell 2" << endl;
-    for(auto it : constraints)
-      cout << it << endl;
-    if(!solver_.is_sat(constraints) && !solver_.has_error()) {
-      generate_constraints_given_no_cell_overlap(am);
-      return;
-    } else {
-      cout << "cell1 not always below cell2" << endl;
-    }
-
-    auto cell2below = cell2.address + SymBitVector::constant(64, cell2.size) <= cell1.address;
-    constraints = initial_constraints;
-    constraints.push_back(!cell2below);
-    cout << "Checking if cell 2 below cell 1" << endl;
-    for(auto it : constraints)
-      cout << it << endl;
-    if(!solver_.is_sat(constraints) && !solver_.has_error()) {
-      generate_constraints_given_no_cell_overlap(am);
-      return;
-    } else {
-      cout << "cell2 not always below cell1" << endl;
-    }
   }
 
   // to setup, let's "cache" the result of each cell.

@@ -100,6 +100,12 @@ public:
 
   /** Forget about everything that has been started. */
   virtual void delete_all() {
+    if(dispatches_ > 0) {
+      std::cout << "Waiting on pipeline..." << std::endl;
+      pipeline_->complete();
+      std::cout << "Closing up nontransaction..." << std::endl;
+      pipeline_tx_->commit();
+    }
     dispatches_ = 0;
     outstanding_jobs.clear();
     delete pipeline_;

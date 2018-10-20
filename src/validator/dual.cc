@@ -208,15 +208,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         TraceState follow = tr_state;
         follow.state = edge.to;
 
-        CpuState target_start;
-        CpuState rewrite_start;
-        bool add_target_state = follow.target_trace.size();
-        bool add_rewrite_state = follow.rewrite_trace.size();
-        if(add_target_state)
-          target_start = follow.target_trace[0].cs;
-        if(add_rewrite_state)
-          rewrite_start = follow.rewrite_trace[0].cs;
-
         // (2) update the CpuStates
         if (edge.te.size())
           follow.target_current = follow.target_trace[edge.te.size()-1].cs;
@@ -251,10 +242,8 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         // (4) record the CpuState in the right place
         target_state_data_[edge.to].push_back(follow.target_current);
         rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
-        if(add_target_state && add_rewrite_state) {
-          target_edge_data_[edge].push_back(target_start);
-          rewrite_edge_data_[edge].push_back(rewrite_start);
-        }
+        target_edge_data_[edge].push_back(tr_state.target_current);
+        rewrite_edge_data_[edge].push_back(tr_state.rewrite_current);
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
