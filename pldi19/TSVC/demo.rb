@@ -5,6 +5,22 @@
   :rewrite_bound => 4
 }
 
+@rodata_needed = {
+  "s000"      => ["gcc", "llvm"],
+  "s1112"     => ["gcc", "llvm"],
+  "s116"      => ["gcc", "llvm"],
+  "s1221"     => ["gcc"],
+  "s122"      => ["gcc"],
+  "s315"      => ["baseline", "gcc", "llvm"],
+  "s318"      => ["baseline", "gcc", "llvm"],
+  "s3251"     => ["llvm"],
+  "s351"      => ["baseline", "gcc", "llvm"],
+  "s452"      => ["gcc"],
+  "s453"      => ["gcc"],
+  "stacktest" => ["gcc", "llvm"],
+  "testing"   => ["baseline", "gcc", "llvm"],
+}
+
 @default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 %rax %rbp %rsp %xmm0 %xmm1 %xmm2 %xmm3 %rbx %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 }\""
 @default_live_outs = "\"{ %rbx %rsp %rbp %r12 %r13 %r14 %r15 }\""
 
@@ -87,6 +103,9 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
   check_file testcase_file
   check_file "rodata"
 
+  rodata_compilers = @rodata_needed[benchmark]
+  rodata_needed = (not rodata_compilers.nil?) and (rodata_compilers.include?(compiler1) or rodata_compilers.include?(compiler2))
+
   while File.exist?("traces/#{name}")
     num = num+1
     name = "#{prefix}.#{num}"
@@ -101,7 +120,6 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--target #{compiler1}/#{benchmark}.s",
     "--rewrite #{compiler2}/#{benchmark}.s",
     "--testcases #{testcase_file}",
-    "--rodata rodata",
     "--vector_invariants",
     "--heap_out",
 #    "--stack_out",
@@ -112,6 +130,10 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--rewrite_bound #{@options[:rewrite_bound]}",
     "--assume \"(t_%rdi<=15)\"",
   ]
+
+  if rodata_needed
+    stoke_args.push("--rodata rodata")
+  end
 
   puts "Recording data in traces/#{name}"
   io = "2> misc/#{name}.err | tee traces/#{name}"

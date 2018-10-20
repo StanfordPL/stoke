@@ -354,7 +354,7 @@ bool ArmMemory::check_nonoverlapping(ArmMemory* am, const vector<SymBool>& initi
   auto constraints = initial_constraints;
   for(size_t i = 0; i < cells_.size(); ++i) {
     for(size_t j = 0; j < cells_.size(); ++j) {
-      if(i == j)
+      if(i <= j)
         continue;
 
       auto ranges_i = ranges[i];
