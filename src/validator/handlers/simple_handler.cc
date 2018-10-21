@@ -931,6 +931,14 @@ void SimpleHandler::add_all() {
     ss.set(dst, result, true);
   });
 
+  add_opcode_str({"psrldq"},
+      [this] (Operand dst, Operand i, SymBitVector a, SymBitVector imm, SymState& ss) {
+    //SymBool output_zero = (imm > SymBitVector::constant(8, 15)); 
+    //SymBitVector result = output_zero.ite(SymBitVector::constant(128, 0), shift);
+    auto shift = a >> (imm.zero_extend(128)*SymBitVector::constant(128,8));
+    ss.set(dst, shift, false);
+  });
+
   add_opcode_str({"pushq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 8));

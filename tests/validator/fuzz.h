@@ -160,6 +160,40 @@ TEST_F(ValidatorFuzzTest, XchgInstructionsRandomState) {
   EXPECT_GE(success_count_, iterations*8/10);
 }
 
+/** This test is for psrlqd. */
+TEST_F(ValidatorFuzzTest, PsrldqInstructionsRandomState) {
+
+  // Parameters for the test
+  unsigned long iterations = 20;
+  success_count_ = 0;
+
+  // Setup transforms pool
+  Sandbox sb;
+  DefaultFilter filter(ch_);
+  SmtObligationChecker oc(z3_, filter);
+  Validator v(oc);
+  TransformPools tp = default_fuzzer_pool();
+  tp.set_validator(&v);
+
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto op = (Opcode)i;
+
+    if (op == PSRLDQ_XMM_IMM8) continue;
+
+    tp.remove_opcode((Opcode)i);
+  }
+  tp.set_memory_write(true);
+  tp.set_memory_read(true);
+
+  tp.recompute_pools();
+
+  uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
+
+  sg_.set_seed(seed);
+
+  EXPECT_EQ(success_count_, iterations);
+}
+
 /** This test is for shifts and rotates.  This is important because there are
 lots of corner cases on these instructions that are hard to get right.  They
 require thorough testing. */
