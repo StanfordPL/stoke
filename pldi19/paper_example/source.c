@@ -11,30 +11,28 @@
  */
 
 
-size_t
+void
 __attribute__ ((noinline))
-bitflip (int *array, int len) {
-  for(int i = 0; i < len; ++i) {
+bitflip (int *array, unsigned int len) {
+  for(unsigned int i = 0; i < len; ++i) {
     array[i] ^= 0xffffffff;
   }
 }
 
 
-size_t
+void
 __attribute__ ((noinline))
-bitflip_vec (int *array, int len) {
-  int i = 0;
-  if (len && (uint_ptr_t)array % 8 == 0) {
+bitflip_vec (int *array, unsigned int len) {
+  if (len % 2 == 1) {
     *array ^= 0xffffffff;
     array++;
-    i++;
+    len--;
   }
-  for(; i + 1 < len; i += 2) {
-    *((long)array) ^= 0xffffffffffffffff;
+  while(len > 0) {
+    *((long*)array) ^= 0xffffffffffffffff;
     array += 2;
+    len -= 2;
   }
-  if(i < len)
-    *array ^= 0xffffffff;
 }
 
 

@@ -1,10 +1,10 @@
 
-TARGET_BOUND=4
-REWRITE_BOUND=4
-NAME=myfunction
-TARGET=opt1/func_1.s
-REWRITE=opt1/func_2.s
-DEF_INS="{ }"
+TARGET_BOUND=8
+REWRITE_BOUND=8
+NAME=paper_example
+TARGET=opt1/bitflip.s
+REWRITE=opt1/bitflip_vec.s
+DEF_INS="{ %rdi %rsi }"
 LIVE_OUTS="{ }"
 
 

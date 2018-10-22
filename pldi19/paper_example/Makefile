@@ -11,8 +11,9 @@ all:
 	stoke debug cfg --target $(REWRITE) -o $(NAME)_vec.pdf
 
 tcgen:
-	stoke_tcgen --target $(TARGET) --bound 4 --def_in $(DEF_INS) --live_out $(LIVE_OUTS) --output tcs/tcgen1 --mutants 4
-	stoke_tcgen --target $(REWRITE) --bound 4 --def_in $(DEF_INS) --live_out $(LIVE_OUTS) --output tcs/tcgen2 --mutants 4
+	rm -f tcs/tcgen1 tcs/tcgen2
+	stoke_tcgen --target $(TARGET) --bound 8 --def_in $(DEF_INS) --live_out $(LIVE_OUTS) --output tcs/tcgen1 --mutants 0
+	stoke_tcgen --target $(REWRITE) --bound 8 --def_in $(DEF_INS) --live_out $(LIVE_OUTS) --output tcs/tcgen2 --mutants 0
 	cat tcs/tcgen1 tcs/tcgen2 > tcs/testcases.combo
 
 clean:

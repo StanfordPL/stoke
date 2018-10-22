@@ -33,11 +33,11 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(0) { X } }
+#define OBLIG_DEBUG(X) { if(1) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
-#define DEBUG_ARM(X) { if(0) { X } }
+#define DEBUG_ARM(X) { if(1) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -559,6 +559,7 @@ void SmtObligationChecker::check(
   // Get a list of all aliasing cases.
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
   bool arm_model = alias_strategy_ == AliasStrategy::ARM;
+  bool dummy_model = alias_strategy_ == AliasStrategy::DUMMY;
   bool arm_testcases = arm_model && (testcases.size() > 0);
 
   //OBLIG_DEBUG(cout << "[check_core] arm_testcases = " << arm_testcases << endl;)
@@ -591,6 +592,9 @@ void SmtObligationChecker::check(
     state_t.memory = new ArmMemory(separate_stack, solver_);
     state_r.memory = new ArmMemory(separate_stack, solver_);
     oc_sandbox_.reset();
+  } else if (dummy_model) {
+    state_t.memory = new TrivialMemory();
+    state_r.memory = new TrivialMemory();
   }
 
   // Add given assumptions

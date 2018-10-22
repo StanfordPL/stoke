@@ -482,7 +482,7 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
 }
 
 bool DdecValidator::build_dual_for_discriminator(Invariant* inv, DualAutomata& dual) {
-  cout << "[build_dual_for_discriminator] expression " << inv << endl;
+  cout << "[build_dual_for_discriminator] expression " << *inv << endl;
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
@@ -504,7 +504,6 @@ bool DdecValidator::build_dual_for_discriminator(Invariant* inv, DualAutomata& d
     matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace.back(), rewrite_trace.back()));
 
     // edges from entry to first iteration
-    bool found_false = false;
     for(auto ts : target_trace) {
       for(auto rs : rewrite_trace) {
         if(inv->check(ts.cs,rs.cs)) {
@@ -514,15 +513,8 @@ bool DdecValidator::build_dual_for_discriminator(Invariant* inv, DualAutomata& d
           //cout << ts.cs << endl;
           //cout << rs.cs << endl;
           matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
-        } else {
-          found_false = true;
-        }
+        } 
       }
-    }
-
-    if(!found_false) {
-      cout << "  found_false: " << found_false;
-      return false;
     }
 
     // edges from first iteration to second

@@ -161,14 +161,14 @@ private:
   ObligationChecker::AliasStrategy parse_alias() {
     std::string alias = alias_strategy_arg.value();
 
-    if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
-      return ObligationChecker::AliasStrategy::BASIC;
-    } else if (alias == "flat" || alias == "array") {
+    if (alias == "flat" || alias == "array") {
       return ObligationChecker::AliasStrategy::FLAT;
     } else if (alias == "arm") {
       return ObligationChecker::AliasStrategy::ARM;
     } else if (alias == "arms_race") {
       return ObligationChecker::AliasStrategy::ARMS_RACE;
+    } else if (alias == "dummy") {
+      return ObligationChecker::AliasStrategy::DUMMY; 
     } else {
       std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
       exit(1);

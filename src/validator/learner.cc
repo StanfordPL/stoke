@@ -33,6 +33,7 @@
 #include "src/validator/invariants/range.h"
 #include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
+#include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 
 #include "src/validator/learner.h"
@@ -363,19 +364,20 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
 
       if ((*i).size() == 64) {
-        for (auto ghost : ghosts_) {
-          Variable v(*i, k);
-          auto a = new InequalityInvariant(v, ghost, false, false); // v <= ghost (replacement)
-          auto b = new InequalityInvariant(v, ghost, true, false);  // v < ghost
-          auto c = new InequalityInvariant(ghost, v, false, false); // ghost <= v (replacement)
-          auto d = new InequalityInvariant(ghost, v, true, false);  // ghost < v  
-          inequalities.push_back(a);
-          inequalities.push_back(b);
-          inequalities.push_back(c);
-          inequalities.push_back(d);
-          graph.add_replacement(b, a);
-          graph.add_replacement(d, c);
-        }
+        if(enable_shadow_)
+          for (auto ghost : ghosts_) {
+            Variable v(*i, k);
+            auto a = new InequalityInvariant(v, ghost, false, false); // v <= ghost (replacement)
+            auto b = new InequalityInvariant(v, ghost, true, false);  // v < ghost
+            auto c = new InequalityInvariant(ghost, v, false, false); // ghost <= v (replacement)
+            auto d = new InequalityInvariant(ghost, v, true, false);  // ghost < v  
+            inequalities.push_back(a);
+            inequalities.push_back(b);
+            inequalities.push_back(c);
+            inequalities.push_back(d);
+            graph.add_replacement(b, a);
+            graph.add_replacement(d, c);
+          }
       }
 
       for (auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
@@ -543,10 +545,12 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       variables.push_back(v);
     }
 
-    const Cfg& prog = k ? rewrite_ : target_;
-    for(size_t i = 1; i < prog.num_blocks()-1; ++i) {
-      Variable v = Variable::bb_ghost(i, k);
-      variables.push_back(v);
+    if(enable_shadow_) {
+      const Cfg& prog = k ? rewrite_ : target_;
+      for(size_t i = 1; i < prog.num_blocks()-1; ++i) {
+        Variable v = Variable::bb_ghost(i, k);
+        variables.push_back(v);
+      }
     }
   }
 
@@ -1284,6 +1288,19 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   }
   */
 
+  if(!enable_vector_vars_) {
+    for(size_t k = 0; k < 2; ++k) {
+      for(auto r : r64s) {
+        auto candidate = new TopZeroInvariant(r, k);
+        if(candidate->check(target_states, rewrite_states)) {
+          conj->add_invariant(candidate);
+        } else {
+          delete candidate;
+        }
+      }
+    }
+  }
+
   // sign invariants
   auto class_sign = graph.new_class();
   auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
@@ -1382,15 +1399,17 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     cout << "FOUND " << mem_null_count << " IMPLICATIONS AMONG THE MEMORY-NULL EQUALITIES" << endl;
   }
 
-  for (auto ghost : ghosts_) {
-    auto pointer_null = new PointerNullInvariant(ghost, 1);
-    DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
-    if (pointer_null->check(target_states, rewrite_states)) {
-      conj->add_invariant(pointer_null);
-      DEBUG_LEARNER(cout << "  * accepted" << endl;)
-    } else {
-      delete pointer_null;
-      DEBUG_LEARNER(cout << "  * rejected" << endl;)
+  if(enable_shadow_) {
+    for (auto ghost : ghosts_) {
+      auto pointer_null = new PointerNullInvariant(ghost, 1);
+      DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
+      if (pointer_null->check(target_states, rewrite_states)) {
+        conj->add_invariant(pointer_null);
+        DEBUG_LEARNER(cout << "  * accepted" << endl;)
+      } else {
+        delete pointer_null;
+        DEBUG_LEARNER(cout << "  * rejected" << endl;)
+      }
     }
   }
 
