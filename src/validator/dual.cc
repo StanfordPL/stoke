@@ -684,7 +684,7 @@ void DualAutomata::serialize(std::ostream& os) const {
   stoke::serialize<Cfg>(os, rewrite_);
   stoke::serialize<map<State, vector<Edge>>>(os, next_edges_);
   stoke::serialize<map<State, vector<Edge>>>(os, prev_edges_);
-  stoke::serialize<map<State, ConjunctionInvariant*>>(os, invariants_);
+  stoke::serialize<map<State, std::shared_ptr<ConjunctionInvariant>>>(os, invariants_);
   stoke::serialize<vector<State>>(os, topological_sort_);
 }
 
@@ -695,7 +695,7 @@ DualAutomata DualAutomata::deserialize(std::istream& is) {
   DualAutomata pod(*target, *rewrite);
   pod.next_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
   pod.prev_edges_ = stoke::deserialize<map<State, vector<Edge>>>(is);
-  pod.invariants_ = stoke::deserialize<map<State, ConjunctionInvariant*>>(is);
+  pod.invariants_ = stoke::deserialize<map<State, std::shared_ptr<ConjunctionInvariant>>>(is);
   pod.topological_sort_ = stoke::deserialize<vector<State>>(is);
   return pod;
 }

@@ -53,8 +53,8 @@ ostream& ClassChecker::Problem::serialize(ostream& os) const {
   stoke::serialize<DualBuilder::EquivalenceClassMap>(os, equivalence_class);
   os << target_bound << " " << rewrite_bound << endl;
   stoke::serialize<vector<pair<M8,M8>>>(os, pointer_ranges);
-  stoke::serialize<vector<Invariant*>>(os, extra_assumptions);
-  stoke::serialize<vector<Invariant*>>(os, assume_always);
+  stoke::serialize<vector<std::shared_ptr<Invariant>>>(os, extra_assumptions);
+  stoke::serialize<vector<std::shared_ptr<Invariant>>>(os, assume_always);
   os << separate_stack << endl;
   return os;
 }
@@ -66,8 +66,8 @@ ClassChecker::Problem ClassChecker::Problem::deserialize(istream& is) {
   size_t target_bound, rewrite_bound;
   is >> target_bound >> rewrite_bound;
   auto ptr_ranges = stoke::deserialize<vector<pair<M8,M8>>>(is);
-  auto extras = stoke::deserialize<vector<Invariant*>>(is);
-  auto always = stoke::deserialize<vector<Invariant*>>(is);
+  auto extras = stoke::deserialize<vector<std::shared_ptr<Invariant>>>(is);
+  auto always = stoke::deserialize<vector<std::shared_ptr<Invariant>>>(is);
   bool separate_stack;
   is >> separate_stack;
   ClassChecker::Problem problem(template_pod, equiv_class_map, target_bound, rewrite_bound, ptr_ranges, extras, always, separate_stack);

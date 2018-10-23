@@ -32,10 +32,10 @@ public:
   /** Get an invariant corresponding to a pair of basic blocks. This outer function does
     the work of checking the invariant across all the test data and adding more data
     if needed. */
-  ConjunctionInvariant* get_invariant(Cfg::id_type target_block, Cfg::id_type rewrite_block);
+  std::shared_ptr<ConjunctionInvariant> get_invariant(Cfg::id_type target_block, Cfg::id_type rewrite_block);
 
   /** Transform an invariant so that it holds on a set of inductive paths. */
-  ConjunctionInvariant* transform_invariant(ConjunctionInvariant* conj,
+  std::shared_ptr<ConjunctionInvariant> transform_invariant(std::shared_ptr<ConjunctionInvariant> conj,
       std::vector<CfgPath>& target_paths,
       std::vector<CfgPath>& rewrite_paths);
 
@@ -53,7 +53,7 @@ private:
   void collect_data(size_t tc_id);
 
   /** Get an invariant corresponding to a pair of basic blocks. */
-  ConjunctionInvariant* get_invariant_inner(Cfg::id_type target_block, Cfg::id_type rewrite_block);
+  std::shared_ptr<ConjunctionInvariant> get_invariant_inner(Cfg::id_type target_block, Cfg::id_type rewrite_block);
 
 
   /** Select from a vector elements at random. */

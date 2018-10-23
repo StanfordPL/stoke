@@ -74,8 +74,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new FlagSetInvariant(flag_, is_rewrite_, invert_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<FlagSetInvariant>(flag_, is_rewrite_, invert_);
   }
 
 

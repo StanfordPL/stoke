@@ -26,28 +26,28 @@ public:
 
   ConjunctionInvariant() : invariants_() { }
 
-  ConjunctionInvariant(std::vector<Invariant*> invariants) : invariants_(invariants) { }
+  ConjunctionInvariant(std::vector<std::shared_ptr<Invariant>> invariants) : invariants_(invariants) { }
 
   /** makes a copy of the container, but not a deep copy */
-  ConjunctionInvariant(ConjunctionInvariant* other) : invariants_(other->invariants_) { }
+  ConjunctionInvariant(std::shared_ptr<ConjunctionInvariant> other) : invariants_(other->invariants_) { }
 
-  ConjunctionInvariant& add_invariants(ConjunctionInvariant* invs) {
+  ConjunctionInvariant& add_invariants(std::shared_ptr<ConjunctionInvariant> invs) {
     for (size_t i = 0; i < invs->size(); ++i)
       add_invariant((*invs)[i]);
     return *this;
   }
-  ConjunctionInvariant& add_invariants(std::vector<Invariant*> invs) {
+  ConjunctionInvariant& add_invariants(std::vector<std::shared_ptr<Invariant>> invs) {
     for (auto inv : invs)
       add_invariant(inv);
     return *this;
   }
 
-  ConjunctionInvariant& add_invariant(Invariant* inv) {
+  ConjunctionInvariant& add_invariant(std::shared_ptr<Invariant> inv) {
     invariants_.push_back(inv);
     return *this;
   }
 
-  SymBool operator()(SymState& left, SymState& right, size_t& number) {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) override {
     SymBool b = SymBool::_true();
 
     for (auto it : invariants_) {
@@ -58,14 +58,14 @@ public:
     return b;
   }
 
-  void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number) {
+  void get_dereference_map(DereferenceMap& deref_map, const CpuState& target, const CpuState& rewrite, size_t& number) override {
     for(auto it : invariants_) {
       it->get_dereference_map(deref_map, target, rewrite, number);
       number++;
     }
   };
 
-  Invariant* operator[](size_t n) const {
+  std::shared_ptr<Invariant> operator[](size_t n) const {
     assert(n < invariants_.size());
     return invariants_[n];
   }
@@ -78,7 +78,7 @@ public:
     invariants_.erase(invariants_.begin() + i);
   }
 
-  bool check (const CpuState& target, const CpuState& rewrite) const {
+  bool check (const CpuState& target, const CpuState& rewrite) const override {
    for (auto it : invariants_) {
      if (!it->check(target, rewrite))
        return false;
@@ -105,7 +105,7 @@ public:
   }
 
 
-  std::ostream& write(std::ostream& os) const {
+  std::ostream& write(std::ostream& os) const override {
 
     if (invariants_.size() == 0) {
       os << "true";
@@ -126,7 +126,7 @@ public:
     return os;
   }
 
-  virtual std::vector<Variable> get_variables() const {
+  virtual std::vector<Variable> get_variables() const override {
     std::vector<Variable> result;
     for (auto it : invariants_) {
       auto prev = it->get_variables();
@@ -135,7 +135,7 @@ public:
     return result;
   }
 
-  virtual std::ostream& serialize(std::ostream& out) const {
+  virtual std::ostream& serialize(std::ostream& out) const override {
     out << "ConjunctionInvariant" << std::endl;
     out << invariants_.size() << std::endl;
     for(auto it : invariants_) {
@@ -153,16 +153,16 @@ public:
     }
   }
 
-  Invariant* clone() const {
-    std::vector<Invariant*> new_invs;
+  std::shared_ptr<Invariant> clone() const override {
+    std::vector<std::shared_ptr<Invariant>> new_invs;
     for(auto inv : invariants_)
       new_invs.push_back(inv->clone());
-    return new ConjunctionInvariant(new_invs);
+    return std::make_shared<ConjunctionInvariant>(new_invs);
   }
 
 private:
 
-  std::vector<Invariant*> invariants_;
+  std::vector<std::shared_ptr<Invariant>> invariants_;
 
 };
 

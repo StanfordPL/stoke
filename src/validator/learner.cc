@@ -281,15 +281,15 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
 
 /** Return a set of possible memory null invariants */
-vector<NonzeroInvariant*> InvariantLearner::build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs) const {
-  vector<NonzeroInvariant*> invariants;
+vector<std::shared_ptr<NonzeroInvariant>> InvariantLearner::build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs) const {
+  vector<std::shared_ptr<NonzeroInvariant>> invariants;
 
   auto memory_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
   for (auto v : memory_vars) {
-    auto mni = new NonzeroInvariant(v, false);
+    auto mni = std::make_shared<NonzeroInvariant>(v, false);
     invariants.push_back(mni);  
 
-    mni = new NonzeroInvariant(v, true);
+    mni = std::make_shared<NonzeroInvariant>(v, true);
     invariants.push_back(mni);
   }
 
@@ -303,10 +303,10 @@ vector<NonzeroInvariant*> InvariantLearner::build_memory_null_invariants(RegSet 
 }
 
 /** Return a set of possible memory-register equalities */
-vector<EqualityInvariant*> InvariantLearner::build_memory_register_equalities(RegSet target_regs, RegSet rewrite_regs) const {
+vector<std::shared_ptr<EqualityInvariant>> InvariantLearner::build_memory_register_equalities(RegSet target_regs, RegSet rewrite_regs) const {
 
   set<size_t> mem_sizes;
-  vector<EqualityInvariant*> invariants;
+  vector<std::shared_ptr<EqualityInvariant>> invariants;
   auto memory_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
   for(auto mv : memory_vars) {
     mem_sizes.insert(mv.size);
@@ -341,7 +341,7 @@ vector<EqualityInvariant*> InvariantLearner::build_memory_register_equalities(Re
       if(rv.size == mv.size) {
         mv.coefficient = 1;
         rv.coefficient = -1;
-        EqualityInvariant* inv = new EqualityInvariant({rv,mv},0);
+        auto inv = make_shared<EqualityInvariant>(vector<Variable>({rv,mv}),0);
         invariants.push_back(inv);
         cout << "Proposing " << *inv << endl;
       }
@@ -352,9 +352,9 @@ vector<EqualityInvariant*> InvariantLearner::build_memory_register_equalities(Re
 }
 
 /** Return a set of possible inequality invariants. */
-vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs, ImplicationGraph& graph) const {
+vector<std::shared_ptr<InequalityInvariant>> InvariantLearner::build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs, ImplicationGraph& graph) const {
 
-  vector<InequalityInvariant*> inequalities;
+  vector<std::shared_ptr<InequalityInvariant>> inequalities;
 
   // For now, let's look at unsigned target-target and rewrite-rewrite inequalities
 
@@ -367,10 +367,10 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
         if(enable_shadow_)
           for (auto ghost : ghosts_) {
             Variable v(*i, k);
-            auto a = new InequalityInvariant(v, ghost, false, false); // v <= ghost (replacement)
-            auto b = new InequalityInvariant(v, ghost, true, false);  // v < ghost
-            auto c = new InequalityInvariant(ghost, v, false, false); // ghost <= v (replacement)
-            auto d = new InequalityInvariant(ghost, v, true, false);  // ghost < v  
+            auto a = std::make_shared<InequalityInvariant>(v, ghost, false, false); // v <= ghost (replacement)
+            auto b = std::make_shared<InequalityInvariant>(v, ghost, true, false);  // v < ghost
+            auto c = std::make_shared<InequalityInvariant>(ghost, v, false, false); // ghost <= v (replacement)
+            auto d = std::make_shared<InequalityInvariant>(ghost, v, true, false);  // ghost < v  
             inequalities.push_back(a);
             inequalities.push_back(b);
             inequalities.push_back(c);
@@ -390,8 +390,8 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
           Variable v1(*i, k);
           Variable v2(*j, k);
 
-          auto a = new InequalityInvariant(v1, v2, false, false);
-          auto b = new InequalityInvariant(v1, v2, true, false);
+          auto a = std::make_shared<InequalityInvariant>(v1, v2, false, false);
+          auto b = std::make_shared<InequalityInvariant>(v1, v2, true, false);
           inequalities.push_back(a);
           inequalities.push_back(b);
           graph.add_replacement(b, a);
@@ -403,11 +403,11 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_invariants(RegSe
           Variable v1_32(r32s[*i], k);
           Variable v2_32(r32s[*j], k);
 
-          auto a = new InequalityInvariant(v1, v2, false, false);
-          auto b = new InequalityInvariant(v1, v2, true, false);
+          auto a = std::make_shared<InequalityInvariant>(v1, v2, false, false);
+          auto b = std::make_shared<InequalityInvariant>(v1, v2, true, false);
 
-          auto c = new InequalityInvariant(v1_32, v2_32, false, false);
-          auto d = new InequalityInvariant(v1_32, v2_32, true, false);
+          auto c = std::make_shared<InequalityInvariant>(v1_32, v2_32, false, false);
+          auto d = std::make_shared<InequalityInvariant>(v1_32, v2_32, true, false);
 
           inequalities.push_back(a);
           inequalities.push_back(b);
@@ -438,13 +438,13 @@ uint64_t InvariantLearner::euclid(uint64_t a, uint64_t b)
 }
 
 
-vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
+vector<std::shared_ptr<EqualityInvariant>> InvariantLearner::build_modulo_invariants(
     RegSet target_regs, 
     RegSet rewrite_regs, 
     const vector<CpuState>& target_states, 
     const vector<CpuState>& rewrite_states) const {
 
-  vector<EqualityInvariant*> modulos;
+  vector<std::shared_ptr<EqualityInvariant>> modulos;
 
   // For now, let's look at unsigned target-target and rewrite-rewrite modulo equalities
   for (size_t k = 0; k < 2; ++k) {
@@ -469,11 +469,9 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
         Variable v(*i, k);
         v.coefficient = 1;
         auto terms = {v};
-        auto inv = new EqualityInvariant(terms, onereg_val % onereg_gcd, onereg_gcd);
+        auto inv = std::make_shared<EqualityInvariant>(terms, onereg_val % onereg_gcd, onereg_gcd);
         if(inv->check(target_states, rewrite_states))
           modulos.push_back(inv);
-        else
-          delete inv;
       }
 
 
@@ -512,12 +510,10 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
           w.coefficient = -1;
           auto terms = {v , w};
           some_diff = some_diff % gcd;
-          auto inv = new EqualityInvariant(terms, some_diff, gcd);
+          auto inv = std::make_shared<EqualityInvariant>(terms, some_diff, gcd);
           if(inv->check(target_states, rewrite_states)) {
             modulos.push_back(inv);
-          } else {
-            delete inv;
-          }
+          } 
         }
 
       }
@@ -527,7 +523,7 @@ vector<EqualityInvariant*> InvariantLearner::build_modulo_invariants(
   return modulos;
 }
 
-vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_invariants(
+vector<std::shared_ptr<InequalityInvariant>> InvariantLearner::build_inequality_with_constant_invariants(
     RegSet target_regs, 
     RegSet rewrite_regs, 
     const vector<CpuState>& target_states, 
@@ -535,7 +531,7 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
 
   assert(target_states.size() == rewrite_states.size());
 
-  vector<InequalityInvariant*> outputs;
+  vector<std::shared_ptr<InequalityInvariant>> outputs;
   vector<Variable> variables;
 
   for(size_t k = 0; k < 2; ++k) {
@@ -601,12 +597,12 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
       //cout << "  min " << min_difference << endl;
 
       // i + constant <= j
-      auto inv = new InequalityInvariant(v1, v2, false, false, min_difference);
+      auto inv = std::make_shared<InequalityInvariant>(v1, v2, false, false, min_difference);
       outputs.push_back(inv);
       //cout << "  generating " << *inv << endl;
 
       // i + constant >= j   i.e.   j - constant <= i
-      auto inv2 = new InequalityInvariant(v2, v1, false, false, -max_difference);
+      auto inv2 = std::make_shared<InequalityInvariant>(v2, v1, false, false, -max_difference);
       outputs.push_back(inv2);
       //cout << "  generating " << *inv2 << endl;
     }
@@ -616,13 +612,13 @@ vector<InequalityInvariant*> InvariantLearner::build_inequality_with_constant_in
 }
 
 /** Return invariants over the range of a variable. */
-vector<RangeInvariant*> InvariantLearner::build_range_invariants(
+vector<std::shared_ptr<RangeInvariant>> InvariantLearner::build_range_invariants(
     RegSet target_regs, 
     RegSet rewrite_regs, 
     const vector<CpuState>& target_states, 
     const vector<CpuState>& rewrite_states) const {
 
-  vector<RangeInvariant*> ranges;
+  vector<std::shared_ptr<RangeInvariant>> ranges;
 
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
@@ -651,13 +647,13 @@ vector<RangeInvariant*> InvariantLearner::build_range_invariants(
       }
       if(min_count > 2) {
         Variable v(*i, k);
-        auto inv = new RangeInvariant(v, min, (uint64_t)(-1));
+        auto inv = std::make_shared<RangeInvariant>(v, min, (uint64_t)(-1));
         assert(inv->check(target_states, rewrite_states));
         ranges.push_back(inv);
       }
       if(max_count > 2) {
         Variable v(*i, k);
-        auto inv = new RangeInvariant(v, 0, max);
+        auto inv = std::make_shared<RangeInvariant>(v, 0, max);
         assert(inv->check(target_states, rewrite_states));
         ranges.push_back(inv);
       }
@@ -669,9 +665,9 @@ vector<RangeInvariant*> InvariantLearner::build_range_invariants(
 }
 
 /** Return a set of possible lower-n bit invariants. */
-vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrite_regs) {
+vector<std::shared_ptr<Mod2NInvariant>> build_mod2n_invariants(RegSet target_regs, RegSet rewrite_regs) {
 
-  vector<Mod2NInvariant*> invariants;
+  vector<std::shared_ptr<Mod2NInvariant>> invariants;
 
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
@@ -679,7 +675,7 @@ vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrit
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
       for (auto j = 1; j < 5; ++j) {
         Variable v(*i, k);
-        invariants.push_back(new Mod2NInvariant(v, j));
+        invariants.push_back(std::make_shared<Mod2NInvariant>(v, j));
       }
     }
   }
@@ -688,24 +684,24 @@ vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrit
 }
 
 /** Return a set of sign invariants. */
-vector<SignInvariant*> build_sign_invariants(RegSet target_regs, RegSet rewrite_regs) {
+vector<std::shared_ptr<SignInvariant>> build_sign_invariants(RegSet target_regs, RegSet rewrite_regs) {
 
-  vector<SignInvariant*> invariants;
+  vector<std::shared_ptr<SignInvariant>> invariants;
 
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
 
     for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
       Variable v(*i, k);
-      invariants.push_back(new SignInvariant(v, true));
-      invariants.push_back(new SignInvariant(v, false));
+      invariants.push_back(std::make_shared<SignInvariant>(v, true));
+      invariants.push_back(std::make_shared<SignInvariant>(v, false));
     }
   }
 
   return invariants;
 }
 
-bool invariant_holds(Invariant* invariant, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
+bool invariant_holds(std::shared_ptr<Invariant> invariant, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
 
   for (size_t i = 0; i < target_states.size(); ++i)
     if (!invariant->check(target_states[i], rewrite_states[i]))
@@ -714,10 +710,10 @@ bool invariant_holds(Invariant* invariant, const vector<CpuState>& target_states
   return true;
 }
 
-bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose = false);
+bool add_or_delete_inv(vector<std::shared_ptr<Invariant>>& invs, std::shared_ptr<Invariant> inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose = false);
 
-bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<CpuState>& ts, const vector<CpuState>& rs, bool verbose = false) {
-  vector<Invariant*> tmp;
+bool add_or_delete_inv(std::shared_ptr<ConjunctionInvariant> conj, std::shared_ptr<Invariant> inv, const vector<CpuState>& ts, const vector<CpuState>& rs, bool verbose = false) {
+  vector<std::shared_ptr<Invariant>> tmp;
   bool b = add_or_delete_inv(tmp, inv, ts, rs, verbose);
   for (auto it : tmp)
     conj->add_invariant(it);
@@ -725,7 +721,7 @@ bool add_or_delete_inv(ConjunctionInvariant* conj, Invariant* inv, const vector<
 }
 
 /** Returns true if the invariant is added. */
-bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose) {
+bool add_or_delete_inv(vector<std::shared_ptr<Invariant>>& invs, std::shared_ptr<Invariant> inv, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states, bool verbose) {
   if (invariant_holds(inv, target_states, rewrite_states)) {
     if (verbose)
       cout << "  Yes, " << *inv << " holds" << endl;
@@ -734,12 +730,11 @@ bool add_or_delete_inv(vector<Invariant*>& invs, Invariant* inv, const vector<Cp
   } else {
     if (verbose)
       cout << "  No, " << *inv << " does not hold" << endl;
-    delete inv;
     return false;
   }
 }
 
-vector<Invariant*> build_flag_invariants(
+vector<std::shared_ptr<Invariant>> build_flag_invariants(
   x64asm::RegSet target_regs,
   x64asm::RegSet rewrite_regs,
   const vector<CpuState>& target_states,
@@ -748,7 +743,7 @@ vector<Invariant*> build_flag_invariants(
   DEBUG_LEARNER(cout << "target_regs: " << target_regs << endl;)
   DEBUG_LEARNER(cout << "rewrite_regs: " << rewrite_regs << endl;)
 
-  vector<Invariant*> inv;
+  vector<std::shared_ptr<Invariant>> inv;
 
   for(size_t k = 0; k < 2; ++k) {
     auto& regs = k ? rewrite_regs : target_regs;
@@ -756,8 +751,8 @@ vector<Invariant*> build_flag_invariants(
 
       // Generate target flag true
       // these leak memory it unused
-      Invariant* flag_true = new FlagSetInvariant(*flag, k, false);
-      Invariant* flag_false = new FlagSetInvariant(*flag, k, true);
+      std::shared_ptr<Invariant> flag_true = std::make_shared<FlagSetInvariant>(*flag, k, false);
+      std::shared_ptr<Invariant> flag_false = std::make_shared<FlagSetInvariant>(*flag, k, true);
       add_or_delete_inv(inv, flag_true, target_states, rewrite_states);
       add_or_delete_inv(inv, flag_false, target_states, rewrite_states);
     }
@@ -802,7 +797,7 @@ const std::vector<CpuState>& rewrite_states) {
   return pair<vector<CpuState>, vector<CpuState>>(target_chosen, rewrite_chosen);
 }
 
-ConjunctionInvariant* InvariantLearner::learn(
+std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
   x64asm::RegSet target_regs,
   x64asm::RegSet rewrite_regs,
   const std::vector<CpuState>& states,
@@ -816,24 +811,28 @@ ConjunctionInvariant* InvariantLearner::learn(
   auto rewrite_states = states2;
 
   // idea: sort state pairs into one, two, or four groups, and learn invariant over them
-  vector<Invariant*> condition_invariants;
+  vector<std::shared_ptr<Invariant>> condition_invariants;
   if (target_cc != "" && rewrite_cc != "") {
-    auto inv_t = new FlagInvariant(target_cc, false, false);
-    auto inv_r = new FlagInvariant(rewrite_cc, true, false);
-    auto not_inv_t = new FlagInvariant(target_cc, false, true);
-    auto not_inv_r = new FlagInvariant(rewrite_cc, true, true);
-    condition_invariants.push_back(new ConjunctionInvariant({inv_t, inv_r}));
-    condition_invariants.push_back(new ConjunctionInvariant({not_inv_t, inv_r}));
-    condition_invariants.push_back(new ConjunctionInvariant({inv_t, not_inv_r}));
-    condition_invariants.push_back(new ConjunctionInvariant({not_inv_t, not_inv_r}));
+    auto inv_t = std::make_shared<FlagInvariant>(target_cc, false, false);
+    auto inv_r = std::make_shared<FlagInvariant>(rewrite_cc, true, false);
+    auto not_inv_t = std::make_shared<FlagInvariant>(target_cc, false, true);
+    auto not_inv_r = std::make_shared<FlagInvariant>(rewrite_cc, true, true);
+    condition_invariants.push_back(
+        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({inv_t, inv_r})));
+    condition_invariants.push_back(
+        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({not_inv_t, inv_r})));
+    condition_invariants.push_back(
+        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({inv_t, not_inv_r})));
+    condition_invariants.push_back(
+        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({not_inv_t, not_inv_r})));
   } else if (target_cc != "") {
-    auto inv = new FlagInvariant(target_cc, false, false);
-    auto inv2 = new FlagInvariant(target_cc, false, true);
+    auto inv = std::make_shared<FlagInvariant>(target_cc, false, false);
+    auto inv2 = std::make_shared<FlagInvariant>(target_cc, false, true);
     condition_invariants.push_back(inv);
     condition_invariants.push_back(inv2);
   } else if (rewrite_cc != "") {
-    auto inv = new FlagInvariant(rewrite_cc, true, false);
-    auto inv2 = new FlagInvariant(rewrite_cc, true, true);
+    auto inv = std::make_shared<FlagInvariant>(rewrite_cc, true, false);
+    auto inv2 = std::make_shared<FlagInvariant>(rewrite_cc, true, true);
     condition_invariants.push_back(inv);
     condition_invariants.push_back(inv2);
   } else {
@@ -870,7 +869,7 @@ ConjunctionInvariant* InvariantLearner::learn(
   }
 
   // learn simple invariants and conjoin
-  auto final_inv = new ConjunctionInvariant();
+  auto final_inv = std::make_shared<ConjunctionInvariant>();
 
   for (size_t i = 0; i < condition_invariants.size(); ++i) {
     auto lhs_vector = state_sets[i].first;
@@ -878,15 +877,15 @@ ConjunctionInvariant* InvariantLearner::learn(
     assert(lhs_vector.size() == rhs_vector.size());
 
     if (lhs_vector.size() == 0) {
-      final_inv->add_invariant(new ImplicationInvariant(condition_invariants[i], new FalseInvariant()));
+      final_inv->add_invariant(std::make_shared<ImplicationInvariant>(condition_invariants[i], std::make_shared<FalseInvariant>()));
     } else {
       auto inv = learn_simple(target_regs, rewrite_regs, lhs_vector, rhs_vector, graph);
       for (size_t j = 0; j < inv->size(); ++j) {
         auto curr = (*inv)[j];
-        auto impl = new ImplicationInvariant(condition_invariants[i], curr);
+        auto impl = std::make_shared<ImplicationInvariant>(condition_invariants[i], curr);
         final_inv->add_invariant(impl);
         for(auto it : graph.get_replacements(curr)) {
-          auto new_replacement = new ImplicationInvariant(condition_invariants[i], it);
+          auto new_replacement = std::make_shared<ImplicationInvariant>(condition_invariants[i], it);
           graph.add_replacement(impl, new_replacement);
         }
       }
@@ -900,7 +899,7 @@ ConjunctionInvariant* InvariantLearner::learn(
 
 /** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
-vector<Invariant*> InvariantLearner::learn_constants(
+vector<std::shared_ptr<Invariant>> InvariantLearner::learn_constants(
   vector<Variable>& columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -908,7 +907,7 @@ vector<Invariant*> InvariantLearner::learn_constants(
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
 
-  vector<Invariant*> invariants;
+  vector<std::shared_ptr<Invariant>> invariants;
 
   for (size_t i = 0; i < columns.size(); ++i) {
 
@@ -925,7 +924,7 @@ vector<Invariant*> InvariantLearner::learn_constants(
     if (match) {
       vector<Variable> terms;
       terms.push_back(columns[i]);
-      auto ei = new EqualityInvariant(terms, value);
+      auto ei = std::make_shared<EqualityInvariant>(terms, value);
       invariants.push_back(ei);
 
       cout << "generating " << *ei << endl;
@@ -988,7 +987,7 @@ void multiplication_update(uint64_t& col_i_value, uint64_t& col_j_value,
 
 /** Learn constants over a set of columns,
   === AND === remove variables that are constants. */
-vector<Invariant*> InvariantLearner::learn_easy_equalities(
+vector<std::shared_ptr<Invariant>> InvariantLearner::learn_easy_equalities(
   vector<Variable>& columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -996,7 +995,7 @@ vector<Invariant*> InvariantLearner::learn_easy_equalities(
   assert(target_states.size() == rewrite_states.size());
   size_t tc_count = target_states.size();
 
-  vector<Invariant*> invariants;
+  vector<std::shared_ptr<Invariant>> invariants;
 
   vector<size_t> columns_to_erase;
   for (size_t i = 0; i < columns.size(); ++i) {
@@ -1039,7 +1038,7 @@ vector<Invariant*> InvariantLearner::learn_easy_equalities(
         terms.push_back(columns[i]);
         terms.push_back(columns[j]);
 
-        auto ei = new EqualityInvariant(terms, diff);
+        auto ei = std::make_shared<EqualityInvariant>(terms, diff);
         invariants.push_back(ei);
         DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
@@ -1051,7 +1050,7 @@ vector<Invariant*> InvariantLearner::learn_easy_equalities(
         terms.push_back(columns[i]);
         terms.push_back(columns[j]);
 
-        auto ei = new EqualityInvariant(terms, 0);
+        auto ei = std::make_shared<EqualityInvariant>(terms, 0);
         invariants.push_back(ei);
         DEBUG_LEARNER(cout << "generating " << *ei << endl;)
 
@@ -1096,7 +1095,7 @@ IntMatrix InvariantLearner::states_to_matrix(
   return matrix2;
 }
 
-ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
+std::shared_ptr<ConjunctionInvariant> InvariantLearner::matrix_to_invariant(
   const vector<Variable>& variables,
   const IntMatrix& matrix
 ) {
@@ -1104,7 +1103,7 @@ ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
   size_t dim = matrix.rows();
   size_t num_columns = matrix.cols();
   cout << "Got matrix with " << dim << " rows and " << num_columns << " cols" << endl;
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
+  std::shared_ptr<ConjunctionInvariant> conj = std::make_shared<ConjunctionInvariant>();
 
   for (size_t i = 0; i < dim; ++i) {
     vector<Variable> terms;
@@ -1118,7 +1117,7 @@ ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
       }
     }
 
-    auto ei = new EqualityInvariant(terms, -matrix[i][num_columns-1]);
+    auto ei = std::make_shared<EqualityInvariant>(terms, -matrix[i][num_columns-1]);
     conj->add_invariant(ei);
   }
 
@@ -1126,7 +1125,7 @@ ConjunctionInvariant* InvariantLearner::matrix_to_invariant(
 }
 
 
-vector<Invariant*> InvariantLearner::learn_equalities(
+vector<std::shared_ptr<Invariant>> InvariantLearner::learn_equalities(
   vector<Variable> columns,
   const vector<CpuState>& target_states,
   const vector<CpuState>& rewrite_states) {
@@ -1134,7 +1133,7 @@ vector<Invariant*> InvariantLearner::learn_equalities(
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
 
-  vector<Invariant*> invariants;
+  vector<std::shared_ptr<Invariant>> invariants;
 
   /** First do some checks to make things faster. */
   /** (A) check for constant columns. */
@@ -1167,7 +1166,7 @@ vector<Invariant*> InvariantLearner::learn_equalities(
   auto rewrite_learn = tc_pairs.second;
 
   bool done = false;
-  ConjunctionInvariant* equalities;
+  std::shared_ptr<ConjunctionInvariant> equalities;
   while (!done) {
     auto matrix = states_to_matrix(columns, target_learn, rewrite_learn);
     cout << "COMPUTING KERNEL OF THIS MATRIX " << matrix.rows() << " x " << matrix.cols() << endl;
@@ -1223,7 +1222,7 @@ vector<Invariant*> InvariantLearner::learn_equalities(
 }
 
 
-ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
+std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const vector<CpuState>& target_states,
     const vector<CpuState>& rewrite_states,
@@ -1231,17 +1230,14 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
   assert(target_states.size() == rewrite_states.size());
 
-  //TODO leaks memory
-
-  MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
-
-  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
-  ConjunctionInvariant* conj = new ConjunctionInvariant();
+  std::shared_ptr<MemoryEqualityInvariant> mem_equ = std::make_shared<MemoryEqualityInvariant>();
+  std::shared_ptr<NoSignalsInvariant> no_sigs = std::make_shared<NoSignalsInvariant>();
+  std::shared_ptr<ConjunctionInvariant> conj = std::make_shared<ConjunctionInvariant>();
   conj->add_invariant(no_sigs);
   conj->add_invariant(mem_equ);
 
   if (target_states.size() == 0 || rewrite_states.size() == 0) {
-    conj->add_invariant(new FalseInvariant());
+    conj->add_invariant(std::make_shared<FalseInvariant>());
     return conj;
   }
 
@@ -1262,13 +1258,12 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
       if (all_nonzero) {
         Variable v(r64s[*it], k);
-        auto nz = new NonzeroInvariant(v);
+        auto nz = std::make_shared<NonzeroInvariant>(v);
         if (nz->check(target_states, rewrite_states)) {
           conj->add_invariant(nz);
           graph.add_invariant(nz);
         } else {
           DEBUG_LEARNER(cout << "GOT BAD INVARIANT " << *nz << endl;)
-          delete nz;
         }
       }
     }
@@ -1281,9 +1276,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     for (auto modulo : potential_mod2n) {
       if (modulo->check(target_states, rewrite_states)) {
         conj->add_invariant(modulo);
-      } else {
-        delete modulo;
-      }
+      } 
     }
   }
   */
@@ -1291,12 +1284,10 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
   if(!enable_vector_vars_) {
     for(size_t k = 0; k < 2; ++k) {
       for(auto r : r64s) {
-        auto candidate = new TopZeroInvariant(r, k);
+        auto candidate = std::make_shared<TopZeroInvariant>(r, k);
         if(candidate->check(target_states, rewrite_states)) {
           conj->add_invariant(candidate);
-        } else {
-          delete candidate;
-        }
+        } 
       }
     }
   }
@@ -1308,9 +1299,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     if (sign->check(target_states, rewrite_states)) {
       conj->add_invariant(sign);
       graph.add_invariant(sign);
-    } else {
-      delete sign;
-    }
+    } 
   }
 
   // Memory-Register equalities
@@ -1324,7 +1313,6 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
       graph.add_invariant(ineq);
     } else {
       cout << "Discarding " << *ineq << endl;
-      delete ineq;
     }
   }
   size_t memreg_equ_count = graph.compute(class_memreg_equ, class_memreg_equ);
@@ -1338,9 +1326,7 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
     if (ineq->check(target_states, rewrite_states)) {
       conj->add_invariant(ineq);
       graph.add_invariant(ineq);
-    } else {
-      delete ineq;
-    }
+    } 
   }
   */
 
@@ -1391,7 +1377,6 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
         graph.add_invariant(mem_null);
       } else {
         cout << " * fail" << endl;
-        delete mem_null;
       }
     }
 
@@ -1401,13 +1386,12 @@ ConjunctionInvariant* InvariantLearner::learn_simple(x64asm::RegSet target_regs,
 
   if(enable_shadow_) {
     for (auto ghost : ghosts_) {
-      auto pointer_null = new PointerNullInvariant(ghost, 1);
+      auto pointer_null = std::make_shared<PointerNullInvariant>(ghost, 1);
       DEBUG_LEARNER(cout << "testing ptr " << *pointer_null << endl;)
       if (pointer_null->check(target_states, rewrite_states)) {
         conj->add_invariant(pointer_null);
         DEBUG_LEARNER(cout << "  * accepted" << endl;)
       } else {
-        delete pointer_null;
         DEBUG_LEARNER(cout << "  * rejected" << endl;)
       }
     }

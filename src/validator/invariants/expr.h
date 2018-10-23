@@ -132,8 +132,8 @@ public:
     }
   }
 
-  Invariant* clone() const {
-    return new ExprInvariant(expr_, original_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<ExprInvariant>(expr_, original_);
   }
 
 

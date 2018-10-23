@@ -97,26 +97,31 @@ public:
   }
 
   /** Set strategy for aliasing */
-  ObligationChecker& set_alias_strategy(AliasStrategy as) {
+  ObligationChecker& set_alias_strategy(AliasStrategy as) override {
     child_->set_alias_strategy(as);
     return *this;
   }
 
-  AliasStrategy get_alias_strategy() {
+  AliasStrategy get_alias_strategy() override {
     return child_->get_alias_strategy();
   }
 
-  ObligationChecker& set_fixpoint_up(bool b) {
+  ObligationChecker& set_fixpoint_up(bool b) override {
     child_->set_fixpoint_up(b);
     return *this;
   }
 
-  ObligationChecker& set_nacl(bool b) {
+  ObligationChecker& set_separate_stack(bool b) override {
+    child_->set_separate_stack(b);
+    return *this;
+  }
+
+  ObligationChecker& set_nacl(bool b) override {
     child_->set_nacl(b);
     return *this;
   }
 
-  ObligationChecker& set_basic_block_ghosts(bool b) {
+  ObligationChecker& set_basic_block_ghosts(bool b) override {
     child_->set_basic_block_ghosts(b);
     return *this;
   }
@@ -129,24 +134,24 @@ public:
   virtual void check(const Cfg& target, const Cfg& rewrite,
                      Cfg::id_type target_block, Cfg::id_type rewrite_block,
                      const CfgPath& p, const CfgPath& q,
-                     Invariant& assume, Invariant& prove,
+                     std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      bool override_separate_stack,
-                     void* optional = NULL) {
+                     void* optional = NULL) override {
     child_->check(target, rewrite, target_block, rewrite_block, p, q, assume, prove, testcases, callback, override_separate_stack, optional);
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */
-  virtual void block_until_complete() {
+  virtual void block_until_complete() override {
     child_->block_until_complete();
   }
 
-  virtual void check_for_callbacks() {
+  virtual void check_for_callbacks() override {
     child_->check_for_callbacks();
   }
 
-  virtual void delete_all() {
+  virtual void delete_all() override {
     child_->delete_all();
   }
 

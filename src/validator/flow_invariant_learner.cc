@@ -55,7 +55,7 @@ std::vector<T> FlowInvariantLearner::pick_at_random(const vector<T>& items, size
   return chosen;
 }
 
-ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_block,
+std::shared_ptr<ConjunctionInvariant> FlowInvariantLearner::get_invariant(Cfg::id_type target_block,
     Cfg::id_type rewrite_block) {
   
   /** These are cached by data collector; no real performance hit here. */
@@ -113,7 +113,7 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant(Cfg::id_type target_bl
   }
 }
 
-ConjunctionInvariant* FlowInvariantLearner::get_invariant_inner(Cfg::id_type target_block,
+std::shared_ptr<ConjunctionInvariant> FlowInvariantLearner::get_invariant_inner(Cfg::id_type target_block,
     Cfg::id_type rewrite_block) {
 
   /** Fetch and unzip the pairs */
@@ -137,17 +137,17 @@ ConjunctionInvariant* FlowInvariantLearner::get_invariant_inner(Cfg::id_type tar
 
   cout << "* learning equalities" << endl;
   if (target_states.size() == 0) {
-    auto ci = new ConjunctionInvariant();
+    auto ci = std::make_shared<ConjunctionInvariant>();
     return ci;
   }
 
-  auto ci = new ConjunctionInvariant();
+  auto ci = std::make_shared<ConjunctionInvariant>();
   auto invs = invariant_learner_.learn_equalities(columns, target_states, rewrite_states);
   ci->add_invariants(invs);
   return ci;
 }
 
-ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvariant* conj,
+std::shared_ptr<ConjunctionInvariant> FlowInvariantLearner::transform_invariant(std::shared_ptr<ConjunctionInvariant> conj,
     std::vector<CfgPath>& target_paths, std::vector<CfgPath>& rewrite_paths) {
 
   /** The conjunction contains invariants, which we write in the form
@@ -191,7 +191,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
       auto target_path = target_paths[i];
       auto rewrite_path = rewrite_paths[i];
 
-      auto invariant = static_cast<EqualityInvariant*>((*conj)[j]);
+      auto invariant = dynamic_pointer_cast<EqualityInvariant>((*conj)[j]);
       auto variables = invariant->get_variables();
 
       for (size_t m = 0; m < variables.size(); ++m) {
@@ -226,12 +226,12 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
   cout << "DEBUGGING TRANSFORM MATRIX NULLSPACE" << endl;
   solutions.print();
 
-  auto transformed = new ConjunctionInvariant();
+  auto transformed = std::make_shared<ConjunctionInvariant>();
   for (auto& solution : solutions) {
     vector<Variable> terms;
     size_t non_ghost_count = 0;
     for (size_t i = 0; i < solution.size(); ++i) {
-      auto invariant = static_cast<EqualityInvariant*>((*conj)[i]);
+      auto invariant = dynamic_pointer_cast<EqualityInvariant>((*conj)[i]);
       auto variables = invariant->get_variables();
       auto multiplier = solution[i];
       if (multiplier == 0)
@@ -249,7 +249,7 @@ ConjunctionInvariant* FlowInvariantLearner::transform_invariant(ConjunctionInvar
     }
 
     if (non_ghost_count) {
-      auto ei = new EqualityInvariant(terms, 0);
+      auto ei = std::make_shared<EqualityInvariant>(terms, 0);
       transformed->add_invariant(ei);
     }
   }

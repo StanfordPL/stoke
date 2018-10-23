@@ -110,8 +110,8 @@ public:
     m_ = *static_cast<x64asm::Mem*>(&m8);
   }
 
-  Invariant* clone() const {
-    return new MemoryNullInvariant(m_, is_rewrite_, is_null_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<MemoryNullInvariant>(m_, is_rewrite_, is_null_);
   }
 
 private:

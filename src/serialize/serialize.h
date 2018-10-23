@@ -8,6 +8,7 @@
 #include <map>
 #include <ostream>
 #include <vector>
+#include <memory>
 
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/serialize/check_stream.h"
@@ -46,8 +47,20 @@ class Serializer<typename std::enable_if<!std::is_base_of<Invariant, T>::value, 
       T t = stoke::deserialize<T>(is);
       return new T(t);
     }
-
 };
+
+/** Invariant shared pointers */
+template <typename T>
+class Serializer<typename std::enable_if<std::is_base_of<Invariant, T>::value, std::shared_ptr<T>>::type, std::shared_ptr<T>> {
+  public:
+    static void serialize(std::ostream& os, const std::shared_ptr<T> t) {
+      t->serialize(os);
+    }
+    static std::shared_ptr<T> deserialize(std::istream& is) {
+      return std::dynamic_pointer_cast<T>(Invariant::deserialize(is));
+    }
+};
+
 
 /** Invariant pointers */
 template <typename T>

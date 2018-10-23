@@ -86,8 +86,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new PointerRangeInvariant(begin_, end_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<PointerRangeInvariant>(begin_, end_);
   }
 
 

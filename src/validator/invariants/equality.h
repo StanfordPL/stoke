@@ -158,8 +158,8 @@ public:
     }
   }
 
-  Invariant* clone() const {
-    return new EqualityInvariant(terms_, constant_, modulus_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<EqualityInvariant>(terms_, constant_, modulus_);
   }
 
   std::vector<Variable> get_terms() const {

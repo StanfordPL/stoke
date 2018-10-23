@@ -59,21 +59,21 @@ public:
       delete child_;
   }
 
-  ClassChecker& set_stop_early(bool b) {
+  ClassChecker& set_stop_early(bool b) override {
     child_->set_stop_early(b);
     return *this;
   }
 
-  ClassChecker& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) {
+  ClassChecker& add_pointer_range(x64asm::M8 begin, x64asm::M8 end) override {
     child_->add_pointer_range(begin, end);
     return *this;
   }
 
-  ClassChecker& assume(Invariant* assumption) {
+  ClassChecker& assume(std::shared_ptr<Invariant> assumption) override {
     return child_->assume(assumption);
   }
 
-  ClassChecker& assume_always(Invariant* assumption) {
+  ClassChecker& assume_always(std::shared_ptr<Invariant> assumption) override {
     return child_->assume(assumption);
   }
 
@@ -86,7 +86,7 @@ public:
                      const DualBuilder::EquivalenceClassMap& equivalence_class,
                      Callback& callback,
                      bool separate_stack,
-                     void* optional = NULL) {
+                     void* optional = NULL) override {
     return child_->check(template_pod, equivalence_class, callback, separate_stack, optional);
   }
 

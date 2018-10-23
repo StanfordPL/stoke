@@ -64,57 +64,57 @@ void Invariant::get_dereference_map(DereferenceMap& deref_map,
 };
 
 
-Invariant* Invariant::deserialize(istream& in) {
+std::shared_ptr<Invariant> Invariant::deserialize(istream& in) {
   string class_name;
   in >> ws >> class_name;
   CHECK_STREAM(in);
 
   if(class_name == "ConjunctionInvariant") {
-    return new ConjunctionInvariant(in);    
+    return std::make_shared<ConjunctionInvariant>(in);    
   } else if (class_name == "DisjunctionInvariant") {
-    return new DisjunctionInvariant(in);
+    return std::make_shared<DisjunctionInvariant>(in);
   } else if (class_name == "EqualityInvariant") {
-    return new EqualityInvariant(in);
+    return std::make_shared<EqualityInvariant>(in);
   } else if (class_name == "ExprInvariant") {
-    return new ExprInvariant(in);
+    return std::make_shared<ExprInvariant>(in);
   } else if (class_name == "FalseInvariant") {
-    return new FalseInvariant(in);
+    return std::make_shared<FalseInvariant>(in);
   } else if (class_name == "FlagInvariant") {
-    return new FlagInvariant(in);
+    return std::make_shared<FlagInvariant>(in);
   } else if (class_name == "FlagSetInvariant") {
-    return new FlagSetInvariant(in);
+    return std::make_shared<FlagSetInvariant>(in);
   } else if (class_name == "ImplicationInvariant") {
-    return new ImplicationInvariant(in);
+    return std::make_shared<ImplicationInvariant>(in);
   } else if (class_name == "InequalityInvariant") {
-    return new InequalityInvariant(in);
+    return std::make_shared<InequalityInvariant>(in);
   } else if (class_name == "MemoryConstant") {
-    return new MemoryConstantInvariant(in);
+    return std::make_shared<MemoryConstantInvariant>(in);
   } else if (class_name == "MemoryEqualityInvariant") {
-    return new MemoryEqualityInvariant(in);
+    return std::make_shared<MemoryEqualityInvariant>(in);
   } else if (class_name == "MemoryNullInvariant") {
-    return new MemoryNullInvariant(in);
+    return std::make_shared<MemoryNullInvariant>(in);
   } else if (class_name == "Mod2NInvariant") {
-    return new Mod2NInvariant(in);
+    return std::make_shared<Mod2NInvariant>(in);
   } else if (class_name == "NonzeroInvariant") {
-    return new NonzeroInvariant(in);
+    return std::make_shared<NonzeroInvariant>(in);
   } else if (class_name == "NoSignalsInvariant") {
-    return new NoSignalsInvariant(in);
+    return std::make_shared<NoSignalsInvariant>(in);
   } else if (class_name == "NotInvariant") {
-    return new NotInvariant(in);
+    return std::make_shared<NotInvariant>(in);
   } else if (class_name == "PointerNullInvariant") {
-    return new PointerNullInvariant(in);
+    return std::make_shared<PointerNullInvariant>(in);
   } else if (class_name == "PointerRangeInvariant") {
-    return new PointerRangeInvariant(in);
+    return std::make_shared<PointerRangeInvariant>(in);
   } else if (class_name == "RangeInvariant") {
-    return new RangeInvariant(in);
+    return std::make_shared<RangeInvariant>(in);
   } else if (class_name == "SignInvariant") {
-    return new SignInvariant(in);
+    return std::make_shared<SignInvariant>(in);
   } else if (class_name == "StateEqualityInvariant") {
-    return new StateEqualityInvariant(in);
+    return std::make_shared<StateEqualityInvariant>(in);
   } else if (class_name == "TopZeroInvariant") {
-    return new TopZeroInvariant(in);
+    return std::make_shared<TopZeroInvariant>(in);
   } else if (class_name == "TrueInvariant") {
-    return new TrueInvariant(in);
+    return std::make_shared<TrueInvariant>(in);
   } else {
     cerr << "Got bad invariant class: " << class_name << endl;
     assert(false);
@@ -123,11 +123,5 @@ Invariant* Invariant::deserialize(istream& in) {
 }
 
 
-ConjunctionInvariant* Invariant::AND(Invariant* other) {
-  auto ci = new ConjunctionInvariant();
-  ci->add_invariant(this);
-  ci->add_invariant(other);
-  return ci;
-}
 
 

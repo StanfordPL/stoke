@@ -94,7 +94,7 @@ public:
     return os;
   }
 
-  virtual std::ostream& serialize(std::ostream& out) const {
+  virtual std::ostream& serialize(std::ostream& out) const override {
     out << "FlagInvariant" << std::endl;
     out << predicate_ << " " << fallthrough_ << " " << is_rewrite_ << std::endl;
     return out;
@@ -105,8 +105,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new FlagInvariant(predicate_, is_rewrite_, fallthrough_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<FlagInvariant>(predicate_, is_rewrite_, fallthrough_);
   }
 
 

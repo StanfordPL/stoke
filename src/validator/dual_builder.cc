@@ -57,7 +57,7 @@ bool DualBuilder::exit_works(DualAutomata::Edge& e, const set<IntVector>& start_
 
 }
 
-uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
+uint64_t DualBuilder::get_invariant_class(std::shared_ptr<EqualityInvariant> equ, DualAutomata::Edge& e) {
   /** get counts from frontier. */
   map<size_t, size_t> target_block_counts;
   map<size_t, size_t> rewrite_block_counts;
@@ -94,10 +94,10 @@ uint64_t DualBuilder::get_invariant_class(EqualityInvariant* equ, DualAutomata::
   return sum;
 }
 
-std::vector<uint64_t> DualBuilder::get_invariant_class(ConjunctionInvariant* conj, DualAutomata::Edge& e) {
+std::vector<uint64_t> DualBuilder::get_invariant_class(std::shared_ptr<ConjunctionInvariant> conj, DualAutomata::Edge& e) {
   std::vector<uint64_t> equiv_class;
   for (size_t i = 0; i < conj->size(); ++i) {
-    auto equ = static_cast<EqualityInvariant*>((*conj)[i]);
+    auto equ = dynamic_pointer_cast<EqualityInvariant>((*conj)[i]);
     auto value = get_invariant_class(equ, e);
     equiv_class.push_back(value);
   }

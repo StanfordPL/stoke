@@ -24,7 +24,7 @@ class ImplicationInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  ImplicationInvariant(Invariant* a, Invariant* b) : a_(a), b_(b) { }
+  ImplicationInvariant(std::shared_ptr<Invariant> a, std::shared_ptr<Invariant> b) : a_(a), b_(b) { }
 
   SymBool operator()(SymState& left, SymState& right, size_t& number) {
 
@@ -70,7 +70,7 @@ public:
     return result;
   }
 
-  virtual std::ostream& serialize(std::ostream& out) const {
+  virtual std::ostream& serialize(std::ostream& out) const override {
     out << "ImplicationInvariant" << std::endl;
     a_->serialize(out);
     b_->serialize(out);
@@ -84,8 +84,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new ImplicationInvariant(a_->clone(), b_->clone());
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<ImplicationInvariant>(a_->clone(), b_->clone());
   }
 
   virtual bool is_critical() override {
@@ -99,8 +99,8 @@ public:
 
 private:
 
-  Invariant* a_;
-  Invariant* b_;
+  std::shared_ptr<Invariant> a_;
+  std::shared_ptr<Invariant> b_;
 
 };
 

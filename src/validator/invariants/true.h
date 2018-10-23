@@ -49,8 +49,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new TrueInvariant();
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<TrueInvariant>();
   }
 };
 

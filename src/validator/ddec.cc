@@ -133,7 +133,7 @@ void DdecValidator::add_loop_to_node(
   const vector<CfgPath>& rewrite_inductive_paths,
   Cfg::id_type target_block,
   Cfg::id_type rewrite_block,
-  ConjunctionInvariant* invariant
+  std::shared_ptr<ConjunctionInvariant> invariant
 ) {
 
   // add node to dual automata
@@ -162,9 +162,9 @@ void DdecValidator::add_loop_to_node(
   invariant->write_pretty(cout);
 
   // get relevant invariants only
-  ConjunctionInvariant* copy = new ConjunctionInvariant();
+  std::shared_ptr<ConjunctionInvariant> copy = std::make_shared<ConjunctionInvariant>();
   for(size_t i = 0; i < invariant->size(); ++i) {
-    auto conj = static_cast<EqualityInvariant*>((*invariant)[i]);
+    auto conj = dynamic_pointer_cast<EqualityInvariant>((*invariant)[i]);
     auto variables = conj->get_variables();
     size_t ghost_count = 0;
     size_t non_ghost_count = 0;
@@ -217,7 +217,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
       vector<CfgPath> best_rewrite_inductive_paths;
       Cfg::id_type best_target_block = 0;
       Cfg::id_type best_rewrite_block = 0;
-      ConjunctionInvariant* best_invariant = NULL;
+      std::shared_ptr<ConjunctionInvariant> best_invariant = NULL;
 
       for (auto& target_block : target_blocks) {
         for (auto& rewrite_block : rewrite_blocks) {
@@ -297,7 +297,7 @@ DualAutomata DdecValidator::learn_inductive_paths() {
   live-out variables are constrained?  We want to constrain as
   many live-out variables as possible, ideally. */
 double DdecValidator::invariant_quality(
-  ConjunctionInvariant* conj,
+  std::shared_ptr<ConjunctionInvariant> conj,
   Cfg::id_type target_block,
   Cfg::id_type rewrite_block) {
 
@@ -320,7 +320,7 @@ double DdecValidator::invariant_quality(
       auto reg = *it;
       bool found = false;
       for (size_t i = 0; i < conj->size(); ++i) {
-        auto inv = static_cast<EqualityInvariant*>((*conj)[i]);
+        auto inv = dynamic_pointer_cast<EqualityInvariant>((*conj)[i]);
         auto vars = inv->get_variables();
         for (auto var : vars) {
           if (var.is_rewrite == is_rewrite &&
@@ -344,7 +344,7 @@ double DdecValidator::invariant_quality(
 }
 
 
-ConjunctionInvariant* DdecValidator::learn_inductive_invariant_at_block(
+std::shared_ptr<ConjunctionInvariant> DdecValidator::learn_inductive_invariant_at_block(
   const std::vector<CfgPath>& target_inductive_paths,
   const std::vector<CfgPath>& rewrite_inductive_paths,
   Cfg::id_type target_block,
@@ -481,7 +481,7 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   return constants;
 }
 
-bool DdecValidator::build_dual_for_discriminator(Invariant* inv, DualAutomata& dual) {
+bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv, DualAutomata& dual) {
   cout << "[build_dual_for_discriminator] expression " << *inv << endl;
 
   bool found_loop = false;
@@ -608,7 +608,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   dual.set_invariant(fail_state, get_fail_invariant());
 
   /** Add NoSignals invariant everywhere.  This is to handle exceptions. */
-  auto ns_invariant = new NoSignalsInvariant();
+  auto ns_invariant = std::make_shared<NoSignalsInvariant>();
   for (auto rs : edge_reachable) {
     if(rs == start_state || rs == end_state || rs == fail_state)
       continue;
@@ -774,7 +774,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
         for(auto e : edges) {
           cout << "[verify_dual] dispatching hoare triples for edge " << e << endl;
           auto target = e.to;
-          ConjunctionInvariant* target_inv = dual.get_invariant(target);
+          std::shared_ptr<ConjunctionInvariant> target_inv = dual.get_invariant(target);
           auto target_testcases = dual.get_target_data(e);
           auto rewrite_testcases = dual.get_rewrite_data(e);
           assert(target_testcases.size() == rewrite_testcases.size());
@@ -796,7 +796,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
             auto conjunct = (*target_inv)[i];
 
             // construct source invariant
-            ConjunctionInvariant new_source_invariant(*source_inv);
+            shared_ptr<ConjunctionInvariant> new_source_invariant = 
+              dynamic_pointer_cast<ConjunctionInvariant>(source_inv->clone());
 
             // we don't want to just remove these conjuncts because they may imply others which do hold
             // (we can however, remove them, if we add in the others also)
@@ -806,13 +807,13 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
             //  new_source_invariant.add_invariant((*source_inv)[i]);
             //}
             for(auto inv : assume_always_) {
-              new_source_invariant.add_invariant(inv);
+              new_source_invariant->add_invariant(inv);
             }
 
             // dispatch the check
             cout << "[verify_dual]      dispatching conjunct " << i << ": " << *conjunct << endl;
             checker_.check(target_, rewrite_, state.ts, state.rs, e.te, e.re, 
-                           new_source_invariant, *conjunct, testcases, callback, true, (void*)cbp);
+                           new_source_invariant, conjunct, testcases, callback, true, (void*)cbp);
 
             // see if we've received any callbacks that end it all
             if(failure) {
@@ -847,7 +848,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
       for(auto state_set : conjuncts_to_delete) {
         auto& to_delete = state_set.second;
         update_needed[state_set.first] = true;
-        ConjunctionInvariant* inv = dual.get_invariant(state_set.first);
+        std::shared_ptr<ConjunctionInvariant> inv = dual.get_invariant(state_set.first);
 
         cout << "[verify_dual] removing conjuncts from state " << state_set.first << endl;
         for(auto i = to_delete.rbegin(); i != to_delete.rend(); ++i) {
@@ -933,7 +934,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
-  MemoryEqualityInvariant memequ;
+  auto memequ = make_shared<MemoryEqualityInvariant>();
 
   for(size_t target_cutpoint = target_.get_entry(); target_cutpoint < target_.get_exit(); ++target_cutpoint) {
     if(!target_sccs.in_scc(target_cutpoint))
@@ -971,13 +972,13 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
 
             for(auto constant : constants) {
-              EqualityInvariant specific(inv.get_terms(), constant);
-              ConjunctionInvariant conj;
-              conj.add_invariant(&specific);
-              conj.add_invariant(&memequ);
+              auto specific = make_shared<EqualityInvariant>(inv.get_terms(), constant);
+              auto conj = make_shared<ConjunctionInvariant>();
+              conj->add_invariant(specific);
+              conj->add_invariant(memequ);
 
               DualAutomata dual(target_, rewrite_);
-              bool success = build_dual_for_discriminator(&conj, dual);
+              bool success = build_dual_for_discriminator(conj, dual);
               if(success) {
                 dual.print_all();
                 dual.simplify();
@@ -1140,7 +1141,7 @@ vector<DualBuilder::EquivalenceClass> DdecValidator::get_classes_for_state(DualA
 
 }
 
-uint64_t DdecValidator::get_invariant_class(EqualityInvariant* equ, DualAutomata::Edge& e) {
+uint64_t DdecValidator::get_invariant_class(std::shared_ptr<EqualityInvariant> equ, DualAutomata::Edge& e) {
   /** get counts from frontier. */
   map<size_t, size_t> target_block_counts;
   map<size_t, size_t> rewrite_block_counts;
@@ -1172,10 +1173,10 @@ uint64_t DdecValidator::get_invariant_class(EqualityInvariant* equ, DualAutomata
   return sum;
 }
 
-std::vector<uint64_t> DdecValidator::get_invariant_class(ConjunctionInvariant* conj, DualAutomata::Edge& e) {
+std::vector<uint64_t> DdecValidator::get_invariant_class(std::shared_ptr<ConjunctionInvariant> conj, DualAutomata::Edge& e) {
   std::vector<uint64_t> equiv_class;
   for (size_t i = 0; i < conj->size(); ++i) {
-    auto equ = static_cast<EqualityInvariant*>((*conj)[i]);
+    auto equ = dynamic_pointer_cast<EqualityInvariant>((*conj)[i]);
     auto value = get_invariant_class(equ, e);
     equiv_class.push_back(value);
   }
@@ -1265,8 +1266,8 @@ DualBuilder::EquivalenceClassMap DdecValidator::build_classmap_from_descriptor()
   return output;
 }
 
-ConjunctionInvariant* DdecValidator::get_initial_invariant(DualAutomata& dual) const {
-  auto initial_invariant = new ConjunctionInvariant();
+std::shared_ptr<ConjunctionInvariant> DdecValidator::get_initial_invariant(DualAutomata& dual) const {
+  auto initial_invariant = std::make_shared<ConjunctionInvariant>();
 
   /** set all shadow block variables to 0 */
   auto target = dual.get_target();
@@ -1277,19 +1278,19 @@ ConjunctionInvariant* DdecValidator::get_initial_invariant(DualAutomata& dual) c
   shadows.insert(shadows.begin(), shadow_rewrite.begin(), shadow_rewrite.end());
   for(auto it : shadows) {
     it.coefficient = 1;
-    auto init_zero = new EqualityInvariant({ it }, 0);
+    auto init_zero = std::make_shared<EqualityInvariant>(vector<Variable>({ it }), 0);
     initial_invariant->add_invariant(init_zero);
   }
 
-  auto sei = new StateEqualityInvariant(target.def_ins());
+  auto sei = std::make_shared<StateEqualityInvariant>(target.def_ins());
   initial_invariant->add_invariant(sei);
-  initial_invariant->add_invariant(new MemoryEqualityInvariant());
-  initial_invariant->add_invariant(new NoSignalsInvariant());
+  initial_invariant->add_invariant(std::make_shared<MemoryEqualityInvariant>());
+  initial_invariant->add_invariant(std::make_shared<NoSignalsInvariant>());
 
   for(auto span : pointer_ranges_) {
     auto begin = span.first;
     auto end = span.second;
-    auto pri = new PointerRangeInvariant(begin, end);
+    auto pri = std::make_shared<PointerRangeInvariant>(begin, end);
     initial_invariant->add_invariant(pri);
   }
 
@@ -1303,12 +1304,12 @@ ConjunctionInvariant* DdecValidator::get_initial_invariant(DualAutomata& dual) c
       Variable start_var(string_ghost_start(r), false);
       Variable string_reg(r, false);
       string_reg.coefficient = -1;
-      auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+      auto equiv = std::make_shared<EqualityInvariant>({start_var, string_reg}, 0);
       initial_invariant->add_invariant(equiv);
 
       // rsi_end = 0 (for example)
       Variable end_var(string_ghost_end(r), false);
-      auto end_mem = new PointerNullInvariant(end_var, 1);
+      auto end_mem = std::make_shared<PointerNullInvariant>(end_var, 1);
       initial_invariant->add_invariant(end_mem);
     }
   */
@@ -1318,22 +1319,22 @@ ConjunctionInvariant* DdecValidator::get_initial_invariant(DualAutomata& dual) c
   return initial_invariant;
 }
 
-ConjunctionInvariant* DdecValidator::get_final_invariant(DualAutomata& dual) const {
+std::shared_ptr<ConjunctionInvariant> DdecValidator::get_final_invariant(DualAutomata& dual) const {
   auto target = dual.get_target();
-  auto final_invariant = new ConjunctionInvariant();
-  auto sei = new StateEqualityInvariant(target.live_outs());
+  auto final_invariant = std::make_shared<ConjunctionInvariant>();
+  auto sei = std::make_shared<StateEqualityInvariant>(target.live_outs());
   final_invariant->add_invariant(sei);
-  final_invariant->add_invariant(new MemoryEqualityInvariant());
-  final_invariant->add_invariant(new NoSignalsInvariant());
+  final_invariant->add_invariant(std::make_shared<MemoryEqualityInvariant>());
+  final_invariant->add_invariant(std::make_shared<NoSignalsInvariant>());
 
   //final_invariant->add_invariant(get_fixed_invariant());
 
   return final_invariant;
 }
 
-ConjunctionInvariant* DdecValidator::get_fail_invariant() const {
-  auto fail_invariant = new ConjunctionInvariant();
-  fail_invariant->add_invariant(new FalseInvariant());
+std::shared_ptr<ConjunctionInvariant> DdecValidator::get_fail_invariant() const {
+  auto fail_invariant = std::make_shared<ConjunctionInvariant>();
+  fail_invariant->add_invariant(std::make_shared<FalseInvariant>());
 
   return fail_invariant;
 }

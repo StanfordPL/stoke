@@ -40,7 +40,7 @@ void ForkingObligationChecker::check(
            const Cfg& target, const Cfg& rewrite,
            Cfg::id_type target_block, Cfg::id_type rewrite_block,
            const CfgPath& p, const CfgPath& q,
-           Invariant& assume, Invariant& prove,
+           std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
            const std::vector<std::pair<CpuState, CpuState>>& testcases,
            Callback& callback,
            bool override_separate_stack,

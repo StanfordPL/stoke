@@ -225,12 +225,12 @@ public:
   bool learn_invariants(DataCollector&, InvariantLearner&, ImplicationGraph&);
 
   /** Get invariant at state. */
-  ConjunctionInvariant* get_invariant(const State& state) const {
+  std::shared_ptr<ConjunctionInvariant> get_invariant(const State& state) const {
     if (invariants_.count(state))
       return invariants_.at(state);
     else {
-      auto conj = new ConjunctionInvariant();
-      auto false_ = new FalseInvariant();
+      auto conj = std::make_shared<ConjunctionInvariant>();
+      auto false_ = std::make_shared<FalseInvariant>();
       conj->add_invariant(false_);
       return conj;
     }
@@ -268,7 +268,7 @@ public:
   std::vector<Edge> compute_failure_edges(const Cfg& target, const Cfg& rewrite) const;
 
   /** Forcibly set invariant. */
-  void set_invariant(State& state, ConjunctionInvariant* inv) {
+  void set_invariant(State& state, std::shared_ptr<ConjunctionInvariant> inv) {
     invariants_[state] = inv;
   }
 
@@ -345,7 +345,7 @@ private:
   std::map<State, std::vector<Edge>> next_edges_; //serialize
   std::map<State, std::vector<Edge>> prev_edges_; //serialize
 
-  std::map<State, ConjunctionInvariant*> invariants_; //serialize
+  std::map<State, std::shared_ptr<ConjunctionInvariant>> invariants_; //serialize
   std::map<State, std::vector<CpuState>> target_state_data_;
   std::map<State, std::vector<CpuState>> rewrite_state_data_;
   std::map<Edge, std::vector<CpuState>> target_edge_data_;

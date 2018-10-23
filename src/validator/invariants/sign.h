@@ -80,9 +80,8 @@ public:
     CHECK_STREAM(is);
   }
 
-
-  Invariant* clone() const {
-    return new SignInvariant(variable_, positive_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<SignInvariant>(variable_, positive_);
   }
 
 private:

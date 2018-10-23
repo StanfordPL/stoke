@@ -72,8 +72,8 @@ public:
     is >> zero_bits_;
   }
 
-  Invariant* clone() const {
-    return new Mod2NInvariant(variable_, zero_bits_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<Mod2NInvariant>(variable_, zero_bits_);
   }
 
 private:

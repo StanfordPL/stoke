@@ -33,11 +33,11 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(1) { X } }
+#define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
-#define DEBUG_ARM(X) { if(1) { X } }
+#define DEBUG_ARM(X) { if(0) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -85,13 +85,13 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
 }
 
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
-Invariant* SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
+std::shared_ptr<Invariant> SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
   auto jump_type = ObligationChecker::is_jump(cfg, start_b, {p[0]}, 0);
 
   //cout << "get_jump_inv: jump type " << jump_type << endl;
 
   if (jump_type == SmtObligationChecker::JumpType::NONE) {
-    return new TrueInvariant();
+    return std::make_shared<TrueInvariant>();
   }
 
   auto start_block = start_b;
@@ -101,11 +101,11 @@ Invariant* SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start
 
   if (!jump_instr.is_jcc()) {
     //cout << "   get_jump_inv: no cond jump" << endl;
-    return new TrueInvariant();
+    return std::make_shared<TrueInvariant>();
   }
 
   bool is_fallthrough = jump_type == SmtObligationChecker::JumpType::FALL_THROUGH;
-  auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
+  auto jump_inv = std::make_shared<FlagInvariant>(jump_instr, is_rewrite, is_fallthrough);
   //cout << "   get_jump_inv: got " << *jump_inv << endl;
   return jump_inv;
 }
@@ -192,8 +192,8 @@ bool SmtObligationChecker::check_counterexample(
     const Code& rewrite_unroll,
     const LineMap& target_linemap,
     const LineMap& rewrite_linemap,
-    const Invariant& assume, 
-    const Invariant& prove, 
+    const std::shared_ptr<Invariant> assume, 
+    const std::shared_ptr<Invariant> prove, 
     const CpuState& ceg_t, 
     const CpuState& ceg_r, 
     CpuState& ceg_t_expected, 
@@ -287,11 +287,11 @@ bool SmtObligationChecker::check_counterexample(
   }
 
   // First, the counterexample has to pass the invariant.
-  if (!assume.check(ceg_t, ceg_r)) {
+  if (!assume->check(ceg_t, ceg_r)) {
     cout << "  (Counterexample does not meet assumed invariant.)" << endl;
-    auto conj = static_cast<const ConjunctionInvariant&>(assume);
-    for(size_t i = 0; i < conj.size(); ++i) {
-      auto inv = conj[i];
+    auto conj = dynamic_pointer_cast<ConjunctionInvariant>(assume);
+    for(size_t i = 0; i < conj->size(); ++i) {
+      auto inv = (*conj)[i];
       if(!inv->check(ceg_t, ceg_r))
         cout << "     " << *inv << endl;
     }
@@ -299,7 +299,7 @@ bool SmtObligationChecker::check_counterexample(
   }
 
   // Check the sandbox-provided output states to see if they fail the 'prove' invariant
-  if(prove.check(target_output, rewrite_output)) {
+  if(prove->check(target_output, rewrite_output)) {
     cout << "  (Counterexample satisfies desired invariant; it shouldn't)" << endl;
     return false;
   }
@@ -424,7 +424,7 @@ bool SmtObligationChecker::generate_arm_testcases(
   const LineMap& target_linemap,
   const LineMap& rewrite_linemap,
   bool separate_stack,
-  const Invariant& assume,
+  const std::shared_ptr<Invariant> assume,
   std::vector<std::pair<CpuState,CpuState>>& testcases) {
 
   cout << "uh-oh.  attempting stategen." << endl;
@@ -438,9 +438,8 @@ bool SmtObligationChecker::generate_arm_testcases(
   state_t.memory = &target_flat;
   state_r.memory = &rewrite_flat;
   size_t dummy = 0;
-  auto my_assume = assume.clone();
+  auto my_assume = assume->clone();
   auto assumption = (*my_assume)(state_t, state_r, dummy);
-  delete my_assume; //todo leak, deep free
 
   CpuState target_tc;
   CpuState rewrite_tc;
@@ -513,8 +512,8 @@ void SmtObligationChecker::check(
   Cfg::id_type rewrite_block, 
   const CfgPath& P, 
   const CfgPath& Q, 
-  Invariant& assume, 
-  Invariant& prove, 
+  std::shared_ptr<Invariant> assume, 
+  std::shared_ptr<Invariant> prove, 
   const vector<pair<CpuState, CpuState>>& given_testcases,
   Callback& callback,
   bool override_separate_stack,
@@ -551,8 +550,8 @@ void SmtObligationChecker::check(
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check. solver_=" << &solver_ << " this=" << this << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << P << " Q: " << Q << endl;)
-  OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
-  OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
+  OBLIG_DEBUG(cout << "Assuming: " << *assume << endl;)
+  OBLIG_DEBUG(cout << "Proving: " << *prove << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)
   OBLIG_DEBUG(print_m.unlock();)
 
@@ -599,7 +598,7 @@ void SmtObligationChecker::check(
 
   // Add given assumptions
   size_t invariant_lineno = 0;
-  auto assumption = assume(state_t, state_r, invariant_lineno);
+  auto assumption = (*assume)(state_t, state_r, invariant_lineno);
   constraints.push_back(assumption);
   invariant_lineno++;
 
@@ -686,7 +685,7 @@ void SmtObligationChecker::check(
   }
 
   // Build inequality constraint
-  auto prove_constraint = !prove(state_t, state_r, invariant_lineno);
+  auto prove_constraint = !(*prove)(state_t, state_r, invariant_lineno);
 
   constraints.push_back(prove_constraint);
 
@@ -718,14 +717,14 @@ void SmtObligationChecker::check(
       cout << "[check_core] adding assume dereference map" << endl;
       cout << tc_pair.first << endl << endl;
       cout << tc_pair.second << endl << endl;)
-      assume.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      assume->get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
       DEBUG_ARM(
       cout << "[check_core] debugging assume dereference map 1" << endl;
       cout << "deref_map size = " << deref_map.size() << endl;
       for(auto it : deref_map) {
         cout << it.first.invariant_number << " -> " << it.second << endl; 
       })
-      prove.get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
+      prove->get_dereference_map(deref_map, tc_pair.first, tc_pair.second, tmp_invariant_lineno);
       DEBUG_ARM(
       cout << "[check_core] debugging prove dereference map 1" << endl;
       cout << "deref_map size = " << deref_map.size() << endl;
@@ -786,7 +785,7 @@ void SmtObligationChecker::check(
       auto& deref_map = deref_maps[i];
       const auto& tc_pair = testcases[i];
       //cout << "[check_core] adding prove dereference map" << endl;
-      prove.get_dereference_map(deref_map, last_target, last_rewrite, tmp_invariant_lineno);
+      prove->get_dereference_map(deref_map, last_target, last_rewrite, tmp_invariant_lineno);
     }
   }
 

@@ -19,6 +19,7 @@
 #include "src/state/cpu_state.h"
 #include "src/symstate/state.h"
 #include "src/validator/variable.h"
+#include <memory>
 
 namespace stoke {
 
@@ -40,7 +41,7 @@ public:
 
   virtual std::ostream& write(std::ostream& out) const = 0;
   virtual std::ostream& serialize(std::ostream& out) const = 0;
-  static Invariant* deserialize(std::istream& in);
+  static std::shared_ptr<Invariant> deserialize(std::istream& in);
 
   virtual bool operator==(const Invariant& other) const {
     std::stringstream ss;
@@ -91,9 +92,7 @@ public:
     return false;
   }
 
-  ConjunctionInvariant* AND(Invariant* other);
-
-  virtual Invariant* clone() const = 0;
+  virtual std::shared_ptr<Invariant> clone() const = 0;
 
 protected:
 

@@ -18,42 +18,42 @@ class ImplicationGraph {
     set_separate_stack(false);
   }
 
-  std::set<Invariant*> get_replacements(Invariant* inv) {
+  std::set<std::shared_ptr<Invariant>> get_replacements(std::shared_ptr<Invariant> inv) {
     if(has_replacements(inv))
       return replacements_[inv];
     else
-      return std::set<Invariant*>();
+      return std::set<std::shared_ptr<Invariant>>();
   }
 
-  bool has_replacements(Invariant* inv) {
+  bool has_replacements(std::shared_ptr<Invariant> inv) {
     if(replacements_.count(inv))
       return replacements_[inv].size() > 0;
     else
       return false;
   }
 
-  void add_replacement(Invariant* inv, Invariant* replacement) {
+  void add_replacement(std::shared_ptr<Invariant> inv, std::shared_ptr<Invariant> replacement) {
     replacements_[inv].insert(replacement);
   }
 
-  bool is_superseded(Invariant* inv) {
+  bool is_superseded(std::shared_ptr<Invariant> inv) {
     return superseded_.count(inv);
   }
 
   /** Create a class of invariants to add to. */
   size_t new_class() {
-    std::set<Invariant*> new_set;
+    std::set<std::shared_ptr<Invariant>> new_set;
     invariant_sets_.push_back(new_set);
     current_set = invariant_sets_.size() - 1;
     return current_set;
   }
 
   /** Add an invariant to the current class. */
-  void add_invariant(Invariant* inv) {
+  void add_invariant(std::shared_ptr<Invariant> inv) {
     invariant_sets_[current_set].insert(inv);
   }
   /** Add an invariant to the current class. */
-  void add_invariant(const std::vector<Invariant*>& inv) {
+  void add_invariant(const std::vector<std::shared_ptr<Invariant>>& inv) {
     for(auto i : inv)
       add_invariant(i);
   }
@@ -76,13 +76,13 @@ private:
   Z3Solver smt_;
   bool separate_stack_;
 
-  std::map<Invariant*, std::set<Invariant*>> replacements_;
-  std::set<Invariant*> superseded_;
+  std::map<std::shared_ptr<Invariant>, std::set<std::shared_ptr<Invariant>>> replacements_;
+  std::set<std::shared_ptr<Invariant>> superseded_;
 
-  std::vector<std::set<Invariant*>> invariant_sets_;
+  std::vector<std::set<std::shared_ptr<Invariant>>> invariant_sets_;
   size_t current_set = 0;
   /*
-  std::map<Invariant*, std::map<Invariant*, bool>> implication_table_;
+  std::map<std::shared_ptr<Invariant>, std::map<std::shared_ptr<Invariant>, bool>> implication_table_;
 
   */
 

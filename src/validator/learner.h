@@ -92,7 +92,7 @@ public:
 
   /** Learn a precise invariant over a set of data */
   // TODO: add set of memory locations to look at
-  ConjunctionInvariant* learn(
+  std::shared_ptr<ConjunctionInvariant> learn(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
@@ -103,7 +103,7 @@ public:
     );
 
   /** Learn linear equalities over some columns of data */
-  std::vector<Invariant*> learn_equalities(
+  std::vector<std::shared_ptr<Invariant>> learn_equalities(
     std::vector<Variable>,
     const std::vector<CpuState>&,
     const std::vector<CpuState>&);
@@ -123,26 +123,26 @@ private:
 
   /** Take a matrix (from nullspace computation), and extract invariants from
    * it. */
-  ConjunctionInvariant* matrix_to_invariant(
+  std::shared_ptr<ConjunctionInvariant> matrix_to_invariant(
     const std::vector<Variable>& variables,
     const IntMatrix& matrix);
 
   /** Learn that a variable is constant over many states, AND,
     remove the variable from the referenced set of columns. */
-  std::vector<Invariant*> learn_constants(
+  std::vector<std::shared_ptr<Invariant>> learn_constants(
     std::vector<Variable>& columns,
     const std::vector<CpuState>& target_states,
     const std::vector<CpuState>& rewrite_states);
 
   /** Learn that two variables are equal over many states, AND,
     remove the variable from the referenced set of columns. */
-  std::vector<Invariant*> learn_easy_equalities(
+  std::vector<std::shared_ptr<Invariant>> learn_easy_equalities(
     std::vector<Variable>& columns,
     const std::vector<CpuState>& target_states,
     const std::vector<CpuState>& rewrite_states);
 
   /** Learn a single invariant, without regard for flags. */
-  ConjunctionInvariant* learn_simple(
+  std::shared_ptr<ConjunctionInvariant> learn_simple(
     x64asm::RegSet target_regs,
     x64asm::RegSet rewrite_regs,
     const std::vector<CpuState>& states,
@@ -150,16 +150,16 @@ private:
     ImplicationGraph& graph);
 
   /** Overapproximate set of possible inequality invariants. */
-  std::vector<InequalityInvariant*> build_inequality_invariants
+  std::vector<std::shared_ptr<InequalityInvariant>> build_inequality_invariants
   (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs,
    ImplicationGraph& graph) const;
 
   /** Overapproximate set of possible memory-register equality invariants. */
-  std::vector<EqualityInvariant*> build_memory_register_equalities
+  std::vector<std::shared_ptr<EqualityInvariant>> build_memory_register_equalities
   (x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
   /** Set of inequalities with constants */
-  std::vector<InequalityInvariant*> build_inequality_with_constant_invariants(
+  std::vector<std::shared_ptr<InequalityInvariant>> build_inequality_with_constant_invariants(
     x64asm::RegSet target_regs, 
     x64asm::RegSet rewrite_regs, 
     const std::vector<CpuState>& target_states, 
@@ -167,7 +167,7 @@ private:
 
   /** Create set of invariants of form x - y == c (mod N) that
    hold over given data. */
-  std::vector<EqualityInvariant*> build_modulo_invariants(
+  std::vector<std::shared_ptr<EqualityInvariant>> build_modulo_invariants(
     x64asm::RegSet target_regs, 
     x64asm::RegSet rewrite_regs, 
     const std::vector<CpuState>& target_states, 
@@ -175,7 +175,7 @@ private:
 
   /** Create set of invariants of form x - y == c (mod N) that
    hold over given data. */
-  std::vector<RangeInvariant*> build_range_invariants(
+  std::vector<std::shared_ptr<RangeInvariant>> build_range_invariants(
     x64asm::RegSet target_regs, 
     x64asm::RegSet rewrite_regs, 
     const std::vector<CpuState>& target_states, 
@@ -184,7 +184,7 @@ private:
   /** Get all variables corresponding to relevant sub-variables of a register. */
   std::vector<Variable> sub_registers_for_regset(x64asm::RegSet rs, bool is_rewrite) const;
 
-  std::vector<NonzeroInvariant*> build_memory_null_invariants(
+  std::vector<std::shared_ptr<NonzeroInvariant>> build_memory_null_invariants(
       x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
 
   /** Set of ghost variables we should do learning over. */

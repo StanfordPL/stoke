@@ -109,8 +109,8 @@ public:
     Cfg::id_type rewrite_block;
     CfgPath P;
     CfgPath Q;
-    Invariant* assume;
-    Invariant* prove;
+    std::shared_ptr<Invariant> assume;
+    std::shared_ptr<Invariant> prove;
     std::vector<std::pair<CpuState, CpuState>> testcases;
     bool separate_stack;
 
@@ -150,22 +150,22 @@ public:
   }
 
   /** Set strategy for aliasing */
-  ObligationChecker& set_alias_strategy(AliasStrategy as) {
+  virtual ObligationChecker& set_alias_strategy(AliasStrategy as) {
     alias_strategy_ = as;
     return *this;
   }
 
-  AliasStrategy get_alias_strategy() {
+  virtual AliasStrategy get_alias_strategy() {
     return alias_strategy_;
   }
 
   /** Set whether we are going to use separate stack. */
-  ObligationChecker& set_separate_stack(bool b) {
+  virtual ObligationChecker& set_separate_stack(bool b) {
     separate_stack_ = b;
     return *this;
   }
 
-  ObligationChecker& set_fixpoint_up(bool b) {
+  virtual ObligationChecker& set_fixpoint_up(bool b) {
     fixpoint_up_ = b;
     return *this;
   }
@@ -178,14 +178,14 @@ public:
     any of our NaCl examples, and sould be rare to find since no compilers
     generate code that use an index besides 1 for NaCl; and STOKE won't do this
     transformation. */
-  ObligationChecker& set_nacl(bool b) {
+  virtual ObligationChecker& set_nacl(bool b) {
     nacl_ = b;
     return *this;
   }
 
   /** Turn on per-basic block ghost variables.  This will track a ghost variable
     for each basic block that gets incremented by one on each execution. */
-  ObligationChecker& set_basic_block_ghosts(bool b) {
+  virtual ObligationChecker& set_basic_block_ghosts(bool b) {
     basic_block_ghosts_ = b;
     return *this;
   }
@@ -194,7 +194,7 @@ public:
   Result check_wait(const Cfg& target, const Cfg& rewrite,
                     Cfg::id_type target_block, Cfg::id_type rewrite_block,
                     const CfgPath& p, const CfgPath& q,
-                    Invariant& assume, Invariant& prove,
+                    std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
                     const std::vector<std::pair<CpuState, CpuState>>& testcases,
                     bool override_separate_stack) {
 
@@ -223,7 +223,7 @@ public:
   virtual void check(const Cfg& target, const Cfg& rewrite,
                      Cfg::id_type target_block, Cfg::id_type rewrite_block,
                      const CfgPath& p, const CfgPath& q,
-                     Invariant& assume, Invariant& prove,
+                     std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      bool override_separate_stack,
@@ -231,7 +231,7 @@ public:
 
   void check(const Obligation& problem, Callback& callback, void* optional = NULL) {
     check(problem.target, problem.rewrite, problem.target_block, problem.rewrite_block,
-          problem.P, problem.Q, *problem.assume, *problem.prove, problem.testcases,
+          problem.P, problem.Q, problem.assume, problem.prove, problem.testcases,
           callback, problem.separate_stack, optional);
   }
 

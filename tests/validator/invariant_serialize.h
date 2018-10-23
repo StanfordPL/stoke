@@ -20,7 +20,7 @@ namespace stoke {
 class ValidatorInvariantSerializationTest : public ::testing::Test { 
 
 protected:
-  void check(Invariant* inv, bool nodelete = false) {
+  void check(std::shared_ptr<Invariant> inv) {
     stringstream ss;
     inv->serialize(ss);
     auto copy = ss.str();
@@ -36,11 +36,6 @@ protected:
     new_inv->serialize(ss2);
     auto copy2 = ss2.str();
     ASSERT_EQ(copy, copy2);
-
-    if(!nodelete) {
-      delete inv;
-      delete new_inv;
-    }
   }
 
   void check(Variable v) {
@@ -64,26 +59,22 @@ TEST_F(ValidatorInvariantSerializationTest, OperandVariable) {
 
 TEST_F(ValidatorInvariantSerializationTest, ConjunctionDisjunctionInvariant) {
   // a
-  auto a = new FlagInvariant("lt", false, true);
+  auto a = std::make_shared<FlagInvariant>("lt", false, true);
 
   // b
   Variable v1("hello", true);
   Variable v2(x64asm::rax, false);
 
-  auto b = new InequalityInvariant(v1, v2, false, true);
+  auto b = std::make_shared<InequalityInvariant>(v1, v2, false, true);
 
   // c
-  auto c = new EqualityInvariant({v1, v2}, -8, 32);
+  auto c = std::make_shared<EqualityInvariant>(vector<Variable>({v1, v2}), -8, 32);
 
-  auto inv = new ConjunctionInvariant({a, b, c});
+  auto inv = std::make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({a, b, c}));
   check(inv);
 
-  auto inv2 = new DisjunctionInvariant({a, b, c});
+  auto inv2 = std::make_shared<DisjunctionInvariant>(vector<shared_ptr<Invariant>>({a, b, c}));
   check(inv2);
-
-  delete a;
-  delete b;
-  delete c;
 }
 
 TEST_F(ValidatorInvariantSerializationTest, EqualityInvariant) {
@@ -91,140 +82,137 @@ TEST_F(ValidatorInvariantSerializationTest, EqualityInvariant) {
   terms.push_back(Variable("hello", true));
   terms.push_back(Variable(x64asm::rax, false));
 
-  auto inv = new EqualityInvariant(terms, 8, 32);
+  auto inv = std::make_shared<EqualityInvariant>(terms, 8, 32);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, ExprInvariant) {
   string s = "t_%rdi>1000";
   auto expr = ExprInvariant::parse(s);
-  auto inv = new ExprInvariant(expr, s);
+  auto inv = std::make_shared<ExprInvariant>(expr, s);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, ExprInvariant2) {
   string s = "(4096<=t_%rdi)&(t_%rdi+t_%esi*4+8<=18446744073709547519)&(t_%rdi<=t_%rdi+t_%esi*4+8)";
   auto expr = ExprInvariant::parse(s);
-  auto inv = new ExprInvariant(expr, s);
+  auto inv = std::make_shared<ExprInvariant>(expr, s);
   check(inv);
 }
 
 
 
 TEST_F(ValidatorInvariantSerializationTest, FalseInvariant) {
-  auto inv = new FalseInvariant();
+  auto inv = std::make_shared<FalseInvariant>();
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, FlagInvariant) {
-  auto inv = new FlagInvariant("lt", false, true);
+  auto inv = std::make_shared<FlagInvariant>("lt", false, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, FlagSetInvariant) {
-  auto inv = new FlagSetInvariant(x64asm::eflags_cf, false, true);
+  auto inv = std::make_shared<FlagSetInvariant>(x64asm::eflags_cf, false, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, ImplicationInvariant) {
-  auto inv1 = new FlagSetInvariant(x64asm::eflags_cf, true, true);
-  auto inv2 = new FlagInvariant("lt", true, false);
-  auto inv = new ImplicationInvariant(inv1, inv2);
+  auto inv1 = std::make_shared<FlagSetInvariant>(x64asm::eflags_cf, true, true);
+  auto inv2 = std::make_shared<FlagInvariant>("lt", true, false);
+  auto inv = std::make_shared<ImplicationInvariant>(inv1, inv2);
   check(inv);
-  delete inv1;
-  delete inv2;
 }
 
 TEST_F(ValidatorInvariantSerializationTest, InequalityInvariant) {
   Variable v1("hello", true);
   Variable v2(x64asm::rax, false);
 
-  auto inv = new InequalityInvariant(v1, v2, false, true);
+  auto inv = std::make_shared<InequalityInvariant>(v1, v2, false, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, MemoryEqualityInvariant) {
-  auto inv = new MemoryEqualityInvariant();
+  auto inv = std::make_shared<MemoryEqualityInvariant>();
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, MemoryNullInvariant) {
-  auto inv = new MemoryNullInvariant(x64asm::M16(x64asm::rdx), false, true);
+  auto inv = std::make_shared<MemoryNullInvariant>(x64asm::M16(x64asm::rdx), false, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, Mod2NInvariant) {
   Variable v(x64asm::rsi, false);
 
-  auto inv = new Mod2NInvariant(v, 4);
+  auto inv = std::make_shared<Mod2NInvariant>(v, 4);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, NonzeroInvariant) {
   Variable v(x64asm::rsi, true);
 
-  auto inv = new NonzeroInvariant(v, true);
+  auto inv = std::make_shared<NonzeroInvariant>(v, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, NoSignalsInvariant) {
-  auto inv = new NoSignalsInvariant();
+  auto inv = std::make_shared<NoSignalsInvariant>();
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, NotInvariant) {
-  auto a = new NoSignalsInvariant();
-  auto inv = new NotInvariant(a);
+  auto a = std::make_shared<NoSignalsInvariant>();
+  auto inv = std::make_shared<NotInvariant>(a);
   check(inv);
-  delete a;
 }
 
 TEST_F(ValidatorInvariantSerializationTest, PointerNullInvariant) {
   Variable v(x64asm::rsi, false);
-  auto inv = new PointerNullInvariant(v, 4);
+  auto inv = std::make_shared<PointerNullInvariant>(v, 4);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, RangeInvariant) {
   Variable v("hello", false);
 
-  auto inv = new RangeInvariant(v, 32, (uint64_t)(-32));
+  auto inv = std::make_shared<RangeInvariant>(v, 32, (uint64_t)(-32));
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, SignInvariant) {
   Variable v("hello", false);
 
-  auto inv = new SignInvariant(v, true);
+  auto inv = std::make_shared<SignInvariant>(v, true);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, StateEqualityInvariant) {
   Variable v("hello", false);
   auto regset = x64asm::RegSet::empty() + x64asm::ecx + x64asm::di;
-  auto inv = new StateEqualityInvariant(regset, {v, v, v});
+  auto inv = std::make_shared<StateEqualityInvariant>(regset, vector<Variable>({v, v, v}));
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, TopZeroInvariant) {
-  auto inv = new TopZeroInvariant(x64asm::rdx, false);
+  auto inv = std::make_shared<TopZeroInvariant>(x64asm::rdx, false);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, TrueInvariant) {
-  auto inv = new TrueInvariant();
+  auto inv = std::make_shared<TrueInvariant>();
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, MemoryConstantInvariant) {
   x64asm::M8 m(x64asm::rdx);
-  auto inv = new MemoryConstantInvariant(m, true, 0x40);
+  auto inv = std::make_shared<MemoryConstantInvariant>(m, true, 0x40);
   check(inv);
 }
 
 TEST_F(ValidatorInvariantSerializationTest, MemoryConstantInvariant2) {
   x64asm::M8 m(x64asm::Imm32(0xdeadbeef));
-  auto inv = new MemoryConstantInvariant(m, false, 0xf0);
+  auto inv = std::make_shared<MemoryConstantInvariant>(m, false, 0xf0);
   check(inv);
 }
 } //namespace stoke

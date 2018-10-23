@@ -21,7 +21,7 @@
 #include "src/sandbox/state_callback.h"
 #include "src/state/regs.h"
 
-#define DEBUG_STATEGEN(X) { if(1) { X } }
+#define DEBUG_STATEGEN(X) { if(0) { X } }
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -342,9 +342,10 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
         disp &= 0x00000000ffffffff;
 
       if(linemap_.size() && linemap_.count(line)) {
+        DEBUG_STATEGEN(
         cout << "[fix] have rip offset of " << linemap_[line].rip_offset << endl;
         cout << "[fix] (uint64_t)mem.get_disp() = " << (uint64_t)mem.get_disp() << endl;
-        cout << "[fix] disp = " << disp << endl;
+        cout << "[fix] disp = " << disp << endl;)
         addr = linemap_[line].rip_offset + disp;
       } else {
         addr = disp + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);

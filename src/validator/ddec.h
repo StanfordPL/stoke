@@ -79,7 +79,7 @@ public:
   }
 
   /** Add an assumption that holds at every point (e.g. read-only memory) */
-  DdecValidator& assume_always(Invariant* assumption) {
+  DdecValidator& assume_always(std::shared_ptr<Invariant> assumption) {
     assume_always_.push_back(assumption);
     return *this;
   }
@@ -104,8 +104,8 @@ private:
   bool has_next_class_;
   
   std::vector<DualBuilder::EquivalenceClass> get_classes_for_state(DualAutomata& templ, DualAutomata::State state);
-  uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
-  std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
+  uint64_t get_invariant_class(std::shared_ptr<EqualityInvariant>, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(std::shared_ptr<ConjunctionInvariant>, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata&, DualAutomata::State&, DualAutomata::Edge&);
   std::set<DualBuilder::EquivalenceClass> make_wildcard_classes(const std::set<DualBuilder::EquivalenceClass>&, const std::vector<uint64_t>&);
 
@@ -132,7 +132,7 @@ private:
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
   /** Learn inductive invariants */
-  ConjunctionInvariant* learn_inductive_invariant_at_block(
+  std::shared_ptr<ConjunctionInvariant> learn_inductive_invariant_at_block(
     const std::vector<CfgPath>& target_inductive_paths,
     const std::vector<CfgPath>& rewrite_inductive_paths,
     Cfg::id_type target_block,
@@ -140,7 +140,7 @@ private:
 
   /** Is the invariant at a pair of basic blocks useful? */
   double invariant_quality(
-    ConjunctionInvariant* conj,
+    std::shared_ptr<ConjunctionInvariant> conj,
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block);
 
@@ -151,24 +151,24 @@ private:
     const std::vector<CfgPath>& rewrite_inductive_paths,
     Cfg::id_type target_block,
     Cfg::id_type rewrite_block,
-    ConjunctionInvariant* invariant
+    std::shared_ptr<ConjunctionInvariant> invariant
   );
 
   /** Compute the initial invariant */
-  ConjunctionInvariant* get_initial_invariant(DualAutomata&) const;
-  ConjunctionInvariant* get_final_invariant(DualAutomata&) const;
-  ConjunctionInvariant* get_fail_invariant() const;
+  std::shared_ptr<ConjunctionInvariant> get_initial_invariant(DualAutomata&) const;
+  std::shared_ptr<ConjunctionInvariant> get_final_invariant(DualAutomata&) const;
+  std::shared_ptr<ConjunctionInvariant> get_fail_invariant() const;
 
   /** Verify that a dual automata is correct */
   bool verify_dual(DualAutomata& dual);
 
 
-  bool build_dual_for_discriminator(Invariant* inv, DualAutomata&);
+  bool build_dual_for_discriminator(std::shared_ptr<Invariant> inv, DualAutomata&);
   std::vector<uint64_t> find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
   void get_states_at_cutpoint(size_t trace, size_t target_point, size_t rewrite_point, std::vector<DataCollector::TracePoint>& target_states, std::vector<DataCollector::TracePoint>& rewrite_states, bool bound) const;
 
   /** Invariants assumed to hold at any point. */
-  std::vector<Invariant*> assume_always_;
+  std::vector<std::shared_ptr<Invariant>> assume_always_;
 
   /** Bound */
   size_t target_bound_;

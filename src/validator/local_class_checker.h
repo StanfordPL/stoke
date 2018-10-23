@@ -73,9 +73,9 @@ private:
   bool sanity_check(const DualAutomata* dual) const;
 
   /** Compute the initial invariant */
-  ConjunctionInvariant* get_initial_invariant(DualAutomata&) const;
-  ConjunctionInvariant* get_final_invariant(DualAutomata&) const;
-  ConjunctionInvariant* get_fail_invariant() const;
+  std::shared_ptr<ConjunctionInvariant> get_initial_invariant(DualAutomata&) const;
+  std::shared_ptr<ConjunctionInvariant> get_final_invariant(DualAutomata&) const;
+  std::shared_ptr<ConjunctionInvariant> get_fail_invariant() const;
 
   /** Try and prove all the invariants we can, starting from the initial one. */
   void discharge_invariants(DualAutomata&, bool separate_stack);

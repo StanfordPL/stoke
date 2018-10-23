@@ -171,8 +171,8 @@ public:
     return false;
   }
 
-  Invariant* clone() const {
-    return new InequalityInvariant(variable1_, variable2_, is_strict_, is_signed_, lhs_constant_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<InequalityInvariant>(variable1_, variable2_, is_strict_, is_signed_, lhs_constant_);
   }
 
 private:

@@ -56,8 +56,8 @@ public:
     size_t target_bound;
     size_t rewrite_bound;
     std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges;
-    std::vector<Invariant*> extra_assumptions;
-    std::vector<Invariant*> assume_always;
+    std::vector<std::shared_ptr<Invariant>> extra_assumptions;
+    std::vector<std::shared_ptr<Invariant>> assume_always;
     bool separate_stack;
 
     static Problem deserialize(std::istream& is);
@@ -67,8 +67,8 @@ public:
             const DualBuilder::EquivalenceClassMap& equ_class,
             size_t tb, size_t rb,
             const std::vector<std::pair<x64asm::M8, x64asm::M8>>& ptr_rng,
-            const std::vector<Invariant*>& assume,
-            const std::vector<Invariant*>& always,
+            const std::vector<std::shared_ptr<Invariant>>& assume,
+            const std::vector<std::shared_ptr<Invariant>>& always,
             bool sstack) : 
       template_pod(da),
       equivalence_class(equ_class),
@@ -114,7 +114,7 @@ public:
   }
 
   /** Add an extra assumption at beginning. */
-  virtual ClassChecker& assume(Invariant* assumption) {
+  virtual ClassChecker& assume(std::shared_ptr<Invariant> assumption) {
     for(auto curr : extra_assumptions_)
       if(curr == assumption)
         return *this;
@@ -124,7 +124,7 @@ public:
   }
 
   /** Add an assumption that holds at every point (e.g. read-only memory) */
-  virtual ClassChecker& assume_always(Invariant* assumption) {
+  virtual ClassChecker& assume_always(std::shared_ptr<Invariant> assumption) {
     for(auto curr : assume_always_)
       if(curr == assumption)
         return *this;
@@ -162,8 +162,8 @@ protected:
   size_t rewrite_bound_;
   std::vector<std::pair<x64asm::M8, x64asm::M8>> pointer_ranges_;
   /** Extra invariants to assume at the beginning. */
-  std::vector<Invariant*> extra_assumptions_;
-  std::vector<Invariant*> assume_always_;
+  std::vector<std::shared_ptr<Invariant>> extra_assumptions_;
+  std::vector<std::shared_ptr<Invariant>> assume_always_;
 
   bool stop_early_;
 };

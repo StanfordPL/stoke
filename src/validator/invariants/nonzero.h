@@ -77,8 +77,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new NonzeroInvariant(variable_, negate_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<NonzeroInvariant>(variable_, negate_);
   }
 
 

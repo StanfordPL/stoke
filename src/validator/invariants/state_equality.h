@@ -97,8 +97,8 @@ public:
     }
   }
 
-  Invariant* clone() const {
-    return new StateEqualityInvariant(rs_, ghost_variables_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<StateEqualityInvariant>(rs_, ghost_variables_);
   }
 
 

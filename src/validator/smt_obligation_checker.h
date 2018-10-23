@@ -76,11 +76,11 @@ public:
   void check(const Cfg& target, const Cfg& rewrite,
              Cfg::id_type target_block, Cfg::id_type rewrite_block,
              const CfgPath& p, const CfgPath& q,
-             Invariant& assume, Invariant& prove,
+             std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
              const std::vector<std::pair<CpuState, CpuState>>& testcases,
              Callback& callback,
              bool override_separate_stack,
-             void* optional);
+             void* optional) override;
 
   Filter& get_filter() {
     return filter_;
@@ -115,7 +115,7 @@ private:
     const LineMap& target_linemap,
     const LineMap& rewrite_linemap,
     bool separate_stack,
-    const Invariant& assume,
+    const std::shared_ptr<Invariant> assume,
     std::vector<std::pair<CpuState,CpuState>>& testcases);
 
 
@@ -154,7 +154,7 @@ private:
                             const x64asm::Code& target_unroll, 
                             const x64asm::Code& rewrite_unroll,
                             const LineMap& target_linemap, const LineMap& rewrite_linemap,
-                            const Invariant& assume, const Invariant& prove, 
+                            const std::shared_ptr<Invariant> assume, const std::shared_ptr<Invariant> prove, 
                             const CpuState& ceg, const CpuState& ceg2,
                             CpuState& ceg_expected, CpuState& ceg_expected2,
                             bool separate_stack);
@@ -168,7 +168,7 @@ private:
   void generate_linemap(const Cfg&, const CfgPath& p, LineMap& to_populate, bool is_rewrite, x64asm::Code& code);
 
 
-  Invariant* get_jump_inv(const Cfg& cfg, Cfg::id_type, const CfgPath& p, bool is_rewrite);
+  std::shared_ptr<Invariant> get_jump_inv(const Cfg& cfg, Cfg::id_type, const CfgPath& p, bool is_rewrite);
 
   /** Rules to transform instructions for a custom purpose */
   Filter& filter_;

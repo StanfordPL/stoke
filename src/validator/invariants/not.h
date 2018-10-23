@@ -24,7 +24,7 @@ class NotInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  NotInvariant(Invariant* a) : a_(a) { }
+  NotInvariant(std::shared_ptr<Invariant> a) : a_(a) { }
 
   SymBool operator()(SymState& left, SymState& right, size_t& number) {
     auto a = (*a_)(left, right, number);
@@ -68,15 +68,15 @@ public:
   }
 
 
-  Invariant* clone() const {
-    return new NotInvariant(a_->clone());
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<NotInvariant>(a_->clone());
   }
 
 
 
 private:
 
-  Invariant* a_;
+  std::shared_ptr<Invariant> a_;
 
 };
 

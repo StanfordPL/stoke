@@ -127,7 +127,7 @@ private:
     if(expr == NULL) {
       exit(1);
     }
-    Invariant* ei = new ExprInvariant(expr, s);
+    auto ei = std::make_shared<ExprInvariant>(expr, s);
     //std::cout << "Parsing invariant" << std::endl;
     //std::cout << *ei << std::endl;
     validator.assume(ei);
@@ -142,7 +142,7 @@ private:
       if(m.is_valid(i)) {
         x64asm::Imm32 imm(i);
         x64asm::M8 ref(imm);
-        auto inv = new MemoryConstantInvariant(ref, true, m[i]);
+        auto inv = std::make_shared<MemoryConstantInvariant>(ref, true, m[i]);
         ddec.assume_always(inv);
         std::cout << "  Adding invariant " << *inv << std::endl;
       }

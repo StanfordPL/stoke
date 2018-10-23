@@ -27,20 +27,20 @@ public:
 
   FalseInvariant() {}
 
-  SymBool operator()(SymState& left, SymState& right, size_t& number) {
+  SymBool operator()(SymState& left, SymState& right, size_t& number) override {
     return SymBool::_false();
   }
 
-  std::ostream& write(std::ostream& os) const {
+  std::ostream& write(std::ostream& os) const override {
     os << "false";
     return os;
   }
 
-  bool check(const CpuState& target, const CpuState& rewrite) const {
+  bool check(const CpuState& target, const CpuState& rewrite) const override {
     return false;
   }
 
-  virtual std::ostream& serialize(std::ostream& out) const {
+  virtual std::ostream& serialize(std::ostream& out) const override {
     out << "FalseInvariant" << std::endl;
     return out;
   }
@@ -49,8 +49,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new FalseInvariant();
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<FalseInvariant>();
   }
 
 };

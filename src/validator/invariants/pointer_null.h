@@ -86,8 +86,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new PointerNullInvariant(variable_, size_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<PointerNullInvariant>(variable_, size_);
   }
 
 private:

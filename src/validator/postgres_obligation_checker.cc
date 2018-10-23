@@ -90,7 +90,7 @@ void PostgresObligationChecker::make_tables() {
 void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
                    Cfg::id_type target_block, Cfg::id_type rewrite_block,
                    const CfgPath& p, const CfgPath& q,
-                   Invariant& assume, Invariant& prove,
+                   shared_ptr<Invariant> assume, shared_ptr<Invariant> prove,
                    const std::vector<std::pair<CpuState, CpuState>>& testcases,
                    Callback& callback,
                    bool override_separate_stack,
@@ -115,8 +115,8 @@ void PostgresObligationChecker::check(const Cfg& target, const Cfg& rewrite,
   obligation.rewrite_block = rewrite_block;
   obligation.P = p;
   obligation.Q = q;
-  obligation.assume = &assume;
-  obligation.prove = &prove;
+  obligation.assume = assume;
+  obligation.prove = prove;
   obligation.testcases = sampled_testcases;
   obligation.separate_stack = separate_stack_ || override_separate_stack;
 

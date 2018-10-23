@@ -128,7 +128,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
   dual.set_invariant(fail_state, get_fail_invariant());
 
   /** Add NoSignals invariant everywhere */
-  auto ns_invariant = new NoSignalsInvariant();
+  auto ns_invariant = std::make_shared<NoSignalsInvariant>();
   auto reachable = dual.get_edge_reachable_states();
   for (auto rs : reachable) {
     auto orig_inv = dual.get_invariant(rs);
@@ -154,7 +154,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
   auto expected_final = get_final_invariant(dual);
   vector<pair<CpuState, CpuState>> testcases;
   auto result = obligation_checker_.check_wait(target, rewrite, end_state.ts, end_state.rs,
-                                    {}, {}, *actual_final, *expected_final, testcases, 
+                                    {}, {}, actual_final, expected_final, testcases, 
                                     separate_stack);
   if(result.has_error) {
     cout << "[verify_dual] Checker encountered error: " << result.error_message << endl;
@@ -178,8 +178,8 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
 };
 
 
-ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dual) const {
-  auto initial_invariant = new ConjunctionInvariant();
+std::shared_ptr<ConjunctionInvariant> LocalClassChecker::get_initial_invariant(DualAutomata& dual) const {
+  auto initial_invariant = std::make_shared<ConjunctionInvariant>();
 
   /** set all shadow block variables to 0 */
   auto target = dual.get_target();
@@ -190,19 +190,19 @@ ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dua
   shadows.insert(shadows.begin(), shadow_rewrite.begin(), shadow_rewrite.end());
   for(auto it : shadows) {
     it.coefficient = 1;
-    auto init_zero = new EqualityInvariant({ it }, 0);
+    auto init_zero = std::make_shared<EqualityInvariant>(vector<Variable>({ it }), 0);
     initial_invariant->add_invariant(init_zero);
   }
 
-  auto sei = new StateEqualityInvariant(target.def_ins());
+  auto sei = std::make_shared<StateEqualityInvariant>(target.def_ins());
   initial_invariant->add_invariant(sei);
-  initial_invariant->add_invariant(new MemoryEqualityInvariant());
-  initial_invariant->add_invariant(new NoSignalsInvariant());
+  initial_invariant->add_invariant(std::make_shared<MemoryEqualityInvariant>());
+  initial_invariant->add_invariant(std::make_shared<NoSignalsInvariant>());
 
   for(auto span : pointer_ranges_) {
     auto begin = span.first;
     auto end = span.second;
-    auto pri = new PointerRangeInvariant(begin, end);
+    auto pri = std::make_shared<PointerRangeInvariant>(begin, end);
     initial_invariant->add_invariant(pri);
   }
 
@@ -216,12 +216,12 @@ ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dua
       Variable start_var(string_ghost_start(r), false);
       Variable string_reg(r, false);
       string_reg.coefficient = -1;
-      auto equiv = new EqualityInvariant({start_var, string_reg}, 0);
+      auto equiv = std::make_shared<EqualityInvariant>({start_var, string_reg}, 0);
       initial_invariant->add_invariant(equiv);
 
       // rsi_end = 0 (for example)
       Variable end_var(string_ghost_end(r), false);
-      auto end_mem = new PointerNullInvariant(end_var, 1);
+      auto end_mem = std::make_shared<PointerNullInvariant>(end_var, 1);
       initial_invariant->add_invariant(end_mem);
     }
   */
@@ -231,21 +231,21 @@ ConjunctionInvariant* LocalClassChecker::get_initial_invariant(DualAutomata& dua
   return initial_invariant;
 }
 
-ConjunctionInvariant* LocalClassChecker::get_final_invariant(DualAutomata& dual) const {
+std::shared_ptr<ConjunctionInvariant> LocalClassChecker::get_final_invariant(DualAutomata& dual) const {
   auto target = dual.get_target();
-  auto final_invariant = new ConjunctionInvariant();
-  auto sei = new StateEqualityInvariant(target.live_outs());
+  auto final_invariant = std::make_shared<ConjunctionInvariant>();
+  auto sei = std::make_shared<StateEqualityInvariant>(target.live_outs());
   final_invariant->add_invariant(sei);
-  final_invariant->add_invariant(new MemoryEqualityInvariant());
+  final_invariant->add_invariant(std::make_shared<MemoryEqualityInvariant>());
 
   //final_invariant->add_invariant(get_fixed_invariant());
 
   return final_invariant;
 }
 
-ConjunctionInvariant* LocalClassChecker::get_fail_invariant() const {
-  auto fail_invariant = new ConjunctionInvariant();
-  fail_invariant->add_invariant(new FalseInvariant());
+std::shared_ptr<ConjunctionInvariant> LocalClassChecker::get_fail_invariant() const {
+  auto fail_invariant = std::make_shared<ConjunctionInvariant>();
+  fail_invariant->add_invariant(std::make_shared<FalseInvariant>());
 
   return fail_invariant;
 }
@@ -253,15 +253,15 @@ ConjunctionInvariant* LocalClassChecker::get_fail_invariant() const {
 /** returns true if everything was successful. */
 void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState& ds, const DualAutomata::Edge& edge, size_t conjunct, stringstream* ss, bool separate_stack) {
 
-  ConjunctionInvariant* start_inv = dual.get_invariant(edge.from);
-  ConjunctionInvariant* start_inv_copy = new ConjunctionInvariant(*start_inv);
+  std::shared_ptr<ConjunctionInvariant> start_inv = dual.get_invariant(edge.from);
+  std::shared_ptr<ConjunctionInvariant> start_inv_copy = std::make_shared<ConjunctionInvariant>(*start_inv);
   for(auto inv : assume_always_) {
     start_inv_copy->add_invariant(inv);
     cout << "  " << *inv << endl;
   }
 
-  ConjunctionInvariant* end_inv = dual.get_invariant(edge.to);
-  Invariant* partial_inv = (*end_inv)[conjunct];
+  std::shared_ptr<ConjunctionInvariant> end_inv = dual.get_invariant(edge.to);
+  std::shared_ptr<Invariant> partial_inv = (*end_inv)[conjunct];
   *ss << " conjunct " << conjunct << " / " << end_inv->size() << endl;
   *ss << "    Edge " << edge << endl;
   *ss << "    Proving " << *partial_inv << endl;
@@ -287,7 +287,7 @@ void LocalClassChecker::discharge_edge(const DualAutomata& dual, DischargeState&
   auto target = dual.get_target();
   auto rewrite = dual.get_rewrite();
   obligation_checker_.check(target, rewrite, edge.from.ts, edge.from.rs,
-                 edge.te, edge.re, *start_inv_copy, *partial_inv, testcases, 
+                 edge.te, edge.re, start_inv_copy, partial_inv, testcases, 
                  callback_, separate_stack, (void*)info);
 
 }

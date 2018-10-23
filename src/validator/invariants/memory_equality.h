@@ -88,8 +88,8 @@ public:
     CHECK_STREAM(is);
   }
 
-  Invariant* clone() const {
-    return new MemoryEqualityInvariant();
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<MemoryEqualityInvariant>();
   }
 
   virtual bool is_critical() {

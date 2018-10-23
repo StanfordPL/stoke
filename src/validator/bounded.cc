@@ -79,23 +79,23 @@ void BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite,
                                    const CfgPath& P, const CfgPath& Q, 
                                    ObligationChecker::Callback& callback) {
 
-  StateEqualityInvariant assume_state(target.def_ins());
-  StateEqualityInvariant prove_state(target.live_outs());
-  NoSignalsInvariant no_sig;
+  auto assume_state = make_shared<StateEqualityInvariant>(target.def_ins());
+  auto prove_state = make_shared<StateEqualityInvariant>(target.live_outs());
+  auto memory_equal = make_shared<MemoryEqualityInvariant>();
+  auto no_sig = make_shared<NoSignalsInvariant>();
 
-  MemoryEqualityInvariant memory_equal;
+  auto assume = make_shared<ConjunctionInvariant>();
+  assume->add_invariant(assume_state);
+  assume->add_invariant(memory_equal);
+  assume->add_invariant(no_sig);
 
-  ConjunctionInvariant assume;
-  assume.add_invariant(&assume_state);
-  assume.add_invariant(&memory_equal);
-  assume.add_invariant(&no_sig);
   for(auto it : extra_assumptions_) {
-    assume.add_invariant(it);
+    assume->add_invariant(it);
   }
 
-  ConjunctionInvariant prove;
-  prove.add_invariant(&prove_state);
-  prove.add_invariant(&memory_equal);
+  auto prove = make_shared<ConjunctionInvariant>();
+  prove->add_invariant(prove_state);
+  prove->add_invariant(memory_equal);
 
   CallbackData* cd = new CallbackData();
   cd->P = P;

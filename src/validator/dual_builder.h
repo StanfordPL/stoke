@@ -73,8 +73,8 @@ private:
   };
 
   /** Get class of invariant from current frontier and paths. */
-  uint64_t get_invariant_class(EqualityInvariant*, DualAutomata::Edge&);
-  std::vector<uint64_t> get_invariant_class(ConjunctionInvariant*, DualAutomata::Edge&);
+  uint64_t get_invariant_class(std::shared_ptr<EqualityInvariant>, DualAutomata::Edge&);
+  std::vector<uint64_t> get_invariant_class(std::shared_ptr<ConjunctionInvariant>, DualAutomata::Edge&);
   std::vector<uint64_t> get_invariant_class(DualAutomata::State&, DualAutomata::Edge&);
 
   /** Does this edge from the current frontier to the exit work? */

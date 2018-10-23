@@ -37,11 +37,11 @@ public:
   virtual void check(const Cfg& target, const Cfg& rewrite,
                      Cfg::id_type target_block, Cfg::id_type rewrite_block,
                      const CfgPath& p, const CfgPath& q,
-                     Invariant& assume, Invariant& prove,
+                     std::shared_ptr<Invariant> assume, std::shared_ptr<Invariant> prove,
                      const std::vector<std::pair<CpuState, CpuState>>& testcases,
                      Callback& callback,
                      bool separate_stack,
-                     void* optional = NULL) {
+                     void* optional = NULL) override {
     Result r;
     r.verified = false;
     r.has_ceg = false;
@@ -50,7 +50,7 @@ public:
   }
 
   /** Blocks until all the checking has done and the callbacks have been called. */
-  virtual void block_until_complete() {
+  virtual void block_until_complete() override {
 
   }
 

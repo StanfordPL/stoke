@@ -65,8 +65,8 @@ public:
   }
 
 
-  Invariant* clone() const {
-    return new TopZeroInvariant(reg_, is_rewrite_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<TopZeroInvariant>(reg_, is_rewrite_);
   }
 
 

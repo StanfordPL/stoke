@@ -77,8 +77,8 @@ public:
 
   }
 
-  Invariant* clone() const {
-    return new RangeInvariant(variable_, min_, max_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<RangeInvariant>(variable_, min_, max_);
   }
 
 

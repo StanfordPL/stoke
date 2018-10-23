@@ -94,8 +94,8 @@ public:
     byte_ = (uint8_t)byte;
   }
 
-  Invariant* clone() const {
-    return new MemoryConstantInvariant(m_, is_rewrite_, byte_);
+  std::shared_ptr<Invariant> clone() const override {
+    return std::make_shared<MemoryConstantInvariant>(m_, is_rewrite_, byte_);
   }
 
   virtual bool is_postponable() const override {

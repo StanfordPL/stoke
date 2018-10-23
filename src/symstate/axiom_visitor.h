@@ -88,9 +88,9 @@ public:
         axioms_.push_back(axiom);
       }
       if(associative_functions_.count(name)) {
-        assert(fxn.args.size() == 3);
+        assert(fxn.args.size() == 2);
         assert(fxn.args[0] == fxn.args[1]);
-        assert(fxn.args[1] == fxn.args[2]);
+        assert(fxn.args[0] == fxn.return_type);
         auto x = SymBitVector::tmp_var(fxn.args[0]);
         auto y = SymBitVector::tmp_var(fxn.args[0]);
         auto z = SymBitVector::tmp_var(fxn.args[0]);

@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { if(1) { X } }
+#define DEBUG_ARM(X) { if(0) { X } }
 
 
 void ArmMemory::generate_constraints(

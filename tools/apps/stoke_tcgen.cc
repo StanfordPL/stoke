@@ -175,8 +175,8 @@ void make_tc_different_memory(
     default_random_engine& gen) {
 // Now, lets find another testcase that touches *different* memory.
   ComboHandler handler;
-  FalseInvariant _false;
-  TrueInvariant _true;
+  auto _false = make_shared<FalseInvariant>();
+  auto _true = make_shared<TrueInvariant>();
 
   auto segments = get_segments(tc);
   if (segments.size()) {
@@ -289,8 +289,8 @@ int main(int argc, char** argv) {
   auto rewrite_path = CfgPaths::enumerate_paths(rewrite, 1)[0];
 
 
-  FalseInvariant _false;
-  TrueInvariant _true;
+  auto _false = make_shared<FalseInvariant>();
+  auto _true = make_shared<TrueInvariant>();
 
   size_t found = 0;
 
