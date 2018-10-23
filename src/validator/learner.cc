@@ -1582,8 +1582,8 @@ std::vector<Variable> InvariantLearner::sub_registers_for_regset(x64asm::RegSet 
   vector<Variable> outputs;
   for (auto r = rs.sse_begin(); r != rs.sse_end(); ++r) {
     size_t bytes = (*r).size()/8;
-    // add each 1,2,4,8-byte subregister
-    for(size_t k = 0; k < 4; ++k) {
+    // add each 4,8-byte subregister
+    for(size_t k = 2; k < 4; ++k) {
       size_t pow2 = (1 << k);
       for(size_t i = 0; i < bytes; i += pow2) {
         Variable sub(*r, is_rewrite, pow2, i);

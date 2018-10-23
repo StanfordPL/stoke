@@ -34,6 +34,7 @@ public:
   InvariantLearnerGadget(SeedGadget& seed, const Cfg& target, const Cfg& rewrite) : 
     InvariantLearner(target, rewrite) {
     set_seed(seed);
+    set_enable_shadow(shadow_regs_arg.value());
     set_enable_nonlinear(!only_linear_arg.value());
     set_enable_memory(!no_learn_memory_arg.value());
     set_enable_vector_vars(vector_invariants_arg.value());

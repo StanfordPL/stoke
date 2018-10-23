@@ -34,6 +34,9 @@ cpputil::FlagArg& vector_invariants_arg =
   cpputil::FlagArg::create("vector_invariants")
   .description("Learn invariants over sub-registers");
 
+cpputil::FlagArg& shadow_regs_arg =
+  cpputil::FlagArg::create("shadow_registers")
+  .description("Learn invariants over shadow registers (basic block counts)");
 
 } // namespace stoke
 

@@ -2,7 +2,8 @@
 
 @options = { 
   :target_bound => 18,
-  :rewrite_bound => 4
+  :rewrite_bound => 4,
+  :shadow => false,
 }
 
 @rodata_needed = {
@@ -131,6 +132,10 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--assume \"(t_%rdi<=15)\"",
   ]
 
+  if @options[:shadow] then
+    stoke_args.push("--shadow_registers") 
+  end
+
   if rodata_needed
     stoke_args.push("--rodata rodata")
   end
@@ -164,6 +169,9 @@ def update_options
     if ARGV[n] == "--rewrite-bound" then
       n = n+1
       @options[:rewrite_bound] = ARGV[n].to_i
+    end
+    if ARGV[n] == "--shadow-registers" then
+      @options[:shadow] = true
     end
     n = n+1
   end
