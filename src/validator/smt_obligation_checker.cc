@@ -967,6 +967,9 @@ void SmtObligationChecker::check(
     result.target_final_ceg = ceg_tf;
     result.rewrite_final_ceg = ceg_rf;
 
+    cout << "RESULT.REWRITE_CEG = " << endl << result.rewrite_ceg << endl;
+    cout << "RESULT.REWRITE_FINAL_CEG = " << endl << result.rewrite_final_ceg << endl;
+
     callback(result, optional);
 
   } else {

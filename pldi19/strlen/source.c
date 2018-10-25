@@ -11,11 +11,12 @@
  */
 
 uint64_t __attribute__ ((noinline)) func_2(char* s) {
-  uint64_t len = 0;
-  while(s[len] != '\0')
-    len++;
+  char* t = s;
+  while(*s != '\0') {
+    s++;
+  }
 
-  return len;
+  return (uint64_t)(s-t);
 }
 
 size_t

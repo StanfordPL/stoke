@@ -569,7 +569,7 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
     auto edge_reachable = dual.get_edge_reachable_states();
     for(auto s : edge_reachable) {
       if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
-        cout << "[verify_dual] Failure.  State " << s << " in cycle which doesn't make progress. " << endl;
+        cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
         return false;
       }
     }
@@ -600,6 +600,9 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   cout << "FINAL IMPLICATION GRAPH" << endl;
   graph.print();
   cout << endl << endl;
+  cout << "Dual with invariants" << endl;
+  dual.print_all();
+  cout << endl;
 
 
   // Took out the following check because it fails when there's dead code
@@ -1026,64 +1029,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
   }
 
-
-
-  /*
-  cout << "[DdecValidator::verify()] debugging equivalence classes to try" << endl;
-  auto states = template_pod.get_inductive_states();
-  for(auto state : states) {
-    if(state == template_pod.start_state())
-      continue;
-
-    cout << "STATE " << state << endl;
-    auto classes = get_classes_for_state(template_pod, state);
-    for(auto cls : classes) {
-      cout << "   ";
-      for(auto it : cls) {
-        if(it.has_value())
-          cout << setw(3) << *it << " ";
-        else
-          cout << "  * ";
-      }
-      cout << endl;
-    }
-  }
-  */
-
-  /*
-  bool have_classes = init_class_enumeration(template_pod);
-  if(!have_classes)
-    return false;
-  */
-
-  /** Setup class checker */
-  ClassChecker::Callback callback = [&] (const ClassChecker::Result& r, void* optional) {
-    return class_checker_callback(r, optional);
-  };
-  
-  /*
-  ClassChecker* checker = NULL;
-  checker = new LocalClassChecker(data_collector_, *control_learner_, 
-                    target_bound_, rewrite_bound_,
-                    checker_, invariant_learner_); */
-
-  for(auto it : pointer_ranges_)
-    class_checker_.add_pointer_range(it.first, it.second);
-  for(auto it : extra_assumptions_)
-    class_checker_.assume(it);
-  cout << "DDEC tells class checker to assume" << endl;
-  for(auto it : assume_always_) {
-    class_checker_.assume_always(it);
-    cout << "    " << *it << endl;
-  }
-
-  //class_checker_.check(template_pod, handhold_class, callback, !stack_out_, (void*)ji);
-
-  /** Finish it off. */
-  class_checker_.block_until_complete();
-
-  if(verified_ > 0)
-    return true;
 
   return false;
 }

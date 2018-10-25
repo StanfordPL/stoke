@@ -1192,6 +1192,14 @@ bool debug_hash_obligation(string hash) {
       cout << "error=" << result.error_message << endl;
     cout << "gen_time=" << result.gen_time_microseconds << endl;
     cout << "smt_time=" << result.smt_time_microseconds << endl;
+
+    cout << getpid() << ": got answer!" << endl;
+    result.write_text(cout) << endl;
+    //connection c2(postgres_arg.value());
+    //report_result(c2, *qe, result);
+    //c2.disconnect();
+    //cout << getpid() << ": reported result!" << endl;
+
   };
 
 

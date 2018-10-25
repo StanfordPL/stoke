@@ -1,6 +1,6 @@
 
-TARGET_BOUND=9
-REWRITE_BOUND=2
+TARGET_BOUND=16
+REWRITE_BOUND=4
 NAME=memchr
 TARGET=opt1/my_memchr.s
 REWRITE=opt1/libc_memchr.s
