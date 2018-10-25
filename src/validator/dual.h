@@ -301,6 +301,10 @@ public:
     return rewrite_;
   }
 
+  /** Is a node contained in a cycles where progress is only made on target/rewrite? */
+  bool one_program_cycle(State s, bool is_target)  const;
+
+
   /** Remove edges that aren't needed. */
   void simplify();
 
@@ -329,7 +333,7 @@ private:
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_edge_prefix(const CfgPath& tr1, const CfgPath& tr2);
-  /** Is a node contained in an SCC? */
+  /** Is a node contained in a cycle? */
   bool in_scc(State) const;
 
   /** Get fringe states of single CFG. */

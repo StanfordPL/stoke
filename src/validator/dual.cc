@@ -13,7 +13,8 @@ using namespace std;
 #define DEBUG_LEARN_STATE_DATA(X) { if(1) { X } }
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
-#define DEBUG_IN_SCC(X) { if(1) { X } }
+#define DEBUG_IN_SCC(X) { if(0) { X } }
+#define DEBUG_IN_CYCLE(X) { if(1) { X } }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (ts != other.ts)
@@ -698,6 +699,50 @@ DualAutomata DualAutomata::deserialize(std::istream& is) {
   pod.invariants_ = stoke::deserialize<map<State, std::shared_ptr<ConjunctionInvariant>>>(is);
   pod.topological_sort_ = stoke::deserialize<vector<State>>(is);
   return pod;
+}
+
+/** We are searching for cycles where the edges only contain blocks of the target /
+   the edges only contain blocks of the rewrite. */
+bool DualAutomata::one_program_cycle(State s, bool is_target)  const {
+  DEBUG_IN_CYCLE(cout << "[in_cycle] called for " << s << " is_target=" << is_target << endl;)
+  map<State, bool> visited;
+  visited[s] = true;
+  queue<State> worklist;
+  worklist.push(s);
+
+  while(worklist.size()) {
+    State t = worklist.front();
+    worklist.pop();
+    DEBUG_IN_CYCLE(cout << "[in_cycle] visiting " << t << endl;)
+    if(next_edges_.count(t) == 0)
+      continue;
+    auto next = next_edges_.at(t);
+    for(auto e : next) {
+      DEBUG_IN_CYCLE(cout << "[in_cycle] considering edge " << e << endl;)
+      if(is_target && e.re.size() != 0) {
+        DEBUG_IN_CYCLE(cout << "[in_cycle]    skipping -- nonempty rewrite edge" << endl;)
+        continue;
+      }
+      if(!is_target && e.te.size() != 0) {
+        DEBUG_IN_CYCLE(cout << "[in_cycle]    skipping -- nonempty target edge" << endl;)
+        continue;
+      }
+
+      auto u = e.to;
+      DEBUG_IN_CYCLE(cout << "[in_cycle]     next is " << u << endl;)
+      if(u == s) {
+        DEBUG_IN_CYCLE(cout << "[in_cycle] returning true for " << s << endl;)
+        return true;
+      }
+      if(!visited[u]) {
+        worklist.push(u);
+        visited[u] = true;
+      }
+    }
+  }
+
+  DEBUG_IN_CYCLE(cout << "[in_cycle] returning false for " << s << endl;)
+  return false;
 }
 
 bool DualAutomata::in_scc(State s) const {

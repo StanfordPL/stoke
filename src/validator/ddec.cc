@@ -504,6 +504,7 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
     matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace.back(), rewrite_trace.back()));
 
     // edges from entry to first iteration
+    bool found_false = false;
     for(auto ts : target_trace) {
       for(auto rs : rewrite_trace) {
         if(inv->check(ts.cs,rs.cs)) {
@@ -513,8 +514,16 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
           //cout << ts.cs << endl;
           //cout << rs.cs << endl;
           matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
-        } 
+        } else {
+          found_false = true;
+        }
       }
+    }
+
+    if(!found_false) {
+      // no way this is going to work
+      cout << "[build_dual_for_discriminator] predicate holds everywhere on trace " << i << endl;
+      return false;
     }
 
     // edges from first iteration to second
@@ -555,6 +564,16 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
         dual.add_edge(e);
       }
     }
+
+    // check if there are any cycles with only edges in target / only edges in rewrite
+    auto edge_reachable = dual.get_edge_reachable_states();
+    for(auto s : edge_reachable) {
+      if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
+        cout << "[verify_dual] Failure.  State " << s << " in cycle which doesn't make progress. " << endl;
+        return false;
+      }
+    }
+
   }
 
   return true;
@@ -562,9 +581,16 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
 
 bool DdecValidator::verify_dual(DualAutomata& dual) {
 
-  dual.remove_prefixes();
-  dual.print_all();
+  // check if there are any cycles with only edges in target / only edges in rewrite
+  auto edge_reachable = dual.get_edge_reachable_states();
+  for(auto s : edge_reachable) {
+    if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
+      cout << "[verify_dual] Failure.  State " << s << " in cycle which doesn't make progress. " << endl;
+      return false;
+    }
+  }
 
+  // learn invariants
   ImplicationGraph graph(target_, rewrite_);
   bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, graph);
   if (!learning_successful) {
@@ -575,7 +601,6 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   graph.print();
   cout << endl << endl;
 
-  auto edge_reachable = dual.get_edge_reachable_states();
 
   // Took out the following check because it fails when there's dead code
   // (and I've never seen a useful true-positive for this)
