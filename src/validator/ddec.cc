@@ -959,6 +959,25 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   target_traces_ = data_collector_.get_traces(target_);
   rewrite_traces_ = data_collector_.get_traces(rewrite_);
 
+  if(alignment_predicate_) {
+    DualAutomata dual(target_, rewrite_);
+    bool success = build_dual_for_discriminator(alignment_predicate_, dual);
+    if(success) {
+      dual.print_all();
+      dual.simplify();
+      cout << "SIMPLIFIED!!" << endl;
+      dual.print_all();
+      bool b = verify_dual(dual);
+      if(b) {
+        cout << "PROOF SUCCEEDED!" << endl;
+        return true;
+      } else {
+        cout << "Dual failed to verify with user-provided predicate." << endl;
+        return false;
+      }
+    }
+  }
+
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 

@@ -52,6 +52,14 @@ cpputil::FlagArg& handhold_arg =
 cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& rodata =
   cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("rodata");
 
+cpputil::ValueArg<std::string>& alignment_predicate_arg = 
+  cpputil::ValueArg<std::string>::create("alignment_predicate")
+  .usage("<string>")
+  .description("Specify an alignment predicate to try")
+  .default_val("");
+
+
+
 
 } // namespace stoke
 

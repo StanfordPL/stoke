@@ -177,6 +177,13 @@ private:
       auto ddec = new DdecValidator(*oc_, cc, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_use_handhold(handhold_arg.value());
+      auto align_pred = alignment_predicate_arg.value();
+      if(align_pred.size()) {
+        auto expr = ExprInvariant::parse(align_pred);
+        auto inv = std::make_shared<ExprInvariant>(expr, align_pred);
+        auto casted = std::dynamic_pointer_cast<Invariant>(inv);
+        ddec->set_alignment_predicate(casted);
+      }
       add_pointer_ranges(*ddec);
       add_assumptions(*ddec);
       add_readonly_memory(*ddec);

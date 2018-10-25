@@ -51,14 +51,8 @@ public:
     set_di(rewrite, number, true);
 
     std::function<SymBitVector (const std::string& s)> env = [&](const std::string& s) -> SymBitVector {
-      auto pair = parse_variable(s);
-      auto& state = pair.second ? rewrite : target;
-
-      auto value = state[pair.first];
-      if(value.width() < 64)
-        value = value.sign_extend(64);
-
-      return value;
+      auto variable = parse_variable(s);
+      return variable.from_state(target, rewrite);
     };
 
     Expr<SymBitVector>* bv_expr = expr_->map<SymBitVector>();
@@ -72,11 +66,8 @@ public:
   bool check(const CpuState& target, const CpuState& rewrite) const {
 
     std::function<uint64_t (const std::string& s)> env = [&](const std::string& s) -> uint64_t {
-      auto pair = parse_variable(s);
-      auto& state = pair.second ? rewrite : target;
-
-      auto value = state[pair.first];
-      return value.get_fixed_quad(0);
+      auto variable = parse_variable(s);
+      return variable.from_state(target, rewrite);
     };
 
     auto value = (*expr_)(env);
@@ -139,8 +130,8 @@ public:
 
 private:
 
-  static std::pair<x64asm::Operand, bool> parse_variable(const std::string& s) {
-    if(s[1] != '_' || (s[0] != 't' && s[0] != 'r')) {
+  static Variable parse_variable(const std::string& s) {
+    if(s.size() < 3 || s[1] != '_' || (s[0] != 't' && s[0] != 'r')) {
       std::stringstream ss;
       ss << __FILE__ << ":" << __LINE__ 
          << ": Invalid environment variable. " << s << std::endl;
@@ -149,19 +140,26 @@ private:
 
     bool is_rewrite = s[0] == 'r';
 
-    std::stringstream ss;
-    x64asm::Operand r(x64asm::rax);
-    std::string op_str = s.substr(2);
-    ss << op_str;
-    ss >> r;
-    if(ss.bad() || ss.fail()) {
+    if(s[2] == '%') {
       std::stringstream ss;
-      ss << __FILE__ << ":" << __LINE__ 
-         << ": Could not parse operand " << op_str << std::endl;
-      throw ss.str();
-    }
+      x64asm::Operand r(x64asm::rax);
+      std::string op_str = s.substr(2);
+      ss << op_str;
+      ss >> r;
+      if(ss.bad() || ss.fail()) {
+        std::stringstream ss;
+        ss << __FILE__ << ":" << __LINE__ 
+           << ": Could not parse operand " << op_str << std::endl;
+        throw ss.str();
+      }
 
-    return std::pair<x64asm::Operand, bool>(r, is_rewrite);
+      Variable v(r, is_rewrite);
+      return v;
+    } else {
+      std::string ghost_name = s.substr(2);
+      Variable v(ghost_name, is_rewrite);
+      return v;
+    }
   }
 
 

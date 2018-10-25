@@ -45,7 +45,8 @@ public:
           invariant_learner_(inv),
           flow_invariant_learner_(NULL),
           control_learner_(NULL),
-          class_checker_(class_chk)
+          class_checker_(class_chk),
+          alignment_predicate_()
   {
     set_use_handhold(false);
   }
@@ -83,6 +84,13 @@ public:
     assume_always_.push_back(assumption);
     return *this;
   }
+
+  /** Specify an alignment predicate */
+  DdecValidator& set_alignment_predicate(std::shared_ptr<Invariant> inv) {
+    alignment_predicate_ = inv;
+    return *this;
+  }
+
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -193,6 +201,7 @@ private:
   std::map<size_t, JobInfo> jobs_;
   bool use_handhold_;
 
+  std::shared_ptr<Invariant> alignment_predicate_;
 };
 
 } // namespace stoke
