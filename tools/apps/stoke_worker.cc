@@ -532,7 +532,7 @@ size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max) {
 }
 
 
-void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken_s) {
+void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken_s, string error = "TIMEOUT") {
 
   nontransaction tx(c);
   std::stringstream sql_add_result;
@@ -548,7 +548,7 @@ void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken
       << "  " << 0 << ", "
       << "  " << time_taken_s*1000*1000 << ", "
       << "  '" << tx.esc(version_info) << "', "
-      << "  'TIMEOUT')";
+      << "  '" << error << "')";
   tx.exec(sql_add_result.str().c_str());
 
   // Next, remove from the queue
@@ -559,7 +559,7 @@ void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken
 
 }
 
-void report_timeout(connection& c, ClassQueueEntry& qe, uint64_t time_taken_s) {
+void report_timeout(connection& c, ClassQueueEntry& qe, uint64_t time_taken_s, string error = "") {
   // no need to report this.  just come back later.
 }
 
@@ -950,6 +950,13 @@ pid_t spawn_worker(T* item) {
         report_timeout(c3, *qe, diff);
         c3.disconnect();
         delete qe;
+      } else if (WIFSIGNALED(status)) {
+        stringstream ss;
+        ss << "SIGNAL-" << WTERMSIG(status);
+        cout << getpid() << ": Detected crash!  " << ss.str() << endl;
+        connection c3(postgres_arg.value());
+        report_timeout(c3, *qe, diff, ss.str());
+        c3.disconnect();
       }
 
       // check for OOM
