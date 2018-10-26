@@ -960,6 +960,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   rewrite_traces_ = data_collector_.get_traces(rewrite_);
 
   if(alignment_predicate_) {
+    cout << "Attempting to use " << *alignment_predicate_ << endl;
     DualAutomata dual(target_, rewrite_);
     bool success = build_dual_for_discriminator(alignment_predicate_, dual);
     if(success) {

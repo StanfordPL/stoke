@@ -21,7 +21,7 @@
 using namespace std;
 using namespace stoke;
 
-#define DEBUG_ARM(X) { if(0) { X } }
+#define DEBUG_ARM(X) { if(ENABLE_DEBUG_ARM) { X } }
 
 
 void ArmMemory::generate_constraints(
@@ -77,6 +77,9 @@ void ArmMemory::generate_constraints(
       auto access = all_accesses_[i];  
       auto di = access.deref;
       cout << "      address = " << access.address << endl;
+      cout << "      value = " << access.value << endl;
+      cout << "      size = " << access.size << endl;
+      cout << "      write = " << access.write << endl;
       cout << "      di.is_rewrite = " << (di.is_rewrite ? "true" : "false") << endl;
       cout << "      di.is_invariant = " << (di.is_invariant ? "true" : "false") << endl;
       cout << "      di.implicit = " << (di.implicit_dereference ? "true" : "false") << endl;
@@ -392,8 +395,11 @@ bool ArmMemory::generate_constraints_given_no_cell_overlap(ArmMemory* am) {
 
   if (stop_now_ && *stop_now_) return true;
 
+  // these are maps: cell x offset -> bitvector
   std::map<uint64_t, std::map<uint64_t, SymBitVector>> my_memory_locations;
   std::map<uint64_t, std::map<uint64_t, SymBitVector>> other_memory_locations;
+
+  // first, figure out what the cells are
   for(auto& access : all_accesses_) {
     auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
     for(size_t i = 0; i < access.size/8; ++i) {
@@ -401,7 +407,27 @@ bool ArmMemory::generate_constraints_given_no_cell_overlap(ArmMemory* am) {
         memloc[access.cell][access.cell_offset + i] = SymBitVector::tmp_var(8);
       }
     }
+  }
 
+  // second, construct a heap for each initial value.  
+  // TODO: we'll be much better off constructing one heap per cell
+  //      will also help with modeling stack, etc.
+  for(size_t k = 0; k < 2; ++k) {
+    auto& memloc = k ? other_memory_locations : my_memory_locations;
+    auto& heap = k ? am->heap_ : heap_;
+
+    for(auto pair : memloc) {
+      auto cell = cells_[pair.first];
+      for(auto pair2 : pair.second)
+        heap = heap.update(SymBitVector::constant(64, pair2.first) + cell.address, pair2.second);
+    }
+  }
+  constraints_.push_back(start_variable_ == heap_);
+  constraints_.push_back(am->start_variable_ == am->heap_);
+
+  // now update the cells
+  for(auto & access : all_accesses_) {
+    auto& memloc = access.is_other ? other_memory_locations : my_memory_locations;
     if(access.write) 
       for(size_t i = 0; i < access.size/8; ++i) 
         memloc[access.cell][access.cell_offset + i] = access.value[8*i+7][8*i];
@@ -411,8 +437,6 @@ bool ArmMemory::generate_constraints_given_no_cell_overlap(ArmMemory* am) {
   }
 
   /** Create heap */
-  if (stop_now_ && *stop_now_) return true;
-
   for(size_t k = 0; k < 2; ++k) {
     auto& memloc = k ? other_memory_locations : my_memory_locations;
     auto& heap = k ? am->heap_ : heap_;

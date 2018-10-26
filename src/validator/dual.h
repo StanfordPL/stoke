@@ -304,9 +304,24 @@ public:
   /** Is a node contained in a cycles where progress is only made on target/rewrite? */
   bool one_program_cycle(State s, bool is_target)  const;
 
+  /** Check if a state has a self loop. */
+  bool has_self_loop(State s) const {
+    if(!next_edges_.count(s))
+      return false;
 
-  /** Remove edges that aren't needed. */
-  void simplify();
+    auto edges = next_edges_.at(s);
+    for(auto e : edges) {
+      if(e.to == s) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  /** Remove states and edges that aren't needed. 
+    Returns false if nothing was done. */
+  bool simplify();
 
   void serialize(std::ostream& os) const;
   static DualAutomata deserialize(std::istream& is);

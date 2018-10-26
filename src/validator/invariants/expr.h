@@ -114,8 +114,11 @@ public:
       std::cout << "Shouldn't be here" << std::endl;
       return false;
     });
-    if(!parser.has_error())
-      return parser.get();
+    if(!parser.has_error()) {
+      auto expr = parser.get();
+      expr->print_dot();
+      return expr;
+    }
     else {
       std::cout << __FILE__ << ":" << __LINE__ 
                 << ": parser got error: " << parser.get_error() << std::endl;

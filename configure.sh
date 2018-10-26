@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function show_help {
-  echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4] [--renew-kerberos] [--uf-multiplication]"
+  echo "$0 [--debug-default-target] [--debug-{local,ddec,ceg,arm}] [--no-cvc4] [--renew-kerberos] [--uf-multiplication]"
   echo ""
 }
 
@@ -16,7 +16,7 @@ function error {
 ## START
 
 ## All options are off by default
-MISC_OPTIONS="-DSTOKE_Z3_DEBUG_LAST_HASH"
+MISC_OPTIONS=""
 
 ## Detect platform
 $(grep avx2 /proc/cpuinfo >/dev/null)
@@ -37,15 +37,26 @@ fi
 
 BUILD_TYPE="release"
 
+DEBUG_ARM=0
+DEBUG_CEG=0
+DEBUG_LOCAL=0
+
 while :; do
   case $1 in
     -h|--help)
       show_help
       exit
       ;;
-
     --uf-multiplication)
       MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_UF_MULTIPLICATION"
+      shift
+      ;;
+    --debug-local)
+      DEBUG_LOCAL=1
+      shift
+      ;;
+    --debug-arm)
+      DEBUG_ARM=1
       shift
       ;;
     --debug-ddec)
@@ -53,7 +64,7 @@ while :; do
       shift
       ;;
     --debug-ceg)
-      MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_DEBUG_CEG"
+      DEBUG_CEG=1
       shift
       ;;
     --renew-kerberos)
@@ -77,6 +88,8 @@ while :; do
       break
   esac
 done
+
+MISC_OPTIONS="$MISC_OPTIONS -DENABLE_DEBUG_ARM=$DEBUG_ARM -DENABLE_DEBUG_CEG=$DEBUG_CEG -DENABLE_LOCAL_DEBUG=$DEBUG_LOCAL"
 
 echo ""
 echo "The default build type is '$BUILD_TYPE'."

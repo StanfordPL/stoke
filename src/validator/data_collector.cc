@@ -167,6 +167,10 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
   }
 
   sandbox_.run(testcase);
+  auto output = *sandbox_.get_output(testcase);
+  if(output.code != ErrorCode::NORMAL) {
+    cout << "Test case " << testcase << " seemed to fail with an exception." << endl;
+  }
 
   TracePoint tp;
   tp.block_id = cfg.get_exit();

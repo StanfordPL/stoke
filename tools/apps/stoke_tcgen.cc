@@ -70,6 +70,9 @@ auto& stop_at = ValueArg<size_t>::create("max_tcs")
                 .description("once this many testcases are generated, stop")
                 .default_val(0);
 
+auto& randomize_order_arg = FlagArg::create("randomize_order")
+                        .description("Output test cases in random order");
+
 typedef struct {
   unsigned long size,resident,share,text,lib,data,dt;
 } statm_t;
@@ -352,6 +355,10 @@ int main(int argc, char** argv) {
 
   DEBUG(cout << "Output argument: " << output_arg.value() << endl;)
   DEBUG(cout << "Output count: " << outputs.size() << endl;)
+
+  if(randomize_order_arg.value()) {
+    random_shuffle(outputs.begin(), outputs.end());
+  }
 
   // Print anything we have so far
   if (outputs.size() && output_arg.value() == "") {

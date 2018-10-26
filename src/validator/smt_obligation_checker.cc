@@ -33,11 +33,11 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(0) { X } }
-#define CONSTRAINT_DEBUG(X) { if(0) { X } }
+#define OBLIG_DEBUG(X) { if(ENABLE_LOCAL_DEBUG) { X } }
+#define CONSTRAINT_DEBUG(X) { if(ENABLE_LOCAL_DEBUG) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
-#define DEBUG_ARM(X) { if(0) { X } }
+#define DEBUG_ARM(X) { if(ENABLE_DEBUG_ARM) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -50,7 +50,7 @@
 //#else
 //#define CEG_DEBUG(X) { }
 //#endif
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { if(ENABLE_DEBUG_CEG) { X } }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )

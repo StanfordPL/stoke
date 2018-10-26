@@ -775,8 +775,9 @@ bool DualAutomata::in_scc(State s) const {
 }
 
 /** Remove edges that aren't needed. */
-void DualAutomata::simplify() {
+bool DualAutomata::simplify() {
 
+  bool changes_made = false;
   /** Step 1: remove nodes that are not contained in a strongly connected component. */
   auto start = start_state();
   auto end = exit_state();
@@ -785,12 +786,14 @@ void DualAutomata::simplify() {
   while(!fixpoint) {
     fixpoint = true;
     auto edge_reachable = get_edge_reachable_states();
+    cout << "[simplify] starting fixpoint iteration" << endl;
     for(auto s : edge_reachable) {
       if(s == start)
         continue;
       if(s == end)
         continue;
-      if(in_scc(s))
+
+      if(has_self_loop(s))
         continue;
 
       cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
@@ -816,7 +819,10 @@ void DualAutomata::simplify() {
         cout << "[simplify] removing edge " << out << endl;
         remove_edge(out);
       }
+      prev_edges_.erase(s);
+      next_edges_.erase(s);
       fixpoint = false;
+      changes_made = true;
       break;
     }
   }
@@ -842,6 +848,7 @@ void DualAutomata::simplify() {
            CfgPaths::is_prefix(first.re, second.re)) {
           // remove 'second'
           edges_to_remove.insert(second);
+          changes_made = true;
         }
       }
     }
@@ -850,6 +857,11 @@ void DualAutomata::simplify() {
       remove_edge(e);
   }
 
+  // redo until fixpoint
+  if(changes_made) 
+    simplify();
+
+  return changes_made;
 }
 
 
