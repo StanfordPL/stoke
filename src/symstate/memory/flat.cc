@@ -26,9 +26,8 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 
   if (separate_stack_ && deref.stack_dereference) {
-    //cout << "[flat] STACK WRITE" << endl;
-
-    stack_[size] = stack_[size/8].update(address, value);
+    cout << "[flat] STACK WRITE" << endl;
+    stack_[size/8] = stack_[size/8].update(address, value);
     /*for (size_t i = 0; i < size/8; ++i) {
       stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
     }*/
