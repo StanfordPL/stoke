@@ -534,11 +534,13 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
         auto& second_target = second_pair.first;
         auto& second_rewrite = second_pair.second;
 
+        /*
         cout << " - Considering pairs:" << endl;
         cout << "     First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
              << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
         cout << "     Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
              << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; 
+             */
 
         if(second_target.index == first_target.index && second_rewrite.index == first_rewrite.index)
           continue;
@@ -951,6 +953,24 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   return true;
 }
 
+vector<Variable> DdecValidator::get_stack_locations(bool is_rewrite) {
+  const Cfg& cfg = is_rewrite ? rewrite_ : target_;
+  vector<Variable> stack_locations;
+  auto code = cfg.get_code();
+  for(auto instr : code) {
+    if(instr.is_explicit_memory_dereference()) {
+      auto index = instr.mem_index();
+      auto operand = instr.get_operand<Mem>(index);
+      if(operand.get_base() == rbp) {
+        Variable v(operand, is_rewrite);
+        stack_locations.push_back(v);
+      }
+    }
+  }
+  return stack_locations;
+
+}
+
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   target_ = init_target;
@@ -995,18 +1015,36 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       auto target_defined_registers = target_.def_outs(target_cutpoint);
       auto rewrite_defined_registers = rewrite_.def_outs(rewrite_cutpoint);
 
+      vector<Variable> target_variables;
+      vector<Variable> rewrite_variables;
+
+
       for(auto target_reg = target_defined_registers.gp_begin();
                target_reg != target_defined_registers.gp_end();
                ++target_reg) {
+        target_variables.push_back(Variable(*target_reg, false));
+      }
 
-        for(auto rewrite_reg = rewrite_defined_registers.gp_begin();
-                 rewrite_reg != rewrite_defined_registers.gp_end();
-                 ++rewrite_reg) {
+      for(auto rewrite_reg = rewrite_defined_registers.gp_begin();
+               rewrite_reg != rewrite_defined_registers.gp_end();
+               ++rewrite_reg) {
+        rewrite_variables.push_back(Variable(*rewrite_reg, true));
+      }
+
+      auto target_stack_locations = get_stack_locations(false);
+      auto rewrite_stack_locations = get_stack_locations(true);
+
+      target_variables.insert(target_variables.begin(), target_stack_locations.begin(), target_stack_locations.end());
+      rewrite_variables.insert(rewrite_variables.begin(), rewrite_stack_locations.begin(), rewrite_stack_locations.end());
+
+      for(auto v1 : target_variables) {
+        cout << "TARGET VARIABLE " << v1 << endl;
+
+        for(auto v2 : rewrite_variables) {
+          cout << "REWRITE VARIABLE " << v2 << endl;
 
           size_t power2bound = 5;
           for(size_t i = 0; i < power2bound*2-1; ++i) {
-            Variable v1(*target_reg, false);
-            Variable v2(*rewrite_reg, true);
             if(i < power2bound) {
               v1.coefficient = (1 << i);
               v2.coefficient = -1;

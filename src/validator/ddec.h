@@ -170,6 +170,8 @@ private:
   /** Verify that a dual automata is correct */
   bool verify_dual(DualAutomata& dual);
 
+  std::vector<Variable> get_stack_locations(bool is_rewrite);
+
 
   bool build_dual_for_discriminator(std::shared_ptr<Invariant> inv, DualAutomata&);
   std::vector<uint64_t> find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);

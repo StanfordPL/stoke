@@ -55,7 +55,7 @@ protected:
   SymState* state_;
 
   bool is_stack_dereference(x64asm::Mem& mem) {
-    return mem.contains_base() && mem.get_base() == x64asm::rsp;
+    return mem.contains_base() && (mem.get_base() == x64asm::rsp || mem.get_base() == x64asm::rbp);
   }
 
 };

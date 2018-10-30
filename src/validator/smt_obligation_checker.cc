@@ -33,11 +33,14 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
-#define OBLIG_DEBUG(X) { if(ENABLE_LOCAL_DEBUG) { X } }
-#define CONSTRAINT_DEBUG(X) { if(ENABLE_LOCAL_DEBUG) { X } }
+#define DO_DEBUG 0
+//#define DO_DEBUG ENABLE_LOCAL_DEBUG
+
+#define OBLIG_DEBUG(X) { if(DO_DEBUG) { X } }
+#define CONSTRAINT_DEBUG(X) { if(DO_DEBUG) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
-#define DEBUG_ARM(X) { if(ENABLE_DEBUG_ARM) { X } }
+#define DEBUG_ARM(X) { if(DO_DEBUG) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }

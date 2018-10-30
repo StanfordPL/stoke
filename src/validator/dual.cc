@@ -14,7 +14,7 @@ using namespace std;
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(0) { X } }
-#define DEBUG_IN_CYCLE(X) { if(1) { X } }
+#define DEBUG_IN_CYCLE(X) { if(0) { X } }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (ts != other.ts)
