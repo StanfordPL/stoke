@@ -48,6 +48,7 @@
 
 
 #define DDEC_TC_DEBUG(X) { }
+#define DEBUG_ALIGN_PRED_CONSTANTS(X) { if(0) { X } }
 
 using namespace std;
 using namespace std::chrono;
@@ -413,8 +414,8 @@ void DdecValidator::get_states_at_cutpoint(size_t i, size_t target_point, size_t
 }
 
 
-vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
-  cout << "Searching for disciminator constants at " << target_point << " / " << rewrite_point << " with " << inv << endl;
+vector<uint64_t> DdecValidator::find_alignment_predicate_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv) {
+  DEBUG_ALIGN_PRED_CONSTANTS(cout << "Searching for alignment predicate constants at " << target_point << " / " << rewrite_point << " with " << inv << endl;)
   vector<uint64_t> constants;
 
   assert(target_traces_.size() == rewrite_traces_.size());
@@ -423,7 +424,7 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
   size_t last_size = 0;
   size_t last_size_run = 0;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
-    //cout << "  * Processing trace " << i << endl;
+    DEBUG_ALIGN_PRED_CONSTANTS(cout << "  * Processing trace " << i << endl;)
     set<uint64_t> my_constants;
 
     vector<DataCollector::TracePoint> target_states;
@@ -431,12 +432,13 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
 
     get_states_at_cutpoint(i, target_point, rewrite_point, target_states, rewrite_states, true);
 
-    cout << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;
+    DEBUG_ALIGN_PRED_CONSTANTS(cout << dec << "Got " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
     if(target_states.size() > 2 && rewrite_states.size() > 2) {
       for(auto ts : target_states) {
         for(auto rs : rewrite_states) {
           auto value = inv.calculate_lhs(ts.cs, rs.cs);
           my_constants.insert(value);
+          DEBUG_ALIGN_PRED_CONSTANTS(cout << hex << "     Found constant " << value << endl;)
         }
       }
 
@@ -453,6 +455,10 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
         constants = intersection;
       }
 
+      DEBUG_ALIGN_PRED_CONSTANTS(cout << "-- intersection --" << endl;
+      for(auto it : constants)
+        cout << it << endl;)
+
       if(constants.size() == 0)
         break;
 
@@ -467,8 +473,6 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
 
       //cout << "constants.size() = " << constants.size() << endl;
     }
-
-
     /*
     cout << "   on trace " << i << " got ";
     for(auto i : constants) {
@@ -478,11 +482,13 @@ vector<uint64_t> DdecValidator::find_discriminator_constants(size_t target_point
     */
   }
 
+  DEBUG_ALIGN_PRED_CONSTANTS(cout << dec;)
+
   return constants;
 }
 
-bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv, DualAutomata& dual) {
-  cout << "[build_dual_for_discriminator] expression " << *inv << endl;
+bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant> inv, DualAutomata& dual) {
+  cout << "[build_dual_for_alignment_predicate] expression " << *inv << endl;
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
@@ -508,13 +514,21 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
     for(auto ts : target_trace) {
       for(auto rs : rewrite_trace) {
         if(inv->check(ts.cs,rs.cs)) {
+          /*
           cout << " - ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
                << "  trace indexes " << ts.index << " / " << rs.index << endl;
-          //cout << "STATES" << endl;
-          //cout << ts.cs << endl;
-          //cout << rs.cs << endl;
+          cout << "STATES" << endl;
+          cout << ts.cs << endl;
+          cout << rs.cs << endl; */
           matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
         } else {
+          /*
+          cout << " - FAILS FOR blocks " << ts.block_id << " / " << rs.block_id
+               << " trace indexes " << ts.index << " / " << rs.index << endl;
+          cout << "STATES" << endl;
+          cout << ts.cs << endl;
+          cout << rs.cs << endl; */
+
           found_false = true;
         }
       }
@@ -522,7 +536,7 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
 
     if(!found_false) {
       // no way this is going to work
-      cout << "[build_dual_for_discriminator] predicate holds everywhere on trace " << i << endl;
+      cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on trace " << i << endl;
       return false;
     }
 
@@ -581,10 +595,11 @@ bool DdecValidator::build_dual_for_discriminator(std::shared_ptr<Invariant> inv,
   return true;
 }
 
-bool DdecValidator::verify_dual(DualAutomata& dual) {
+bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predicate) {
 
   // check if there are any cycles with only edges in target / only edges in rewrite
   auto edge_reachable = dual.get_edge_reachable_states();
+  cout << "Checking for cycle in dual" << endl;
   for(auto s : edge_reachable) {
     if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
       cout << "[verify_dual] Failure.  State " << s << " in cycle which doesn't make progress. " << endl;
@@ -594,7 +609,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   // learn invariants
   ImplicationGraph graph(target_, rewrite_);
-  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, graph);
+  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, graph, predicate);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     return false;
@@ -602,10 +617,6 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
   cout << "FINAL IMPLICATION GRAPH" << endl;
   graph.print();
   cout << endl << endl;
-  cout << "Dual with invariants" << endl;
-  dual.print_all();
-  cout << endl;
-
 
   // Took out the following check because it fails when there's dead code
   // (and I've never seen a useful true-positive for this)
@@ -652,6 +663,10 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     size_t conjunct;
     bool ignore_errors;
   };
+
+  cout << "Dual with invariants" << endl;
+  dual.print_all();
+  cout << endl;
 
   /** Start the fixpoint computation.  There are two rounds.  In the first round, we ignore
     timeouts/errors, and focus on getting counterexamples that can remove clauses.  In the
@@ -982,13 +997,13 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   if(alignment_predicate_) {
     cout << "Attempting to use " << *alignment_predicate_ << endl;
     DualAutomata dual(target_, rewrite_);
-    bool success = build_dual_for_discriminator(alignment_predicate_, dual);
+    bool success = build_dual_for_alignment_predicate(alignment_predicate_, dual);
     if(success) {
       dual.print_all();
       dual.simplify();
       cout << "SIMPLIFIED!!" << endl;
       dual.print_all();
-      bool b = verify_dual(dual);
+      bool b = verify_dual(dual, alignment_predicate_);
       if(b) {
         cout << "PROOF SUCCEEDED!" << endl;
         return true;
@@ -1055,7 +1070,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             EqualityInvariant inv({v1, v2}, 0);
 
             vector<uint64_t> constants;
-            constants = find_discriminator_constants(target_cutpoint, rewrite_cutpoint, inv);
+            constants = find_alignment_predicate_constants(target_cutpoint, rewrite_cutpoint, inv);
 
             for(auto constant : constants) {
               auto specific = make_shared<EqualityInvariant>(inv.get_terms(), constant);
@@ -1064,13 +1079,13 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
               conj->add_invariant(memequ);
 
               DualAutomata dual(target_, rewrite_);
-              bool success = build_dual_for_discriminator(conj, dual);
+              bool success = build_dual_for_alignment_predicate(conj, dual);
               if(success) {
                 dual.print_all();
                 dual.simplify();
                 cout << "SIMPLIFIED!!" << endl;
                 dual.print_all();
-                bool b = verify_dual(dual);
+                bool b = verify_dual(dual, conj);
                 if(b) {
                   cout << "PROOF SUCCEEDED!" << endl;
                   return true;

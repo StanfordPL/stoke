@@ -39,8 +39,17 @@ auto& debug = FlagArg::create("debug")
               .alternate("d")
               .description("Debug mode, step through instructions one at a time");
 
+auto& verbose = FlagArg::create("verbose")
+              .alternate("d")
+              .description("Print state following each instruction");
+
+auto& operands = ValueArg<string>::create("operands")
+                 .description("Operands to print for each basic block executed")
+                 .default_val("");
+
 // The current program stack
 vector<pair<TUnit, size_t>> program_stack;
+vector<Operand> operand_list;
 
 // Kind of ugly; the callback needs to see this Gadgets, but we
 // can't make it global. It'll be initialized correctly in main.
@@ -156,17 +165,27 @@ void callback(const StateCallbackData& data, void* arg) {
   auto& frame = program_stack.back();
   frame.second = data.line;
 
-  // Print current execution state if debug was ever specified
-  if (debug.value()) {
-    print_state(data);
-    print_stack();
-    print_current(frame);
-  }
+  if(operand_list.size()) {
+    cout << left;
+    cout << dec << setw(4) << " " << setw(4) << data.line << setw(4) << " ";
+    for(auto op : operand_list) {
+      cout << hex << setw(4) << " " << setw(16) << (uint64_t)data.state[op].get_fixed_quad(0);
+    }
+    cout << endl;
+    cout << dec << setw(0);
+  } else {
+    // Print current execution state if debug was ever specified
+    if (debug.value() || verbose.value()) {
+      print_state(data);
+      print_stack();
+      print_current(frame);
+    }
 
-  // User interaction loop
-  auto stepping = (bool*) arg;
-  if (*stepping) {
-    *stepping = user_loop(data.state);
+    // User interaction loop
+    auto stepping = (bool*) arg;
+    if (*stepping) {
+      *stepping = user_loop(data.state);
+    }
   }
 
   // Update the stack based on the current instruction
@@ -195,6 +214,38 @@ int main(int argc, char** argv) {
   CpuStates tcs;
   tcs.push_back(tc);
 
+  // parse operands
+  if(operands.value().size()) {
+    stringstream ss(operands.value());
+    string token;
+    while(std::getline(ss, token, ';')) {
+      x64asm::Operand op(rax);
+      stringstream tmp_ss(token);
+      tmp_ss >> op;
+      if(op.is_typical_memory()) {
+        M64 m(*static_cast<M8*>(&op)); 
+        operand_list.push_back(m);
+      } else {
+        operand_list.push_back(op);
+      }
+    }
+  }
+  if(operand_list.size())  {
+    cout << endl;
+    cout << "    line    ";
+  }
+  for(auto op : operand_list) {
+    stringstream ss;
+    ss << op;
+    while(ss.str().size() < 16)
+      ss << " ";
+    cout << "    " << ss.str();
+  }
+  if(operand_list.size()) 
+    cout << endl;
+
+
+
   auto stepping = debug.value();
   fg = &aux_fxns;
   program_stack.push_back({target_arg.value(), 0});
@@ -203,15 +254,17 @@ int main(int argc, char** argv) {
 
   sb.run(target);
 
-  const auto result = *(sb.result_begin());
-  if (result.code != ErrorCode::NORMAL) {
-    Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << " [" << readable_error_code(result.code) << "]" << endl;
-  } else {
-    Console::msg() << "Control returned normally with state: " << endl;
+  if(operand_list.size() == 0) {
+    const auto result = *(sb.result_begin());
+    if (result.code != ErrorCode::NORMAL) {
+      Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << " [" << readable_error_code(result.code) << "]" << endl;
+    } else {
+      Console::msg() << "Control returned normally with state: " << endl;
+      Console::msg() << endl;
+      Console::msg() << result << endl;
+    }
     Console::msg() << endl;
-    Console::msg() << result << endl;
   }
-  Console::msg() << endl;
 
   return 0;
 }

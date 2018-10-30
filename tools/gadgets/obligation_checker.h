@@ -52,6 +52,7 @@ public:
       filter_ = new BoundAwayFilter(*handler_, (uint64_t)0x1000, (uint64_t)(-0x1000));
       solver_ = new SolverGadget();
       child_ = new SmtObligationChecker(*solver_, *filter_);
+      set_separate_stack(!stack_out_arg.value());
     } 
     if (oc_type == "postgres") {
       set_alias_strategy(parse_alias());

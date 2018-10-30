@@ -129,9 +129,7 @@ public:
   /** Create a formula expressing these memory cells with another set. Also generates all the
     constraints needed for this contraint to make sense (retrievable through get_constraints().
     This can be computationally expensive. */
-  SymBool equality_constraint(ArmMemory& other) {
-    return get_variable() == other.get_variable();
-  }
+  SymBool equality_constraint(ArmMemory& other, const std::vector<SymBitVector>& exclusions);
 
   std::vector<SymBool> get_constraints() {
     return constraints_;

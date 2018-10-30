@@ -634,3 +634,19 @@ void ArmMemory::recurse_cell_assignment(size_t access_index) {
   }
 
 }
+
+SymBool ArmMemory::equality_constraint(ArmMemory& other, const vector<SymBitVector>& exclusions) {
+  if(exclusions.size() == 0)
+    return get_variable() == other.get_variable();
+
+  auto my_heap = get_variable();
+  auto their_heap = other.get_variable();
+
+  auto tmp = SymBitVector::tmp_var(64);
+  SymBool tmp_is_excluded = SymBool::_false();
+  for(auto e : exclusions) {
+    tmp_is_excluded = tmp_is_excluded | (e == tmp);
+  }
+  return ((my_heap[tmp] != their_heap[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
+
+}

@@ -120,7 +120,8 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
-                                    const DataCollector::Trace& orig_rewrite_trace) {
+                                    const DataCollector::Trace& orig_rewrite_trace,
+                                    shared_ptr<Invariant> predicate) {
 
   /** Copy traces, remove 0 block. */
   auto target_trace = orig_target_trace;
@@ -216,10 +217,13 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
           follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
 
         // (X) perform a sanity check; memory states should be equal (except maybe stack)
+        // .... actually it's the alignment predicate that should hold
+
         //if(follow.target_current.stack != follow.rewrite_current.stack) {
         //  DEBUG_LEARN_STATE_DATA(cout << "    on this path stack states differ." << endl;)
         //  continue;
         //}
+        /*
         if(follow.target_current.heap != follow.rewrite_current.heap) {
           DEBUG_LEARN_STATE_DATA(cout << "    on this path heap states differ." << endl;)
           continue;
@@ -231,7 +235,13 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         if(follow.target_current.segments != follow.rewrite_current.segments) {
           DEBUG_LEARN_STATE_DATA(cout << "    on this path memory states differ." << endl;)
           continue;
+        }*/
+        if(follow.state != exit && 
+            !predicate->check(follow.target_current, follow.rewrite_current)) {
+          DEBUG_LEARN_STATE_DATA(cout << "    on this path alignment predicate fails." << endl;)
+          continue;
         }
+
 
         // Good job!
         found_matching_edge = true;
@@ -268,7 +278,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 }
 
 
-bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner, ImplicationGraph& graph) {
+bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner, ImplicationGraph& graph, shared_ptr<Invariant> predicate) {
 
 
   data_reachable_states_.clear();
@@ -303,7 +313,7 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
     )
 
 
-    bool ok = learn_state_data(target_trace, rewrite_trace);
+    bool ok = learn_state_data(target_trace, rewrite_trace, predicate);
     if (!ok) {
       cout << "[learn_invariants] lsd returned FALSE!" << endl;
       return false;

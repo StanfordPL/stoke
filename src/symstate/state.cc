@@ -140,7 +140,7 @@ SymBitVector SymState::operator[](const Operand o) {
 SymBitVector SymState::lookup(const Operand o) const {
 
   if (o.is_typical_memory()) {
-    auto& m = reinterpret_cast<const M8&>(o);
+    auto& m = reinterpret_cast<const Mem&>(o);
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
@@ -148,7 +148,7 @@ SymBitVector SymState::lookup(const Operand o) const {
     //cout << "memory = " << memory << endl;
     if (memory) {
       auto deref_copy = deref_;
-      deref_copy.stack_dereference = (m.contains_base() && m.get_base() == rsp);
+      deref_copy.stack_dereference = (m.contains_base() && (m.get_base() == rsp || m.get_base() == rbp));
       //cout << "for " << m << " stack_deref = " << deref_copy.stack_dereference << endl;
       auto p = memory->read(addr, size, deref_copy);
       //cout << "width in bits of result: " << p.first.width() << endl;
@@ -253,7 +253,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto addr = get_addr(m);
 
     auto deref_copy = deref_;
-    deref_copy.stack_dereference = m.contains_base() && m.get_base() == rsp;
+    deref_copy.stack_dereference = m.contains_base() && (m.get_base() == rsp || m.get_base() == rbp);
 
     if (memory) {
       //cout << "for " << m << " stack_deref = " << deref_copy.stack_dereference << endl;
@@ -369,8 +369,7 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
 
 
 /** Get address corresponding to a memory reference */
-template <typename T>
-SymBitVector SymState::get_addr(M<T> memory) const {
+SymBitVector SymState::get_addr(const Mem& memory) const {
 
   SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
 

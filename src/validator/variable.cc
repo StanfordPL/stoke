@@ -72,6 +72,10 @@ cpputil::BitVector Variable::from_state_vector(const CpuState& target, const Cpu
     return vector;
   } else {
     cpputil::BitVector v(64);
+    if(cs.shadow.count(name) == 0) {
+      cerr << "shadow with name " << name << " not found... dying." << endl;
+      exit(1);
+    }
     v.get_fixed_quad(0) = cs.shadow.at(name);
     return v;
   }
@@ -162,7 +166,14 @@ uint64_t Variable::get_addr(const CpuState& target, const CpuState& rewrite) con
   }
 }
 
-
+SymBitVector Variable::get_addr(const SymState& target, const SymState& rewrite) const {
+  const Mem& mem = static_cast<const Mem&>(operand);
+  if(is_rewrite) {
+    return rewrite.get_addr(mem);
+  } else {
+    return target.get_addr(mem);
+  }
+}
 
 Variable Variable::bb_ghost(size_t n, bool is_rewrite) {
   std::stringstream ss;

@@ -222,7 +222,7 @@ public:
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
   /** Learn invariants.  Returns 'true' if no error. */
-  bool learn_invariants(DataCollector&, InvariantLearner&, ImplicationGraph&);
+  bool learn_invariants(DataCollector&, InvariantLearner&, ImplicationGraph&, std::shared_ptr<Invariant> predicate);
 
   /** Get invariant at state. */
   std::shared_ptr<ConjunctionInvariant> get_invariant(const State& state) const {
@@ -342,7 +342,8 @@ private:
   /** Runs a test case/trace through all possible paths in automata to
     populate state information.  Returns false on error. */
   bool learn_state_data(const DataCollector::Trace& target,
-                        const DataCollector::Trace& rewrite);
+                        const DataCollector::Trace& rewrite,
+                        std::shared_ptr<Invariant> predicate);
 
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);

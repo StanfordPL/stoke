@@ -143,7 +143,7 @@ private:
 
     bool is_rewrite = s[0] == 'r';
 
-    if(s[2] == '%') {
+    if(s[2] == '%' || s[2] == '(' || s[2] == '0') {
       std::stringstream ss;
       x64asm::Operand r(x64asm::rax);
       std::string op_str = s.substr(2);
@@ -156,8 +156,14 @@ private:
         throw ss.str();
       }
 
-      Variable v(r, is_rewrite);
-      return v;
+      if(r.is_typical_memory()) {
+        x64asm::M64 m(*static_cast<x64asm::M8*>(&r));
+        Variable v(m, is_rewrite);
+        return v;
+      } else {
+        Variable v(r, is_rewrite);
+        return v;
+      }
     } else {
       std::string ghost_name = s.substr(2);
       Variable v(ghost_name, is_rewrite);

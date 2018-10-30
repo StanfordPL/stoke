@@ -86,8 +86,16 @@ std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t 
 }
 
 /** Create a formula expressing these memory cells with another set. */
-SymBool FlatMemory::equality_constraint(FlatMemory& other) {
-  return (heap_ == other.heap_);
+SymBool FlatMemory::equality_constraint(FlatMemory& other, std::vector<SymBitVector>& exclusions) {
+  if(exclusions.size() == 0)
+    return (heap_ == other.heap_);
+  
+  auto tmp = SymBitVector::tmp_var(64);
+  SymBool tmp_is_excluded = SymBool::_false();
+  for(auto e : exclusions) {
+    tmp_is_excluded = tmp_is_excluded | (e == tmp);
+  }
+  return ((heap_[tmp] != other.heap_[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
 }
 
 

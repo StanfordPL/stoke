@@ -16,7 +16,6 @@
 #define STOKE_SRC_VALIDATOR_INVARIANT_MEMORY_EQUALITY_H
 
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
 #include "src/validator/invariant.h"
@@ -28,8 +27,11 @@ class MemoryEqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  MemoryEqualityInvariant(size_t red_zone_size = 128) :
-    red_zone_size_(red_zone_size) {
+  MemoryEqualityInvariant() {
+  }
+
+  MemoryEqualityInvariant(const std::vector<Variable>& locations) : excluded_locations_(locations) {
+
   }
 
   SymBool operator()(SymState& left, SymState& right, size_t& number) {
@@ -40,29 +42,39 @@ public:
     if (left.memory == 0 && right.memory == 0)
       return SymBool::_true();
 
-    auto cell_left = dynamic_cast<CellMemory*>(left.memory);
-    if (cell_left != 0) {
-      assert(dynamic_cast<CellMemory*>(right.memory) != 0);
-      return cell_left->equality_constraint(*static_cast<CellMemory*>(right.memory));
+    std::vector<SymBitVector> bad_locations;
+    for(auto v : excluded_locations_) {
+      auto start = v.get_addr(left, right);
+      for(size_t i = 0; i < v.size; ++i) {
+        auto bad = start + SymBitVector::constant(64, i);
+        bad_locations.push_back(bad);
+      }
     }
 
     auto flat_left = dynamic_cast<FlatMemory*>(left.memory);
     if (flat_left != 0) {
       assert(dynamic_cast<FlatMemory*>(right.memory) != 0);
-      return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
+      return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory), bad_locations);
     }
 
     auto arm_left = dynamic_cast<ArmMemory*>(left.memory);
     if (arm_left != 0) {
       assert(dynamic_cast<ArmMemory*>(right.memory) != 0);
-      return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory));
+      return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory), bad_locations);
     }
 
     return SymBool::_true();
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << "(t/r agree on memory)";
+    if(excluded_locations_.size() == 0)
+      os << "(t/r agree on memory)";
+    else {
+      os << "(t/r agree on memory except at ";
+      for(auto v : excluded_locations_)
+        os << v << " ";
+      os << ")";
+    }
     return os;
   }
 
@@ -71,25 +83,39 @@ public:
     if (target.segments.size() != rewrite.segments.size())
       return false;
     for (size_t i = 0; i < target.segments.size(); ++i) {
-      if (target.segments[i] != rewrite.segments[i])
+      if (!check_segment(target.segments[i], rewrite.segments[i], target, rewrite)) {
         return false;
+      }
     }
-    return target.heap == rewrite.heap &&
+    return check_segment(target.heap, rewrite.heap, target, rewrite) &&
+           check_segment(target.data, rewrite.data, target, rewrite);
     /*       target.stack == rewrite.stack && */
-           target.data == rewrite.data;
   }
 
   virtual std::ostream& serialize(std::ostream& out) const {
     out << "MemoryEqualityInvariant" << std::endl;
+    out << excluded_locations_.size() << std::endl;
+    for(auto it : excluded_locations_) {
+      it.serialize(out);
+    }
     return out;
   }
 
   MemoryEqualityInvariant(std::istream& is) { 
     CHECK_STREAM(is);
+    size_t count;
+    is >> count;
+    CHECK_STREAM(is);
+    for(size_t i = 0; i < count; ++i) {
+      Variable v(is);
+      excluded_locations_.push_back(v);
+      CHECK_STREAM(is);
+    }
+
   }
 
   std::shared_ptr<Invariant> clone() const override {
-    return std::make_shared<MemoryEqualityInvariant>();
+    return std::make_shared<MemoryEqualityInvariant>(excluded_locations_);
   }
 
   virtual bool is_critical() {
@@ -100,7 +126,35 @@ public:
 
 private:
 
-  size_t red_zone_size_;
+  /** Check if two segments are equal, except on specified locations. */
+  bool check_segment(const Memory& a, const Memory& b, const CpuState& target, const CpuState& rewrite) const {
+    if(a.lower_bound() != b.lower_bound())
+      return false;
+    if(a.size() != b.size())
+      return false;
+    for(uint64_t i = 0; i < a.size(); ++i) {
+      uint64_t addr = a.lower_bound() + i;
+      
+      bool excluded = false;
+      for(auto v : excluded_locations_) {
+        uint64_t start = v.get_addr(target, rewrite);
+        uint64_t end = start + v.size;
+
+        if(addr >= start && addr < end) {
+          excluded = true;
+          break;
+        }
+      }
+      
+      if(!excluded)
+        if(a[addr] != b[addr])
+          return false;
+    }
+
+    return true;
+  }
+
+  std::vector<Variable> excluded_locations_;
 
 };
 

@@ -71,8 +71,7 @@ public:
   }
 
   /** Get the address corresponding to a memory location */
-  template <typename T>
-  SymBitVector get_addr(x64asm::M<T> ref) const;
+  SymBitVector get_addr(const x64asm::Mem& ref) const;
   /** Get the address corresponding to an instruction */
   SymBitVector get_addr(const x64asm::Instruction& instr) const;
 

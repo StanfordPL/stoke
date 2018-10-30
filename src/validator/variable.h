@@ -55,6 +55,7 @@ struct Variable {
   bool is_dereference() const;
   /** From a concrete state, get the address of the memory dereference. */
   uint64_t get_addr(const CpuState& target, const CpuState& rewrite) const;
+  SymBitVector get_addr(const SymState& target, const SymState& rewrite) const;
 
   /** Make basic block ghost variable. */
   static Variable bb_ghost(size_t n, bool is_rewrite);

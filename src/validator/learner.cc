@@ -115,10 +115,20 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
   vector<const Cfg*> programs = {&target, &rewrite};
   for (const Cfg* prog : programs) {
     bool has_stack = false;
-    for (auto instr : prog->get_code()) {
+    auto code = prog->get_code();
+    auto tunit = prog->get_function();
+    for (size_t i = 0; i < code.size(); ++i) {
+      auto instr = code[i];
       //cout << "  processing instr " << instr << endl;
       if (instr.is_explicit_memory_dereference()) {
         auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
+        if(mem.rip_offset()) {
+          auto rip = tunit.hex_offset(i) + tunit.hex_size(i) + tunit.get_rip_offset();
+          cout << "~~~ for " << instr << " rip offset = " << rip << endl;
+          cout << "     hexoffset = " << tunit.hex_offset(i) << "  hexsize = " << tunit.hex_size(i) << " fileoffset = " << tunit.get_rip_offset() << endl;
+          mem.set_disp(Imm32(mem.get_disp() + (int32_t)rip));
+          mem.set_rip_offset(false);
+        }
         //cout << "     - considering operand " << mem 
         //     << " of size " << mem.size() << " type " << mem.type() << endl;
         memory_operands.insert(mem);
@@ -1230,15 +1240,34 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
 
   assert(target_states.size() == rewrite_states.size());
 
-  std::shared_ptr<MemoryEqualityInvariant> mem_equ = std::make_shared<MemoryEqualityInvariant>();
   std::shared_ptr<NoSignalsInvariant> no_sigs = std::make_shared<NoSignalsInvariant>();
   std::shared_ptr<ConjunctionInvariant> conj = std::make_shared<ConjunctionInvariant>();
   conj->add_invariant(no_sigs);
-  conj->add_invariant(mem_equ);
 
   if (target_states.size() == 0 || rewrite_states.size() == 0) {
     conj->add_invariant(std::make_shared<FalseInvariant>());
     return conj;
+  }
+
+  // Memory equality
+  {
+    auto memequ = make_shared<MemoryEqualityInvariant>();
+    if(memequ->check(target_states, rewrite_states)) {
+      cout << "[learn_simple] adding standard memory equality invariant" << endl;
+      conj->add_invariant(memequ);
+    } else {
+      auto vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+      for(auto var : vars) {
+        vector<Variable> vs;
+        vs.push_back(var);
+        auto memequ = make_shared<MemoryEqualityInvariant>(vs);
+        cout << "[learn_simple] ... attemting " << *memequ << endl;
+        if(memequ->check(target_states, rewrite_states))  {
+          cout << "[learn_simple] adding memory equality invariant excluding " << var << endl;
+          conj->add_invariant(memequ);
+        }
+      }
+    }
   }
 
   // NonZero invariants

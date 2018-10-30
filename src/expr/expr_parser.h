@@ -269,8 +269,14 @@ private:
     while ( (c >= 'a' && c <= 'z') ||
             (c >= 'A' && c <= 'Z') ||
             (c >= '0' && c <= '9') ||
-            (c == '_') || (c == '%')) {
-      var = var.append(1, next());
+            (c == '_') || (c == '%') ||
+            (c == '[') || (c == ']')) {
+      char d = next();
+      if (d == '[')
+        d = '(';
+      if (d == ']')
+        d = ')';
+      var = var.append(1, d);
       c = peek();
     }
 
