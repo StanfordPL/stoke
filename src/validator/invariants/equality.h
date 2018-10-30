@@ -166,6 +166,39 @@ public:
     return terms_;
   }
 
+  /** return true if we're sure that *this does not imply inv. */
+  virtual bool does_not_imply(std::shared_ptr<Invariant> inv) const override {
+    auto casted = std::dynamic_pointer_cast<EqualityInvariant>(inv);
+    if(casted) {
+      auto our_terms = casted->get_terms();
+      auto their_terms = casted->get_terms();
+      for(auto ours : our_terms) {
+        bool found_one = false;
+        for(auto theirs : their_terms) {
+          if(ours.is_related(theirs)) {
+            found_one = true;
+            break;
+          }
+        }
+        if(!found_one)
+          return true;
+      }
+      for(auto theirs : their_terms) {
+        bool found_one = false;
+        for(auto ours : our_terms) {
+          if(theirs.is_related(ours)) {
+            found_one = true;
+            break;
+          }
+        }
+        if(!found_one)
+          return true;
+      }
+    }
+    return false;
+  }
+
+
 private:
 
   std::vector<Variable> terms_;

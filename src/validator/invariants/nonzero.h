@@ -81,6 +81,14 @@ public:
     return std::make_shared<NonzeroInvariant>(variable_, negate_);
   }
 
+  virtual bool does_not_imply(std::shared_ptr<Invariant> inv) const override {
+    auto casted = std::dynamic_pointer_cast<NonzeroInvariant>(inv);
+    if(casted) {
+      return !variable_.is_related(casted->variable_);
+    } else {
+      return false;
+    }
+  }
 
 private:
 

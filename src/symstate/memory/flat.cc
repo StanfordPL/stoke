@@ -27,9 +27,11 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
   if (separate_stack_ && deref.stack_dereference) {
     //cout << "[flat] STACK WRITE" << endl;
-    for (size_t i = 0; i < size/8; ++i) {
+
+    stack_[size] = stack_[size/8].update(address, value);
+    /*for (size_t i = 0; i < size/8; ++i) {
       stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
-    }
+    }*/
     return SymBool::_false();
   }
 
@@ -63,10 +65,10 @@ std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t 
 
   if (separate_stack_ && deref.stack_dereference) {
     //cout << "[flat] STACK READ" << endl;
-    SymBitVector value = stack_[address];
-    for (size_t i = 1; i < size/8; ++i) {
+    SymBitVector value = stack_[size/8][address];
+    /*for (size_t i = 1; i < size/8; ++i) {
       value = stack_[address + SymBitVector::constant(64, i)] || value;
-    }
+    }*/
     return pair<SymBitVector,SymBool>(value, SymBool::_false());
   }
 

@@ -293,9 +293,9 @@ void IntMatrix::print() const {
   auto& m = *this;
   for (size_t i =0; i < m.size(); ++i) {
     for (size_t j = 0; j < m[i].size(); ++j) {
-      cout << m[i][j] << "  ";
+      cout << hex << m[i][j] << "  ";
     }
-    cout << endl;
+    cout << endl << dec;
   }
 }
 

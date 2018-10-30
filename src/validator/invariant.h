@@ -92,6 +92,11 @@ public:
     return false;
   }
 
+  /** return true if we're sure that *this does not imply inv. */
+  virtual bool does_not_imply(std::shared_ptr<Invariant> inv) const {
+    return false;
+  }
+
   virtual std::shared_ptr<Invariant> clone() const = 0;
 
 protected:

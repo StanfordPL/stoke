@@ -60,6 +60,7 @@ using namespace x64asm;
 #include "tests/unionfind/unionfind.h"
 #include "tests/validator/invariants.h"
 #include "tests/validator/invariant_serialize.h"
+#include "tests/validator/variables.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 

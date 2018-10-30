@@ -35,12 +35,16 @@ public:
 
   ArmMemory(bool separate_stack, SMTSolver& solver) : SymMemory(separate_stack), solver_(solver) {
     heap_ = SymArray::tmp_var(64, 8);
-    stack_ = SymArray::tmp_var(64, 8);
     start_variable_ = heap_;
     final_heap_ = SymArray::tmp_var(64, 8);
     finalize_ = false;
     set_interrupt_var(NULL);
     unsound_ = false;
+
+    for(size_t i = 0; i < 6; ++i) {
+      size_t pow2 = (1 << i);
+      stack_[pow2] = SymArray::tmp_var(64, 8*pow2);
+    }
   }
 
   ArmMemory(ArmMemory& other) : SymMemory(other.separate_stack_), solver_(other.solver_) {
@@ -76,9 +80,12 @@ public:
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo deref) {
 
     if (separate_stack_ && deref.stack_dereference) {
+      stack_[size] = stack_[size/8].update(address, value);
+      /*
       for (size_t i = 0; i < size/8; ++i) {
         stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
       }
+      */
       return SymBool::_false();
     }
 
@@ -101,10 +108,13 @@ public:
   std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo deref) {
 
     if (separate_stack_ && deref.stack_dereference) {
+      SymBitVector value = stack_[size/8][address];
+      /*
       SymBitVector value = stack_[address];
       for (size_t i = 1; i < size/8; ++i) {
         value = stack_[address + SymBitVector::constant(64, i)] || value;
       }
+      */
       return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
     }
 
@@ -199,7 +209,7 @@ private:
   SymArray heap_;
   SymArray start_variable_;
   SymArray final_heap_;
-  SymArray stack_;
+  std::map<size_t, SymArray> stack_;
   bool finalize_;
 
   /** map of (symbolic address, size) pairs accessed. */

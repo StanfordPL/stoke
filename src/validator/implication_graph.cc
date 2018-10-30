@@ -32,6 +32,11 @@ size_t ImplicationGraph::compute(size_t i1, size_t i2) {
       if(inv1 == inv2)
         continue;
 
+      if(inv1->does_not_imply(inv2)) {
+        cout << "Skipping check for ( " << *inv1 <<  " ) ==> ( " << *inv2 << " )" << endl;
+        continue;
+      }
+
       // setup symbolic states
 
       SymState ts("TARGET");

@@ -134,6 +134,8 @@ private:
       return false;
     for(uint64_t i = 0; i < a.size(); ++i) {
       uint64_t addr = a.lower_bound() + i;
+      if(!a.is_valid(addr))
+        continue;
       
       bool excluded = false;
       for(auto v : excluded_locations_) {

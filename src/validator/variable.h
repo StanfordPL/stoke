@@ -53,6 +53,44 @@ struct Variable {
 
   /** Does this have a memory dereference? */
   bool is_dereference() const;
+  bool is_stack() const {
+    assert(is_dereference());
+    auto mem = static_cast<const x64asm::Mem*>(&operand);
+    return mem->get_base() == x64asm::rsp || mem->get_base() == x64asm::rbp;
+  }
+  bool is_related(const Variable& v) const {
+    //std::cout << "checking if from same program..." << std::endl;
+    if(is_rewrite != v.is_rewrite)
+      return false;
+    //std::cout << "checking if ghost flag differs ..." << std::endl;
+    if(is_ghost != v.is_ghost)
+      return false;
+    //std::cout << "checking if ghosts name matches ..." << std::endl;
+    if(is_ghost) 
+      return name == v.name;
+
+    //std::cout << "checking if memory status differs ..." << std::endl;
+    if(operand.is_typical_memory() != v.operand.is_typical_memory())
+      return false;
+
+    if(operand.is_typical_memory()) {
+      //std::cout << "comparing memory..." << std::endl;
+      auto m1 = *static_cast<const x64asm::Mem*>(&operand);
+      auto m2 = *static_cast<const x64asm::Mem*>(&v.operand);
+      if(m1.contains_base() != m2.contains_base())
+        return false;
+      if(m1.contains_index() != m2.contains_index())
+        return false;
+      if(m1.contains_base() && m1.get_base() != m2.get_base())
+        return false;
+      if(m1.contains_index() && m1.get_index() != m2.get_index())
+        return false;
+      return true;
+    } else {
+      //std::cout << "comparing operand" << std::endl;
+      return operand == v.operand;
+    }
+  }
   /** From a concrete state, get the address of the memory dereference. */
   uint64_t get_addr(const CpuState& target, const CpuState& rewrite) const;
   SymBitVector get_addr(const SymState& target, const SymState& rewrite) const;

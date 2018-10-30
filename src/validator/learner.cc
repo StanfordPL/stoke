@@ -111,9 +111,11 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
   set<Variable> results;
 
-  set<x64asm::Mem> memory_operands;
-  vector<const Cfg*> programs = {&target, &rewrite};
-  for (const Cfg* prog : programs) {
+  set<x64asm::Mem> target_memory_operands;
+  set<x64asm::Mem> rewrite_memory_operands;
+  for(size_t k = 0; k < 2; ++k) {
+    const Cfg* prog = k ? &rewrite : &target;
+    auto& memory_operands = k ? rewrite_memory_operands : target_memory_operands;
     bool has_stack = false;
     auto code = prog->get_code();
     auto tunit = prog->get_function();
@@ -146,16 +148,23 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
   }
 
   DEBUG_LEARNER(
-  cout << "Inserted operands include: " << endl;
-  for(auto mem : memory_operands) {
+  cout << "Inserted target operands include: " << endl;
+  for(auto mem : target_memory_operands) {
     cout << "     - considering operand " << mem 
          << " of size " << mem.size() << " type " << mem.type() << endl;
-  })
+  }
+  cout << "Inserted rewrite operands include: " << endl;
+  for(auto mem : rewrite_memory_operands) {
+    cout << "     - considering operand " << mem 
+         << " of size " << mem.size() << " type " << mem.type() << endl;
+  }
+  )
 
   for(size_t k = 0; k < 2; ++k) {
 
     auto& cfg = k ? rewrite : target;
     auto regs = k ? rewrite_regs : target_regs;
+    auto memory_operands = k ? rewrite_memory_operands : target_memory_operands;
 
     for (auto mem : memory_operands) {
 
@@ -228,7 +237,6 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
         for (size_t offset : {
                0,4,-4
              }) {
-
           M32 mem_fixed(mem.get_seg(),
                         mem.get_base(),
                         mem.get_index(),
@@ -356,6 +364,24 @@ vector<std::shared_ptr<EqualityInvariant>> InvariantLearner::build_memory_regist
         cout << "Proposing " << *inv << endl;
       }
     }
+    // look for equalities of stack-registers with memory locations
+    /*
+    for(auto mv2 : memory_vars) {
+      if(!mv.is_stack() && !mv2.is_stack())
+        continue;
+      if(mv == mv2)
+        continue;
+      if(mv.size != mv2.size)
+        continue;
+      if(mv.is_rewrite == mv2.is_rewrite)
+        continue;
+
+      mv.coefficient = 1;
+      mv2.coefficient = -1;
+      auto inv = make_shared<EqualityInvariant>(vector<Variable>({mv,mv2}),0);
+      invariants.push_back(inv);
+      cout << "Proposing " << *inv << endl;
+    }*/
   }
 
   return invariants;
@@ -1261,7 +1287,7 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
         vector<Variable> vs;
         vs.push_back(var);
         auto memequ = make_shared<MemoryEqualityInvariant>(vs);
-        cout << "[learn_simple] ... attemting " << *memequ << endl;
+        cout << "[learn_simple] ... attempting " << *memequ << endl;
         if(memequ->check(target_states, rewrite_states))  {
           cout << "[learn_simple] adding memory equality invariant excluding " << var << endl;
           conj->add_invariant(memequ);
@@ -1493,8 +1519,16 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
     }
   }
 
-  vector<Variable> mem_vars;
+  /** get variables corresponding to stack locations */
+  {
+    auto mem_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+    for(auto var : mem_vars) {
+      if(var.is_stack())
+        columns.push_back(var);
+    }
+  }
   /*
+  vector<Variable> mem_vars;
   if (enable_memory_) {
     mem_vars = get_memory_variables(target_, rewrite_);
 

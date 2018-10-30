@@ -44,7 +44,6 @@ void Invariant::get_dereference_map(DereferenceMap& deref_map,
     }
   }
 
-  assert(memory_variables.size() < 2);
   if(memory_variables.size() > 0) {
     auto var = memory_variables[0];
     //cout << "Processing variable " << var << " number=" << number << endl;

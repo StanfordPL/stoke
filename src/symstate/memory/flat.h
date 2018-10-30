@@ -30,11 +30,16 @@ public:
 
   FlatMemory(bool separate_stack, bool no_constraints = false) : SymMemory(separate_stack) {
     variable_ = SymArray::tmp_var(64, 8);
-    stack_ = SymArray::tmp_var(64, 8);
     start_variable_ = variable_;
     heap_ = variable_;
     variable_up_to_date_ = true;
     no_constraints_ = no_constraints;
+
+    for(size_t i = 0; i < 6; ++i) {
+      size_t pow2 = (1 << i);
+      stack_[pow2] = SymArray::tmp_var(64, 8*pow2);
+    }
+
   }
 
   FlatMemory(FlatMemory& other) : SymMemory(other.separate_stack_) {
@@ -84,7 +89,8 @@ public:
   /** The heap state */
   SymArray heap_;
   /** The stack state */
-  SymArray stack_;
+  //SymArray stack_;
+  std::map<size_t, SymArray> stack_;
   /** Extra constraints needed to make everything work. */
   std::vector<SymBool> constraints_;
 
