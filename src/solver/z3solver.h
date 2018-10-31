@@ -39,6 +39,7 @@ public:
 
     context_.set("timeout", (int)timeout_);
     context_.set("smt.phase_selection", 5);
+    context_.set("smt.mbqi", 1);
   }
 
   /** Create a Z3 solver from another one. */
@@ -47,6 +48,7 @@ public:
     timeout_ = s.get_timeout();
     context_.set("timeout", (int)timeout_);
     context_.set("smt.phase_selection", 5);
+    context_.set("smt.mbqi", 1);
   }
 
   /** Copy assignment */

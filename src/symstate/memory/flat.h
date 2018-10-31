@@ -59,7 +59,7 @@ public:
   std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo info);
 
   /** Create a formula expressing these memory cells with another set. */
-  SymBool equality_constraint(FlatMemory& other, std::vector<SymBitVector>& exclusions);
+  SymBool equality_constraint(FlatMemory& other);
 
   std::vector<SymBool> get_constraints() {
     return constraints_;

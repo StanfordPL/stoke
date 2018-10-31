@@ -181,7 +181,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 256) { 
         for (size_t offset : {
-               0,32,-32
+               0//,32,-32
              }) {
 
           // Make everything an M256
@@ -199,7 +199,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 128) { 
         for (size_t offset : {
-               0,16,-16
+               0//,16,-16
              }) {
 
           // Make everything an M128
@@ -217,7 +217,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 64) { 
         for (size_t offset : {
-               0,8,-8
+               0//,8,-8
              }) {
 
           // Make everything an M64
@@ -235,7 +235,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 32) {
         for (size_t offset : {
-               0,4,-4
+               0//,4,-4
              }) {
           M32 mem_fixed(mem.get_seg(),
                         mem.get_base(),
@@ -251,7 +251,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 16) {
         for (size_t offset : {
-               0,2,-2
+               0//,2,-2
              }) {
 
           M16 mem_fixed(mem.get_seg(),
@@ -268,7 +268,7 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
 
       if(mem.size() == 8) {
         for (size_t offset : {
-               0,1,-1
+               0//,1,-1
              }) {
 
           M8 mem_fixed(mem.get_seg(),
@@ -833,6 +833,36 @@ const std::vector<CpuState>& rewrite_states) {
   return pair<vector<CpuState>, vector<CpuState>>(target_chosen, rewrite_chosen);
 }
 
+std::shared_ptr<MemoryEqualityInvariant> InvariantLearner::learn_memory_equality(
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states,
+    x64asm::RegSet target_regs,
+    x64asm::RegSet rewrite_regs) const {
+
+  // Memory equality
+  auto memequ = make_shared<MemoryEqualityInvariant>();
+  if(memequ->check(target_states, rewrite_states)) {
+    cout << "[learn_simple] adding standard memory equality invariant" << endl;
+    return memequ; 
+  } else {
+    auto vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+    for(auto var : vars) {
+      vector<Variable> vs;
+      vs.push_back(var);
+      auto memequ = make_shared<MemoryEqualityInvariant>(vs);
+      cout << "[learn_simple] ... attempting " << *memequ << endl;
+      if(memequ->check(target_states, rewrite_states))  {
+        cout << "[learn_simple] adding memory equality invariant excluding " << var << endl;
+        return memequ;
+      }
+    }
+  }
+
+  cerr << "Could not find any invariant relating memory states... busted." << endl;
+  return shared_ptr<MemoryEqualityInvariant>(nullptr);
+}
+ 
+
 std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
   x64asm::RegSet target_regs,
   x64asm::RegSet rewrite_regs,
@@ -845,6 +875,8 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
   //auto pair = choose_tcs(states, states2);
   auto target_states = states;
   auto rewrite_states = states2;
+
+  auto memequ = learn_memory_equality(states, states2, target_regs, rewrite_regs);
 
   // idea: sort state pairs into one, two, or four groups, and learn invariant over them
   vector<std::shared_ptr<Invariant>> condition_invariants;
@@ -872,7 +904,9 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
     condition_invariants.push_back(inv);
     condition_invariants.push_back(inv2);
   } else {
-    return learn_simple(target_regs, rewrite_regs, target_states, rewrite_states, graph);
+    auto conj = learn_simple(target_regs, rewrite_regs, target_states, rewrite_states, graph);
+    conj->add_invariant(memequ);
+    return conj;
   }
 
   // identify the flag invariants we care about
@@ -928,6 +962,7 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
     }
   }
 
+  final_inv->add_invariant(memequ);
   return final_inv;
 
 }
@@ -1275,28 +1310,7 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
     return conj;
   }
 
-  // Memory equality
-  {
-    auto memequ = make_shared<MemoryEqualityInvariant>();
-    if(memequ->check(target_states, rewrite_states)) {
-      cout << "[learn_simple] adding standard memory equality invariant" << endl;
-      conj->add_invariant(memequ);
-    } else {
-      auto vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
-      for(auto var : vars) {
-        vector<Variable> vs;
-        vs.push_back(var);
-        auto memequ = make_shared<MemoryEqualityInvariant>(vs);
-        cout << "[learn_simple] ... attempting " << *memequ << endl;
-        if(memequ->check(target_states, rewrite_states))  {
-          cout << "[learn_simple] adding memory equality invariant excluding " << var << endl;
-          conj->add_invariant(memequ);
-        }
-      }
-    }
-  }
-
-  // NonZero invariants
+ // NonZero invariants
   auto class_nonzero = graph.new_class();
   for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;

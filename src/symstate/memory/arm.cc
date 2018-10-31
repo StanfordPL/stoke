@@ -24,7 +24,7 @@ using namespace stoke;
 #define DEBUG_ARM(X) { if(ENABLE_DEBUG_ARM) { X } }
 
 
-void ArmMemory::generate_constraints(
+bool ArmMemory::generate_constraints(
     ArmMemory* am, 
     std::vector<SymBool>& initial_constraints,
     std::vector<SymBool>& all_constraints,
@@ -53,10 +53,12 @@ void ArmMemory::generate_constraints(
   access_offsets_.clear();
 
   // Check that initial invariants are sane
+  //for(auto it : initial_constraints)
+  //  cout << "initial_constraints = " << it << endl;
   bool sane = solver_.is_sat(initial_constraints);
   if(!sane) {
     DEBUG_ARM(cout << "Initial constraints unsatisfiable... ARM is easy here :)" << endl;)
-    return;
+    return false;
   }
 
   // 0. Get all the memory accesses in one place to look at.
@@ -96,8 +98,6 @@ void ArmMemory::generate_constraints(
     }
   )
 
-  if (stop_now_ && *stop_now_) return;
-
   // 1. figure out relationships between offsets
   if(deref_maps.size() > 0) {
     generate_constraints_offsets_data(initial_constraints, deref_maps);
@@ -108,6 +108,8 @@ void ArmMemory::generate_constraints(
   // 2. get the cells and enumerate constraints
   generate_constraints_enumerate_cells();
   generate_constraints_given_cells(am, initial_constraints);
+
+  return true;
 }
 
 void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_constraints,
@@ -167,9 +169,11 @@ void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_
       DEBUG_ARM(cout << "-> CONJECTURE: accesses " << i << " , " << j << " are offset by " << diff << endl;)
 
       /** Try to prove that the address of deref i is always a fixed offset of deref j */
+      cout << "Initial constraints: " << initial_constraints[0] << endl;
       auto check = !(i_access.address + SymBitVector::constant(64, diff) == j_access.address);
       initial_constraints.push_back(check);
-      if (stop_now_ && *stop_now_) return;
+
+      cout << "CHECKING " << check << endl;
       bool correct = !solver_.is_sat(initial_constraints) && !solver_.has_error();
       initial_constraints.pop_back();
       if (correct) {
@@ -635,10 +639,11 @@ void ArmMemory::recurse_cell_assignment(size_t access_index) {
 
 }
 
-SymBool ArmMemory::equality_constraint(ArmMemory& other, const vector<SymBitVector>& exclusions) {
-  if(exclusions.size() == 0)
-    return get_variable() == other.get_variable();
+SymBool ArmMemory::equality_constraint(ArmMemory& other) {
+  //if(exclusions.size() == 0)
+  return get_variable() == other.get_variable();
 
+  /*
   auto my_heap = get_variable();
   auto their_heap = other.get_variable();
 
@@ -647,6 +652,9 @@ SymBool ArmMemory::equality_constraint(ArmMemory& other, const vector<SymBitVect
   for(auto e : exclusions) {
     tmp_is_excluded = tmp_is_excluded | (e == tmp);
   }
-  return ((my_heap[tmp] != their_heap[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
+
+  return (tmp_is_excluded | (my_heap[tmp] == their_heap[tmp])).forall({tmp}, {});*/
+  //return ((!tmp_is_excluded).implies(my_heap[tmp] == their_heap[tmp])).forall({tmp}, {});
+  //return ((my_heap[tmp] != their_heap[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
 
 }

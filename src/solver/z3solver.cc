@@ -32,7 +32,7 @@ using namespace std::chrono;
 
 //#define STOKE_Z3_DEBUG_LAST_HASH YESPLEASE
 //#define DEBUG_Z3_PERFORMANCE 1
-#define DEBUG_Z3(X) { }
+#define DEBUG_Z3(X) { if(0) { X } }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
@@ -156,7 +156,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     if (check_abort()) return false;
 
     DEBUG_Z3(
-    ofstream ofs("z3-smtlib");
+    static int debug_count = 0;
+    stringstream ss;
+    ss << "z3-smtlib-" << debug_count++;
+    ofstream ofs(ss.str());
     string smtlib = solver_.to_smt2();
     ofs << smtlib << endl;
     ofs.close();)

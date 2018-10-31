@@ -43,6 +43,10 @@ public:
   virtual std::ostream& serialize(std::ostream& out) const = 0;
   static std::shared_ptr<Invariant> deserialize(std::istream& in);
 
+  virtual std::ostream& write_pretty(std::ostream& out) const {
+    return write(out);
+  }
+
   virtual bool operator==(const Invariant& other) const {
     std::stringstream ss;
     std::stringstream ss_other;

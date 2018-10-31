@@ -26,8 +26,10 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 
   if (separate_stack_ && deref.stack_dereference) {
-    cout << "[flat] STACK WRITE" << endl;
+    cout << "[flat] STACK WRITE size=" << size << " address=" << address << " value=" << value << endl;
     stack_[size/8] = stack_[size/8].update(address, value);
+    cout << "newstack: " << stack_[size/8] << endl;
+
     /*for (size_t i = 0; i < size/8; ++i) {
       stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
     }*/
@@ -63,8 +65,9 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t size, DereferenceInfo deref) {
 
   if (separate_stack_ && deref.stack_dereference) {
-    //cout << "[flat] STACK READ" << endl;
+    cout << "[flat] STACK READ size=" << size << " address=" << address << endl;
     SymBitVector value = stack_[size/8][address];
+    cout << "value=" << value << endl;
     /*for (size_t i = 1; i < size/8; ++i) {
       value = stack_[address + SymBitVector::constant(64, i)] || value;
     }*/
@@ -87,16 +90,21 @@ std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t 
 }
 
 /** Create a formula expressing these memory cells with another set. */
-SymBool FlatMemory::equality_constraint(FlatMemory& other, std::vector<SymBitVector>& exclusions) {
-  if(exclusions.size() == 0)
-    return (heap_ == other.heap_);
+SymBool FlatMemory::equality_constraint(FlatMemory& other) {
+  return (heap_ == other.heap_);
+  //if(exclusions.size() == 0)
   
+  /*
+  auto& my_heap = heap_;
+  auto& their_heap = other.heap_;
   auto tmp = SymBitVector::tmp_var(64);
   SymBool tmp_is_excluded = SymBool::_false();
   for(auto e : exclusions) {
     tmp_is_excluded = tmp_is_excluded | (e == tmp);
   }
-  return ((heap_[tmp] != other.heap_[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
+
+  return (tmp_is_excluded | (my_heap[tmp] == their_heap[tmp])).forall({tmp}, {}); */
+  //return ((heap_[tmp] != other.heap_[tmp]).implies(tmp_is_excluded)).forall({tmp},{});
 }
 
 

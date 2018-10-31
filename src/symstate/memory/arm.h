@@ -81,6 +81,8 @@ public:
 
     if (separate_stack_ && deref.stack_dereference) {
       stack_[size/8] = stack_[size/8].update(address, value);
+      std::cout << "STACK WRITE size=" << size << " address=" << address << " value=" << value << std::endl;
+      std::cout << "stack[" << size/8 << "] = " << stack_[size/8] << std::endl;
       /*
       for (size_t i = 0; i < size/8; ++i) {
         stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
@@ -109,6 +111,8 @@ public:
 
     if (separate_stack_ && deref.stack_dereference) {
       SymBitVector value = stack_[size/8][address];
+      std::cout << "STACK READ size=" << size << " address=" << address << std::endl;
+      std::cout << "  value=" << value << std::endl;
       /*
       SymBitVector value = stack_[address];
       for (size_t i = 1; i < size/8; ++i) {
@@ -134,12 +138,12 @@ public:
   }
 
   /** Do the hard work of ARM and generate constraints needed to extract equality constraints */
-  void generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints, std::vector<SymBool>& all_constraints, const DereferenceMaps& deref_map);
+  bool generate_constraints(ArmMemory* am, std::vector<SymBool>& initial_constraints, std::vector<SymBool>& all_constraints, const DereferenceMaps& deref_map);
 
   /** Create a formula expressing these memory cells with another set. Also generates all the
     constraints needed for this contraint to make sense (retrievable through get_constraints().
     This can be computationally expensive. */
-  SymBool equality_constraint(ArmMemory& other, const std::vector<SymBitVector>& exclusions);
+  SymBool equality_constraint(ArmMemory& other);
 
   std::vector<SymBool> get_constraints() {
     return constraints_;

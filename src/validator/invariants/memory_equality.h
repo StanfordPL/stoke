@@ -42,25 +42,16 @@ public:
     if (left.memory == 0 && right.memory == 0)
       return SymBool::_true();
 
-    std::vector<SymBitVector> bad_locations;
-    for(auto v : excluded_locations_) {
-      auto start = v.get_addr(left, right);
-      for(size_t i = 0; i < v.size; ++i) {
-        auto bad = start + SymBitVector::constant(64, i);
-        bad_locations.push_back(bad);
-      }
-    }
-
     auto flat_left = dynamic_cast<FlatMemory*>(left.memory);
     if (flat_left != 0) {
       assert(dynamic_cast<FlatMemory*>(right.memory) != 0);
-      return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory), bad_locations);
+      return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
     }
 
     auto arm_left = dynamic_cast<ArmMemory*>(left.memory);
     if (arm_left != 0) {
       assert(dynamic_cast<ArmMemory*>(right.memory) != 0);
-      return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory), bad_locations);
+      return arm_left->equality_constraint(*static_cast<ArmMemory*>(right.memory));
     }
 
     return SymBool::_true();
@@ -122,6 +113,23 @@ public:
     return true;
   }
 
+
+  std::vector<Variable> get_excluded_locations() const {
+    return excluded_locations_;
+  }
+
+
+  std::vector<SymBitVector> get_excluded_addresses(SymState& left, SymState& right) const {
+    std::vector<SymBitVector> excluded_addrs;
+    for(auto v : excluded_locations_) {
+      auto start = v.get_addr(left, right);
+      for(size_t i = 0; i < v.size; ++i) {
+        auto excluded = start + SymBitVector::constant(64, i);
+        excluded_addrs.push_back(excluded);
+      }
+    }
+    return excluded_addrs;
+  }
 
 
 private:

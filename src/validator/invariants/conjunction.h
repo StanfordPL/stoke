@@ -86,7 +86,7 @@ public:
      return true;
   }
 
- std::ostream& write_pretty(std::ostream& os) const {
+ std::ostream& write_pretty(std::ostream& os) const override {
 
     if (invariants_.size() == 0) {
       os << "    true" << std::endl;
@@ -95,7 +95,7 @@ public:
 
     for (size_t i = 0; i < invariants_.size(); ++i) {
       os << "    ";
-      invariants_[i]->write(os);
+      invariants_[i]->write_pretty(os);
       if (i != invariants_.size() - 1) {
         os << " ^ " << std::endl;
       }

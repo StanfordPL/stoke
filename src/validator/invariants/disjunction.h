@@ -18,9 +18,7 @@
 #include "src/validator/invariant.h"
 
 namespace stoke {
-
-class DisjunctionInvariant : public Invariant {
-
+class DisjunctionInvariant : public Invariant { 
 public:
   using Invariant::check;
 
@@ -129,6 +127,26 @@ public:
       new_invs.push_back(inv->clone());
     return std::make_shared<DisjunctionInvariant>(new_invs);
   }
+
+
+ std::ostream& write_pretty(std::ostream& os) const override {
+
+    if (invariants_.size() == 0) {
+      os << "    true" << std::endl;
+      return os;
+    }
+
+    for (size_t i = 0; i < invariants_.size(); ++i) {
+      os << "    ";
+      invariants_[i]->write_pretty(os);
+      if (i != invariants_.size() - 1) {
+        os << " v " << std::endl;
+      }
+    }
+    os << std::endl;
+    return os;
+  }
+
 
 
 private:

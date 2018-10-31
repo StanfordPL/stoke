@@ -36,7 +36,7 @@
 //#define DO_DEBUG 0
 #define DO_DEBUG ENABLE_LOCAL_DEBUG
 
-#define OBLIG_DEBUG(X) { if(0) { X } }
+#define OBLIG_DEBUG(X) { if(DO_DEBUG) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
@@ -553,8 +553,12 @@ void SmtObligationChecker::check(
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check. solver_=" << &solver_ << " this=" << this << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << P << " Q: " << Q << endl;)
-  OBLIG_DEBUG(cout << "Assuming: " << *assume << endl;)
-  OBLIG_DEBUG(cout << "Proving: " << *prove << endl;)
+  OBLIG_DEBUG(cout << "Assuming: ";)
+  OBLIG_DEBUG(assume->write_pretty(cout);)
+  OBLIG_DEBUG(cout << endl;)
+  OBLIG_DEBUG(cout << "Proving: ";)
+  OBLIG_DEBUG(prove->write_pretty(cout);)
+  OBLIG_DEBUG(cout << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)
   OBLIG_DEBUG(print_m.unlock();)
 
@@ -599,12 +603,44 @@ void SmtObligationChecker::check(
     state_r.memory = new TrivialMemory();
   }
 
-  // Add given assumptions
+  // Check for memory equality invariants.  If one has a non-empty set of locations that
+  // aren't related, we update the memory representations with some writes to illustrate this.
+  auto assume_conj = dynamic_pointer_cast<ConjunctionInvariant>(assume);
   size_t invariant_lineno = 0;
+  if(assume_conj) {
+    for(size_t i = 0; i < assume_conj->size(); ++i) {
+      auto inv = (*assume_conj)[i];
+      auto memequ = dynamic_pointer_cast<MemoryEqualityInvariant>(inv);
+      if(memequ) {
+        auto constraint = (*memequ)(state_t, state_r, invariant_lineno);
+        constraints.push_back(constraint);
+        cout << "Adding constraint for memory equality: " << constraint << endl;
+        auto excluded_locations = memequ->get_excluded_locations();        
+        for(auto loc : excluded_locations) {
+          DereferenceInfo di;
+          di.is_invariant = true;
+          di.invariant_number = invariant_lineno;
+          di.is_rewrite = loc.is_rewrite;
+          di.implicit_dereference = false;
+          di.line_number = (size_t)(-1);
+          invariant_lineno++;
+
+          auto& state = loc.is_rewrite ? state_r : state_t;
+          auto var_addr = loc.get_addr(state_t, state_r);
+          auto var_value = SymBitVector::tmp_var(loc.size*8);
+          cout << "Performing write of " << var_addr << " -> " << var_value << endl;
+          state.memory->write(var_addr, var_value, loc.size*8, di);
+        }
+        assume_conj->remove(i);
+        break;
+      }
+    }
+  }
+
+  // Add (other) given assumptions
   auto assumption = (*assume)(state_t, state_r, invariant_lineno);
   constraints.push_back(assumption);
   invariant_lineno++;
-
 
   // Generate line maps
   LineMap target_linemap;
@@ -687,12 +723,26 @@ void SmtObligationChecker::check(
 
   }
 
+
+  auto prove_conj = dynamic_pointer_cast<ConjunctionInvariant>(prove);
+  shared_ptr<MemoryEqualityInvariant> prove_memequ;
+  if(!prove_conj) {
+    prove_conj = make_shared<ConjunctionInvariant>();
+    prove_conj->add_invariant(prove);
+  }
+  for(size_t i = 0; i < prove_conj->size(); ++i) {
+    auto inv = (*prove_conj)[i];
+    auto memequ = dynamic_pointer_cast<MemoryEqualityInvariant>(inv);
+    if(memequ) {
+      prove_memequ = memequ;
+      prove_conj->remove(i);
+      break;
+    }
+  }
+
   // Build inequality constraint
-  auto prove_constraint = !(*prove)(state_t, state_r, invariant_lineno);
-
-  constraints.push_back(prove_constraint);
-
-
+  auto prove_part2 = !(*prove_conj)(state_t, state_r, invariant_lineno);
+  cout << "prove constraints part 2 = " << prove_part2 << endl;
 
   // Try to generate ARM testcase if needed
   if(arm_model && (testcases.size() == 0)) {
@@ -801,6 +851,7 @@ void SmtObligationChecker::check(
     rewrite_arm->finalize_heap();
   }
 
+
   // Extract the final states of target/rewrite
   SymState state_t_final("1_FINAL");
   SymState state_r_final("2_FINAL");
@@ -833,7 +884,24 @@ void SmtObligationChecker::check(
     auto rewrite_arm = static_cast<ArmMemory*>(state_r.memory);
 
     vector<SymBool> initial_assumptions = { assumption };
-    target_arm->generate_constraints(rewrite_arm, initial_assumptions, constraints, deref_maps);
+    bool sat = target_arm->generate_constraints(rewrite_arm, initial_assumptions, constraints, deref_maps);
+    if(!sat) {
+      // we can end early!
+
+      uint64_t duration = duration_cast<microseconds>(system_clock::now() - start_time).count();
+      ObligationChecker::Result result;
+      result.solver = solver_.get_enum();
+      result.strategy = alias_strategy_;
+      result.smt_time_microseconds = 0;
+      result.gen_time_microseconds = duration;
+      result.source_version = string(version_info);
+      result.verified = true;
+      result.has_ceg = false;
+      result.has_error = false;
+      result.error_message = "";
+      callback(result, optional);
+      return;
+    }
 
     auto target_con = target_arm->get_constraints();
     auto rewrite_con = rewrite_arm->get_constraints();
@@ -845,12 +913,46 @@ void SmtObligationChecker::check(
                        rewrite_con.end());
   }
 
+  // Add prove memequ constraint
+  if(prove_memequ) {
+    vector<SymBitVector> excluded_badaddrs = prove_memequ->get_excluded_addresses(state_t, state_r);
+
+    auto target_heap = arm_model ? static_cast<ArmMemory*>(state_t.memory)->get_variable()
+                                 : static_cast<FlatMemory*>(state_t.memory)->get_variable();
+    auto rewrite_heap = arm_model ? static_cast<ArmMemory*>(state_r.memory)->get_variable()
+                                 : static_cast<FlatMemory*>(state_r.memory)->get_variable();
+
+    if(excluded_badaddrs.size()) {
+      SymBitVector badaddr = SymBitVector::tmp_var(64);
+      SymBool prove_part1 = SymBool::_false();
+      SymBool is_badaddr = SymBool::_true();
+      for(auto it : excluded_badaddrs)
+        is_badaddr = is_badaddr & (it != badaddr);
+
+      auto target_read = target_heap[badaddr];
+      auto rewrite_read = rewrite_heap[badaddr];
+
+      is_badaddr = is_badaddr & (target_read != rewrite_read);
+      prove_part1 = prove_part1 | is_badaddr;
+      cout << "Generating prove_part1 = " << prove_part1 << endl;
+
+      auto prove_constraint = prove_part1 | prove_part2;
+      constraints.push_back(prove_constraint);
+    } else {
+      auto prove_constraint = !(target_heap == rewrite_heap) | prove_part2;
+      constraints.push_back(prove_constraint);
+    }
+  } else {
+    constraints.push_back(prove_part2);
+  }
+
+
   CONSTRAINT_DEBUG(print_m.lock();)
   CONSTRAINT_DEBUG(cout << "[ConstraintDebug] for P: " << P << " Q: " << Q << endl;)
     CONSTRAINT_DEBUG(
       cout << endl << "CONSTRAINTS" << endl << endl;;
     for (auto it : constraints) {
-    cout << it << endl;
+      cout << it << endl;
   })
   CONSTRAINT_DEBUG(print_m.unlock();)
 

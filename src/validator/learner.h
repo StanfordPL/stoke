@@ -19,6 +19,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/inequality.h"
+#include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/memory_null.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/range.h"
@@ -186,6 +187,11 @@ private:
 
   std::vector<std::shared_ptr<NonzeroInvariant>> build_memory_null_invariants(
       x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs) const;
+
+
+  /** Create a single MemoryEqualityInvariant */
+  std::shared_ptr<MemoryEqualityInvariant> learn_memory_equality(
+      const std::vector<CpuState>&, const std::vector<CpuState>&, x64asm::RegSet, x64asm::RegSet) const;
 
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;
