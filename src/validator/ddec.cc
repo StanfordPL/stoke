@@ -494,7 +494,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
-    cout << "TRACE " << i << endl;
+    //cout << "TRACE " << i << endl;
     if(i > 20)
       break;
 
@@ -538,7 +538,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
 
     if(!found_false) {
       // no way this is going to work
-      cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on trace " << i << endl;
+      //cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on trace " << i << endl;
       return false;
     }
 
@@ -577,7 +577,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
         target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
         rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
 
-        cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
+        //cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
         DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
         dual.add_edge(e);
       }
@@ -587,7 +587,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
     auto edge_reachable = dual.get_edge_reachable_states();
     for(auto s : edge_reachable) {
       if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
-        cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
+        //cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
         return false;
       }
     }

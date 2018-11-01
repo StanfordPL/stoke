@@ -10,7 +10,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { if(1) { X } }
+#define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(0) { X } }
@@ -177,9 +177,10 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         continue;
       }
 
+      DEBUG_LEARN_STATE_DATA(
       cout << "[lsd] processing trace state @ " << tr_state.state << endl;
       cout << "[lsd]            target rem  = " << DataCollector::project_states(tr_state.target_trace) << endl;
-      cout << "[lsd]            rewrite rem = " << DataCollector::project_states(tr_state.rewrite_trace) << endl;
+      cout << "[lsd]            rewrite rem = " << DataCollector::project_states(tr_state.rewrite_trace) << endl;)
       bool found_matching_edge = false;
 
       for (auto edge : next_edges_[tr_state.state]) {
@@ -258,12 +259,12 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
-        DEBUG_LEARN_STATE_DATA(std::cout << "   - REACHABLE: " << follow.state << std::endl;)
+        DEBUG_LEARN_STATE_DATA(std::cout << "   - REACHABLE: " << follow.state << std::endl;
         cout << "drs: ";
         for(auto it : data_reachable_states_) {
           cout << it << "    ";
         }
-        cout << endl;
+        cout << endl;)
       }
 
       if (!found_matching_edge) {
@@ -289,7 +290,7 @@ bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate)
 
   // Step 1: get data at each state.
   for (size_t i = 0; i < target_traces.size(); ++i) {
-    cout << "TESTCASE " << i << endl;
+    //cout << "TESTCASE " << i << endl;
     auto target_trace = target_traces[i];
     auto rewrite_trace = rewrite_traces[i];
 
@@ -797,7 +798,7 @@ bool DualAutomata::simplify() {
   while(!fixpoint) {
     fixpoint = true;
     auto edge_reachable = get_edge_reachable_states();
-    cout << "[simplify] starting fixpoint iteration" << endl;
+    //cout << "[simplify] starting fixpoint iteration" << endl;
     for(auto s : edge_reachable) {
       if(s == start)
         continue;
@@ -807,7 +808,7 @@ bool DualAutomata::simplify() {
       if(has_self_loop(s))
         continue;
 
-      cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
+      //cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
       auto edges_in = prev_edges(s); 
       auto edges_out = next_edges(s);
 
@@ -818,16 +819,16 @@ bool DualAutomata::simplify() {
           e.te.insert(e.te.end(), out.te.begin(), out.te.end());
           e.re.insert(e.re.end(), out.re.begin(), out.re.end());
           add_edge(e);
-          cout << "[simplify] adding edge " << e << endl;
+          //cout << "[simplify] adding edge " << e << endl;
         }
       }
 
       for(auto in : edges_in) {
-        cout << "[simplify] removing edge " << in << endl;
+        //cout << "[simplify] removing edge " << in << endl;
         remove_edge(in);
       }
       for(auto out : edges_out) {
-        cout << "[simplify] removing edge " << out << endl;
+        //cout << "[simplify] removing edge " << out << endl;
         remove_edge(out);
       }
       prev_edges_.erase(s);
@@ -838,7 +839,7 @@ bool DualAutomata::simplify() {
     }
   }
 
-  cout << "[simplify] proceeding to second step" << endl;
+  //cout << "[simplify] proceeding to second step" << endl;
 
   /** Step 2: Remove edges where another edge is a prefix. */
   auto states = get_edge_reachable_states();

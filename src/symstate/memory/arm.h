@@ -81,8 +81,8 @@ public:
 
     if (separate_stack_ && deref.stack_dereference) {
       stack_[size/8] = stack_[size/8].update(address, value);
-      std::cout << "STACK WRITE size=" << size << " address=" << address << " value=" << value << std::endl;
-      std::cout << "stack[" << size/8 << "] = " << stack_[size/8] << std::endl;
+      //std::cout << "STACK WRITE size=" << size << " address=" << address << " value=" << value << std::endl;
+      //std::cout << "stack[" << size/8 << "] = " << stack_[size/8] << std::endl;
       /*
       for (size_t i = 0; i < size/8; ++i) {
         stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
@@ -111,8 +111,8 @@ public:
 
     if (separate_stack_ && deref.stack_dereference) {
       SymBitVector value = stack_[size/8][address];
-      std::cout << "STACK READ size=" << size << " address=" << address << std::endl;
-      std::cout << "  value=" << value << std::endl;
+      //std::cout << "STACK READ size=" << size << " address=" << address << std::endl;
+      //std::cout << "  value=" << value << std::endl;
       /*
       SymBitVector value = stack_[address];
       for (size_t i = 1; i < size/8; ++i) {
