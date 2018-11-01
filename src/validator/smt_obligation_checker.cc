@@ -36,7 +36,7 @@
 //#define DO_DEBUG 0
 #define DO_DEBUG ENABLE_LOCAL_DEBUG
 
-#define OBLIG_DEBUG(X) { if(DO_DEBUG) { X } }
+#define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }

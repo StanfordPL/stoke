@@ -1018,6 +1018,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   CfgSccs rewrite_sccs(rewrite_);
 
   auto memequ = make_shared<MemoryEqualityInvariant>();
+  vector<shared_ptr<EqualityInvariant>> try_again_predicates;
 
   for(size_t target_cutpoint = target_.get_entry(); target_cutpoint < target_.get_exit(); ++target_cutpoint) {
     if(!target_sccs.in_scc(target_cutpoint))
@@ -1077,6 +1078,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
               auto conj = make_shared<ConjunctionInvariant>();
               conj->add_invariant(specific);
               conj->add_invariant(memequ);
+              try_again_predicates.push_back(specific);
 
               DualAutomata dual(target_, rewrite_);
               bool success = build_dual_for_alignment_predicate(conj, dual);
@@ -1100,6 +1102,27 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         }
       }
     }
+  }
+
+  for(auto inv : try_again_predicates) {
+    DualAutomata dual(target_, rewrite_);
+    cout << "Trying alignment predicate without heap: " << *inv << endl;
+    bool success = build_dual_for_alignment_predicate(inv, dual);
+    if(success) {
+      dual.print_all();
+      dual.simplify();
+      cout << "SIMPLIFIED!!" << endl;
+      dual.print_all();
+      bool b = verify_dual(dual, inv);
+      if(b) {
+        cout << "PROOF SUCCEEDED!" << endl;
+        return true;
+      } else {
+        cout << "Dual failed to verify... trying something else." << endl;
+      }
+    }
+    else
+      cout << "Making graph failed" << endl;
   }
 
 
