@@ -204,6 +204,11 @@ private:
   bool use_handhold_;
 
   std::shared_ptr<Invariant> alignment_predicate_;
+
+  std::chrono::time_point<std::chrono::system_clock> benchmark_starttime_;
+  std::chrono::time_point<std::chrono::system_clock> benchmark_searchstart_;
+  uint64_t benchmark_total_search_time_;
+  bool benchmark_proof_succeeded_;
 };
 
 } // namespace stoke

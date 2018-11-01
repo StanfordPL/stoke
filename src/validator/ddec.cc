@@ -29,6 +29,8 @@
 #include "tools/io/state_diff.h"
 
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <algorithm>
 #include <set>
 
@@ -607,13 +609,27 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
     }
   }
 
-  // learn invariants
-  ImplicationGraph graph(target_, rewrite_);
-  bool learning_successful = dual.learn_invariants(data_collector_, invariant_learner_, graph, predicate);
-  if (!learning_successful) {
-    cout << "[verify_dual] Learning invariants failed!" << endl;
+  // check if this dual makes sense
+  bool dual_ok = dual.test_dual(data_collector_, predicate);
+  if(!dual_ok) {
+    cout << "[verify_dual] Dual does not check out!" << endl;
     return false;
   }
+
+  if(benchmark_proof_succeeded_) {
+    cout << "[benchmark] No need to check further... see ya." << endl;
+    return false;
+  } else {
+    cout << "[benchmark] Looks like we found something!  Recording search time." << endl; 
+    auto now = system_clock::now();
+    auto diff = duration_cast<microseconds>(now - benchmark_searchstart_).count();
+    benchmark_total_search_time_ += diff;
+    cout << "[benchmark] SEARCH TOOK " << diff << endl;
+  }
+
+  // learn invariants
+  ImplicationGraph graph(target_, rewrite_);
+  dual.learn_invariants(invariant_learner_, graph);
   cout << "FINAL IMPLICATION GRAPH" << endl;
   graph.print();
   cout << endl << endl;
@@ -970,23 +986,32 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
 
 vector<Variable> DdecValidator::get_stack_locations(bool is_rewrite) {
   const Cfg& cfg = is_rewrite ? rewrite_ : target_;
-  vector<Variable> stack_locations;
+  set<Variable> stack_locations;
   auto code = cfg.get_code();
   for(auto instr : code) {
     if(instr.is_explicit_memory_dereference()) {
       auto index = instr.mem_index();
       auto operand = instr.get_operand<Mem>(index);
-      if(operand.get_base() == rbp) {
+      if(operand.get_base() == rbp || operand.get_base() == rsp) {
         Variable v(operand, is_rewrite);
-        stack_locations.push_back(v);
+        stack_locations.insert(v);
       }
     }
   }
-  return stack_locations;
 
+  vector<Variable> output;
+  output.insert(output.begin(), stack_locations.begin(), stack_locations.end());
+  return output;
 }
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+
+  benchmark_proof_succeeded_ = false;
+  benchmark_starttime_ = system_clock::now();
+  benchmark_searchstart_ = benchmark_starttime_;
+  benchmark_total_search_time_ = 0;
+  auto start_time = system_clock::to_time_t(benchmark_starttime_);
+  cout << "[benchmark] STARTTIME=" << ctime(&start_time) << endl;
 
   target_ = init_target;
   rewrite_ = init_rewrite;
@@ -1018,6 +1043,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   CfgSccs rewrite_sccs(rewrite_);
 
   auto memequ = make_shared<MemoryEqualityInvariant>();
+  set<EqualityInvariant> tried_invariants;
   vector<shared_ptr<EqualityInvariant>> try_again_predicates;
 
   for(size_t target_cutpoint = target_.get_entry(); target_cutpoint < target_.get_exit(); ++target_cutpoint) {
@@ -1075,10 +1101,14 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
             for(auto constant : constants) {
               auto specific = make_shared<EqualityInvariant>(inv.get_terms(), constant);
+              if(tried_invariants.count(*specific))
+                continue;
+              tried_invariants.insert(*specific);
+              try_again_predicates.push_back(specific);
+
               auto conj = make_shared<ConjunctionInvariant>();
               conj->add_invariant(specific);
               conj->add_invariant(memequ);
-              try_again_predicates.push_back(specific);
 
               DualAutomata dual(target_, rewrite_);
               bool success = build_dual_for_alignment_predicate(conj, dual);
@@ -1090,7 +1120,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                 bool b = verify_dual(dual, conj);
                 if(b) {
                   cout << "PROOF SUCCEEDED!" << endl;
-                  return true;
+                  benchmark_proof_succeeded_ = true;
+                  benchmark_searchstart_ = system_clock::now();
+                  //return true;
                 } else {
                   cout << "Dual failed to verify... trying something else." << endl;
                 }
@@ -1116,7 +1148,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       bool b = verify_dual(dual, inv);
       if(b) {
         cout << "PROOF SUCCEEDED!" << endl;
-        return true;
+        benchmark_proof_succeeded_ = true;
+        benchmark_searchstart_ = system_clock::now();
+        //return true;
       } else {
         cout << "Dual failed to verify... trying something else." << endl;
       }
@@ -1125,8 +1159,14 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "Making graph failed" << endl;
   }
 
+  auto now = system_clock::now();
+  auto diff = duration_cast<microseconds>(now - benchmark_searchstart_).count();
+  benchmark_total_search_time_ += diff;
+  cout << "[benchmark] BAD SEARCH TOOK " << diff << endl;
+  cout << "[benchmark] TOTAL SEARCH TIME " << benchmark_total_search_time_ << endl;
 
-  return false;
+
+  return benchmark_proof_succeeded_;
 }
 
 set<DualBuilder::EquivalenceClass> DdecValidator::make_wildcard_classes(const set<DualBuilder::EquivalenceClass>& done, const vector<uint64_t>& remaining) {

@@ -59,6 +59,18 @@ public:
     // heh, it works :P
   }
 
+  virtual bool operator<(const Invariant& other) const {
+    std::stringstream ss;
+    std::stringstream ss_other;
+
+    write(ss);
+    other.write(ss_other);
+
+    return ss.str() < ss_other.str();
+
+    // heh, it works :P
+  }
+
   virtual bool check(const CpuState& target, const CpuState& rewrite) const {
     return true;
   }

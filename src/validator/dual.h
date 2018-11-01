@@ -221,8 +221,9 @@ public:
   /** Get edges on each path from start to end. */
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
+  bool test_dual(DataCollector&, std::shared_ptr<Invariant> predicate);
   /** Learn invariants.  Returns 'true' if no error. */
-  bool learn_invariants(DataCollector&, InvariantLearner&, ImplicationGraph&, std::shared_ptr<Invariant> predicate);
+  void learn_invariants(InvariantLearner&, ImplicationGraph&);
 
   /** Get invariant at state. */
   std::shared_ptr<ConjunctionInvariant> get_invariant(const State& state) const {

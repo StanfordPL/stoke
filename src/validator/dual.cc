@@ -277,9 +277,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
 }
 
-
-bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner, ImplicationGraph& graph, shared_ptr<Invariant> predicate) {
-
+bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate) {
 
   data_reachable_states_.clear();
   invariants_.clear();
@@ -319,6 +317,11 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
       return false;
     }
   }
+
+  return true;
+}
+
+void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph& graph) {
 
   // Step 2: learn the invariants
   target_.recompute();
@@ -379,8 +382,6 @@ bool DualAutomata::learn_invariants(DataCollector& dc, InvariantLearner& learner
     // TODO check that the invariants look good enough
   }
 
-
-  return true;
 
 }
 
