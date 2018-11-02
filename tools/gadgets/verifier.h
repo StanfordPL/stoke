@@ -181,8 +181,17 @@ private:
       if(align_pred.size()) {
         auto expr = ExprInvariant::parse(align_pred);
         auto inv = std::make_shared<ExprInvariant>(expr, align_pred);
-        auto casted = std::dynamic_pointer_cast<Invariant>(inv);
-        ddec->set_alignment_predicate(casted);
+        if(alignment_predicate_heap_arg.value()) {
+          auto conj = std::make_shared<ConjunctionInvariant>();
+          conj->add_invariant(inv);
+          conj->add_invariant(std::make_shared<MemoryEqualityInvariant>());
+          auto casted = std::dynamic_pointer_cast<Invariant>(conj);
+          ddec->set_alignment_predicate(casted);
+        } else {
+          auto casted = std::dynamic_pointer_cast<Invariant>(inv);
+          ddec->set_alignment_predicate(casted);
+        }
+
       }
       add_pointer_ranges(*ddec);
       add_assumptions(*ddec);

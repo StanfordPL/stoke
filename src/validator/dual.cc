@@ -350,6 +350,7 @@ void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
     string rewrite_cc = rewrite_instr.is_jcc() ? rewrite_opc.substr(1, rewrite_opc.size()-1) : "";
 
     /* For debugging states encountered. */
+    /*
     DEBUG_LEARN_STATE_DATA(
       stringstream ts;
       ts << "state" << state << "-target.txt";
@@ -367,7 +368,7 @@ void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
       rewrite_file.open(rewrite_filename, ios::out);
       CpuStates rewrite_out(rewrite_state_data_[state]);
       rewrite_out.write_text(rewrite_file);
-      rewrite_file.close();)
+      rewrite_file.close();)*/
 
     // TODO: if there aren't enough states here, sound a warning
     auto target_state_count = target_state_data_[state].size();

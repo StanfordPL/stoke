@@ -58,7 +58,9 @@ cpputil::ValueArg<std::string>& alignment_predicate_arg =
   .description("Specify an alignment predicate to try")
   .default_val("");
 
-
+cpputil::FlagArg& alignment_predicate_heap_arg =
+  cpputil::FlagArg::create("alignment_predicate_heap")
+  .description("Add heap equality to specified alignment predicate");
 
 
 } // namespace stoke

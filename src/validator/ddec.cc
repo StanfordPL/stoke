@@ -536,9 +536,28 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
       }
     }
 
-    if(!found_false) {
+    bool dupes = false;
+    for(size_t k = 0; k < 2; ++k) {
+      auto& trace = k ? rewrite_trace : target_trace;
+      for(size_t i = 0; i < trace.size(); ++i) {
+        for(size_t j = i+1; j < trace.size(); ++j) {
+          if(trace[i].block_id == trace[j].block_id) {
+            dupes = true;
+            break;
+          }
+        }
+        if(dupes)
+          break;
+      }
+      if(dupes)
+        break;
+    }
+    cout << "trace " << i << " found dupes: " << dupes << " found false: " << found_false << endl;
+
+    if(!found_false && dupes) {
       // no way this is going to work
-      //cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on trace " << i << endl;
+      // there will necessarily be a cycle with an empty path in it
+      cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on loopy trace " << i << endl;
       return false;
     }
 
@@ -587,7 +606,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
     auto edge_reachable = dual.get_edge_reachable_states();
     for(auto s : edge_reachable) {
       if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
-        //cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
+        cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
         return false;
       }
     }
@@ -1036,6 +1055,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         cout << "Dual failed to verify with user-provided predicate." << endl;
         return false;
       }
+    } else {
+      cout << "Could not build dual with user-provided predicate." << endl;
+      return false;
     }
   }
 
