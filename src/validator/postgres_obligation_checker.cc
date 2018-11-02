@@ -45,7 +45,8 @@ void PostgresObligationChecker::make_tables() {
       "gen_time           BIGINT,"                                  \
       "smt_time           BIGINT,"                                  \
       "version            VARCHAR(128),"                            \
-      "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()"   \
+      "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW(),"  \
+      "comments           TEXT"                                     \
     ")";
 
   // indexes needed:
