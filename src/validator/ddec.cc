@@ -1104,10 +1104,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       rewrite_variables.insert(rewrite_variables.begin(), rewrite_stack_locations.begin(), rewrite_stack_locations.end());
 
       for(auto v1 : target_variables) {
-        cout << "TARGET VARIABLE " << v1 << endl;
+        //cout << "TARGET VARIABLE " << v1 << endl;
 
         for(auto v2 : rewrite_variables) {
-          cout << "REWRITE VARIABLE " << v2 << endl;
+          //cout << "REWRITE VARIABLE " << v2 << endl;
 
           size_t power2bound = 5;
           for(size_t i = 0; i < power2bound*2-1; ++i) {
