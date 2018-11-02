@@ -51,6 +51,7 @@
 
 #define DDEC_TC_DEBUG(X) { }
 #define DEBUG_ALIGN_PRED_CONSTANTS(X) { if(0) { X } }
+#define DEBUG_PAA_CONSTRUCTION(X) { if(0) { X } }
 
 using namespace std;
 using namespace std::chrono;
@@ -494,7 +495,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
 
   bool found_loop = false;
   for(size_t i = 0; i < target_traces_.size(); ++i) {
-    //cout << "TRACE " << i << endl;
+    DEBUG_PAA_CONSTRUCTION(cout << "TRACE " << i << endl;)
     if(i > 20)
       break;
 
@@ -516,12 +517,12 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
     for(auto ts : target_trace) {
       for(auto rs : rewrite_trace) {
         if(inv->check(ts.cs,rs.cs)) {
-          /*
+          DEBUG_PAA_CONSTRUCTION(
           cout << " - ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
                << "  trace indexes " << ts.index << " / " << rs.index << endl;
-          cout << "STATES" << endl;
+          /*cout << "STATES" << endl;
           cout << ts.cs << endl;
-          cout << rs.cs << endl; */
+          cout << rs.cs << endl;*/)
           matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
         } else {
           /*
@@ -569,13 +570,12 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
         auto& second_target = second_pair.first;
         auto& second_rewrite = second_pair.second;
 
-        /*
+        DEBUG_PAA_CONSTRUCTION(
         cout << " - Considering pairs:" << endl;
         cout << "     First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
              << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
         cout << "     Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
-             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; 
-             */
+             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; )
 
         if(second_target.index == first_target.index && second_rewrite.index == first_rewrite.index)
           continue;
@@ -588,7 +588,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
         if(second_rewrite.index - first_rewrite.index > rewrite_bound_)
           continue;
 
-        //cout << "NOT SKIPPING THESE" << endl;
+        DEBUG_PAA_CONSTRUCTION(cout << "NOT SKIPPING THESE" << endl;)
 
         CfgPath target_path;
         CfgPath rewrite_path;
@@ -596,7 +596,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
         target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
         rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
 
-        //cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;
+        DEBUG_PAA_CONSTRUCTION(cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;)
         DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
         dual.add_edge(e);
       }
@@ -606,7 +606,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
     auto edge_reachable = dual.get_edge_reachable_states();
     for(auto s : edge_reachable) {
       if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
-        cout << "   ABorting.  State " << s << " in cycle which doesn't make progress. " << endl;
+        cout << "   Aborting.  State " << s << " in cycle which doesn't make progress. " << endl;
         return false;
       }
     }
