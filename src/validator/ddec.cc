@@ -553,7 +553,7 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
       if(dupes)
         break;
     }
-    cout << "trace " << i << " found dupes: " << dupes << " found false: " << found_false << endl;
+    DEBUG_PAA_CONSTRUCTION(cout << "trace " << i << " found dupes: " << dupes << " found false: " << found_false << endl;)
 
     if(!found_false && dupes) {
       // no way this is going to work
