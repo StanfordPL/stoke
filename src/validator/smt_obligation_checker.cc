@@ -614,7 +614,7 @@ void SmtObligationChecker::check(
       if(memequ) {
         auto constraint = (*memequ)(state_t, state_r, invariant_lineno);
         constraints.push_back(constraint);
-        cout << "Adding constraint for memory equality: " << constraint << endl;
+        //cout << "Adding constraint for memory equality: " << constraint << endl;
         auto excluded_locations = memequ->get_excluded_locations();        
         for(auto loc : excluded_locations) {
           DereferenceInfo di;
@@ -628,7 +628,7 @@ void SmtObligationChecker::check(
           auto& state = loc.is_rewrite ? state_r : state_t;
           auto var_addr = loc.get_addr(state_t, state_r);
           auto var_value = SymBitVector::tmp_var(loc.size*8);
-          cout << "Performing write of " << var_addr << " -> " << var_value << endl;
+          //cout << "Performing write of " << var_addr << " -> " << var_value << endl;
           state.memory->write(var_addr, var_value, loc.size*8, di);
         }
         assume_conj->remove(i);
@@ -742,7 +742,7 @@ void SmtObligationChecker::check(
 
   // Build inequality constraint
   auto prove_part2 = !(*prove_conj)(state_t, state_r, invariant_lineno);
-  cout << "prove constraints part 2 = " << prove_part2 << endl;
+  //cout << "prove constraints part 2 = " << prove_part2 << endl;
 
   // Try to generate ARM testcase if needed
   if(arm_model && (testcases.size() == 0)) {
@@ -934,7 +934,7 @@ void SmtObligationChecker::check(
 
       is_badaddr = is_badaddr & (target_read != rewrite_read);
       prove_part1 = prove_part1 | is_badaddr;
-      cout << "Generating prove_part1 = " << prove_part1 << endl;
+      //cout << "Generating prove_part1 = " << prove_part1 << endl;
 
       auto prove_constraint = prove_part1 | prove_part2;
       constraints.push_back(prove_constraint);

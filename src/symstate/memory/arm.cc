@@ -169,11 +169,11 @@ void ArmMemory::generate_constraints_offsets_data(std::vector<SymBool>& initial_
       DEBUG_ARM(cout << "-> CONJECTURE: accesses " << i << " , " << j << " are offset by " << diff << endl;)
 
       /** Try to prove that the address of deref i is always a fixed offset of deref j */
-      cout << "Initial constraints: " << initial_constraints[0] << endl;
+      //cout << "Initial constraints: " << initial_constraints[0] << endl;
       auto check = !(i_access.address + SymBitVector::constant(64, diff) == j_access.address);
       initial_constraints.push_back(check);
 
-      cout << "CHECKING " << check << endl;
+      //cout << "CHECKING " << check << endl;
       bool correct = !solver_.is_sat(initial_constraints) && !solver_.has_error();
       initial_constraints.pop_back();
       if (correct) {
