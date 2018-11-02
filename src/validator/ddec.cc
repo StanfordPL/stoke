@@ -727,6 +727,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
     cout << "[verify_dual] received callback edge=" << data.edge << endl;
     cout << "              conjunct " << data.conjunct << ": " << *(*target_invariant)[data.conjunct] << endl;
     cout << "              verified= " << r.verified << " error=" << r.has_error << " ceg=" << r.has_ceg << endl;
+    if(r.has_error)
+      cout << "              message=" << r.error_message << endl;
 
     // we mark this clause is bad in any of the three following situations
     // (i)   we've found a counterexample

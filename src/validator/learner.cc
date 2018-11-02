@@ -586,11 +586,19 @@ vector<std::shared_ptr<InequalityInvariant>> InvariantLearner::build_inequality_
     }
   }
 
+  auto memory_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+  for(auto mv : memory_vars) {
+    if(mv.is_stack())
+      variables.push_back(mv);
+  }
+
   uniform_int_distribution<size_t> dis(0, 100);
 
   for(auto& v1 : variables) {
     for(auto& v2 : variables) {
       if(v1 == v2)
+        continue;
+      if(v1.size != v2.size)
         continue;
 
       // look for invariants of the form
@@ -655,45 +663,57 @@ vector<std::shared_ptr<RangeInvariant>> InvariantLearner::build_range_invariants
     const vector<CpuState>& rewrite_states) const {
 
   vector<std::shared_ptr<RangeInvariant>> ranges;
+  vector<Variable> variables;
 
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
-    const auto& states = k ? rewrite_states : target_states;
+    for(auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+      Variable v(*i, k);
+      variables.push_back(v);
+    }
+  }
 
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+  auto mem_vars = get_memory_variables(target_, rewrite_, target_regs, rewrite_regs);
+  for(auto var : mem_vars) {
+    if(var.is_stack())
+      variables.push_back(var);
+  }
 
-      uint64_t min = (uint64_t)(-1);
-      uint64_t max = 0;
-      uint64_t min_count = 0;
-      uint64_t max_count = 0;
-      for(auto& it : states) {
-        auto value = it[*i];
-        if(value == max) {
-          max_count++;
-        } else if(value > max) {
-          max = value;
-          max_count = 1;
-        }
-        if(value == min) {
-          min_count++;
-        } if(value < min) {
-          min = value;
-          min_count = 1;
-        }
-      }
-      if(min_count > 2) {
-        Variable v(*i, k);
-        auto inv = std::make_shared<RangeInvariant>(v, min, (uint64_t)(-1));
-        assert(inv->check(target_states, rewrite_states));
-        ranges.push_back(inv);
-      }
-      if(max_count > 2) {
-        Variable v(*i, k);
-        auto inv = std::make_shared<RangeInvariant>(v, 0, max);
-        assert(inv->check(target_states, rewrite_states));
-        ranges.push_back(inv);
-      }
+  for(auto var : variables) {
 
+    uint64_t min = (uint64_t)(-1);
+    uint64_t max = 0;
+    uint64_t min_count = 0;
+    uint64_t max_count = 0;
+
+    for(size_t i = 0; i < target_states.size(); ++i) {
+      auto ts = target_states[i];
+      auto rs = rewrite_states[i];
+
+      auto value = var.from_state(ts, rs);
+      if(value == max) {
+        max_count++;
+      } else if(value > max) {
+        max = value;
+        max_count = 1;
+      }
+      if(value == min) {
+        min_count++;
+      } if(value < min) {
+        min = value;
+        min_count = 1;
+      }
+    }
+
+    if(min_count > 2) {
+      auto inv = std::make_shared<RangeInvariant>(var, min, (uint64_t)(-1));
+      assert(inv->check(target_states, rewrite_states));
+      ranges.push_back(inv);
+    }
+    if(max_count > 2) {
+      auto inv = std::make_shared<RangeInvariant>(var, 0, max);
+      assert(inv->check(target_states, rewrite_states));
+      ranges.push_back(inv);
     }
   }
 
@@ -1417,7 +1437,7 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
     graph.add_invariant(it);
   }
 
-  // Modulo invariants
+  // Range invariants
   auto class_bound = graph.new_class();
   auto ranges = build_range_invariants(target_regs, rewrite_regs, target_states, rewrite_states);
   for(auto it : ranges) {

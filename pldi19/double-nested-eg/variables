@@ -1,0 +1,10 @@
+
+TARGET_BOUND=40
+REWRITE_BOUND=40
+NAME=multiply
+TARGET=opt0/f.s
+REWRITE=opt0/g.s
+DEF_INS="{ %rdi %rsi %rbp %rsp }"
+LIVE_OUTS="{ %rax %rbp %rsp }"
+
+
