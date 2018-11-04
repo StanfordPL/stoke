@@ -40,9 +40,8 @@ public:
     error_ = "";
 
     // Require memory dereferences to not touch forbidden address
-    if (instr.is_explicit_memory_dereference()) {
-      x64asm::Mem mem = instr.get_operand<x64asm::Mem>(instr.mem_index());
-      auto addr = state.get_addr(mem);
+    if (instr.is_memory_dereference()) {
+      auto addr = state.get_addr(instr);
 
       constraints.push_back(addr >= SymBitVector::constant(64, low_));
       constraints.push_back(addr <= SymBitVector::constant(64, high_));
