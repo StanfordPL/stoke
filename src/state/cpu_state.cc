@@ -16,6 +16,7 @@
 #include <regex>
 
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/serialize/check_stream.h"
 #include "src/state/cpu_state.h"
 #include "src/symstate/memory.h"
 
@@ -372,11 +373,13 @@ istream& CpuState::read_text_segments(istream& is) {
     fail(is) << "Expected segment count.  Got \"" << s << "\"." << endl;
     return is;
   }
+  CHECK_STREAM(is);
 
   for (int i = 0; i < n; ++i) {
     Memory m;
     is >> ws;
     m.read_text(is);
+    CHECK_STREAM(is);
     segments.push_back(m);
   }
   is >> ws;
@@ -396,10 +399,12 @@ istream& CpuState::read_shadow_vars(istream& is) {
     fail(is) << "Expected shadow variables.  Got \"" << s << "\"." << endl;
     return is;
   }
+  CHECK_STREAM(is);
 
   for(size_t i = 0; i < n; ++i) {
     is >> ws;
     is >> s >> name >> value;
+    CHECK_STREAM(is);
     if(s != "shadow") {
       fail(is) << "Expected 'shadow' but got \"" << s << "\"." << endl;
       return is;
@@ -447,21 +452,27 @@ istream& CpuState::read_text(istream& is) {
   is >> ws;
 
   gp.read_text(is, gps);
+  CHECK_STREAM(is);
   is >> ws;
 
   sse.read_text(is, sses);
+  CHECK_STREAM(is);
   is >> ws;
 
   rf.read_text(is, rflags);
+  CHECK_STREAM(is);
   is >> ws;
 
   stack.read_text(is);
+  CHECK_STREAM(is);
   is >> ws;
 
   heap.read_text(is);
+  CHECK_STREAM(is);
   is >> ws;
 
   data.read_text(is);
+  CHECK_STREAM(is);
   is >> ws;
 
   // Figure out of we're reading an old version of the testcase format (in
@@ -470,12 +481,14 @@ istream& CpuState::read_text(istream& is) {
   char future = is.peek();
   if (future >= '0' && future <= '9') {
     read_text_segments(is);
+    CHECK_STREAM(is);
   }
   is >> ws;
 
   future = is.peek();
   if (future >= '0' && future <= '9') {
     read_shadow_vars(is);
+    CHECK_STREAM(is);
   }
   
   return is;

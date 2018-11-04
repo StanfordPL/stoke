@@ -20,6 +20,7 @@
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/serialize/hex_reader.h"
 #include "src/ext/cpputil/include/serialize/hex_writer.h"
+#include "src/serialize/check_stream.h"
 
 using namespace cpputil;
 using namespace std;
@@ -37,8 +38,10 @@ ostream& Memory::write_text(ostream& os) const {
 istream& Memory::read_text(istream& is) {
   is >> ws;
   read_text_summary(is);
+  CHECK_STREAM_RET(is);
   is >> ws;
   read_text_contents(is);
+  CHECK_STREAM_RET(is);
   is >> ws;
 
   return is;
@@ -85,21 +88,27 @@ void Memory::write_text_contents(ostream& os) const {
 }
 
 void Memory::read_text_summary(istream& is) {
-  is.get();  // '['
-  is.get();  // ' '
+  CHECK_STREAM_RET_VOID(is);
+  fail_if_not(is, '[');
+  fail_if_not(is, ' ');
+  CHECK_STREAM_RET_VOID(is);
 
   uint64_t upper = 0;
   HexReader<uint64_t, 8>()(is, upper);
+  CHECK_STREAM_RET_VOID(is);
 
-  is.get(); // ' '
-  is.get(); // '-'
-  is.get(); // ' '
+  fail_if_not(is, ' ');
+  fail_if_not(is, '-');
+  fail_if_not(is, ' ');
+  CHECK_STREAM_RET_VOID(is);
 
   uint64_t lower = 0;
   HexReader<uint64_t, 8>()(is, lower);
+  CHECK_STREAM_RET_VOID(is);
 
-  is.get(); // ' '
-  is.get(); // ']'
+  fail_if_not(is, ' ');
+  fail_if_not(is, ']');
+  CHECK_STREAM_RET_VOID(is);
 
   // Fail for memories that are larger than 200 KB
   if (upper - lower > 200*1024) {
@@ -121,20 +130,26 @@ void Memory::read_text_row(istream& is) {
     return;
   }
 
-  is.get(); // ' '
-  is.get(); // ' '
-  is.get(); // ' '
+  fail_if_not(is, ' ');
+  fail_if_not(is, ' ');
+  fail_if_not(is, ' ');
+  CHECK_STREAM_RET_VOID(is);
 
   for (int j = 7; j >= 0; --j) {
     is >> s;
+    if(s != "v" && s != ".") {
+      fail(is) << "Expected 'v' or '.' to denote memory validity.";
+      return;
+    }
     set_valid(addr + j, s == "v");
   }
 
-  is.get(); // ' '
-  is.get(); // ' '
+  fail_if_not(is, ' ');
+  fail_if_not(is, ' ');
+  CHECK_STREAM_RET_VOID(is);
 
   for (int j = 7; j >= 0; --j) {
-    is.get(); // ' '
+    fail_if_not(is, ' ');
 
     uint8_t val = 0;
     HexReader<uint8_t, 2>()(is, val);
@@ -154,10 +169,12 @@ void Memory::read_text_contents(istream& is) {
   is >> rows;
 
   getline(is, s, ']');
+  CHECK_STREAM_RET_VOID(is);
 
   for (size_t i = 0; i < rows; ++i) {
     is >> ws;
     read_text_row(is);
+    CHECK_STREAM_RET_VOID(is);
   }
   is >> ws;
 }
