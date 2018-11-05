@@ -408,13 +408,15 @@ void SmtObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, 
     ss.add_basic_block_ghosts(cfg, suffix);
 }
 
-void SmtObligationChecker::return_error(Callback& callback, string& s, void* optional) const {
+void SmtObligationChecker::return_error(Callback& callback, string& s, void* optional, uint64_t smt_duration, uint64_t gen_duration) const {
   ObligationChecker::Result result;
   result.verified = false;
   result.has_ceg = false;
   result.has_error = true;
   result.error_message = s;
   result.source_version = string(version_info);
+  result.smt_duration = smt_duration;
+  result.gen_duration = gen_duration;
   callback(result, optional);
 }
 
@@ -678,14 +680,16 @@ void SmtObligationChecker::check(
     stringstream message;
     message << e.get_file() << ":" << e.get_line() << ": " << e.get_message();
     auto str = message.str();
-    return_error(callback, str, optional);
+    uint64_t gen_time = duration_cast<microseconds>(system_lock::now() - start_time).count();
+    return_error(callback, str, optional, 0, gen_time);
     delete state_t.memory;
     delete state_r.memory;
     return;
   }
 
   if(error_ != "") {
-    return_error(callback, error_, optional);
+    uint64_t gen_time = duration_cast<microseconds>(system_lock::now() - start_time).count();
+    return_error(callback, error_, optional, 0, gen_time);
     return;
   }
 
@@ -965,11 +969,14 @@ void SmtObligationChecker::check(
   auto sat_start = system_clock::now();
 
   bool is_sat = solver_.is_sat(constraints);
+  uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
+  uint64_t gen_time_microseconds = duration_cast<microseconds>(sat_start - start_time).count();
+
   if (solver_.has_error()) {
     stringstream err;
     err << "solver: " << solver_.get_error();
     auto str = err.str();
-    return_error(callback, str, optional);
+    return_error(callback, str, optional, smt_duration, gen_duration);
     return;
   }
 
@@ -978,9 +985,7 @@ void SmtObligationChecker::check(
   solver_time_ += (perf_solve - perf_constr_end).count();
 #endif
 
-  uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
-  uint64_t gen_duration = duration_cast<microseconds>(sat_start - start_time).count();
-  
+ 
 
   ObligationChecker::Result result;
   result.solver = solver_.get_enum();
