@@ -76,3 +76,6 @@ clean:
 	rm -rf llvm gcc baseline
 	rm -rf testcases/*
 	
+plots:
+	gnuplot search.gnuplot
+	gnuplot performance.gnuplot

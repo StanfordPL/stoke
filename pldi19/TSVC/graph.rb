@@ -79,7 +79,7 @@ def collect_data(compiler1, compiler2, benchmark)
     :first_search_time_mins => first_search_time,
     :attempted_predicates => attempted_predicates,
     :tested_ok_predicates => tested_ok_predicates,
-    :smt_solver_time_hours => smt_cpu_time
+    :smt_solver_time_mins => smt_cpu_time
   }
 end
 
@@ -89,7 +89,7 @@ def output_data(benchmarks)
     @data.each do |benchmark,m2|
       m2.each do |compiler1,m3|
         m3.each do |compiler2,m4| 
-          file.write("#{benchmark}-#{compiler2} #{m4[:total_search_time_mins]} #{m4[:first_search_time_mins]} #{m4[:attempted_predicates]} #{m4[:tested_ok_predicates]} #{m4[:smt_cpu_time]}\n")
+          file.write("#{benchmark}-#{compiler2} #{m4[:total_search_time_mins]} #{m4[:first_search_time_mins]} #{m4[:attempted_predicates]} #{m4[:tested_ok_predicates]} #{m4[:smt_solver_time_mins]}\n")
         end
       end
     end
@@ -98,13 +98,14 @@ end
 
 def get_runtime(hashes)
   count = 0
-  sql = "SELECT sum(smt_time+gen_time) as a FROM ProofObligationResult WHERE 1=0"
+  sql = "SELECT sum(smt_time+gen_time) as a FROM ProofObligationResult WHERE (1=0"
   i = 0
   for hash in hashes do
-    break if i > 5
-    i = i + 1
     sql = "#{sql} OR hash='#{hash}'"
+#break if i > 3
+    i = i + 1
   end
+  sql = "#{sql}) AND smt_time+gen_time < 6912000000000" #this is a bug workaround -- remove later
   @connection.exec(sql) do |result|
     result.each do |row|
       count = count + row.values_at('a')[0].to_i
@@ -119,7 +120,7 @@ def main
   File.open('benchmarks').each do |line|
     benchmarks.push(line.strip)
     i = i + 1
-    break if i > 3
+#break if i > 3
   end
 
   benchmarks.each do |benchmark|
