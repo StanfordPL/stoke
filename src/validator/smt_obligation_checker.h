@@ -89,7 +89,7 @@ public:
 private:
 
   /** Trigger callback with error message. */
-  void return_error(Callback& callback, std::string& s, void* optional) const;
+  void return_error(Callback& callback, std::string& s, void* optional, uint64_t smt_time, uint64_t gen_time) const;
 
   /** SMT Solver */
   SMTSolver& solver_;

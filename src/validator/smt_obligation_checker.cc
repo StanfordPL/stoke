@@ -415,8 +415,8 @@ void SmtObligationChecker::return_error(Callback& callback, string& s, void* opt
   result.has_error = true;
   result.error_message = s;
   result.source_version = string(version_info);
-  result.smt_duration = smt_duration;
-  result.gen_duration = gen_duration;
+  result.smt_time_microseconds = smt_duration;
+  result.gen_time_microseconds = gen_duration;
   callback(result, optional);
 }
 
@@ -680,7 +680,7 @@ void SmtObligationChecker::check(
     stringstream message;
     message << e.get_file() << ":" << e.get_line() << ": " << e.get_message();
     auto str = message.str();
-    uint64_t gen_time = duration_cast<microseconds>(system_lock::now() - start_time).count();
+    uint64_t gen_time = duration_cast<microseconds>(system_clock::now() - start_time).count();
     return_error(callback, str, optional, 0, gen_time);
     delete state_t.memory;
     delete state_r.memory;
@@ -688,7 +688,7 @@ void SmtObligationChecker::check(
   }
 
   if(error_ != "") {
-    uint64_t gen_time = duration_cast<microseconds>(system_lock::now() - start_time).count();
+    uint64_t gen_time = duration_cast<microseconds>(system_clock::now() - start_time).count();
     return_error(callback, error_, optional, 0, gen_time);
     return;
   }
@@ -970,7 +970,7 @@ void SmtObligationChecker::check(
 
   bool is_sat = solver_.is_sat(constraints);
   uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
-  uint64_t gen_time_microseconds = duration_cast<microseconds>(sat_start - start_time).count();
+  uint64_t gen_duration = duration_cast<microseconds>(sat_start - start_time).count();
 
   if (solver_.has_error()) {
     stringstream err;
