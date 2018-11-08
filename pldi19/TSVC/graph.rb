@@ -6,6 +6,14 @@ require 'pg'
 @connection = PG.connect( File.open("/afs/cs.stanford.edu/u/berkeley/stoke2/bin/postgres").read )
 @data = {}
 
+@blacklist = { :gcc => { "s351" => true }, :llvm => {} }
+
+@debug = false
+if ARGV.size > 0 and ARGV[0] == "--debug"
+  puts "DEBUG MODE"
+  @debug = true
+end
+
 
 def collect_data(compiler1, compiler2, benchmark)
   puts "Collecting data #{compiler1} #{compiler2} #{benchmark}"
@@ -84,16 +92,50 @@ def collect_data(compiler1, compiler2, benchmark)
 end
 
 def output_data(benchmarks)
-  File.open("data.out", 'w') do |file|
+  filename = "data.out"
+  if @debug
+    filename = "data.debug"
+  end
+
+  cpu_times = {}
+
+  File.open(filename, 'w') do |file|
     file.write("benchmark total_search_min first_search_min attempted_preds tested_preds smt_time\n")
     @data.each do |benchmark,m2|
       m2.each do |compiler1,m3|
         m3.each do |compiler2,m4| 
+          cpu_times["#{benchmark}-#{compiler2}"] = m4[:smt_solver_time_mins]
           file.write("#{benchmark}-#{compiler2} #{m4[:total_search_time_mins]} #{m4[:first_search_time_mins]} #{m4[:attempted_predicates]} #{m4[:tested_ok_predicates]} #{m4[:smt_solver_time_mins]}\n")
         end
       end
     end
   end
+
+  min = nil
+  min_bench = nil
+  max = nil
+  max_bench = nil
+  values = []
+  cpu_times.each do |k,v|
+    if min.nil? or v < min then
+      min = v
+      min_bench = k
+    end
+    if max.nil? or v > max then
+      max = v
+      max_bench = k
+    end
+    values.push(v)
+  end
+  values.sort!
+  if values.size % 2 == 0 then
+    puts "Median #{(values[values.size/2] + values[values.size/2-1])/120}"
+  else
+    puts "Median #{values[values.size/2]/60}"
+  end
+  puts "Min #{min_bench} #{min/60}"
+  puts "Max #{max_bench} #{max/60}"
+
 end
 
 def get_runtime(hashes)
@@ -102,7 +144,7 @@ def get_runtime(hashes)
   i = 0
   for hash in hashes do
     sql = "#{sql} OR hash='#{hash}'"
-#break if i > 3
+    break if i > 3 and @debug
     i = i + 1
   end
   sql = "#{sql}) AND smt_time+gen_time < 6912000000000" #this is a bug workaround -- remove later
@@ -120,13 +162,22 @@ def main
   File.open('benchmarks').each do |line|
     benchmarks.push(line.strip)
     i = i + 1
-#break if i > 3
+    break if i > 3 and @debug
   end
 
   benchmarks.each do |benchmark|
-    @data[benchmark] = { :baseline => { :gcc => { }, :llvm => { } } }
-    collect_data(:baseline, :gcc, benchmark)
-    collect_data(:baseline, :llvm, benchmark)
+    @data[benchmark] = {}
+    @data[benchmark][:baseline] = {}
+
+    if not @blacklist[:gcc][benchmark] then
+      @data[benchmark][:baseline][:gcc] = {}
+      collect_data(:baseline, :gcc, benchmark)
+    end
+
+    if not @blacklist[:llvm][benchmark] then
+      @data[benchmark][:baseline][:llvm] = {}
+      collect_data(:baseline, :llvm, benchmark)
+    end
   end
 
   output_data(benchmarks)

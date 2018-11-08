@@ -79,3 +79,5 @@ clean:
 plots:
 	gnuplot search.gnuplot
 	gnuplot performance.gnuplot
+	gnuplot search-gcc.gnuplot
+	gnuplot performance-gcc.gnuplot

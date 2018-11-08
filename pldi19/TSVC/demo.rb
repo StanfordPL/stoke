@@ -112,6 +112,11 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     name = "#{prefix}.#{num}"
   end
 
+  live_outs = @default_live_outs
+  if benchmark == "sum1d" then
+    live_outs = "\"{ %rax %rbx %rsp %rbp %r12 %r13 %r14 %r15 }\""
+  end
+
   stoke_args = [
     "--strategy ddec",
     "--obligation_checker postgres",
@@ -125,7 +130,7 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
     "--heap_out",
 #    "--stack_out",
     "--max_jumps 129000",
-    "--live_out #{@default_live_outs}",
+    "--live_out #{live_outs}",
     "--def_in #{@default_def_ins}",
     "--target_bound #{@options[:target_bound]}",
     "--rewrite_bound #{@options[:rewrite_bound]}",
