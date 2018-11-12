@@ -74,6 +74,7 @@ TYPE s112(int count) {
   return 0;
 }
 
+
 TYPE s1112(int count) {
   for (int i = count*8-1; i >= 0; i--) {
     a[i] = b[i] + 1;
@@ -363,6 +364,17 @@ TYPE s453(int count) {
 TYPE stacktest(int count) {
    for (int i = 0; i < count*8; i++) {
     a[i] = b[i] + 1;
+  }
+  return 0;
+}
+
+/** vectorizes with gcc */
+TYPE s176(int count) {
+  int m = count;
+  for (int j = 0; j < m; j++) {
+    for (int i = 0; i < m; i++) {
+      a[i] += b[i+m-j-1] * c[j];
+    }
   }
   return 0;
 }

@@ -1,6 +1,8 @@
 
 OPTS=-std=c99 -msse4.2
 
+#default: others
+
 all:
 	gcc $(OPTS) -O1 clean.c -c -o baseline.o
 	gcc $(OPTS) -O3 clean.c -c -o gcc.o
@@ -11,6 +13,10 @@ all:
 	stoke extract -i baseline.bin -o baseline
 	stoke extract -i gcc.bin -o gcc
 	stoke extract -i llvm.bin -o llvm
+
+others:
+	gcc $(OPTS) -O3 -c others.c -o others-gcc.o
+	clang $(OPTS) -O3 -c others.c -o others-llvm.o
 
 .force:
 
@@ -34,6 +40,21 @@ tcgen:
 	tcgen_tsvc --num_testcases 16 >> testcases/96
 	tcgen_tsvc --num_testcases 16 >> testcases/96
 	tcgen_tsvc --num_testcases 16 >> testcases/96
+	# 128
+	tcgen_tsvc --num_testcases 4 > testcases/128
+	tcgen_tsvc --num_testcases 16 >> testcases/128
+	tcgen_tsvc --num_testcases 8 >> testcases/128
+	tcgen_tsvc --num_testcases 8 >> testcases/128
+	tcgen_tsvc --num_testcases 8 >> testcases/128
+	tcgen_tsvc --num_testcases 8 >> testcases/128
+	tcgen_tsvc --num_testcases 12 >> testcases/128
+	tcgen_tsvc --num_testcases 12 >> testcases/128
+	tcgen_tsvc --num_testcases 12 >> testcases/128
+	tcgen_tsvc --num_testcases 12 >> testcases/128
+	tcgen_tsvc --num_testcases 16 >> testcases/128
+	tcgen_tsvc --num_testcases 4 >> testcases/128
+	tcgen_tsvc --num_testcases 4 >> testcases/128
+	tcgen_tsvc --num_testcases 4 >> testcases/128
 	# 192
 	tcgen_tsvc --num_testcases 8 > testcases/192
 	tcgen_tsvc --num_testcases 8 >> testcases/192

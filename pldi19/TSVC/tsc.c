@@ -5265,8 +5265,6 @@ int vas( int* __restrict__ ip)
 
 // %5.1
 
-// BRC ok
-// BRC included
 int vif()
 {
 

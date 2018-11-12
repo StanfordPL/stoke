@@ -73,7 +73,11 @@ def collect_data(compiler1, compiler2, benchmark)
   end
 
   # microseconds to minutes
-  smt_cpu_time = (get_runtime(dispatched).to_f/(1000*1000*60)).round(2)
+  if dispatched.size > 0 then
+    smt_cpu_time = (get_runtime(dispatched).to_f/(1000*1000*60)).round(2)
+  else
+    smt_cpu_time = 0
+  end
 
   puts "       total search time (minutes): #{total_search_time}"
   puts "       first search time (minutes): #{first_search_time}"
@@ -144,7 +148,7 @@ def get_runtime(hashes)
   i = 0
   for hash in hashes do
     sql = "#{sql} OR hash='#{hash}'"
-    break if i > 3 and @debug
+#    break if i > 3 and @debug
     i = i + 1
   end
   sql = "#{sql}) AND smt_time+gen_time < 6912000000000" #this is a bug workaround -- remove later
