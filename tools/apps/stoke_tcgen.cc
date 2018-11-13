@@ -199,6 +199,8 @@ void make_tc_different_memory(
 
     ForbiddenDereferenceFilter filter(handler, low, high);
     SmtObligationChecker oc(checker.get_solver(), filter);
+    oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+    oc.set_separate_stack(false);
 
     vector<pair<CpuState, CpuState>> testcases;
     auto result = oc.check_wait(target, rewrite, target.get_entry(), rewrite.get_entry(), p, rewrite_path, _true, _false, testcases, false);
@@ -266,6 +268,7 @@ int main(int argc, char** argv) {
   DefaultFilter filter(handler);
   SmtObligationChecker checker(solver, filter);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  checker.set_separate_stack(false);
 
   // Step 1: enumerate paths up to a certain bound
   vector<CfgPath> paths;

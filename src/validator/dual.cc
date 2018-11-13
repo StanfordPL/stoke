@@ -800,18 +800,18 @@ bool DualAutomata::simplify() {
     fixpoint = true;
     auto edge_reachable = get_edge_reachable_states();
     //cout << "[simplify] starting fixpoint iteration" << endl;
-    for(auto s : edge_reachable) {
-      if(s == start)
+    for(auto s = edge_reachable.rbegin(); s != edge_reachable.rend(); s++) {
+      if(*s == start)
         continue;
-      if(s == end)
+      if(*s == end)
         continue;
 
-      if(has_self_loop(s))
+      if(has_self_loop(*s))
         continue;
 
       //cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
-      auto edges_in = prev_edges(s); 
-      auto edges_out = next_edges(s);
+      auto edges_in = prev_edges(*s); 
+      auto edges_out = next_edges(*s);
 
       for(auto in : edges_in) {
         for(auto out : edges_out) {
@@ -832,8 +832,8 @@ bool DualAutomata::simplify() {
         //cout << "[simplify] removing edge " << out << endl;
         remove_edge(out);
       }
-      prev_edges_.erase(s);
-      next_edges_.erase(s);
+      prev_edges_.erase(*s);
+      next_edges_.erase(*s);
       fixpoint = false;
       changes_made = true;
       break;

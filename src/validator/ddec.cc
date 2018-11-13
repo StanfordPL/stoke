@@ -1040,6 +1040,14 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   target_traces_ = data_collector_.get_traces(target_);
   rewrite_traces_ = data_collector_.get_traces(rewrite_);
 
+  for(auto& it : target_traces_) {
+    FlowInvariantLearner::add_shadow_variables(target_, it); 
+  }
+  for(auto& it : rewrite_traces_) {
+    FlowInvariantLearner::add_shadow_variables(rewrite_, it); 
+  }
+
+
   if(alignment_predicate_) {
     cout << "Attempting to use " << *alignment_predicate_ << endl;
     DualAutomata dual(target_, rewrite_);
@@ -1146,7 +1154,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
                   cout << "PROOF SUCCEEDED!" << endl;
                   benchmark_proof_succeeded_ = true;
                   benchmark_searchstart_ = system_clock::now();
-                  //return true;
+                  return true;
                 } else {
                   cout << "Dual failed to verify... trying something else." << endl;
                 }
@@ -1174,7 +1182,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         cout << "PROOF SUCCEEDED!" << endl;
         benchmark_proof_succeeded_ = true;
         benchmark_searchstart_ = system_clock::now();
-        //return true;
+        return true;
       } else {
         cout << "Dual failed to verify... trying something else." << endl;
       }
@@ -1190,7 +1198,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   cout << "[benchmark] TOTAL SEARCH TIME " << benchmark_total_search_time_ << endl;
 
 
-  return benchmark_proof_succeeded_;
+  //return benchmark_proof_succeeded_;
+  return false;
 }
 
 set<DualBuilder::EquivalenceClass> DdecValidator::make_wildcard_classes(const set<DualBuilder::EquivalenceClass>& done, const vector<uint64_t>& remaining) {
