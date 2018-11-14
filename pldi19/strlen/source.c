@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+#include <math.h>
 
 /* --- FUNCTIONS --- */
 /* ------------------------------------------ */
@@ -10,15 +14,21 @@
  * writes:
  */
 
-uint64_t __attribute__ ((noinline)) func_2(char* s) {
-  char* t = s;
+#ifndef BENCHMARK_F1
+#ifndef BENCHMARK_F3
+size_t __attribute__ ((noinline)) func_2(const char* s) {
+  const char* t = s;
   while(*s != '\0') {
     s++;
   }
 
-  return (uint64_t)(s-t);
+  return (size_t)(s-t);
 }
+#endif
+#endif
 
+#ifndef BENCHMARK_F2
+#ifndef BENCHMARK_F3
 size_t
 __attribute__ ((noinline))
   func_1 (const char *str) {
@@ -96,8 +106,12 @@ The 0-bits provide holes for carries to fall into.  */
       }
     }
   }
+#endif
+#endif
 
 /** Our optimized version */
+#ifndef BENCHMARK_F1
+#ifndef BENCHMARK_F2
 size_t
 __attribute__ ((noinline))
   func_3 (const char *str) {
@@ -176,7 +190,12 @@ The 0-bits provide holes for carries to fall into.  */
         return cp - str + 7;
     }
   }
+#endif
+#endif
 
+#ifndef BENCHMARK_F1
+#ifndef BENCHMARK_F2
+#ifndef BENCHMARK_F3
 /* Return the length of the null-terminated string STR.  Scan for
    the null terminator quickly by testing four bytes at a time.  */
 size_t 
@@ -302,13 +321,94 @@ The 0-bits provide holes for carries to fall into.  */
     }
   }
 }
+#endif
+#endif
+#endif
 
+unsigned long long benchmark(size_t (*fxn)(const char*), size_t warm_ups, size_t loops) {
+
+  // allocate strings to work on
+  char* strings[100];
+  for(size_t i = 0; i < 100; ++i) {
+    strings[i] = malloc(i+20);
+    for(size_t j = 0; j < i+19; ++j) {
+      strings[i][j] = (char)rand();
+      if(strings[i][j] == 0)
+        strings[i][j] = '\1';
+    }
+    strings[i][i+19] = '\0';
+  }
+
+  // warm-ups!
+  for(size_t j = 0; j < warm_ups; ++j) {
+    for(size_t i = 0; i < 100; ++i) {
+      (*fxn)(strings[i]);
+    }
+  }
+
+  // start the clock
+  struct timeval start;
+  struct timeval end;
+  gettimeofday(&start, NULL);
+
+  // loops!
+  for(size_t j = 0; j < loops; ++j) {
+    for(size_t i = 0; i < 100; ++i) {
+      (*fxn)(strings[i]);
+    }
+  }
+
+  // stop the clock
+  gettimeofday(&end, NULL);
+  unsigned long long difference = (end.tv_sec - start.tv_sec)*1000000 + (end.tv_usec - start.tv_usec);
+
+  // free strings
+  for(size_t i = 0; i < 100; ++i) {
+    free(strings[i]);
+  }
+
+  return difference;
+}
 
 
 /* ---------------------------------------- */
+#define WARMUPS 3
+#define TRIALS 25
 int main (int argc, char* argv[])
 {
-    func_1("Hello, World!");
-    return 0;
+
+  size_t warmups = 1000000;
+  size_t loops = 1000000;
+
+
+  unsigned long long times[TRIALS];
+  unsigned long long ours[TRIALS];
+
+  for(size_t i = 0; i < WARMUPS; ++i) {
+#ifdef BENCHMARK_F1
+    times[i] = benchmark(&func_1, warmups, loops);
+#endif
+#ifdef BENCHMARK_F3
+    times[i] = benchmark(&func_3, warmups, loops);
+#endif
+  }
+
+  for(size_t i = 0; i < TRIALS; ++i) {
+#ifdef BENCHMARK_F1
+    times[i] = benchmark(&func_1, warmups, loops);
+#endif
+#ifdef BENCHMARK_F3
+    times[i] = benchmark(&func_3, warmups, loops);
+#endif
+  }
+
+  printf("Times\n");
+  for(size_t i = 0; i < TRIALS; ++i) {
+    printf("%llu\n", times[i]);
+  }
+  //double mean = pow(product, 1.0/TRIALS);
+  //printf("GEOMETRIC MEAN OF SPEEDUP: %f\n", mean);
+  
+  return 0;
 }
 
