@@ -120,9 +120,7 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
-                                    const DataCollector::Trace& orig_rewrite_trace,
-                                    shared_ptr<Invariant> predicate,
-                                    bool& ap_failed_ever) {
+                                    const DataCollector::Trace& orig_rewrite_trace) {
 
   /** Copy traces, remove 0 block. */
   auto target_trace = orig_target_trace;
@@ -209,6 +207,10 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         }
 
         // if so, we:
+
+        // (0) celebrate!
+        found_matching_edge = true;
+
         // (1) update the state
         TraceState follow = tr_state;
         follow.state = edge.to;
@@ -219,36 +221,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         if (edge.re.size())
           follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
 
-        // (X) perform a sanity check; memory states should be equal (except maybe stack)
-        // .... actually it's the alignment predicate that should hold
-
-        //if(follow.target_current.stack != follow.rewrite_current.stack) {
-        //  DEBUG_LEARN_STATE_DATA(cout << "    on this path stack states differ." << endl;)
-        //  continue;
-        //}
-        /*
-        if(follow.target_current.heap != follow.rewrite_current.heap) {
-          DEBUG_LEARN_STATE_DATA(cout << "    on this path heap states differ." << endl;)
-          continue;
-        }
-        if(follow.target_current.data != follow.rewrite_current.data) {
-          DEBUG_LEARN_STATE_DATA(cout << "    on this path memory data states differ." << endl;)
-          continue;
-        }
-        if(follow.target_current.segments != follow.rewrite_current.segments) {
-          DEBUG_LEARN_STATE_DATA(cout << "    on this path memory states differ." << endl;)
-          continue;
-        }*/
-        if(follow.state != exit && 
-            !predicate->check(follow.target_current, follow.rewrite_current)) {
-          DEBUG_LEARN_STATE_DATA(cout << "    on this path alignment predicate fails." << endl;)
-          ap_failed_ever = true;
-          //continue;
-        }
-
-
-        // Good job!
-        found_matching_edge = true;
 
         // (3) remove the prefixes from both traces
         remove_prefix(edge.te, follow.target_trace);
@@ -281,7 +253,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
 }
 
-bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate, bool& ap_failed_ever) {
+bool DualAutomata::test_dual(DataCollector& dc) {
 
   data_reachable_states_.clear();
   invariants_.clear();
@@ -315,7 +287,7 @@ bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate,
     )
 
 
-    bool ok = learn_state_data(target_trace, rewrite_trace, predicate, ap_failed_ever);
+    bool ok = learn_state_data(target_trace, rewrite_trace);
     if (!ok) {
       cout << "[learn_invariants] lsd returned FALSE!" << endl;
       return false;

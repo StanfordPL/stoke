@@ -92,9 +92,7 @@ ClassChecker::Result LocalClassChecker::verify_dual(DualAutomata& dual, bool sep
   auto rewrite = dual.get_rewrite();
 
   ImplicationGraph ig(target, rewrite);
-  auto inv = make_shared<MemoryEqualityInvariant>();
-  bool x;
-  bool learning_successful = dual.test_dual(data_collector_, inv, x);
+  bool learning_successful = dual.test_dual(data_collector_);
   if (!learning_successful) {
     cout << "[verify_dual] Learning invariants failed!" << endl;
     r.error_message = "Learning state data/invariants failed";

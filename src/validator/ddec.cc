@@ -630,13 +630,10 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
 
   // check if this dual makes sense
   bool ap_failed_ever = false;
-  bool dual_ok = dual.test_dual(data_collector_, predicate, ap_failed_ever);
-  cout << "DUAL OK: " << dual_ok << " AP FAILED: " << ap_failed_ever << endl;
+  bool dual_ok = dual.test_dual(data_collector_);
   if(!dual_ok) {
     cout << "[verify_dual] Dual does not check out!" << endl;
     return false;
-  } else {
-    return true;
   }
 
   if(benchmark_proof_succeeded_) {
