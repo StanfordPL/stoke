@@ -111,14 +111,16 @@ private:
   std::shared_ptr<ConjunctionInvariant> get_fail_invariant() const;
 
   /** Verify that a dual automata is correct */
-  bool verify_dual(DualAutomata& dual, std::shared_ptr<Invariant> predicate);
+  bool verify_dual(DualAutomata& dual);
 
   std::vector<Variable> get_stack_locations(bool is_rewrite);
 
 
   bool build_dual_for_alignment_predicate(std::shared_ptr<Invariant> inv, DualAutomata&);
+  bool build_dual_for_alignment_predicate2(std::shared_ptr<Invariant> inv, DualAutomata&);
   std::vector<uint64_t> find_alignment_predicate_constants(size_t target_point, size_t rewrite_point, EqualityInvariant inv);
   void get_states_at_cutpoint(size_t trace, size_t target_point, size_t rewrite_point, std::vector<DataCollector::TracePoint>& target_states, std::vector<DataCollector::TracePoint>& rewrite_states, bool bound) const;
+  bool test_alignment_predicate(std::shared_ptr<Invariant> inv);
 
   /** Invariants assumed to hold at any point. */
   std::vector<std::shared_ptr<Invariant>> assume_always_;

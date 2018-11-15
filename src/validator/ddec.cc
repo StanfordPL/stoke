@@ -299,7 +299,182 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
   return true;
 }
 
-bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predicate) {
+bool pair_below(pair<DataCollector::TracePoint, DataCollector::TracePoint>& pair1, 
+                pair<DataCollector::TracePoint, DataCollector::TracePoint>& pair2) {
+  auto& first_target = pair1.first.index;
+  auto& first_rewrite = pair1.second.index;
+  auto& second_target = pair2.first.index;
+  auto& second_rewrite = pair2.second.index;
+
+  if(first_target == second_target && first_rewrite == second_rewrite)
+    return false;
+
+  if(second_target < first_target)
+    return false;
+
+  if(second_rewrite < first_rewrite)
+    return false;
+
+  return true;
+}
+
+
+bool DdecValidator::build_dual_for_alignment_predicate2(std::shared_ptr<Invariant> inv, DualAutomata& dual) {
+  cout << "[build_dual_for_alignment_predicate] expression " << *inv << endl;
+
+  bool found_loop = false;
+  for(size_t i = 0; i < target_traces_.size(); ++i) {
+    DEBUG_PAA_CONSTRUCTION(cout << "TRACE " << i << endl;)
+    if(i > 20)
+      break;
+
+    auto& target_trace = target_traces_[i];
+    auto& rewrite_trace = rewrite_traces_[i];
+
+    if(target_trace.size() < 2 || rewrite_trace.size() < 2)
+      continue;
+
+    auto target_trace_path = DataCollector::project_states(target_trace);
+    auto rewrite_trace_path = DataCollector::project_states(rewrite_trace);
+
+    set<pair<DataCollector::TracePoint, DataCollector::TracePoint>> matching_pairs;
+    matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace[0], rewrite_trace[0]));
+    matching_pairs.insert(pair<DataCollector::TracePoint,DataCollector::TracePoint>(target_trace.back(), rewrite_trace.back()));
+
+    // edges from entry to first iteration
+    bool found_false = false;
+    for(auto ts : target_trace) {
+      for(auto rs : rewrite_trace) {
+        if(inv->check(ts.cs,rs.cs)) {
+          DEBUG_PAA_CONSTRUCTION(
+          cout << " - ADDING PAIR at blocks " << ts.block_id << " / " << rs.block_id
+               << "  trace indexes " << ts.index << " / " << rs.index << endl;
+          /*cout << "STATES" << endl;
+          cout << ts.cs << endl;
+          cout << rs.cs << endl;*/)
+          matching_pairs.insert(pair<DataCollector::TracePoint, DataCollector::TracePoint>(ts, rs));
+        } else {
+          /*
+          cout << " - FAILS FOR blocks " << ts.block_id << " / " << rs.block_id
+               << " trace indexes " << ts.index << " / " << rs.index << endl;
+          cout << "STATES" << endl;
+          cout << ts.cs << endl;
+          cout << rs.cs << endl; */
+
+          found_false = true;
+        }
+      }
+    }
+
+    bool dupes = false;
+    for(size_t k = 0; k < 2; ++k) {
+      auto& trace = k ? rewrite_trace : target_trace;
+      for(size_t i = 0; i < trace.size(); ++i) {
+        for(size_t j = i+1; j < trace.size(); ++j) {
+          if(trace[i].block_id == trace[j].block_id) {
+            dupes = true;
+            break;
+          }
+        }
+        if(dupes)
+          break;
+      }
+      if(dupes)
+        break;
+    }
+    DEBUG_PAA_CONSTRUCTION(cout << "trace " << i << " found dupes: " << dupes << " found false: " << found_false << endl;)
+
+    if(!found_false && dupes) {
+      // no way this is going to work
+      // there will necessarily be a cycle with an empty path in it
+      cout << "[build_dual_for_alignment_predicate] predicate holds everywhere on loopy trace " << i << endl;
+      return false;
+    }
+
+    // edges from first iteration to second
+    for(auto first_pair : matching_pairs) {
+      for(auto second_pair : matching_pairs) {
+        auto& first_target = first_pair.first;
+        auto& first_rewrite = first_pair.second;
+        auto& second_target = second_pair.first;
+        auto& second_rewrite = second_pair.second;
+
+        cout << " - Considering pairs:" << endl;
+        cout << "     First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
+             << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
+        cout << "     Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
+             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; 
+
+        if(!pair_below(first_pair, second_pair)) {
+          cout << "          === SKIPPING DUE TO ORDER" << endl;
+          continue;
+        }
+
+        if(second_target.index - first_target.index > target_bound_) {
+          cout << "          === SKIPPING DUE TO TARGET BOUND" << endl;
+          continue;
+        }
+        if(second_rewrite.index - first_rewrite.index > rewrite_bound_) {
+          cout << "          === SKIPPING DUE TO REWRITE BOUND" << endl;
+          continue;
+        }
+
+
+
+        bool found_bad_pair = false;
+        for(auto third_pair : matching_pairs) {
+          if(third_pair == first_pair)
+            continue;
+          if(third_pair == second_pair)
+            continue;
+          if(pair_below(first_pair, third_pair) &&
+              pair_below(third_pair, second_pair)) {
+            found_bad_pair = true;
+            cout << "          === SKIPPING DUE TO BAD TRIPPLE " << endl;
+            cout << "          " << third_pair.first.index << " , " << third_pair.second.index << endl;
+            break;
+          }
+        }
+        if(found_bad_pair) {
+          continue;
+        }
+
+
+        DEBUG_PAA_CONSTRUCTION(
+        cout << " - Considering pairs:" << endl;
+        cout << "     First.  Basic blocks " << first_target.block_id << " / " << first_rewrite.block_id
+             << "  Trace indexes " << first_target.index << " / " << first_rewrite.index << endl;
+        cout << "     Second.  Basic blocks " << second_target.block_id << " / " << second_rewrite.block_id
+             << "  Trace indexes " << second_target.index << " / " << second_rewrite.index << endl; )
+        DEBUG_PAA_CONSTRUCTION(cout << "NOT SKIPPING THESE" << endl;)
+
+        CfgPath target_path;
+        CfgPath rewrite_path;
+
+        target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
+        rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
+
+        DEBUG_PAA_CONSTRUCTION(cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;)
+        DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
+        dual.add_edge(e);
+      }
+    }
+
+    // check if there are any cycles with only edges in target / only edges in rewrite
+    auto edge_reachable = dual.get_edge_reachable_states();
+    for(auto s : edge_reachable) {
+      if(dual.one_program_cycle(s, true) || dual.one_program_cycle(s, false)) {
+        cout << "   Aborting.  State " << s << " in cycle which doesn't make progress. " << endl;
+        return false;
+      }
+    }
+
+  }
+
+  return true;
+}
+
+bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   // check if there are any cycles with only edges in target / only edges in rewrite
   auto edge_reachable = dual.get_edge_reachable_states();
@@ -317,6 +492,8 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
   if(!dual_ok) {
     cout << "[verify_dual] Dual does not check out!" << endl;
     return false;
+  } else {
+    return true;
   }
 
   if(benchmark_proof_succeeded_) {
@@ -337,22 +514,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual, shared_ptr<Invariant> predic
   graph.print();
   cout << endl << endl;
 
-  // Took out the following check because it fails when there's dead code
-  // (and I've never seen a useful true-positive for this)
-  /* 
-  for (auto state : edge_reachable) {
-    cout << "[verify_dual] edge reachable state " << state << endl;
-    if (state == dual.start_state() || state == dual.exit_state() || state == dual.fail_state())
-      continue;
-    auto inv = dual.get_invariant(state);
-    cout << "             got invariant " << *inv << endl;
-    if (inv->size() < 2) {
-      cout << "[verify_dual] Could not learn invariant at state " << state << endl;
-      cout << "              Aboring." << endl;
-      return false;
-    }
-  }*/
-
+  // create proof obligations for infeasible paths
   cout << "[verify_dual] Compute Failure Edges" << endl;
   auto failure_edges = dual.compute_failure_edges(target_, rewrite_);
   for(auto it : failure_edges) {
@@ -709,6 +871,74 @@ vector<Variable> DdecValidator::get_stack_locations(bool is_rewrite) {
   return output;
 }
 
+bool DdecValidator::test_alignment_predicate(shared_ptr<Invariant> invariant) {
+  DualAutomata dual1(target_, rewrite_);
+  DualAutomata dual2(target_, rewrite_);
+  bool success1 = build_dual_for_alignment_predicate(invariant, dual1);
+  bool success2 = build_dual_for_alignment_predicate2(invariant, dual2);
+  if(success1 != success2) {
+    cout << "bad difference; success1=" << success1 << " success2=" << success2 << endl;
+    cout << "dual1:" << endl;
+    dual1.print_all();
+    cout << "dual2:" << endl;
+    dual2.print_all();
+    return false;
+  }
+  dual1.simplify();
+  dual2.simplify();
+  bool valid1 = verify_dual(dual1);
+  bool valid2 = verify_dual(dual2);
+  if(valid1 != valid2) {
+    cout << "bad difference; valid1=" << valid1 << " valid2=" << valid2 << endl;
+    cout << "dual1:" << endl;
+    dual1.print_all();
+    cout << "dual2:" << endl;
+    dual2.print_all();
+    return false;
+  }
+  if(valid1) {
+    auto states1 = dual1.get_edge_reachable_states();
+    auto states2 = dual2.get_edge_reachable_states();
+    if(states1 != states2) {
+      cout << "bad difference in edge reachable states" << endl;
+      cout << "dual1:" << endl;
+      dual1.print_all();
+      cout << "dual2:" << endl;
+      dual2.print_all();
+      return false;
+    }
+    for(auto s : states1) {
+      auto edges1 = dual1.next_edges(s);
+      sort(edges1.begin(), edges1.end());
+      auto edges2 = dual2.next_edges(s);
+      sort(edges2.begin(), edges2.end());
+      if(edges1 != edges2) {
+        cout << "bad difference in edges at state " << s << endl;
+        cout << "dual1:" << endl;
+        dual1.print_all();
+        cout << "dual2:" << endl;
+        dual2.print_all();
+        return false;
+      }
+    }
+    cout << "both valid; differences OK" << endl;
+    cout << "dual1:" << endl;
+    dual1.print_all();
+    cout << "dual2:" << endl;
+    dual2.print_all();
+    return true;
+  } else {
+    cout << "both invalid; differences OK" << endl;
+    cout << "dual1:" << endl;
+    dual1.print_all();
+    cout << "dual2:" << endl;
+    dual2.print_all();
+
+    return false;
+  }
+
+}
+
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   benchmark_proof_succeeded_ = false;
@@ -734,25 +964,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   if(alignment_predicate_) {
     cout << "Attempting to use " << *alignment_predicate_ << endl;
-    DualAutomata dual(target_, rewrite_);
-    bool success = build_dual_for_alignment_predicate(alignment_predicate_, dual);
-    if(success) {
-      dual.print_all();
-      dual.simplify();
-      cout << "SIMPLIFIED!!" << endl;
-      dual.print_all();
-      bool b = verify_dual(dual, alignment_predicate_);
-      if(b) {
-        cout << "PROOF SUCCEEDED!" << endl;
-        return true;
-      } else {
-        cout << "Dual failed to verify with user-provided predicate." << endl;
-        return false;
-      }
-    } else {
-      cout << "Could not build dual with user-provided predicate." << endl;
-      return false;
-    }
+    return test_alignment_predicate(alignment_predicate_);
   }
 
   CfgSccs target_sccs(target_);
@@ -826,6 +1038,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
               conj->add_invariant(specific);
               conj->add_invariant(memequ);
 
+              bool success = test_alignment_predicate(conj);
+              if(success)
+                return true;
+              /*
               DualAutomata dual(target_, rewrite_);
               bool success = build_dual_for_alignment_predicate(conj, dual);
               if(success) {
@@ -845,6 +1061,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
               }
               else
                 cout << "Making graph failed" << endl;
+              */
             }
           }
         }
@@ -853,6 +1070,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   }
 
   for(auto inv : try_again_predicates) {
+    bool success = test_alignment_predicate(inv);
+    if(success)
+      return true;
+    /*
     DualAutomata dual(target_, rewrite_);
     cout << "Trying alignment predicate without heap: " << *inv << endl;
     bool success = build_dual_for_alignment_predicate(inv, dual);
@@ -873,6 +1094,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
     else
       cout << "Making graph failed" << endl;
+      */
   }
 
   auto now = system_clock::now();
