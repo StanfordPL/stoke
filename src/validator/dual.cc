@@ -121,7 +121,8 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
   Returns false on error. */
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
                                     const DataCollector::Trace& orig_rewrite_trace,
-                                    shared_ptr<Invariant> predicate) {
+                                    shared_ptr<Invariant> predicate,
+                                    bool& ap_failed_ever) {
 
   /** Copy traces, remove 0 block. */
   auto target_trace = orig_target_trace;
@@ -161,6 +162,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
     current = next;
     next.clear();
 
+    // iterate over items in the worklist
     for (auto tr_state : current) {
 
       if (exit == tr_state.state) {
@@ -240,7 +242,8 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         if(follow.state != exit && 
             !predicate->check(follow.target_current, follow.rewrite_current)) {
           DEBUG_LEARN_STATE_DATA(cout << "    on this path alignment predicate fails." << endl;)
-          continue;
+          ap_failed_ever = true;
+          //continue;
         }
 
 
@@ -278,7 +281,7 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
 }
 
-bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate) {
+bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate, bool& ap_failed_ever) {
 
   data_reachable_states_.clear();
   invariants_.clear();
@@ -312,7 +315,7 @@ bool DualAutomata::test_dual(DataCollector& dc, shared_ptr<Invariant> predicate)
     )
 
 
-    bool ok = learn_state_data(target_trace, rewrite_trace, predicate);
+    bool ok = learn_state_data(target_trace, rewrite_trace, predicate, ap_failed_ever);
     if (!ok) {
       cout << "[learn_invariants] lsd returned FALSE!" << endl;
       return false;

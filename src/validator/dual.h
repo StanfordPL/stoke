@@ -221,7 +221,7 @@ public:
   /** Get edges on each path from start to end. */
   std::vector<std::vector<Edge>> get_paths(State start, State end);
 
-  bool test_dual(DataCollector&, std::shared_ptr<Invariant> predicate);
+  bool test_dual(DataCollector&, std::shared_ptr<Invariant> predicate, bool& ap_failed_ever);
   /** Learn invariants.  Returns 'true' if no error. */
   void learn_invariants(InvariantLearner&, ImplicationGraph&);
 
@@ -344,7 +344,8 @@ private:
     populate state information.  Returns false on error. */
   bool learn_state_data(const DataCollector::Trace& target,
                         const DataCollector::Trace& rewrite,
-                        std::shared_ptr<Invariant> predicate);
+                        std::shared_ptr<Invariant> predicate,
+                        bool& ap_failed_ever);
 
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);
