@@ -5,7 +5,6 @@
 #include "src/serialize/serialize.h"
 #include "src/state/cpu_states.h"
 #include "src/validator/dual.h"
-#include "src/validator/flow_invariant_learner.h"
 
 using namespace stoke;
 using namespace std;
@@ -268,9 +267,6 @@ bool DualAutomata::test_dual(DataCollector& dc) {
     //cout << "TESTCASE " << i << endl;
     auto target_trace = target_traces[i];
     auto rewrite_trace = rewrite_traces[i];
-
-    FlowInvariantLearner::add_shadow_variables(target_, target_trace);
-    FlowInvariantLearner::add_shadow_variables(rewrite_, rewrite_trace);
 
     auto target_last = target_trace.back();
     target_last.block_id = target_.get_exit();

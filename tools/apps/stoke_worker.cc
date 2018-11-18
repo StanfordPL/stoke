@@ -39,9 +39,7 @@
 #include "src/serialize/serialize.h"
 #include "src/state/cpu_states.h"
 #include "src/stategen/stategen.h"
-#include "src/validator/class_checker.h"
 #include "src/validator/line_info.h"
-#include "src/validator/local_class_checker.h"
 #include "src/validator/path_unroller.h"
 
 #define MAX_JOB_COUNT 256
@@ -127,30 +125,6 @@ struct ObligationQueueEntry {
     text[sizeof(text)-1] = '\0';
   }
 
-};
-
-struct ClassQueueEntry {
-  uint64_t id;
-  char hash[64];
-  char text[1024*1024*10]; // 10 megabytes
-  char testcase_set[64];   // testcase set
-
-  bool operator==(const ClassQueueEntry& other) {
-    return id == other.id;
-  }
-
-  static string queue_tablename() {
-    return "ClassQueue";
-  }
-
-  typedef ClassChecker::Result Result;
-  typedef ClassChecker::Callback Callback;
-
-  ClassQueueEntry() {
-    hash[sizeof(hash)-1] = '\0';    
-    testcase_set[sizeof(testcase_set)-1] = '\0';
-    text[sizeof(text)-1] = '\0';
-  }
 };
 
 template<typename T, size_t N>
@@ -476,61 +450,6 @@ size_t select_job(connection& c, vector<ObligationQueueEntry*>& output, size_t m
 }
 
 
-/** Pick one or more jobs from the database whose expiration is NULL or passed.
-  Fetch problem text while we're at it.
-  Will return immediately if none are available */
-size_t select_job(connection& c, vector<ClassQueueEntry*>& output, size_t max) {
-  bool found_one = false;
-  size_t count = 0;
-  uint64_t id;
-  nontransaction tx_pick(c);
-  stringstream sql;
-  sql << "WITH tmp AS ("
-      << "  SELECT id FROM ClassQueue "
-      << "  WHERE ("
-      << "    expiration IS NULL "                                       
-      << "    OR expiration < NOW()) " 
-      << "  ORDER BY RANDOM() "
-      << "  LIMIT " << max << ") "
-      << "UPDATE ClassQueue SET "
-      << "  expiration = NOW() + interval '10 seconds', "
-      << "  locked_by = " << my_unique_id << " "
-      << "FROM tmp "
-      << "WHERE tmp.id = ClassQueue.id "
-      << "RETURNING *, "
-      << "  (SELECT problem FROM ClassProblem WHERE ClassProblem.hash = ClassQueue.hash) as problem, "
-      << "  (SELECT testcase_set FROM ClassProblem WHERE ClassProblem.hash = ClassQueue.hash) as testcase_set";
-
-  try {
-    result r = tx_pick.exec(sql.str().c_str());
-    tx_pick.commit();
-    found_one = r.size() > 0;
-    if(found_one) {
-
-      for(auto row : r) {
-        id = row["id"].as<uint64_t>();
-        cout << getpid() << ": picked id=" << id << endl;
-
-        ClassQueueEntry* qe = new ClassQueueEntry();
-        qe->id = id;
-        strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
-        strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
-        strncpy(qe->testcase_set, row["testcase_set"].c_str(), sizeof(qe->testcase_set)-1);
-
-        count++;
-        output.push_back(qe);
-      }
-    }
-
-  } catch (pqxx::sql_error e) {
-    cout << __FILE__ << ":" << __LINE__ << ": Caught " << e.what() << endl;
-    return 0;
-  }
-
-
-  return count;
-}
-
 
 void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken_s, string error = "TIMEOUT") {
 
@@ -557,40 +476,6 @@ void report_timeout(connection& c, ObligationQueueEntry& qe, uint64_t time_taken
   tx.exec(sql_remove.str().c_str());
   tx.commit();
 
-}
-
-void report_timeout(connection& c, ClassQueueEntry& qe, uint64_t time_taken_s, string error = "") {
-  // no need to report this.  just come back later.
-}
-
-
-
-void report_result(connection& c, ClassQueueEntry& qe, ClassChecker::Result& result) {
-
-  nontransaction tx(c);
-  std::stringstream sql_add_result;
-
-  // First, add an entry recording what we got
-  sql_add_result
-    << "INSERT INTO ClassResult "
-    << "  (hash, time_ms, version, verified, error, comments) "
-    << "VALUES ("
-    << "  '" << tx.esc(qe.hash) << "', "
-    << "  "  << 0 << ", " // for now
-    << "  '" << tx.esc(result.source_version) << "', "
-    << "  "  << (result.verified ? "TRUE, " : "FALSE, " ) 
-    << "  '"  << tx.esc(result.error_message) << "', "
-    << "  '" << tx.esc(result.comments) << "'"
-    << ")";
-
-  cout << "SQL: " << sql_add_result.str() << endl;
-  tx.exec(sql_add_result.str().c_str());
-
-  // Next, remove from the queue
-  stringstream sql_remove;
-  sql_remove << "DELETE FROM ClassQueue WHERE id=" << qe.id;
-  tx.exec(sql_remove.str().c_str());
-  tx.commit();
 }
 
 void report_result(connection& c, ObligationQueueEntry& qe, ObligationChecker::Result& result) {
@@ -775,60 +660,6 @@ CpuStates fetch_testcases(const char* testcase_hash) {
   ifstream ifs(filename.c_str());
   auto tcs = deserialize<vector<CpuState>>(ifs);
   return tcs;
-}
-
-void discharge_problem(const ClassQueueEntry& qe, ClassChecker::Callback& callback, bool debug_problem = false) {
-
-  if(verbose_arg.value()) {
-    cout << "Problem text is: " << endl << qe.text << endl << endl;
-  }
-
-  // Parse the problem 
-  stringstream ss(qe.text);
-  auto prob = ClassChecker::Problem::deserialize(ss);
-  if(ss.bad() || ss.fail()) {
-    cout << __FILE__ << ":" << __LINE__ 
-         << ": stringstream in bad state when parsing problem with hash "
-         << qe.hash << endl;
-    exit(1);
-  }
-
-  auto& target = prob.template_pod.get_target();
-  auto& rewrite = prob.template_pod.get_rewrite();
-
-  // Setup the sandbox / testcases
-  auto testcases = fetch_testcases(qe.testcase_set);
-  Sandbox sandbox;
-  for(auto tc : testcases)
-    sandbox.insert_input(tc);
-
-  // Setup the class checker
-  DataCollector data_collector(sandbox);
-  ControlLearner control_learner(target, rewrite, sandbox);
-  size_t target_bound = prob.target_bound;
-  size_t rewrite_bound = prob.rewrite_bound;
-  Z3Solver z3;
-  ComboHandler ch;
-  BoundAwayFilter filter(ch, (uint64_t)0x1000, (uint64_t)(-0x1000));
-  SmtObligationChecker smt_checker(z3, filter);
-  PostgresObligationChecker poc(postgres_arg.value(), smt_checker);
-  InvariantLearner learner(target, rewrite);
-  LocalClassChecker lcc(data_collector, control_learner, target_bound, rewrite_bound, poc, learner);
-
-  // Add extra info from problem
-  for(auto range : prob.pointer_ranges)
-    lcc.add_pointer_range(range.first, range.second);
-  for(auto assumption : prob.extra_assumptions)
-    lcc.assume(assumption);
-
-  cout << "TEMPLATE CLASS" << endl;
-  prob.template_pod.print_all();
-  cout << endl << endl;
-
-  // Run the checker
-  lcc.check(prob.template_pod, prob.equivalence_class, callback, prob.separate_stack, nullptr);
-  lcc.block_until_complete();
-
 }
 
 
@@ -1025,14 +856,12 @@ pid_t spawn_producer(ConditionQueue<T>& queue) {
   return pid;
 }
 
-void make_workers(ConditionQueue<ObligationQueueEntry>& obligation_queue,
-                  ConditionQueue<ClassQueueEntry>& class_queue) {
+void make_workers(ConditionQueue<ObligationQueueEntry>& obligation_queue) {
 
   /** make new workers as the old ones end */
   size_t running_workers = 0;
 
   ObligationQueueEntry* temp_oe = new ObligationQueueEntry();
-  ClassQueueEntry* temp_ce = new ClassQueueEntry();
 
   while(true) {
     int status;
@@ -1081,17 +910,7 @@ void make_workers(ConditionQueue<ObligationQueueEntry>& obligation_queue,
         break;
       }
 
-      bool got_ce = class_queue.fetch_job_nonblock(*temp_ce);
-      if(got_ce) {
-        cout << "[make_workers] Spawning a new class queue worker!" << endl;
-        pid_t pid = spawn_worker(temp_ce);
-        cout << "[make_workers] new worker has pid " << pid << endl;
-        running_workers++;
-        break;
-      }
-
       obligation_queue.add_to_notify_list();
-      class_queue.add_to_notify_list();
       raise(SIGSTOP);
     }
   }
@@ -1110,16 +929,14 @@ void main_loop() {
 
   /** Create queues in shared memory */
   auto obligation_queue = make_queue<ObligationQueueEntry>(waitlist_arg.value(), "po");
-  auto class_queue = make_queue<ClassQueueEntry>(waitlist_arg.value(), "cq");
 
   /** Populate the queues */
   spawn_producer(*obligation_queue);
-  spawn_producer(*class_queue);
 
   /** Make workers to do everything */
   cout << "[main_loop] Main process pid: " << getpid() << endl;
   if(!fork()) {
-    make_workers(*obligation_queue, *class_queue); 
+    make_workers(*obligation_queue); 
   } else {
     while(true) {
       wait(NULL);
@@ -1215,44 +1032,6 @@ bool debug_hash_obligation(string hash) {
 
 }
 
-bool debug_hash_checker(string hash) {
-
-  ClassChecker::Callback callback = [&] (ClassChecker::Result& result, void* optional) -> bool {
-    cout << "verified=" << result.verified << endl;
-    if(result.error_message.size())
-      cout << "error=" << result.error_message << endl;
-    return false;
-  };
-
-  connection c(postgres_arg.value());
-  nontransaction tx(c);
-
-  stringstream sql;
-  sql << "SELECT hash, problem, testcase_set FROM ClassProblem WHERE hash='" << tx.esc(hash) << "'";
-
-  result r = tx.exec(sql.str().c_str());
-  tx.commit();
-  c.disconnect();
-
-  bool found_one = r.size() > 0;
-  if(found_one) {
-    for(auto row : r) {
-
-      ClassQueueEntry* qe = new ClassQueueEntry();
-      strncpy(qe->hash, row["hash"].c_str(), sizeof(qe->hash)-1);
-      strncpy(qe->text, row["problem"].c_str(), sizeof(qe->text)-1);
-      strncpy(qe->testcase_set, row["testcase_set"].c_str(), sizeof(qe->testcase_set)-1);
-
-      cout << "Debugging problem with hash " << qe->hash << endl;
-
-      discharge_problem(*qe, callback, true);
-    }
-    return true;
-  } else {
-    cout << "Problem with hash " << hash << " not found." << endl;
-    return false;
-  }
-}
 
 
 int main(int argc, char** argv) {
@@ -1265,9 +1044,6 @@ int main(int argc, char** argv) {
     main_loop();
   } else {
     bool b = debug_hash_obligation(debug_hash_arg.value());
-    if(!b) {
-      debug_hash_checker(debug_hash_arg.value());
-    }
   }
 
   return 0;

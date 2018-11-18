@@ -13,7 +13,6 @@
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/serialize/check_stream.h"
 #include "src/validator/invariant.h"
-#include "src/validator/optional.h"
 
 namespace stoke {
 
@@ -110,34 +109,6 @@ class Serializer<std::pair<T, U>, std::pair<T, U>> {
       T t = stoke::deserialize<T>(is);
       U u = stoke::deserialize<U>(is);
       return std::pair<T,U>(t,u);
-    }
-};
-
-/** Optional */
-template <typename T>
-class Serializer<optional<T>, optional<T>> {
-  public: 
-    static void serialize(std::ostream& os, const optional<T>& option) {
-      if(option.has_value()) {
-        os << "Y ";
-        stoke::serialize<T>(os, option.value());
-      } else {
-        os << "N ";
-      }
-    }
-
-    static optional<T> deserialize(std::istream& is) {
-      char c;
-      is >> c;
-      if(c == 'Y') {
-        T t = stoke::deserialize<T>(is);
-        return optional<T>(t);
-      } else if (c == 'N') {
-        return optional<T>();
-      } else {
-        assert(false);
-        return optional<T>();
-      }
     }
 };
 

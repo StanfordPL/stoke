@@ -121,6 +121,7 @@ istream& ObligationChecker::Obligation::read_text(istream& is) {
 }
 
 
+/** Given a path and start state, figure out if the ith block has a jump */
 ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
 
   auto P = P_copy;

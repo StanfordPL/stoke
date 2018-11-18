@@ -18,7 +18,6 @@
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
 #include "src/sandbox/sandbox.h"
-#include "src/validator/indexer.h"
 #include "src/validator/int_matrix.h"
 #include "src/validator/int_vector.h"
 #include "src/validator/line_info.h"

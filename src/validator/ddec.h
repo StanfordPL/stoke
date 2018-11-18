@@ -15,17 +15,12 @@
 #ifndef STOKE_SRC_VALIDATOR_DDEC_H
 #define STOKE_SRC_VALIDATOR_DDEC_H
 
-#include "src/validator/class_checker.h"
-#include "src/validator/control_learner.h"
 #include "src/validator/dual.h"
-#include "src/validator/dual_builder.h"
 #include "src/validator/data_collector.h"
-#include "src/validator/discharge_state.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/learner.h"
 #include "src/validator/obligation_checker.h"
-#include "src/validator/optional.h"
 #include "src/validator/validator.h"
 
 
@@ -36,13 +31,12 @@ class DdecValidator : public Validator {
 
 public:
 
-  DdecValidator(ObligationChecker& checker, ClassChecker& class_chk, Sandbox& sandbox, InvariantLearner& inv) :
+  DdecValidator(ObligationChecker& checker, Sandbox& sandbox, InvariantLearner& inv) :
     Validator(checker),
     target_({}), rewrite_({}),
           sandbox_(sandbox),
           data_collector_(sandbox),
           invariant_learner_(inv),
-          class_checker_(class_chk),
           alignment_predicate_()
   {
     set_use_handhold(false);
@@ -55,7 +49,6 @@ public:
     sandbox_(rhs.sandbox_),
     data_collector_(sandbox_),
     invariant_learner_(rhs.invariant_learner_),
-    class_checker_(rhs.class_checker_),
     use_handhold_(rhs.use_handhold_) {
 
     target_bound_ = rhs.target_bound_;
@@ -100,7 +93,6 @@ private:
   Sandbox& sandbox_;
   DataCollector data_collector_;
   InvariantLearner invariant_learner_;
-  ClassChecker& class_checker_;
 
   /** Generate a warning for the user about a possible failure reason. */
   void warn(std::string s);
@@ -139,12 +131,6 @@ private:
   size_t callbacks_count_;
   size_t verified_;
 
-  struct JobInfo {
-    DualBuilder::EquivalenceClassMap m;
-    size_t number;
-  };
-
-  std::map<size_t, JobInfo> jobs_;
   bool use_handhold_;
 
   std::shared_ptr<Invariant> alignment_predicate_;

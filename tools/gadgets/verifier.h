@@ -44,14 +44,14 @@ namespace stoke {
 class VerifierGadget : public Verifier {
 public:
 
-  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv, ClassChecker& cc) : verifier_(NULL) {
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) : verifier_(NULL) {
 
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
     for (auto it : splits) {
       if (it == "hold_out" && (test_set_arg.value().size() == 0 || testcases_arg.value().size() == 0)) {
         cpputil::Console::error() << "No test-cases given for hold_out verification." << std::endl;
       }
-      verifiers_.push_back(make_by_name(it, sandbox, fxn, inv, cc));
+      verifiers_.push_back(make_by_name(it, sandbox, fxn, inv));
     }
 
     verifier_ = new SequenceVerifier(verifiers_);
@@ -163,7 +163,7 @@ private:
     }
   }
 
-  Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv, ClassChecker& cc) {
+  Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn, InvariantLearner& inv) {
     if (s == "bounded") {
       oc_ = new ObligationCheckerGadget();
       auto bv = new BoundedValidator(*oc_);
@@ -174,7 +174,7 @@ private:
       return bv;
     } else if (s == "ddec") {
       oc_ = new ObligationCheckerGadget();
-      auto ddec = new DdecValidator(*oc_, cc, sandbox, inv);
+      auto ddec = new DdecValidator(*oc_, sandbox, inv);
       ddec->set_bound(target_bound_arg.value(), rewrite_bound_arg.value());
       ddec->set_use_handhold(handhold_arg.value());
       auto align_pred = alignment_predicate_arg.value();

@@ -179,13 +179,9 @@ SRC_OBJ=\
 	src/tunit/tunit.o \
 	\
 	src/validator/bounded.o \
-	src/validator/class_checker.o \
-	src/validator/control_learner.o \
 	src/validator/data_collector.o \
 	src/validator/ddec.o \
 	src/validator/dual.o \
-	src/validator/dual_builder.o \
-	src/validator/flow_invariant_learner.o \
 	src/validator/forking_obligation_checker.o \
 	src/validator/handler.o \
 	src/validator/implication_graph.o \
@@ -193,12 +189,10 @@ SRC_OBJ=\
 	src/validator/int_vector.o \
 	src/validator/invariant.o \
   src/validator/learner.o \
-	src/validator/local_class_checker.o \
 	src/validator/md5.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/path_unroller.o \
-	src/validator/postgres_class_checker.o \
 	src/validator/postgres_obligation_checker.o \
 	src/validator/sage.o \
 	src/validator/smt_obligation_checker.o \
@@ -262,7 +256,6 @@ BIN=\
 	bin/stoke_extract \
 	bin/stoke_testcase \
 	bin/stoke_tcgen \
-	bin/stoke_class_check \
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_invariant \
 	bin/stoke_debug_sandbox \
