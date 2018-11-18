@@ -19,21 +19,21 @@ class ImplicationGraph {
   }
 
   std::set<std::shared_ptr<Invariant>> get_replacements(std::shared_ptr<Invariant> inv) {
-    if(has_replacements(inv))
-      return replacements_[inv];
-    else
-      return std::set<std::shared_ptr<Invariant>>();
+    //if(has_replacements(inv))
+    //  return replacements_[inv];
+    //else
+    return std::set<std::shared_ptr<Invariant>>();
   }
 
   bool has_replacements(std::shared_ptr<Invariant> inv) {
-    if(replacements_.count(inv))
-      return replacements_[inv].size() > 0;
-    else
+    //if(replacements_.count(inv))
+    //  return replacements_[inv].size() > 0;
+    //else
       return false;
   }
 
   void add_replacement(std::shared_ptr<Invariant> inv, std::shared_ptr<Invariant> replacement) {
-    replacements_[inv].insert(replacement);
+    //replacements_[inv].insert(replacement);
   }
 
   bool is_superseded(std::shared_ptr<Invariant> inv) {
@@ -50,12 +50,12 @@ class ImplicationGraph {
 
   /** Add an invariant to the current class. */
   void add_invariant(std::shared_ptr<Invariant> inv) {
-    invariant_sets_[current_set].insert(inv);
+    //invariant_sets_[current_set].insert(inv);
   }
   /** Add an invariant to the current class. */
   void add_invariant(const std::vector<std::shared_ptr<Invariant>>& inv) {
-    for(auto i : inv)
-      add_invariant(i);
+    //for(auto i : inv)
+    //  add_invariant(i);
   }
 
 

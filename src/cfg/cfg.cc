@@ -20,6 +20,10 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+//#define STOKE_CFG_ALL_INSTR_BLOCK
+//#define STOKE_CFG_AFTER_LABEL_NEW_BLOACK
+//#define STOKE_CFG_COMPARE_NEW_BLOCK
+
 namespace stoke {
 
 Assembler Cfg::assembler_ = Assembler();
@@ -133,6 +137,9 @@ void Cfg::recompute_blocks() {
 #endif
     if (instr.is_label_defn()) {
       boundaries_[i] = true;
+#ifdef STOKE_CFG_AFTER_LABEL_NEW_BLOACK
+      boundaries_[i+1] = true;
+#endif
     } else if (instr.is_jump() || instr.is_return()) {
       boundaries_[i + 1] = true;
     }

@@ -371,7 +371,6 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
     cout << "[verify_dual] Dual does not check out!" << endl;
     return false;
   } 
-  return true;
 
   if(benchmark_proof_succeeded_) {
     cout << "[benchmark] No need to check further... see ya." << endl;
@@ -758,30 +757,6 @@ bool DdecValidator::test_alignment_predicate(shared_ptr<Invariant> invariant) {
 
   dual.simplify();
   bool works = verify_dual(dual);
-
-  if(works) {
-    auto states_simplified = dual.get_edge_reachable_states();
-    auto states_unsimplified = unsimplified.get_edge_reachable_states();
-    cout << "AQ BEFORE SIMPLIFY NODES: " << states_unsimplified.size() << endl;
-    cout << "AQ AFTER SIMPLIFY NODES: " << states_simplified.size() << endl;
-    size_t edges_simplified = 0;
-    size_t edges_unsimplified = 0;
-    for(auto s : states_simplified) {
-      auto edges = dual.next_edges(s);
-      for(auto e : edges)
-        if(e.to != dual.fail_state())
-          edges_simplified++;
-    }
-    for(auto s : states_unsimplified) {
-      auto edges = unsimplified.next_edges(s);
-      for(auto e : edges)
-        if(e.to != unsimplified.fail_state())
-          edges_unsimplified++;
-    }
-    cout << "AQ BEFORE SIMPLIFY EDGES: " << edges_unsimplified << endl;
-    cout << "AQ AFTER SIMPLIFY EDGES: " << edges_simplified << endl;
-  }
-
   return works;
 }
 
