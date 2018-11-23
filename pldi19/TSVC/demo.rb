@@ -125,8 +125,8 @@ def validate(compiler1, compiler2, benchmark, dofork=false)
 
   stoke_args = [
     "--strategy ddec",
-#    "--obligation_checker postgres",
-#    "--postgres ~/stoke/bin/postgres",
+   "--obligation_checker postgres",
+   "--postgres ~/stoke/bin/postgres",
     "--solver z3",
     "--alias_strategy flat",
     "--target #{compiler1}/#{benchmark}.s",

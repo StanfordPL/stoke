@@ -1,2 +1,9 @@
-
-* Equality constraints with xmm/ymms
+Possible improvements
+  - implication graph with equalities over registers
+      ( implies equalities over all subregisters )
+  - improve fixpoint algorithm
+      a. only consider infeasible edges at the end (?)
+      b. don't ignore errors
+  - workers use priority order for solvers / memory models
+  - add more solvers for tough problems
+  - obligation checker using local parallelism
