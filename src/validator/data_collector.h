@@ -60,6 +60,9 @@ public:
     set_collect_before(false);
   }
 
+  /** Returns traces for the given function.  Each trace starts with the
+    entry block (0) and ends with the exit block, and contains data found at the
+    entry to each basic block in between. */
   const std::vector<Trace>& get_traces(Cfg& target);
 
   std::vector<Trace> get_detailed_traces(const Cfg& target, 
@@ -92,6 +95,7 @@ private:
 
   /** Helper: Check if a basic block ends with a jump or not. */
   static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
+  static bool begins_with_label(const Cfg& cfg, Cfg::id_type block);
 
   /** Data Storage */
 

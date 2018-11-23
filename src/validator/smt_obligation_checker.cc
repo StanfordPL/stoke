@@ -36,7 +36,7 @@
 //#define DO_DEBUG 0
 #define DO_DEBUG ENABLE_LOCAL_DEBUG
 
-#define OBLIG_DEBUG(X) { if(0) { X } }
+#define OBLIG_DEBUG(X) { if(1) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
@@ -87,9 +87,9 @@ map<K,V> append_maps(vector<map<K,V>> maps) {
   return output;
 }
 
-/** Returns an invariant representing the fact that the first state transition in the path is taken. */
-std::shared_ptr<Invariant> SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type start_b, const CfgPath& p, bool is_rewrite) {
-  auto jump_type = ObligationChecker::is_jump(cfg, start_b, {p[0]}, 0);
+/** Returns an invariant representing the fact that the last state transition in the path is taken. */
+std::shared_ptr<Invariant> SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cfg::id_type end_block, const CfgPath& p, bool is_rewrite) {
+  auto jump_type = ObligationChecker::is_jump(cfg, end_block, p, p.size() - 1);
 
   //cout << "get_jump_inv: jump type " << jump_type << endl;
 
@@ -97,10 +97,9 @@ std::shared_ptr<Invariant> SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cf
     return std::make_shared<TrueInvariant>();
   }
 
-  auto start_block = start_b;
-  auto start_bs = cfg.num_instrs(start_block);
-  assert(start_bs > 0);
-  auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
+  auto instr_count = cfg.num_instrs(end_block);
+  assert(instr_count > 0);
+  auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(end_block, instr_count - 1))];
 
   if (!jump_instr.is_jcc()) {
     //cout << "   get_jump_inv: no cond jump" << endl;
@@ -653,20 +652,8 @@ void SmtObligationChecker::check(
   PathUnroller::generate_linemap(rewrite, Q, rewrite_linemap, true, rewrite_unroll);
 
 
-  // Build the circuits
-  if (P.size() > 0) {
-    auto ji = get_jump_inv(target, target_block, P, true);
-    size_t tmp_invariant_lineno = invariant_lineno;
-    SymBool conj = (*ji)(state_t, state_t, tmp_invariant_lineno);
-    constraints.push_back(conj);
-  }
-  if (Q.size() > 0) {
-    auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
-    size_t tmp_invariant_lineno = invariant_lineno;
-    SymBool conj = (*ji)(state_r, state_r, tmp_invariant_lineno);
-    constraints.push_back(conj);
-  }
 
+  // Build the circuits
   error_ = "";
 
   size_t line_no = 0;
@@ -686,6 +673,21 @@ void SmtObligationChecker::check(
     delete state_r.memory;
     return;
   }
+
+  // Get the last jump conditions
+  if (P.size() > 0) {
+    auto ji = get_jump_inv(target, target_block, P, true);
+    size_t tmp_invariant_lineno = invariant_lineno;
+    SymBool conj = (*ji)(state_t, state_t, tmp_invariant_lineno);
+    constraints.push_back(conj);
+  }
+  if (Q.size() > 0) {
+    auto ji = get_jump_inv(rewrite, rewrite_block, Q, true);
+    size_t tmp_invariant_lineno = invariant_lineno;
+    SymBool conj = (*ji)(state_r, state_r, tmp_invariant_lineno);
+    constraints.push_back(conj);
+  }
+
 
   if(error_ != "") {
     uint64_t gen_time = duration_cast<microseconds>(system_clock::now() - start_time).count();

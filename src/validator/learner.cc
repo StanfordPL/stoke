@@ -892,98 +892,16 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn(
   string target_cc,
   string rewrite_cc) {
 
-  //auto pair = choose_tcs(states, states2);
-  auto target_states = states;
-  auto rewrite_states = states2;
-
   auto memequ = learn_memory_equality(states, states2, target_regs, rewrite_regs);
 
-  // idea: sort state pairs into one, two, or four groups, and learn invariant over them
-  vector<std::shared_ptr<Invariant>> condition_invariants;
-  if (target_cc != "" && rewrite_cc != "") {
-    auto inv_t = std::make_shared<FlagInvariant>(target_cc, false, false);
-    auto inv_r = std::make_shared<FlagInvariant>(rewrite_cc, true, false);
-    auto not_inv_t = std::make_shared<FlagInvariant>(target_cc, false, true);
-    auto not_inv_r = std::make_shared<FlagInvariant>(rewrite_cc, true, true);
-    condition_invariants.push_back(
-        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({inv_t, inv_r})));
-    condition_invariants.push_back(
-        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({not_inv_t, inv_r})));
-    condition_invariants.push_back(
-        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({inv_t, not_inv_r})));
-    condition_invariants.push_back(
-        make_shared<ConjunctionInvariant>(vector<shared_ptr<Invariant>>({not_inv_t, not_inv_r})));
-  } else if (target_cc != "") {
-    auto inv = std::make_shared<FlagInvariant>(target_cc, false, false);
-    auto inv2 = std::make_shared<FlagInvariant>(target_cc, false, true);
-    condition_invariants.push_back(inv);
-    condition_invariants.push_back(inv2);
-  } else if (rewrite_cc != "") {
-    auto inv = std::make_shared<FlagInvariant>(rewrite_cc, true, false);
-    auto inv2 = std::make_shared<FlagInvariant>(rewrite_cc, true, true);
-    condition_invariants.push_back(inv);
-    condition_invariants.push_back(inv2);
-  } else {
-    auto conj = learn_simple(target_regs, rewrite_regs, target_states, rewrite_states, graph);
+  if(memequ) {
+    auto conj = learn_simple(target_regs, rewrite_regs, states, states2, graph);
     conj->add_invariant(memequ);
     return conj;
+  } else {
+    auto empty = make_shared<ConjunctionInvariant>();
+    return empty;
   }
-
-  // identify the flag invariants we care about
-  std::vector<std::pair<std::vector<CpuState>, std::vector<CpuState>>> state_sets(condition_invariants.size());
-
-  // classify states into buckets
-  for (size_t i = 0; i < target_states.size(); ++i) {
-    auto lhs = target_states[i];
-    auto rhs = rewrite_states[i];
-
-    /*
-    cout << "==================== i = " << i << endl;
-    if(lhs[eflags_zf]) {
-      cout << "TARGET HAS ZF=1, i.e. !ne" << endl;
-    }
-    if(rhs[eflags_zf]) {
-      cout << "REWRITE HAS ZF=1, i.e. !ne" << endl;
-    } */
-
-    for (size_t j = 0; j < condition_invariants.size(); ++j) {
-      auto inv = condition_invariants[j];
-      if (inv->check(lhs, rhs)) {
-        /* cout << "INV " << *inv << " holds" << endl; */
-        state_sets[j].first.push_back(lhs);
-        state_sets[j].second.push_back(rhs);
-      } else {
-        /* cout << "INV " << *inv << " fails" << endl; */
-      }
-    }
-  }
-
-  // learn simple invariants and conjoin
-  auto final_inv = std::make_shared<ConjunctionInvariant>();
-
-  for (size_t i = 0; i < condition_invariants.size(); ++i) {
-    auto lhs_vector = state_sets[i].first;
-    auto rhs_vector = state_sets[i].second;
-    assert(lhs_vector.size() == rhs_vector.size());
-
-    if (lhs_vector.size() == 0) {
-      final_inv->add_invariant(std::make_shared<ImplicationInvariant>(condition_invariants[i], std::make_shared<FalseInvariant>()));
-    } else {
-      auto inv = learn_simple(target_regs, rewrite_regs, lhs_vector, rhs_vector, graph);
-      for (size_t j = 0; j < inv->size(); ++j) {
-        auto curr = (*inv)[j];
-        auto impl = std::make_shared<ImplicationInvariant>(condition_invariants[i], curr);
-        final_inv->add_invariant(impl);
-        for(auto it : graph.get_replacements(curr)) {
-          auto new_replacement = std::make_shared<ImplicationInvariant>(condition_invariants[i], it);
-          graph.add_replacement(impl, new_replacement);
-        }
-      }
-    }
-  }
-
-  final_inv->add_invariant(memequ);
-  return final_inv;
 
 }
 
@@ -1274,6 +1192,11 @@ vector<std::shared_ptr<Invariant>> InvariantLearner::learn_equalities(
     bool all_work = true;
     vector<CpuState> target_bad;
     vector<CpuState> rewrite_bad;
+
+    bool invariant_ceg_found[equalities->size()];
+    for(size_t i = 0; i < equalities->size(); ++i)
+      invariant_ceg_found[i] = false;
+
     for (size_t i = 0; i < target_states.size(); ++i) {
 
       if(new_states >= sample_tcs_)
@@ -1282,15 +1205,22 @@ vector<std::shared_ptr<Invariant>> InvariantLearner::learn_equalities(
       auto target_state = target_states[i];
       auto rewrite_state = rewrite_states[i];
 
+      bool added = false;
       for (size_t j = 0; j < equalities->size(); ++j) {
+        if(invariant_ceg_found[j])
+          continue;
+
         if (!(*equalities)[j]->check(target_state, rewrite_state)) {
-          //cout << "GOT A BAD INVARIANT" << endl;
-          //cout << *(*equalities)[j] << endl;
-          target_learn.push_back(target_state);
-          rewrite_learn.push_back(rewrite_state);
+          cout << "GOT A BAD INVARIANT j=" << j << endl;
+          cout << *(*equalities)[j] << endl;
+          invariant_ceg_found[j] = true;
+          if(!added) {
+            target_learn.push_back(target_state);
+            rewrite_learn.push_back(rewrite_state);
+            added = true;
+          }
           new_states++;
           all_work = false;
-          break; // go to next state
         }
       }
     }

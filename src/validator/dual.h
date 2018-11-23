@@ -223,7 +223,7 @@ public:
 
   bool test_dual(DataCollector&);
   /** Learn invariants.  Returns 'true' if no error. */
-  void learn_invariants(InvariantLearner&, ImplicationGraph&);
+  bool learn_invariants(InvariantLearner&, ImplicationGraph&);
 
   /** Get invariant at state. */
   std::shared_ptr<ConjunctionInvariant> get_invariant(const State& state) const {
@@ -343,7 +343,7 @@ private:
   /** Runs a test case/trace through all possible paths in automata to
     populate state information.  Returns false on error. */
   bool learn_state_data(const DataCollector::Trace& target,
-                        const DataCollector::Trace& rewrite);
+                        const DataCollector::Trace& rewrite, bool recording);
 
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);

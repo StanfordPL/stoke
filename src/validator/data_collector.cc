@@ -141,7 +141,8 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
     cp->block_id = block;
     cp->trace = &trace;
 
-    bool has_jump = ends_with_jump(cfg, block);
+    //bool has_jump = ends_with_jump(cfg, block);
+    bool has_label = begins_with_label(cfg, block);
 
     if (block == cfg.get_entry()) {
       // Don't run sandbox; callback manually.  This is to avoid repeated calls to the callback for jumps back to the
@@ -153,16 +154,16 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
       tp.index = trace.size();
       trace.push_back(tp);
 
-    } else if (has_jump) {
-      index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+    } else if (has_label) {
+      index = cfg.get_index(Cfg::loc_type(block, 0));
       cp->line_number = index;
       //DEBUG_CUTPOINTS(cout << "  - instrumenting before index=" << index << std::endl;)
-      sandbox_.insert_before(label, index, callback, cp);
+      sandbox_.insert_after(label, index, callback, cp);
     } else {
-      index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+      index = cfg.get_index(Cfg::loc_type(block, 0));
       cp->line_number = index;
       //DEBUG_CUTPOINTS(cout << "  - instrumenting after index=" << index << std::endl;)
-      sandbox_.insert_after(label, index, callback, cp);
+      sandbox_.insert_before(label, index, callback, cp);
     }
   }
 
@@ -183,6 +184,16 @@ void DataCollector::mine_data(const Cfg& cfg, size_t testcase, std::vector<Trace
   for (auto it : to_free)
     delete it;
 
+}
+
+bool DataCollector::begins_with_label(const Cfg& cfg, Cfg::id_type block) {
+  size_t instrs = cfg.num_instrs(block);
+  if (instrs == 0)
+    return false;
+
+  auto loc = Cfg::loc_type(block, 0);
+  auto instr = cfg.get_instr(loc);
+  return instr.is_label_defn();
 }
 
 bool DataCollector::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {

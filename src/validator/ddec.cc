@@ -325,11 +325,11 @@ bool DdecValidator::build_dual_for_alignment_predicate(std::shared_ptr<Invariant
         CfgPath target_path;
         CfgPath rewrite_path;
 
-        target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index+1, target_trace_path.begin() + second_target.index+1);
-        rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index+1, rewrite_trace_path.begin() + second_rewrite.index+1);
+        target_path.insert(target_path.begin(), target_trace_path.begin()+first_target.index, target_trace_path.begin() + second_target.index);
+        rewrite_path.insert(rewrite_path.begin(), rewrite_trace_path.begin()+first_rewrite.index, rewrite_trace_path.begin() + second_rewrite.index);
 
         DEBUG_PAA_CONSTRUCTION(cout << "    **** FOUND CORRESPONDING PATHS " << target_path << " / " << rewrite_path << endl;)
-        DualAutomata::Edge e(DualAutomata::State(first_target.block_id, first_rewrite.block_id), target_path, rewrite_path);
+        DualAutomata::Edge e(DualAutomata::State(second_target.block_id, second_rewrite.block_id), target_path, rewrite_path);
         dual.add_edge(e);
       }
     }
@@ -381,7 +381,12 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
   // learn invariants
   ImplicationGraph graph(target_, rewrite_);
-  dual.learn_invariants(invariant_learner_, graph);
+  bool learn_success = dual.learn_invariants(invariant_learner_, graph);
+  if(!learn_success) {
+    cout << "[verify_dual] Learning invariants failed." << endl;
+    return false;
+  }
+
   cout << "FINAL IMPLICATION GRAPH" << endl;
   graph.print();
   cout << endl << endl;
@@ -612,7 +617,7 @@ bool DdecValidator::verify_dual(DualAutomata& dual) {
 
             // dispatch the check
             cout << "[verify_dual]      dispatching conjunct " << i << ": " << *conjunct << endl;
-            checker_.check(target_, rewrite_, state.ts, state.rs, e.te, e.re, 
+            checker_.check(target_, rewrite_, e.to.ts, e.to.rs, e.te, e.re, 
                            new_source_invariant, conjunct, testcases, callback, true, (void*)cbp);
 
             // see if we've received any callbacks that end it all
@@ -750,8 +755,12 @@ bool DdecValidator::test_alignment_predicate(shared_ptr<Invariant> invariant) {
     return false;
 
   DualAutomata unsimplified = dual;
+  cout << "BEFORE SIMPLIFY PAA!" << endl;
+  dual.print_all();
 
   dual.simplify();
+  cout << "TRYING THIS PAA!" << endl;
+  dual.print_all();
   bool works = verify_dual(dual);
   return works;
 }

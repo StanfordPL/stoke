@@ -58,21 +58,21 @@ bool DualAutomata::Edge::operator==(const DualAutomata::Edge& other) const {
 }
 
 DualAutomata::Edge::Edge(DualAutomata::State tail, const CfgPath& tp, const CfgPath& rp) {
-  from = tail;
+  to = tail;
   te = tp;
   re = rp;
   empty_ = false;
 
   if (tp.size()) {
-    to.ts = tp.back();
+    from.ts = tp[0];
   } else {
-    to.ts = from.ts;
+    from.ts = to.ts;
   }
 
   if (rp.size()) {
-    to.rs = rp.back();
+    from.rs = rp[0];
   } else {
-    to.rs = from.rs;
+    from.rs = to.rs;
   }
 }
 
@@ -119,13 +119,11 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
-                                    const DataCollector::Trace& orig_rewrite_trace) {
+                                    const DataCollector::Trace& orig_rewrite_trace, bool recording) {
 
-  /** Copy traces, remove 0 block. */
+  /** Copy traces, remove extra exit block. */
   auto target_trace = orig_target_trace;
   auto rewrite_trace = orig_rewrite_trace;
-  target_trace.erase(target_trace.begin());
-  rewrite_trace.erase(rewrite_trace.begin());
   target_trace.erase(target_trace.end() - 1);
   rewrite_trace.erase(rewrite_trace.end() - 1);
 
@@ -173,6 +171,9 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
           return false;
         }
 
+        if(!recording)
+          return true;
+
         continue;
       }
 
@@ -215,24 +216,27 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         follow.state = edge.to;
 
         // (2) update the CpuStates
-        if (edge.te.size())
-          follow.target_current = follow.target_trace[edge.te.size()-1].cs;
-        if (edge.re.size())
-          follow.rewrite_current = follow.rewrite_trace[edge.re.size()-1].cs;
-
+        if (edge.te.size() < follow.target_trace.size())
+          follow.target_current = follow.target_trace[edge.te.size()].cs;
+        if (edge.re.size() < follow.rewrite_trace.size())
+          follow.rewrite_current = follow.rewrite_trace[edge.re.size()].cs;
 
         // (3) remove the prefixes from both traces
         remove_prefix(edge.te, follow.target_trace);
         remove_prefix(edge.re, follow.rewrite_trace);
 
         // (4) record the CpuState in the right place
-        target_state_data_[edge.to].push_back(follow.target_current);
-        rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
-        target_edge_data_[edge].push_back(tr_state.target_current);
-        rewrite_edge_data_[edge].push_back(tr_state.rewrite_current);
+        if(recording) {
+          target_state_data_[edge.to].push_back(follow.target_current);
+          rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
+          target_edge_data_[edge].push_back(tr_state.target_current);
+          rewrite_edge_data_[edge].push_back(tr_state.rewrite_current);
+        }
 
+        // (5) setup new worklist item
         next.push_back(follow);
         data_reachable_states_.insert(follow.state);
+
         DEBUG_LEARN_STATE_DATA(std::cout << "   - REACHABLE: " << follow.state << std::endl;
         cout << "drs: ";
         for(auto it : data_reachable_states_) {
@@ -243,12 +247,12 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
       if (!found_matching_edge) {
         DEBUG_LEARN_STATE_DATA(std::cout << "   - Could not find matching edge" << std::endl;)
-        return false;
+        //return false;
       }
     }
   }
 
-  return true;
+  return false;
 
 }
 
@@ -268,13 +272,14 @@ bool DualAutomata::test_dual(DataCollector& dc) {
     auto target_trace = target_traces[i];
     auto rewrite_trace = rewrite_traces[i];
 
+    /*
     auto target_last = target_trace.back();
     target_last.block_id = target_.get_exit();
     target_trace.push_back(target_last);
 
     auto rewrite_last = rewrite_trace.back();
     rewrite_last.block_id = rewrite_.get_exit();
-    rewrite_trace.push_back(rewrite_last);
+    rewrite_trace.push_back(rewrite_last);*/
 
 
     DEBUG_LEARN_STATE_DATA(
@@ -283,17 +288,18 @@ bool DualAutomata::test_dual(DataCollector& dc) {
     )
 
 
-    bool ok = learn_state_data(target_trace, rewrite_trace);
+    bool ok = learn_state_data(target_trace, rewrite_trace, false);
     if (!ok) {
-      cout << "[learn_invariants] lsd returned FALSE!" << endl;
+      cout << "[learn_invariants] PAA doesn't accept test inputs" << endl;
       return false;
     }
+    learn_state_data(target_trace, rewrite_trace, true);
   }
 
   return true;
 }
 
-void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph& graph) {
+bool DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph& graph) {
 
   // Step 2: learn the invariants
   target_.recompute();
@@ -310,15 +316,6 @@ void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
     cout << "[learn_invariants] Learning invariants at " << state << endl;
     if (state == exit_state() || state == start_state() || state == fail_state())
       continue;
-
-    auto target_instr = target_.get_last_of_block(state.ts);
-    auto rewrite_instr = rewrite_.get_last_of_block(state.rs);
-
-    string target_opc = Handler::get_opcode(target_instr);
-    string rewrite_opc = Handler::get_opcode(rewrite_instr);
-
-    string target_cc = target_instr.is_jcc() ? target_opc.substr(1, target_opc.size()-1) : "";
-    string rewrite_cc = rewrite_instr.is_jcc() ? rewrite_opc.substr(1, rewrite_opc.size()-1) : "";
 
     /* For debugging states encountered. */
     /*
@@ -349,12 +346,17 @@ void DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
 
     auto inv = learner.learn(target_.def_outs(state.ts), rewrite_.def_outs(state.rs),
                              target_state_data_[state], rewrite_state_data_[state], graph,
-                             target_cc, rewrite_cc);
+                             "", "");
     invariants_[state] = inv;
+    cout << "About to print invariant at " << state << endl;
     cout << "[learn_invariants] Invariant at " << state << ": " << *inv << endl;
-    // TODO check that the invariants look good enough
+
+    /** Check to make sure we got an invariant. */
+    if(inv->size() == 0)
+      return false;
   }
 
+  return true;
 
 }
 
@@ -527,9 +529,10 @@ std::set<CfgPath> DualAutomata::get_cfg_fringe(const Cfg& cfg, State state, bool
     answer and stop searching. */
   vector<CfgPath> current_paths;
   vector<CfgPath> next_paths;
-  for(auto it = cfg.succ_begin(starting_block); it != cfg.succ_end(starting_block); ++it) {
-    current_paths.push_back({ *it });
-  }
+  current_paths.push_back( { starting_block } );
+  //for(auto it = cfg.succ_begin(starting_block); it != cfg.succ_end(starting_block); ++it) {
+  //  current_paths.push_back({ *it });
+  //}
   while(current_paths.size()) {
 
     DEBUG_CFG_FRINGE("current paths" << endl)
@@ -828,8 +831,19 @@ bool DualAutomata::simplify() {
         auto first = edges[i];
         auto second = edges[j];
 
-        if(CfgPaths::is_prefix(first.te, second.te) &&
-           CfgPaths::is_prefix(first.re, second.re)) {
+        auto first_target_edge = first.te;
+        first_target_edge.push_back(first.to.ts);
+        auto second_target_edge = second.te;
+        second_target_edge.push_back(second.to.ts);
+
+        auto first_rewrite_edge = first.re;
+        first_rewrite_edge.push_back(first.to.rs);
+        auto second_rewrite_edge = second.re;
+        second_rewrite_edge.push_back(second.to.rs);
+
+
+        if(CfgPaths::is_prefix(first_target_edge, second_target_edge) &&
+           CfgPaths::is_prefix(first_rewrite_edge, second_rewrite_edge)) {
           // remove 'second'
           edges_to_remove.insert(second);
           changes_made = true;

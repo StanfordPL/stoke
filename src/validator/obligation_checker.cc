@@ -122,13 +122,11 @@ istream& ObligationChecker::Obligation::read_text(istream& is) {
 
 
 /** Given a path and start state, figure out if the ith block has a jump */
-ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type start_block, const CfgPath& P_copy, size_t i) {
+ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_type end_block, const CfgPath& P_copy, size_t i) {
 
   auto P = P_copy;
 
-  if (i == 0 && P.size() == 1) {
-    P.insert(P.begin(), start_block);
-  }
+  P.push_back(end_block);
 
   if (i == P.size() - 1)
     return JumpType::NONE;
@@ -138,25 +136,25 @@ ObligationChecker::JumpType ObligationChecker::is_jump(const Cfg& cfg, Cfg::id_t
   auto itr = cfg.succ_begin(block);
   if (itr == cfg.succ_end(block)) {
     // there are no successors
-    //cout << "is_jump " << block << " NONE" << endl;
+    cout << "[is_jump] " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
   itr++;
   if (itr == cfg.succ_end(block)) {
     // there is only only successor
-    //cout << "is_jump " << block << " NONE" << endl;
+    cout << "[is_jump] " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
   // ok, there are at least 2 successors
   auto next_block = P[i+1];
   if (next_block == block + 1) {
-    //cout << "is_jump " << block << " FALL" << endl;
+    cout << "[is_jump] " << block << " FALL" << endl;
     return JumpType::FALL_THROUGH;
   }
   else {
-    //cout << "is_jump " << block << " JUMP" << endl;
+    cout << "[is_jump] " << block << " JUMP" << endl;
     return JumpType::JUMP;
   }
 }
