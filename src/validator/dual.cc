@@ -9,7 +9,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
+#define DEBUG_LEARN_STATE_DATA(X) { if(1) { X } }
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(0) { X } }
@@ -121,11 +121,9 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
                                     const DataCollector::Trace& orig_rewrite_trace, bool recording) {
 
-  /** Copy traces, remove extra exit block. */
+  /** Copy traces */
   auto target_trace = orig_target_trace;
   auto rewrite_trace = orig_rewrite_trace;
-  target_trace.erase(target_trace.end() - 1);
-  rewrite_trace.erase(rewrite_trace.end() - 1);
 
   /** Setup initial state */
   TraceState initial;
@@ -162,12 +160,13 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
       if (exit == tr_state.state) {
 
-        if (tr_state.rewrite_trace.size() > 0) {
-          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed rewrite trace" << endl;)
+        if (tr_state.target_trace.size() != 1) {
+          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed target trace" << endl;)
           return false;
         }
-        if (tr_state.target_trace.size() > 0) {
-          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed target trace" << endl;)
+
+        if (tr_state.rewrite_trace.size() != 1) {
+          DEBUG_LEARN_STATE_DATA(cout << "[lsd] problem: at exit state, but there's still unconsumed rewrite trace" << endl;)
           return false;
         }
 
@@ -195,13 +194,17 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
             cout << endl;)
 
         // check if edge's target path is prefix of tr_state's target path
-        if (!is_prefix(edge.te, tr_state.target_trace)) {
+        auto te_copy = edge.te;
+        te_copy.push_back(edge.to.ts);
+        if (!is_prefix(te_copy, tr_state.target_trace)) {
           DEBUG_LEARN_STATE_DATA(cout << "     target prefix fail" << endl;)
           continue;
         }
 
         // check if edge's rewrite path is prefix of tr_state's rewrite path
-        if (!is_prefix(edge.re, tr_state.rewrite_trace)) {
+        auto re_copy = edge.re;
+        re_copy.push_back(edge.to.rs);
+        if (!is_prefix(re_copy, tr_state.rewrite_trace)) {
           DEBUG_LEARN_STATE_DATA(cout << "     rewrite prefix fail" << endl;)
           continue;
         }
