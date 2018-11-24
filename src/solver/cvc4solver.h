@@ -32,6 +32,7 @@ public:
     smt_ = new CVC4::SmtEngine(&em_);
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
+    smt_->setOption("finite-model-find", true);
     smt_->setTimeLimit(timeout_, true);
     smt_->setLogic("AUFBV");
     smt_->push();
