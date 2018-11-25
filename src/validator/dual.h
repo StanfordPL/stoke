@@ -343,7 +343,7 @@ private:
   /** Runs a test case/trace through all possible paths in automata to
     populate state information.  Returns false on error. */
   bool learn_state_data(const DataCollector::Trace& target,
-                        const DataCollector::Trace& rewrite, bool recording);
+                        const DataCollector::Trace& rewrite);
 
   /** Is an edge (a series of states) a prefix of a trace (a series of state/cpu state pairs)? */
   bool is_prefix(const CfgPath& tr1, const DataCollector::Trace& tr2);

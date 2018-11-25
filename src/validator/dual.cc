@@ -170,9 +170,6 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
           return false;
         }
 
-        if(!recording)
-          return true;
-
         continue;
       }
 
@@ -229,12 +226,10 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
         remove_prefix(edge.re, follow.rewrite_trace);
 
         // (4) record the CpuState in the right place
-        if(recording) {
-          target_state_data_[edge.to].push_back(follow.target_current);
-          rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
-          target_edge_data_[edge].push_back(tr_state.target_current);
-          rewrite_edge_data_[edge].push_back(tr_state.rewrite_current);
-        }
+        target_state_data_[edge.to].push_back(follow.target_current);
+        rewrite_state_data_[edge.to].push_back(follow.rewrite_current);
+        target_edge_data_[edge].push_back(tr_state.target_current);
+        rewrite_edge_data_[edge].push_back(tr_state.rewrite_current);
 
         // (5) setup new worklist item
         next.push_back(follow);
@@ -291,12 +286,11 @@ bool DualAutomata::test_dual(DataCollector& dc) {
     )
 
 
-    bool ok = learn_state_data(target_trace, rewrite_trace, false);
+    bool ok = learn_state_data(target_trace, rewrite_trace);
     if (!ok) {
       cout << "[learn_invariants] PAA doesn't accept test inputs" << endl;
       return false;
     }
-    learn_state_data(target_trace, rewrite_trace, true);
   }
 
   return true;
