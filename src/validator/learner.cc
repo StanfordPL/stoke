@@ -1480,6 +1480,11 @@ std::shared_ptr<ConjunctionInvariant> InvariantLearner::learn_simple(x64asm::Reg
         Variable c(*r,k,8,i*8);
         columns.push_back(c);
       }
+      for (size_t i = 0; i < (*r).size()/32; ++i) {
+        Variable c(*r,k,4,i*4);
+        columns.push_back(c);
+      }
+
     }
   }
 

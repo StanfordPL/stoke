@@ -22,7 +22,7 @@
   "testing"   => ["baseline", "gcc", "llvm"],
 }
 
-@default_def_ins = "\"{ %rdi %rsi %rdx %rcx %r8 %r9 %rax %rbp %rsp %xmm0 %xmm1 %xmm2 %xmm3 %rbx %r8 %r9 %r10 %r11 %r12 %r13 %r14 %r15 }\""
+@default_def_ins = "\"{ %rdi %rbp %rsp %rbx %r12 %r13 %r14 %r15 }\""
 @default_live_outs = "\"{ %rbx %rsp %rbp %r12 %r13 %r14 %r15 }\""
 
 def print_usage
