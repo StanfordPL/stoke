@@ -63,23 +63,23 @@ public:
     // (replace this with a shift)
     size_t k = 64;
     for (auto term : terms_) {
-      std::cout << std::hex << "coefficient: " << term.coefficient << std::endl;
+      //std::cout << std::hex << "coefficient: " << term.coefficient << std::endl;
       if(term.coefficient > 0) {
         size_t zeros = __builtin_ctzl(term.coefficient);
-        std::cout << "pos coefficient zeros = " << zeros << std::endl;
+        //std::cout << "pos coefficient zeros = " << zeros << std::endl;
         if(zeros < k)
           k = zeros;
       } else if (term.coefficient < 0) {
         size_t zeros = __builtin_ctzl(-term.coefficient);
-        std::cout << "neg coefficient zeros = " << zeros << std::endl;
+        //std::cout << "neg coefficient zeros = " << zeros << std::endl;
         if(zeros < k)
           k = zeros;
       } else {
-        std::cout << "zero coefficient found" << std::endl;
+        //std::cout << "zero coefficient found" << std::endl;
       }
     }
 
-    std::cout << "k = " << k << std::endl;
+    //std::cout << "k = " << k << std::endl;
     if(k == 64 || modulus_ != 0)
       k = 0;
 

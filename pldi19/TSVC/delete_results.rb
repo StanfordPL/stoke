@@ -5,7 +5,7 @@ hashes=[]
 count = 100
 
 ARGF.each do |line|
-  if line =~ /info ([a-f0-9]*)/ then
+  if line =~ /Dispatching hash ([a-f0-9]*)/ then
     hashes.push($~[1])
   end
 end
