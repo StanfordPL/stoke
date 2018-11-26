@@ -32,7 +32,7 @@ using namespace std::chrono;
 
 //#define STOKE_Z3_DEBUG_LAST_HASH YESPLEASE
 //#define DEBUG_Z3_PERFORMANCE 1
-#define DEBUG_Z3(X) { if(1) { X } }
+#define DEBUG_Z3(X) { if(0) { X } }
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
