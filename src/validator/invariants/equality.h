@@ -58,18 +58,51 @@ public:
         size = var.size*8;
     }
 
-    SymBitVector sum = SymBitVector::constant(size, 0);
 
+    // simplification step: find greatest k s.t. 2^k | C for all coefficients C
+    // (replace this with a shift)
+    size_t k = 64;
     for (auto term : terms_) {
+      std::cout << std::hex << "coefficient: " << term.coefficient << std::endl;
+      if(term.coefficient > 0) {
+        size_t zeros = __builtin_ctzl(term.coefficient);
+        std::cout << "pos coefficient zeros = " << zeros << std::endl;
+        if(zeros < k)
+          k = zeros;
+      } else if (term.coefficient < 0) {
+        size_t zeros = __builtin_ctzl(-term.coefficient);
+        std::cout << "neg coefficient zeros = " << zeros << std::endl;
+        if(zeros < k)
+          k = zeros;
+      } else {
+        std::cout << "zero coefficient found" << std::endl;
+      }
+    }
+
+    std::cout << "k = " << k << std::endl;
+    if(k == 64 || modulus_ != 0)
+      k = 0;
+
+    SymBitVector sum = SymBitVector::constant(size-k, 0);
+    // proceed, chopping off the top k bits from each term
+    for (auto term : terms_) {
+      if(term.coefficient == 0)
+        continue;
+
       auto value = term.from_state(target, rewrite);
       auto value_ext = value.sign_extend(size);
-      auto coefficient = SymBitVector::constant(64, term.coefficient);
-      auto coefficient_ext = coefficient.sign_extend(size);
+      auto normalized_term = (term.coefficient >> k);
+      auto coefficient = SymBitVector::constant(64, normalized_term);
+      if(k) 
+        value_ext = value_ext[size-1-k][0];
+      if(size-k < 64)
+        coefficient = coefficient[size-k-1][0];
+      auto coefficient_ext = coefficient.sign_extend(size-k);
       sum = sum + coefficient_ext*value_ext;
     }
 
     if(modulus_ == 0)
-      return sum == SymBitVector::constant(size, constant_);
+      return sum == SymBitVector::constant(size-k, constant_);
     else
       return 
         ((sum - SymBitVector::constant(size, constant_)) 
