@@ -448,6 +448,7 @@ bool SmtObligationChecker::generate_arm_testcases(
   CpuState target_tc;
   CpuState rewrite_tc;
 
+  assumption = simplifier_.simplify(assumption);
   bool assumption_sat = solver_.is_sat({assumption});
   bool ok = true;
   if(solver_.has_error() || !assumption_sat) {
@@ -704,6 +705,7 @@ void SmtObligationChecker::check(
     // also it seems unlikely this path is feasible given that nobody gave us
     // a test case for it...
     auto sat_start = system_clock::now();
+    simplifier_.simplify(constraints);
     if(!solver_.is_sat(constraints) && !solver_.has_error()) {
       cout << "We've finished early without modeling memory!" << endl;
       /** we're done, yo. */
@@ -970,6 +972,7 @@ void SmtObligationChecker::check(
 
   auto sat_start = system_clock::now();
 
+  simplifier_.simplify(constraints);
   bool is_sat = solver_.is_sat(constraints);
   uint64_t smt_duration = duration_cast<microseconds>(system_clock::now() - sat_start).count();
   uint64_t gen_duration = duration_cast<microseconds>(sat_start - start_time).count();

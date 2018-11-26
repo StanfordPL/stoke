@@ -30,6 +30,8 @@ public:
   SymBool simplify(const SymBool& b);
   /** Simplify a given array */
   SymArray simplify(const SymArray& b);
+  /** Simplify a list of items */
+  void simplify(std::vector<SymBool>& items);
 
   /** Constructions a new simplifier.  Any node sharing will be preserved for all circuits simplified with this simplifier. */
   SymSimplify() {}

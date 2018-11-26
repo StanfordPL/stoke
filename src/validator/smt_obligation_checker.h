@@ -31,6 +31,7 @@
 #include "src/symstate/memory/cell.h"
 #include "src/symstate/memory/flat.h"
 #include "src/symstate/memory/arm.h"
+#include "src/symstate/simplify.h"
 #include "src/validator/data_collector.h"
 #include "src/validator/invariant.h"
 #include "src/validator/line_info.h"
@@ -87,6 +88,8 @@ public:
   }
 
 private:
+
+  SymSimplify simplifier_;
 
   /** Trigger callback with error message. */
   void return_error(Callback& callback, std::string& s, void* optional, uint64_t smt_time, uint64_t gen_time) const;

@@ -1,4 +1,9 @@
 Possible improvements
+  - remove unnecessary invariants before generating constraints
+      (i.e. those that contrain unneeded registers)
+
+  - debug specific obligations that take too long
+  - shorter failure edges
   - implication graph with equalities over registers
       ( implies equalities over all subregisters )
   - improve fixpoint algorithm

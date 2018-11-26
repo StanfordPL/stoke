@@ -585,4 +585,11 @@ SymArray SymSimplify::simplify(const SymArray& b) {
   return SymArray(ptr);
 }
 
+void SymSimplify::simplify(vector<SymBool>& items) {
+  for(auto it = items.begin(); it != items.end(); ++it) {
+    auto new_item = simplify(*it);
+    *it = new_item;
+  }
+}
+
 } // namespace stoke
