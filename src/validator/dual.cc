@@ -119,7 +119,7 @@ void DualAutomata::remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2) 
 /** Here we trace one test case through the Automata along every possible path.
   Returns false on error. */
 bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trace,
-                                    const DataCollector::Trace& orig_rewrite_trace, bool recording) {
+                                    const DataCollector::Trace& orig_rewrite_trace) {
 
   /** Copy traces */
   auto target_trace = orig_target_trace;
@@ -245,12 +245,12 @@ bool DualAutomata::learn_state_data(const DataCollector::Trace& orig_target_trac
 
       if (!found_matching_edge) {
         DEBUG_LEARN_STATE_DATA(std::cout << "   - Could not find matching edge" << std::endl;)
-        //return false;
+        return false;
       }
     }
   }
 
-  return false;
+  return true;
 
 }
 
