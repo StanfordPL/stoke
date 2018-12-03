@@ -38,8 +38,8 @@
 
 #define OBLIG_DEBUG(X) { if(0) { X } }
 #define CONSTRAINT_DEBUG(X) { if(0) { X } }
-#define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
-#define BUILD_TC_DEBUG(X) { if(0) { X } }
+#define DEBUG_BUILDTC_FROM_ARRAY(X) { if(1) { X } }
+#define BUILD_TC_DEBUG(X) { if(1) { X } }
 #define DEBUG_ARM(X) { if(DO_DEBUG) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
@@ -112,23 +112,43 @@ std::shared_ptr<Invariant> SmtObligationChecker::get_jump_inv(const Cfg& cfg, Cf
   return jump_inv;
 }
 
+BitVector SmtObligationChecker::add_to_map(const SymArray& array, unordered_map<uint64_t, BitVector>& mem_map) const {
 
-bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray var, const map<const SymBitVectorAbstract*, uint64_t>& others, bool separate_stack) const {
-  auto symvar = dynamic_cast<const SymArrayVar* const>(var.ptr);
-  assert(symvar != NULL);
-  auto str = symvar->name_;
+  BitVector default_value_bv(8);
+  if(array.ptr == nullptr) {
+    return default_value_bv; 
+  }
+
+  auto symarray = dynamic_cast<const SymArrayVar* const>(array.ptr);
+  assert(symarray != nullptr);
+  auto str = symarray->name_;
+  cout << "name is " << str << endl;
 
   auto map_and_default = solver_.get_model_array(str, 64, 8);
   auto orig_map = map_and_default.first;
-  auto default_value = map_and_default.second;
-  unordered_map<uint64_t, BitVector> mem_map;
+  uint64_t default_value = map_and_default.second;
+
   for (auto pair : orig_map) {
-    mem_map[pair.first] = pair.second;
+    //TODO: fix so that we add one byte at a time
+    auto start_addr = pair.first;
+    auto bv = pair.second;
+    mem_map[start_addr] = bv;
   }
 
-  BitVector default_value_bv(8);
   default_value_bv.get_fixed_byte(0) = default_value;
 
+
+  return default_value_bv;
+}
+
+bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray heap, const vector<SymArray>& stacks, const map<const SymBitVectorAbstract*, uint64_t>& others, bool separate_stack) const {
+
+  unordered_map<uint64_t, BitVector> mem_map;
+  auto default_heap = add_to_map(heap, mem_map);
+  BitVector default_stack(8);
+  for(auto stack : stacks) 
+    default_stack = add_to_map(stack, mem_map);
+  
   for (auto p : others) {
     auto abs_var = p.first;
     uint64_t size = p.second/8;
@@ -143,26 +163,26 @@ bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray var
 
     for (uint64_t i = addr; i < addr + size; ++i) {
       if (!mem_map.count(i)) {
-        mem_map[i] = default_value_bv;
+        mem_map[i] = default_heap;
       }
     }
   }
 
   DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;)
   if(separate_stack) {
-    // allocate some space on the stack, say, 64 bytes, and zero it (unless precluded)
+    // allocate some space on the stack, say, 64 bytes, and initialize it (unless precluded)
     uint64_t rsp_loc = ceg[rsp];
     DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;)
     BitVector zero_bv(8);
-    if(rsp_loc > 64) {
-      for(uint64_t i = rsp_loc; i > rsp_loc - 64; i--) {
+    if(rsp_loc > 63) {
+      for(uint64_t i = rsp_loc+7; i > rsp_loc - 63; i--) {
         if(!mem_map.count(i))
-          mem_map[i] = zero_bv;
+          mem_map[i] = default_stack;
       }
     } else {
-      for(uint64_t i = 0; i < 64; ++i) {
+      for(uint64_t i = 0; i < 72; ++i) {
         if(!mem_map.count(i))
-          mem_map[i] = zero_bv;
+          mem_map[i] = default_stack;
       }
     }
   }
@@ -238,30 +258,6 @@ bool SmtObligationChecker::check_counterexample(
     /** Get output */
     output = traces[0].back().cs;
 
-    /** Count basic blocks... */
-    std::map<size_t, size_t> basic_block_counts;
-    for(auto point : trace) {
-      // if point is at the last line of a basic block in the original program
-      //cout << "POINT" << endl;
-      auto line = point.line_number;
-      //cout << "  line " << line << endl;
-      auto location = program.get_loc(line);
-      auto block = location.first;
-      auto index_in_block = location.second;
-      //cout << "  block " << block << " index " << index_in_block << " size " << program.num_instrs(block) << endl;
-      if(index_in_block == program.num_instrs(block) - 1) {
-        //cout << "  adding to " << block << endl;
-        basic_block_counts[block]++;
-      }
-    }
-
-    /** Adjust output */
-    for(auto pair : basic_block_counts) {
-      auto v = Variable::bb_ghost(pair.first, false).name;
-      //cout << "INCREMENTING " << v << " by " << pair.second << endl;
-      output.shadow[v] += pair.second;
-    }
-
     /** If using a seprate stack we don't get this data back in the counterexample, so ignore it for the sake of making a comparison. */
     Memory expected_stack = expected.stack;
     Memory output_stack = output.stack;
@@ -319,14 +315,6 @@ void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpTy
 
   size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
   size_t end_index = start_index + cfg.num_instrs(bb);
-
-  /** increment ghost variable, if needed */
-  if(basic_block_ghosts_) {
-    auto name = Variable::bb_ghost(bb, false).name;
-    auto old = state.shadow[name];
-    auto updated = old + SymBitVector::constant(64, 1);
-    state.shadow[name] = updated;
-  }
 
   /** symbolically execute each instruction */
   for (size_t i = start_index; i < end_index; ++i) {
@@ -402,11 +390,6 @@ void SmtObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpTy
 }
 
 
-void SmtObligationChecker::add_basic_block_ghosts(SymState& ss, const Cfg& cfg, string suffix) {
-  if (basic_block_ghosts_)
-    ss.add_basic_block_ghosts(cfg, suffix);
-}
-
 void SmtObligationChecker::return_error(Callback& callback, string& s, void* optional, uint64_t smt_duration, uint64_t gen_duration) const {
   ObligationChecker::Result result;
   result.verified = false;
@@ -435,8 +418,6 @@ bool SmtObligationChecker::generate_arm_testcases(
     
   SymState state_t("1");
   SymState state_r("2");
-  add_basic_block_ghosts(state_t, target, "1");
-  add_basic_block_ghosts(state_r, rewrite, "2");
   FlatMemory target_flat(separate_stack);
   FlatMemory rewrite_flat(separate_stack);
   state_t.memory = &target_flat;
@@ -456,8 +437,8 @@ bool SmtObligationChecker::generate_arm_testcases(
     return false; 
   } else {
     cout << "... extracting model" << endl;
-    target_tc = state_from_model("_1", SymState::get_ghost_names(target));
-    rewrite_tc = state_from_model("_2", SymState::get_ghost_names(rewrite));
+    target_tc = state_from_model("_1");
+    rewrite_tc = state_from_model("_2");
 
     vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
     other_maps.push_back(target_flat.get_access_list());
@@ -465,8 +446,12 @@ bool SmtObligationChecker::generate_arm_testcases(
     auto other_map = append_maps(other_maps);
 
     // doesn't really matter if these fail or not...
-    build_testcase_from_array(target_tc, target_flat.get_start_variable(), other_map, separate_stack);
-    build_testcase_from_array(rewrite_tc, rewrite_flat.get_start_variable(), other_map, separate_stack);
+    build_testcase_from_array(target_tc, target_flat.get_start_variable(), 
+                                         target_flat.get_stack_start_variables(),
+                                         other_map, separate_stack);
+    build_testcase_from_array(rewrite_tc, rewrite_flat.get_start_variable(), 
+                                          rewrite_flat.get_stack_start_variables(),
+                                          other_map, separate_stack);
 
     cout << "... running sandbox / statgen for target" << endl;
     Sandbox sb1;
@@ -587,9 +572,6 @@ void SmtObligationChecker::check(
 
   SymState state_t("1_INIT");
   SymState state_r("2_INIT");
-
-  add_basic_block_ghosts(state_t, target, "1_INIT");
-  add_basic_block_ghosts(state_r, rewrite, "2_INIT");
 
   bool separate_stack = separate_stack_ || override_separate_stack;
   //OBLIG_DEBUG(cout << "separate_stack = " << separate_stack << endl;)
@@ -864,14 +846,9 @@ void SmtObligationChecker::check(
   SymState state_t_final("1_FINAL");
   SymState state_r_final("2_FINAL");
 
-  add_basic_block_ghosts(state_t_final, target, "1_FINAL");
-  add_basic_block_ghosts(state_r_final, rewrite, "2_FINAL");
-  auto target_ghost_names = SymState::get_ghost_names(target);
-  auto rewrite_ghost_names = SymState::get_ghost_names(rewrite);
-
-  for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe(), target_ghost_names))
+  for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe(), {}))
     constraints.push_back(it);
-  for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe(), rewrite_ghost_names))
+  for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe(), {}))
     constraints.push_back(it);
 
   // Add any extra memory constraints that are needed
@@ -1001,10 +978,10 @@ void SmtObligationChecker::check(
 
   if (is_sat) {
     bool have_ceg;
-    CpuState ceg_t = state_from_model("_1_INIT", target_ghost_names);
-    CpuState ceg_r = state_from_model("_2_INIT", rewrite_ghost_names);
-    CpuState ceg_tf = state_from_model("_1_FINAL", target_ghost_names);
-    CpuState ceg_rf = state_from_model("_2_FINAL", rewrite_ghost_names);
+    CpuState ceg_t = state_from_model("_1_INIT");
+    CpuState ceg_r = state_from_model("_2_INIT");
+    CpuState ceg_tf = state_from_model("_1_FINAL");
+    CpuState ceg_rf = state_from_model("_2_FINAL");
 
     bool ok = true;
     if (flat_model) {
@@ -1016,10 +993,14 @@ void SmtObligationChecker::check(
       other_maps.push_back(rewrite_flat->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_from_array(ceg_t, target_flat->get_start_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_r, rewrite_flat->get_start_variable(), other_map, separate_stack);
-      build_testcase_from_array(ceg_tf, target_flat->get_variable(), other_map, separate_stack);
-      build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_t, target_flat->get_start_variable(), 
+                                             target_flat->get_stack_start_variables(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_r, rewrite_flat->get_start_variable(),
+                                             rewrite_flat->get_stack_start_variables(), other_map, separate_stack);
+      build_testcase_from_array(ceg_tf, target_flat->get_variable(), 
+                                        target_flat->get_stack_end_variables(), other_map, separate_stack);
+      build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), 
+                                        rewrite_flat->get_stack_end_variables(), other_map, separate_stack);
 
     } else if (arm_model) {
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
@@ -1030,10 +1011,14 @@ void SmtObligationChecker::check(
       other_maps.push_back(rewrite_arm->get_access_list());
       auto other_map = append_maps(other_maps);
 
-      ok &= build_testcase_from_array(ceg_t, target_arm->get_start_variable(), other_map, separate_stack);
-      ok &= build_testcase_from_array(ceg_r, rewrite_arm->get_start_variable(), other_map, separate_stack);
-      build_testcase_from_array(ceg_tf, target_arm->get_variable(), other_map, separate_stack);
-      build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_t, target_arm->get_start_variable(), 
+                                             target_arm->get_stack_start_variables(), other_map, separate_stack);
+      ok &= build_testcase_from_array(ceg_r, rewrite_arm->get_start_variable(), 
+                                             rewrite_arm->get_stack_start_variables(), other_map, separate_stack);
+      build_testcase_from_array(ceg_tf, target_arm->get_variable(), 
+                                        target_arm->get_stack_end_variables(), other_map, separate_stack);
+      build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), 
+                                        rewrite_arm->get_stack_end_variables(), other_map, separate_stack);
     }
 
     if (!ok) {
@@ -1112,8 +1097,8 @@ void SmtObligationChecker::check(
 
 
 
-CpuState SmtObligationChecker::state_from_model(const string& name_suffix,
-                                    vector<string> shadow_vars) {
+CpuState SmtObligationChecker::state_from_model(const string& name_suffix) {
+
   CpuState cs;
 
   // 64-bit GP registers
@@ -1139,13 +1124,6 @@ CpuState SmtObligationChecker::state_from_model(const string& name_suffix,
     stringstream name;
     name << eflags[i] << name_suffix;
     cs.rf.set(eflags[i].index(), solver_.get_model_bool(name.str()));
-  }
-
-  // shadow variables
-  for(auto var : shadow_vars) {
-    stringstream name;
-    name << var << name_suffix;
-    cs.shadow[var] = solver_.get_model_bv(name.str(), 64).get_fixed_quad(0);
   }
 
   // Figure out error code

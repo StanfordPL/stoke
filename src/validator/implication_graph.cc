@@ -42,9 +42,6 @@ size_t ImplicationGraph::compute(size_t i1, size_t i2) {
       SymState ts("TARGET");
       SymState rs("REWRITE");
 
-      ts.add_basic_block_ghosts(target_, "TARGET");
-      rs.add_basic_block_ghosts(rewrite_, "REWRITE");
-
       ts.memory = new FlatMemory(separate_stack_);
       rs.memory = new FlatMemory(separate_stack_);
 

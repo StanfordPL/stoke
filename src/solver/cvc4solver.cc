@@ -24,7 +24,7 @@ using namespace stoke;
 using namespace std;
 using namespace CVC4;
 
-#define DEBUG_CVC4(X) { }
+#define DEBUG_CVC4(X) { if(0) { X } }
 
 vector<SymBool> split_constraints_cvc4(const vector<SymBool>& constraints) {
   vector<SymBool> split;
@@ -43,6 +43,17 @@ vector<SymBool> split_constraints_cvc4(const vector<SymBool>& constraints) {
   return split;
 }
 
+Cvc4Solver& Cvc4Solver::init() {
+  smt_ = new CVC4::SmtEngine(&em_);
+  //smt_->setOption("incremental", true);
+  smt_->setOption("produce-assignments", true);
+  smt_->setOption("finite-model-find", true);
+  DEBUG_CVC4(smt_->setOption("produce-assertions", true);)
+  smt_->setTimeLimit(0, true);
+  smt_->setLogic("AUFBV");
+  smt_->push();
+  return *this;
+}
 
 
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
@@ -95,6 +106,17 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
     DEBUG_CVC4(cout << converted << endl;)
     smt_->assertFormula(converted);
   }
+
+  DEBUG_CVC4(
+  static int debug_count = 0;
+  stringstream ss;
+  ss << "cvc4-debug-" << debug_count++;
+  ofstream ofs(ss.str());
+  auto asserts = smt_->getAssertions();
+  for(auto a : asserts)
+    ofs << a << endl;
+  ofs.close();)
+
 
   auto result = smt_->checkSat(em_.mkConst(true));
 

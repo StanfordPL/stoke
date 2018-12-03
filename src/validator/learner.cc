@@ -1193,9 +1193,7 @@ vector<std::shared_ptr<Invariant>> InvariantLearner::learn_equalities(
     vector<CpuState> target_bad;
     vector<CpuState> rewrite_bad;
 
-    bool invariant_ceg_found[equalities->size()];
-    for(size_t i = 0; i < equalities->size(); ++i)
-      invariant_ceg_found[i] = false;
+    vector<bool> invariant_ceg_found(equalities->size(), false);
 
     for (size_t i = 0; i < target_states.size(); ++i) {
 

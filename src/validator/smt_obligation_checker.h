@@ -101,13 +101,15 @@ private:
   Sandbox oc_sandbox_;
 
   /** Extract a CPU state from SMT solver */
-  CpuState state_from_model(const std::string& name_suffix,
-                            std::vector<std::string> shadow_vars);
+  CpuState state_from_model(const std::string& name_suffix);
 
 
-  bool build_testcase_from_array(CpuState&, SymArray variable,
+  /** Populate a CPU state with memory from the model. */
+  bool build_testcase_from_array(CpuState&, SymArray heap, const std::vector<SymArray>& stacks,
                             const std::map<const SymBitVectorAbstract*, uint64_t>& others,
                             bool separate_stack) const;
+  /** Helper for build_testcase_from_array.  Extracts model from an array. */
+  cpputil::BitVector add_to_map(const SymArray& array, std::unordered_map<uint64_t, cpputil::BitVector>& mem_map) const;
 
   /** Make test case for ARM, if possible. */
   bool generate_arm_testcases(

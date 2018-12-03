@@ -265,6 +265,84 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
 }
 
+TEST_F(ValidatorBaseTest, MemoryCounterexample) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "andq $0x100, (%rcx)" << std::endl;
+  target_ << "movq (%rcx), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rcx);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  CpuState ceg;
+  assert_ceg(&ceg);
+
+  auto rcx = ceg.gp[1].get_fixed_quad(0);
+  ASSERT_TRUE(ceg.is_valid(rcx,8));
+  ASSERT_TRUE(ceg.in_range(rcx,8));
+  EXPECT_NE((uint64_t)0x00, ceg.read(rcx,8).get_fixed_quad(0));
+  EXPECT_EQ((uint64_t)0x100, ceg.read(rcx,8).get_fixed_quad(0) & 0x100);
+}
+
+TEST_F(ValidatorBaseTest, MemoryStackCounterexample) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "andq $0x100, (%rsp)" << std::endl;
+  target_ << "movq (%rsp), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rsp);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  CpuState ceg;
+  assert_ceg(&ceg);
+
+  auto rsp = ceg.gp[x64asm::rsp].get_fixed_quad(0);
+  ASSERT_TRUE(ceg.is_valid(rsp,8));
+  ASSERT_TRUE(ceg.in_range(rsp,8));
+  EXPECT_NE((uint64_t)0x00, ceg.read(rsp,8).get_fixed_quad(0));
+  EXPECT_EQ((uint64_t)0x100, ceg.read(rsp,8).get_fixed_quad(0) & 0x100);
+}
+
+TEST_F(ValidatorBaseTest, MemoryStackCounterexample2) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "andq $0x100, %rcx" << std::endl;
+  target_ << "pushq %rcx" << std::endl;
+  target_ << "popq %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rsp + x64asm::rcx);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  CpuState ceg;
+  assert_ceg(&ceg);
+
+  auto rsp = ceg.gp[x64asm::rsp].get_fixed_quad(0);
+  auto rcx = ceg.gp[x64asm::rcx].get_fixed_quad(0);
+  auto rax = ceg.gp[x64asm::rax].get_fixed_quad(0);
+  ASSERT_TRUE(ceg.is_valid(rsp-8,8));
+  ASSERT_TRUE(ceg.in_range(rsp-8,8));
+  EXPECT_NE((uint64_t)0x00, ceg.read(rsp-8,8).get_fixed_quad(0));
+  EXPECT_EQ((uint64_t)0x100, ceg.read(rsp-8,8).get_fixed_quad(0) & 0x100);
+  EXPECT_EQ(rcx & 0x100, ceg.read(rsp-8,8).get_fixed_quad(0) & 0x100);
+  EXPECT_EQ(rax, ceg.read(rsp-8,8).get_fixed_quad(0));
+  EXPECT_EQ(rax, rcx);
+}
+
 TEST_F(ValidatorBaseTest, EflagsCounterexample) {
 
   target_ << ".foo:" << std::endl;

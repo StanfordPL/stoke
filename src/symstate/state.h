@@ -120,11 +120,6 @@ public:
   /** In this variant, we only change the flags if the given condition is true */
   void set_szp_flags(const SymBitVector& v, SymBool condition);
 
-  /** For this CFG add ghost variable for each basic block. */
-  void add_basic_block_ghosts(const Cfg& cfg, std::string suffix);
-  /** Get names of ghost variables for each basic block of Cfg. */
-  static std::vector<std::string> get_ghost_names(const Cfg& cfg);
-
   /** Add constraint */
   void add_constraint(const SymBool& b) {
     constraints.push_back(b);

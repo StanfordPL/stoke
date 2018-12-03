@@ -41,6 +41,7 @@ public:
   {
     cfg_t_ = 0;
     cfg_r_ = 0;
+    oc_.set_separate_stack(true);
   }
 
   ~StraightLineValidatorTest() {
@@ -104,12 +105,12 @@ protected:
 
   /** Check that the validator returns false; check the counterexample
       if given */
-  void assert_ceg(CpuState* ceg = NULL) {
+  void assert_ceg(CpuState* ceg = nullptr, CpuState* end_ceg = nullptr) {
     if (!reset_state())
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
-    if (ceg != NULL) {
+    if (v_.counter_examples_available() && ceg != nullptr) {
       *ceg = v_.get_counter_examples()[0];
 
       // write out the counter-example, and then parse it back in
@@ -126,12 +127,12 @@ protected:
 
   /** Check that the validator returns false, but don't look
       at the counterexample or lack thereof */
-  void assert_ceg_nocheck(CpuState* ceg = NULL) {
+  void assert_ceg_nocheck(CpuState* ceg = nullptr) {
     if (!reset_state())
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE, false);
-    if (ceg != NULL)
+    if (v_.counter_examples_available() && ceg != nullptr)
       *ceg = v_.get_counter_examples()[0];
   }
 

@@ -24,6 +24,7 @@
 
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"
+#include "src/symstate/memory/stack.h"
 #include "src/solver/smtsolver.h"
 
 namespace stoke {
@@ -40,11 +41,6 @@ public:
     finalize_ = false;
     set_interrupt_var(NULL);
     unsound_ = false;
-
-    for(size_t i = 0; i < 6; ++i) {
-      size_t pow2 = (1 << i);
-      stack_[pow2] = SymArray::tmp_var(64, 8*pow2);
-    }
   }
 
   ArmMemory(ArmMemory& other) : SymMemory(other.separate_stack_), solver_(other.solver_) {
@@ -64,6 +60,14 @@ public:
     return start_variable_;
   }
 
+  std::vector<SymArray> get_stack_start_variables() const {
+    return stack_.get_start_variables();
+  }
+
+  std::vector<SymArray> get_stack_end_variables() const {
+    return stack_.get_end_variables();
+  }
+
   SymArray get_variable() {
     if (finalize_)
       return get_end_variable();
@@ -80,14 +84,7 @@ public:
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, DereferenceInfo deref) {
 
     if (separate_stack_ && deref.stack_dereference) {
-      stack_[size/8] = stack_[size/8].update(address, value);
-      //std::cout << "STACK WRITE size=" << size << " address=" << address << " value=" << value << std::endl;
-      //std::cout << "stack[" << size/8 << "] = " << stack_[size/8] << std::endl;
-      /*
-      for (size_t i = 0; i < size/8; ++i) {
-        stack_ = stack_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
-      }
-      */
+      stack_.write(address, value, size);
       return SymBool::_false();
     }
 
@@ -110,15 +107,7 @@ public:
   std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, DereferenceInfo deref) {
 
     if (separate_stack_ && deref.stack_dereference) {
-      SymBitVector value = stack_[size/8][address];
-      //std::cout << "STACK READ size=" << size << " address=" << address << std::endl;
-      //std::cout << "  value=" << value << std::endl;
-      /*
-      SymBitVector value = stack_[address];
-      for (size_t i = 1; i < size/8; ++i) {
-        value = stack_[address + SymBitVector::constant(64, i)] || value;
-      }
-      */
+      auto value = stack_.read(address, size);
       return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
     }
 
@@ -146,7 +135,10 @@ public:
   SymBool equality_constraint(ArmMemory& other);
 
   std::vector<SymBool> get_constraints() {
-    return constraints_;
+    std::vector<SymBool> output = constraints_;
+    auto stack_constraints = stack_.get_constraints();
+    output.insert(output.begin(), stack_constraints.begin(), stack_constraints.end());
+    return output;
   }
 
   /** Get list of accesses accessed (via read or write).  This is needed for
@@ -213,7 +205,7 @@ private:
   SymArray heap_;
   SymArray start_variable_;
   SymArray final_heap_;
-  std::map<size_t, SymArray> stack_;
+  StackMemory stack_;
   bool finalize_;
 
   /** map of (symbolic address, size) pairs accessed. */

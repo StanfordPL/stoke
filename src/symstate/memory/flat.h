@@ -20,6 +20,7 @@
 
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"
+#include "src/symstate/memory/stack.h"
 
 namespace stoke {
 
@@ -34,11 +35,6 @@ public:
     heap_ = variable_;
     variable_up_to_date_ = true;
     no_constraints_ = no_constraints;
-
-    for(size_t i = 0; i < 6; ++i) {
-      size_t pow2 = (1 << i);
-      stack_[pow2] = SymArray::tmp_var(64, 8*pow2);
-    }
 
   }
 
@@ -62,7 +58,10 @@ public:
   SymBool equality_constraint(FlatMemory& other);
 
   std::vector<SymBool> get_constraints() {
-    return constraints_;
+    std::vector<SymBool> output = constraints_;
+    auto stack_constraints = stack_.get_constraints();
+    output.insert(output.begin(), stack_constraints.begin(), stack_constraints.end());
+    return output;
   }
 
   /** Get a variable representing the memory at this state. */
@@ -80,6 +79,14 @@ public:
     return start_variable_;
   }
 
+  std::vector<SymArray> get_stack_start_variables() const {
+    return stack_.get_start_variables();
+  }
+
+  std::vector<SymArray> get_stack_end_variables() const {
+    return stack_.get_end_variables();
+  }
+
   /** Get list of accesses accessed (via read or write).  This is needed for
    * marking relevant cells valid in the counterexample. */
   std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
@@ -89,8 +96,7 @@ public:
   /** The heap state */
   SymArray heap_;
   /** The stack state */
-  //SymArray stack_;
-  std::map<size_t, SymArray> stack_;
+  StackMemory stack_;
   /** Extra constraints needed to make everything work. */
   std::vector<SymBool> constraints_;
 

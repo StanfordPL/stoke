@@ -30,21 +30,12 @@ class Cvc4Solver : public SMTSolver {
 public:
   Cvc4Solver() : SMTSolver(), smt_(NULL), em_(), uninterpreted_(false) {
     smt_ = new CVC4::SmtEngine(&em_);
-    smt_->setOption("incremental", true);
-    smt_->setOption("produce-assignments", true);
-    smt_->setOption("finite-model-find", true);
-    smt_->setTimeLimit(timeout_, true);
-    smt_->setLogic("AUFBV");
-    smt_->push();
+    init();
   }
 
   Cvc4Solver(const Cvc4Solver& s) : SMTSolver(), smt_(NULL), em_(), uninterpreted_(false) {
-    smt_ = new CVC4::SmtEngine(&em_);
-    smt_->setOption("incremental", true);
-    smt_->setOption("produce-assignments", true);
-    smt_->setTimeLimit(s.get_timeout(), true);
-    smt_->setLogic("AUFBV");
-    smt_->push();
+    init();
+    set_timeout(s.get_timeout());
   }
 
   Cvc4Solver& operator=(const Cvc4Solver& s) {
@@ -100,6 +91,8 @@ public:
   }
 
 private:
+
+  Cvc4Solver& init();
 
   CVC4::SmtEngine* smt_;
   CVC4::ExprManager em_;
