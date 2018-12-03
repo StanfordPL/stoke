@@ -758,7 +758,12 @@ bool DdecValidator::test_alignment_predicate(shared_ptr<Invariant> invariant) {
   cout << "BEFORE SIMPLIFY PAA!" << endl;
   dual.print_all();
 
-  dual.simplify();
+  bool simplify_ok = dual.simplify();
+  if(!simplify_ok) {
+    cout << "[verify_dual] Failure. Simplify returned false" << endl;
+    return false;
+  }
+
   cout << "TRYING THIS PAA!" << endl;
   dual.print_all();
   bool works = verify_dual(dual);
