@@ -794,7 +794,7 @@ bool DualAutomata::simplify_remove_edges() {
 
 }
 
-bool DualAutomata::simplify_remove_nodes() {
+bool DualAutomata::simplify_remove_a_node() {
   auto start = start_state();
   auto end = exit_state();
 
@@ -835,11 +835,11 @@ bool DualAutomata::simplify_remove_nodes() {
     prev_edges_.erase(*s);
     next_edges_.erase(*s);
 
-    cout << "[simplify_remove_nodes] changes_made = true" << endl;
+    cout << "[simplify_remove_a_node] changes_made = true" << endl;
     return true;
   }
 
-  cout << "[simplify_remove_nodes] changes_made = false" << endl;
+  cout << "[simplify_remove_a_node] changes_made = false" << endl;
   return false;
 }
 
@@ -855,7 +855,7 @@ bool DualAutomata::simplify() {
     if(simplify_remove_edges())
       changes_made = true;
 
-    while(simplify_remove_nodes())
+    while(simplify_remove_a_node())
       changes_made = true;
 
     if(!too_many_edges_sanity_check())

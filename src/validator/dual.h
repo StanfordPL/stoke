@@ -315,7 +315,7 @@ public:
 
 private:
 
-  bool simplify_remove_nodes();
+  bool simplify_remove_a_node();
   bool simplify_remove_edges();
 
   /** This is a data structure used in learn_state_data and its helpers
