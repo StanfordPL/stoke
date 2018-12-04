@@ -33,6 +33,10 @@
 #include "tools/io/state_diff.h"
 #include "tools/common/version_info.h"
 
+#include <ostream>
+#include <iostream>
+#include <fstream>
+
 //#define DO_DEBUG 0
 #define DO_DEBUG ENABLE_LOCAL_DEBUG
 
@@ -41,6 +45,7 @@
 #define DEBUG_BUILDTC_FROM_ARRAY(X) { if(0) { X } }
 #define BUILD_TC_DEBUG(X) { if(0) { X } }
 #define DEBUG_ARM(X) { if(DO_DEBUG) { X } }
+#define DEBUG_CHECK_CEG(X) { if(1) { X } }
 #define DEBUG_MAP_TC(X) {}
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) {  }
@@ -170,17 +175,18 @@ bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray hea
 
   DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;)
   if(separate_stack) {
-    // allocate some space on the stack, say, 64 bytes, and initialize it (unless precluded)
+    // allocate some space on the stack and initialize it (unless precluded)
+    size_t stack_size=128;
     uint64_t rsp_loc = ceg[rsp];
     DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;)
     BitVector zero_bv(8);
-    if(rsp_loc > 63) {
-      for(uint64_t i = rsp_loc+7; i > rsp_loc - 63; i--) {
+    if(rsp_loc > stack_size-1 && rsp_loc < (uint64_t)(-stack_size)) {
+      for(uint64_t i = rsp_loc+7; i > rsp_loc - stack_size + 1; i--) {
         if(!mem_map.count(i))
           mem_map[i] = default_stack;
       }
     } else {
-      for(uint64_t i = 0; i < 72; ++i) {
+      for(uint64_t i = 0; i < stack_size+8; ++i) {
         if(!mem_map.count(i))
           mem_map[i] = default_stack;
       }
@@ -234,6 +240,25 @@ bool SmtObligationChecker::check_counterexample(
     string name = k ? "rewrite" : "target";
     Cfg cfg(unroll, program.def_ins(), program.live_outs());
 
+    DEBUG_CHECK_CEG(
+    stringstream ss;
+    ss << "ceg-check-debug-";
+    if(k == 0)
+      ss << "target";
+    else
+      ss << "rewrite";
+    ofstream debug(ss.str()+".cfg");
+    debug << cfg.get_function() << endl;
+    debug.close();
+    ofstream debug2(ss.str()+".cs");
+    debug2 << start << endl;
+    debug2.close();
+    cout << "LINEMAP" << endl;
+    for(auto entry : linemap) {
+      cout << entry.first << " -> lineno: " << entry.second.line_number << " bb: " << entry.second.block_number << endl;
+    }
+    )
+
     /** Setup Sandbox */
     Sandbox sb;
     sb.set_abi_check(false);
@@ -258,15 +283,6 @@ bool SmtObligationChecker::check_counterexample(
     /** Get output */
     output = traces[0].back().cs;
 
-    /** If using a seprate stack we don't get this data back in the counterexample, so ignore it for the sake of making a comparison. */
-    Memory expected_stack = expected.stack;
-    Memory output_stack = output.stack;
-    if(separate_stack) { 
-      Memory m;
-      expected.stack = m;
-      output.stack = m;
-    }
-
     /** Compare */
     if(output != expected) {
       cout << "  (Counterexample execution differs in sandbox for " << name << ".)" << endl;
@@ -275,13 +291,8 @@ bool SmtObligationChecker::check_counterexample(
       cout << "  ACTUAL STATE " << endl << output << endl << endl;
       cout << diff_states(expected, output, false, true, x64asm::RegSet::universe());
       cout << "  CODE " << endl << unroll << endl << endl;
+      return false;
     }
-
-    expected.stack = expected_stack;
-    output.stack = output_stack;
-
-    // prefer the sandbox answer over SMT solver for getting counterexample
-    expected = output;
   }
 
   // First, the counterexample has to pass the invariant.
