@@ -1,0 +1,1542 @@
+.\" Process this file with
+.\" groff -man -Tascii SmtEngine.3cvc
+.\"
+.TH SMTENGINE 3cvc "December 2018" "CVC4 release 1.6" "CVC4 Library Interfaces"
+.SH NAME
+SmtEngine \- the primary interface to CVC4's theorem-proving capabilities
+.SH DESCRIPTION
+.B SmtEngine
+is the main entry point into the CVC4 theorem prover API.
+
+.SH SMTENGINE OPTIONS
+
+The SmtEngine is in charge of setting and getting information and options.
+Numerous options are available via the
+.I SmtEngine::setOption()
+call.
+.I SmtEngine::setOption()
+and
+.I SmtEngine::getOption()
+use the following option keys.
+
+.ad l
+
+.RS
+.TP 10
+.I "COMMON OPTIONS"
+.TP
+.B "input-language"
+(InputLanguage) force input language (default is "auto"; see \-\-lang help)
+.TP
+.B "output-language"
+(OutputLanguage) force output language (default is "auto"; see \-\-output\-lang help)
+.TP
+.B "quiet"
+(void) decrease verbosity (may be repeated)
+.TP
+.B "statistics"
+(bool) give statistics on exit
+.TP
+.B "verbose"
+(void) increase verbosity (may be repeated)
+.TP
+.B "copyright"
+(void) show CVC4 copyright information
+.TP
+.B "help"
+(bool) full command line reference
+.TP
+.B "seed"
+(uint64_t) seed for random number generator
+.TP
+.B "show-config"
+(void) show CVC4 static configuration
+.TP
+.B "version"
+(bool) identify this CVC4 binary
+.TP
+.B "strict-parsing"
+(bool) be less tolerant of non\-conforming inputs
+.TP
+.B "cpu-time"
+(bool) measures CPU time if set to true and wall time if false (default false)
+.TP
+.B "dump-to"
+(std::string) all dumping goes to FILE (instead of stdout)
+.TP
+.B "dump"
+(std::string) dump preprocessed assertions, etc., see \-\-dump=help
+.TP
+.B "hard-limit"
+(bool) the resource limit is hard potentially leaving the smtEngine in an unsafe state (should be destroyed and rebuild after resourcing out)
+.TP
+.B "incremental"
+(bool) enable incremental solving
+.TP
+.B "produce-assertions"
+(bool) keep an assertions list (enables get\-assertions command)
+.TP
+.B "produce-models"
+(bool) support the get\-value and get\-model commands
+.TP
+.B "reproducible-resource-limit"
+(unsigned long) enable resource limiting per query
+.TP
+.B "rlimit"
+(unsigned long) enable resource limiting (currently, roughly the number of SAT conflicts)
+.TP
+.B "tlimit-per"
+(unsigned long) enable time limiting per query (give milliseconds)
+.TP
+.B "tlimit"
+(unsigned long) enable time limiting (give milliseconds)
+
+.TP
+.I "ARITHMETIC THEORY OPTIONS"
+.TP
+.B "approx-branch-depth"
+(int16_t) maximum branch depth the approximate solver is allowed to take
+.TP
+.B "arith-no-partial-fun"
+(bool) do not use partial function semantics for arithmetic (not SMT LIB compliant)
+.TP
+.B "arith-prop-clauses"
+(uint16_t) rows shorter than this are propagated as clauses
+.TP
+.B "arith-prop"
+(ArithPropagationMode) turns on arithmetic propagation (default is 'old', see \-\-arith\-prop=help)
+.TP
+.B "arith-rewrite-equalities"
+(bool) turns on the preprocessing rewrite turning equalities into a conjunction of inequalities
+.TP
+.B "collect-pivot-stats"
+(bool) collect the pivot history
+.TP
+.B "cut-all-bounded"
+(bool) turns on the integer solving step of periodically cutting all integer variables that have both upper and lower bounds
+.TP
+.B "dio-decomps"
+(bool) let skolem variables for integer divisibility constraints leak from the dio solver
+.TP
+.B "dio-repeat"
+(bool) handle dio solver constraints in mass or one at a time
+.TP
+.B "dio-solver"
+(bool) turns on Linear Diophantine Equation solver (Griggio, JSAT 2012)
+.TP
+.B "dio-turns"
+(int) turns in a row dio solver cutting gets
+.TP
+.B "error-selection-rule"
+(ErrorSelectionRule) change the pivot rule for the basic variable (default is 'min', see \-\-pivot\-rule help)
+.TP
+.B "fc-penalties"
+(bool) turns on degenerate pivot penalties
+.TP
+.B "heuristic-pivots"
+(int16_t) the number of times to apply the heuristic pivot rule; if N < 0, this defaults to the number of variables; if this is unset, this is tuned by the logic selection
+.TP
+.B "lemmas-on-replay-failure"
+(bool) attempt to use external lemmas if approximate solve integer failed
+.TP
+.B "maxCutsInContext"
+(unsigned) maximum cuts in a given context before signalling a restart
+.TP
+.B "miplib-trick"
+(bool) turns on the preprocessing step of attempting to infer bounds on miplib problems
+.TP
+.B "miplib-trick-subs"
+(unsigned) do substitution for miplib 'tmp' vars if defined in <= N eliminated vars
+.TP
+.B "new-prop"
+(bool) use the new row propagation system
+.TP
+.B "nl-ext"
+(bool) extended approach to non\-linear
+.TP
+.B "nl-ext-ent-conf"
+(bool) check for entailed conflicts in non\-linear solver
+.TP
+.B "nl-ext-factor"
+(bool) use factoring inference in non\-linear solver
+.TP
+.B "nl-ext-inc-prec"
+(bool) whether to increment the precision for irrational function constraints
+.TP
+.B "nl-ext-purify"
+(bool) purify non\-linear terms at preprocess
+.TP
+.B "nl-ext-rbound"
+(bool) use resolution\-style inference for inferring new bounds
+.TP
+.B "nl-ext-rewrite"
+(bool) do rewrites in non\-linear solver
+.TP
+.B "nl-ext-split-zero"
+(bool) intial splits on zero for all variables
+.TP
+.B "nl-ext-tf-taylor-deg"
+(int16_t) initial degree of polynomials for Taylor approximation
+.TP
+.B "nl-ext-tf-tplanes"
+(bool) use non\-terminating tangent plane strategy for transcendental functions for non\-linear
+.TP
+.B "nl-ext-tplanes"
+(bool) use non\-terminating tangent plane strategy for non\-linear
+.TP
+.B "nl-ext-tplanes-interleave"
+(bool) interleave tangent plane strategy for non\-linear
+.TP
+.B "pb-rewrites"
+(bool) apply pseudo boolean rewrites
+.TP
+.B "pivot-threshold"
+(uint16_t) sets the number of pivots using \-\-pivot\-rule per basic variable per simplex instance before using variable order
+.TP
+.B "pp-assert-max-sub-size"
+(unsigned) threshold for substituting an equality in ppAssert
+.TP
+.B "prop-row-length"
+(uint16_t) sets the maximum row length to be used in propagation
+.TP
+.B "replay-early-close-depth"
+(int) multiples of the depths to try to close the approx log eagerly
+.TP
+.B "replay-failure-penalty"
+(int) number of solve integer attempts to skips after a numeric failure
+.TP
+.B "replay-lemma-reject-cut"
+(unsigned) maximum complexity of any coefficient while outputting replaying cut lemmas
+.TP
+.B "replay-num-err-penalty"
+(int) number of solve integer attempts to skips after a numeric failure
+.TP
+.B "replay-reject-cut"
+(unsigned) maximum complexity of any coefficient while replaying cuts
+.TP
+.B "replay-soi-major-threshold"
+(double) threshold for a major tolerance failure by the approximate solver
+.TP
+.B "replay-soi-major-threshold-pen"
+(int) threshold for a major tolerance failure by the approximate solver
+.TP
+.B "replay-soi-minor-threshold"
+(double) threshold for a minor tolerance failure by the approximate solver
+.TP
+.B "replay-soi-minor-threshold-pen"
+(int) threshold for a minor tolerance failure by the approximate solver
+.TP
+.B "restrict-pivots"
+(bool) have a pivot cap for simplex at effort levels below fullEffort
+.TP
+.B "revert-arith-models-on-unsat"
+(bool) revert the arithmetic model to a known safe model on unsat if one is cached
+.TP
+.B "rewrite-divk"
+(bool) rewrite division and mod when by a constant into linear terms
+.TP
+.B "rr-turns"
+(int) round robin turn
+.TP
+.B "se-solve-int"
+(bool) attempt to use the approximate solve integer method on standard effort
+.TP
+.B "simplex-check-period"
+(uint16_t) the number of pivots to do in simplex before rechecking for a conflict on all variables
+.TP
+.B "snorm-infer-eq"
+(bool) infer equalities based on Shostak normalization
+.TP
+.B "soi-qe"
+(bool) use quick explain to minimize the sum of infeasibility conflicts
+.TP
+.B "standard-effort-variable-order-pivots"
+(int16_t) limits the number of pivots in a single invocation of check() at a non\-full effort level using Bland's pivot rule (EXPERTS only)
+.TP
+.B "unate-lemmas"
+(ArithUnateLemmaMode) determines which lemmas to add before solving (default is 'all', see \-\-unate\-lemmas=help)
+.TP
+.B "use-approx"
+(bool) attempt to use an approximate solver
+.TP
+.B "use-fcsimplex"
+(bool) use focusing and converging simplex (FMCAD 2013 submission)
+.TP
+.B "use-soi"
+(bool) use sum of infeasibility simplex (FMCAD 2013 submission)
+.TP
+.I "ARRAYS THEORY OPTIONS"
+.TP
+.B "arrays-config"
+(int) set different array option configurations \- for developers only
+.TP
+.B "arrays-eager-index"
+(bool) turn on eager index splitting for generated array lemmas
+.TP
+.B "arrays-eager-lemmas"
+(bool) turn on eager lemma generation for arrays
+.TP
+.B "arrays-lazy-rintro1"
+(bool) turn on optimization to only perform RIntro1 rule lazily (see Jovanovic/Barrett 2012: Being Careful with Theory Combination)
+.TP
+.B "arrays-model-based"
+(bool) turn on model\-based array solver
+.TP
+.B "arrays-optimize-linear"
+(bool) turn on optimization for linear array terms (see de Moura FMCAD 09 arrays paper)
+.TP
+.B "arrays-prop"
+(int) propagation effort for arrays: 0 is none, 1 is some, 2 is full
+.TP
+.B "arrays-reduce-sharing"
+(bool) use model information to reduce size of care graph for arrays
+.TP
+.B "arrays-weak-equiv"
+(bool) use algorithm from Christ/Hoenicke (SMT 2014)
+.TP
+.I "BASE OPTIONS"
+.TP
+.B "debug"
+(std::string) debug something (e.g. \-d arith), can repeat
+.TP
+.B "parse-only"
+(bool) exit after parsing input
+.TP
+.B "preprocess-only"
+(bool) exit after preprocessing input
+.TP
+.B "print-success"
+(bool) print the "success" output required of SMT\-LIBv2
+.TP
+.B "stats-every-query"
+(bool) in incremental mode, print stats after every satisfiability or validity query
+.TP
+.B "stats-hide-zeros"
+(bool) hide statistics which are zero
+.TP
+.B "trace"
+(std::string) trace something (e.g. \-t pushpop), can repeat
+.TP
+.B "verbosity"
+(int) the verbosity level of CVC4
+.TP
+.B "hide-zero-stats"
+[undocumented]
+.TP
+.B "language"
+[undocumented]
+.TP
+.B "no-statistics"
+[undocumented]
+.TP
+.B "no-statistics-every-query"
+[undocumented]
+.TP
+.B "output-language"
+[undocumented]
+.TP
+.B "show-zero-stats"
+[undocumented]
+.TP
+.B "smtlib-strict"
+SMT\-LIBv2 compliance mode (implies other options)
+.TP
+.B "statistics"
+[undocumented]
+.TP
+.B "statistics-every-query"
+[undocumented]
+.TP
+.B "stats-show-zeros"
+[undocumented]
+.TP
+.I "BITVECTOR THEORY OPTIONS"
+.TP
+.B "bitblast-aig"
+(bool) bitblast by first converting to AIG (implies \-\-bitblast=eager)
+.TP
+.B "bitblast"
+(CVC4::theory::bv::BitblastMode) choose bitblasting mode, see \-\-bitblast=help
+.TP
+.B "bool-to-bv"
+(bool) convert booleans to bit\-vectors of size 1 when possible
+.TP
+.B "bv-abstraction"
+(bool) mcm benchmark abstraction (EXPERTS only)
+.TP
+.B "bv-aig-simp"
+(std::string) abc command to run AIG simplifications (implies \-\-bitblast\-aig, default is "balance;drw") (EXPERTS only)
+.TP
+.B "bv-alg-extf"
+(bool) algebraic inferences for extended functions
+.TP
+.B "bv-algebraic-budget"
+(unsigned) the budget allowed for the algebraic solver in number of SAT conflicts (EXPERTS only)
+.TP
+.B "bv-algebraic-solver"
+(bool) turn on the algebraic solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bv-div-zero-const"
+(bool) always return \-1 on division by zero
+.TP
+.B "bv-eager-explanations"
+(bool) compute bit\-blasting propagation explanations eagerly (EXPERTS only)
+.TP
+.B "bv-eq-slicer"
+(CVC4::theory::bv::BvSlicerMode) turn on the slicing equality solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bv-eq-solver"
+(bool) use the equality engine for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bv-extract-arith"
+(bool) enable rewrite pushing extract [i:0] over arithmetic operations (can blow up) (EXPERTS only)
+.TP
+.B "bv-gauss-elim"
+(bool) simplify formula via Gaussian Elimination if applicable (EXPERTS only)
+.TP
+.B "bv-inequality-solver"
+(bool) turn on the inequality solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bv-intro-pow2"
+(bool) introduce bitvector powers of two as a preprocessing pass (EXPERTS only)
+.TP
+.B "bv-lazy-reduce-extf"
+(bool) reduce extended functions like bv2nat and int2bv at last call instead of full effort
+.TP
+.B "bv-lazy-rewrite-extf"
+(bool) lazily rewrite extended functions like bv2nat and int2bv
+.TP
+.B "bv-num-func"
+(unsigned) number of function symbols in conflicts that are generalized (EXPERTS only)
+.TP
+.B "bv-propagate"
+(bool) use bit\-vector propagation in the bit\-blaster
+.TP
+.B "bv-quick-xplain"
+(bool) minimize bv conflicts using the QuickXplain algorithm (EXPERTS only)
+.TP
+.B "bv-sat-solver"
+(CVC4::theory::bv::SatSolverMode) choose which sat solver to use, see \-\-bv\-sat\-solver=help (EXPERTS only)
+.TP
+.B "bv-skolemize"
+(bool) skolemize arguments for bv abstraction (only does something if \-\-bv\-abstraction is on) (EXPERTS only)
+.TP
+.B "bv-to-bool"
+(bool) lift bit\-vectors of size 1 to booleans when possible
+.TP
+.I "DATATYPES THEORY OPTIONS"
+.TP
+.B "cdt-bisimilar"
+(bool) do bisimilarity check for co\-datatypes
+.TP
+.B "dt-binary-split"
+(bool) do binary splits for datatype constructor types
+.TP
+.B "dt-blast-splits"
+(bool) when applicable, blast splitting lemmas for all variables at once
+.TP
+.B "dt-cyclic"
+(bool) do cyclicity check for datatypes
+.TP
+.B "dt-force-assignment"
+(bool) force the datatypes solver to give specific values to all datatypes terms before answering sat
+.TP
+.B "dt-infer-as-lemmas"
+(bool) always send lemmas out instead of making internal inferences
+.TP
+.B "dt-ref-sk-intro"
+(bool) introduce reference skolems for shorter explanations
+.TP
+.B "dt-rewrite-error-sel"
+(bool) rewrite incorrectly applied selectors to arbitrary ground term (EXPERTS only)
+.TP
+.B "dt-share-sel"
+(bool) internally use shared selectors across multiple constructors
+.TP
+.B "dt-use-testers"
+(bool) do not preprocess away tester predicates
+.TP
+.B "sygus-abort-size"
+(int) tells enumerative sygus to only consider solutions up to term size N (\-1 == no limit, default)
+.TP
+.B "sygus-eval-builtin"
+(bool) use builtin kind for evaluation functions in sygus
+.TP
+.B "sygus-fair-max"
+(bool) use max instead of sum for multi\-function sygus conjectures
+.TP
+.B "sygus-fair"
+(CVC4::theory::SygusFairMode) if and how to apply fairness for sygus
+.TP
+.B "sygus-opt1"
+(bool) sygus experimental option
+.TP
+.B "sygus-sym-break"
+(bool) simple sygus sym break lemmas
+.TP
+.B "sygus-sym-break-dynamic"
+(bool) dynamic sygus sym break lemmas
+.TP
+.B "sygus-sym-break-lazy"
+(bool) lazily add symmetry breaking lemmas for terms
+.TP
+.B "sygus-sym-break-pbe"
+(bool) sygus sym break lemmas based on pbe conjectures
+.TP
+.B "sygus-sym-break-rlv"
+(bool) add relevancy conditions to symmetry breaking lemmas
+.TP
+.I "DECISION HEURISTICS OPTIONS"
+.TP
+.B "decision-random-weight"
+(int) assign random weights to nodes between 0 and N\-1 (0: disable) (EXPERTS only)
+.TP
+.B "decision-threshold"
+(decision::DecisionWeight) ignore all nodes greater than threshold in first attempt to pick decision (EXPERTS only)
+.TP
+.B "decision-use-weight"
+(bool) use the weight nodes (locally, by looking at children) to direct recursive search (EXPERTS only)
+.TP
+.B "decision-weight-internal"
+(decision::DecisionWeightInternal) computer weights of internal nodes using children: off, max, sum, usr1 (meaning evolving) (EXPERTS only)
+.TP
+.B "decision-mode"
+(decision::DecisionMode) choose decision mode, see \-\-decision=help
+.TP
+.I "EXPRESSION PACKAGE OPTIONS"
+.TP
+.B "default-dag-thresh"
+(int) dagify common subexprs appearing > N times (1 == default, 0 == don't dagify)
+.TP
+.B "default-expr-depth"
+(int) print exprs to depth N (0 == default, \-1 == no limit)
+.TP
+.B "eager-type-checking"
+(bool) type check expressions immediately on creation (debug builds only)
+.TP
+.B "print-expr-types"
+(bool) print types with variables when printing exprs
+.TP
+.B "type-checking"
+(bool) never type check expressions
+.TP
+.B "dag-thresh"
+[undocumented]
+.TP
+.B "dag-threshold"
+[undocumented]
+.TP
+.B "expr-depth"
+[undocumented]
+.TP
+.B "no-type-checking"
+[undocumented]
+.TP
+.I "IDL OPTIONS"
+.TP
+.B "idl-rewrite-equalities"
+(bool) enable rewriting equalities into two inequalities in IDL solver (default is disabled)
+.TP
+.I "DRIVER OPTIONS"
+.TP
+.B "continued-execution"
+(bool) continue executing commands, even on error
+.TP
+.B "early-exit"
+(bool) do not run destructors at exit; default on except in debug builds (EXPERTS only)
+.TP
+.B "fallback-sequential"
+(bool) Switch to sequential mode (instead of printing an error) if it can't be solved in portfolio mode
+.TP
+.B "filter-lemma-length"
+(int) don't share (among portfolio threads) lemmas strictly longer than N
+.TP
+.B "incremental-parallel"
+(bool) Use parallel solver even in incremental mode (may print 'unknown's at times)
+.TP
+.B "interactive"
+(bool) force interactive/non\-interactive mode
+.TP
+.B "interactive-prompt"
+(bool) interactive prompting while in interactive mode
+.TP
+.B "segv-spin"
+(bool) spin on segfault/other crash waiting for gdb
+.TP
+.B "show-debug-tags"
+(void) show all available tags for debugging
+.TP
+.B "show-trace-tags"
+(void) show all available tags for tracing
+.TP
+.B "tear-down-incremental"
+(int) implement PUSH/POP/multi\-query by destroying and recreating SmtEngine every N queries (EXPERTS only)
+.TP
+.B "thread-stack"
+(unsigned) stack size for worker threads in MB (0 means use Boost/thread lib default)
+.TP
+.B "threadN"
+(void) configures portfolio thread N (0..#threads\-1)
+.TP
+.B "threads"
+(unsigned) Total number of threads for portfolio
+.TP
+.B "wait-to-join"
+(bool) wait for other threads to join before quitting (EXPERTS only)
+.TP
+.B "license"
+[undocumented]
+.TP
+.B "segv-nospin"
+[undocumented]
+.TP
+.I "PARSER OPTIONS"
+.TP
+.B "filesystem-access"
+(bool) [undocumented]
+.TP
+.B "global-declarations"
+(bool) force all declarations and definitions to be global
+.TP
+.B "mmap"
+(bool) memory map file input
+.TP
+.B "semantic-checks"
+(bool) disable ALL semantic checks, including type checks
+.TP
+.B "no-checking"
+[undocumented]
+.TP
+.B "no-include-file"
+[undocumented]
+.TP
+.I "PRINTING OPTIONS"
+.TP
+.B "inst-format"
+(InstFormatMode) print format mode for instantiations, see \-\-inst\-format=help
+.TP
+.B "model-format"
+(ModelFormatMode) print format mode for models, see \-\-model\-format=help
+.TP
+.I "PROOF OPTIONS"
+.TP
+.B "aggressive-core-min"
+(bool) turns on aggressive unsat core minimization (experimental)
+.TP
+.B "allow-empty-dependencies"
+(bool) if unable to track the dependencies of a rewritten/preprocessed assertion, fail silently
+.TP
+.B "fewer-preprocessing-holes"
+(bool) try to eliminate preprocessing holes in proofs
+.TP
+.B "lfsc-letification"
+(bool) turns on global letification in LFSC proofs
+.TP
+.I "SAT LAYER OPTIONS"
+.TP
+.B "minisat-dump-dimacs"
+(bool) instead of solving minisat dumps the asserted clauses in Dimacs format
+.TP
+.B "minisat-elimination"
+(bool) use Minisat elimination
+.TP
+.B "random-frequency"
+(double) sets the frequency of random decisions in the sat solver (P=0.0 by default)
+.TP
+.B "random-seed"
+(uint32_t) sets the random seed for the sat solver
+.TP
+.B "refine-conflicts"
+(bool) refine theory conflict clauses (default false)
+.TP
+.B "restart-int-base"
+(unsigned) sets the base restart interval for the sat solver (N=25 by default)
+.TP
+.B "restart-int-inc"
+(double) sets the restart interval increase factor for the sat solver (F=3.0 by default)
+.TP
+.I "QUANTIFIERS OPTIONS"
+.TP
+.B "ag-miniscope-quant"
+(bool) perform aggressive miniscoping for quantifiers
+.TP
+.B "cbqi"
+(bool) turns on counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-all"
+(bool) apply counterexample\-based instantiation to all quantified formulas
+.TP
+.B "cbqi-bv"
+(bool) use word\-level inversion approach for counterexample\-guided quantifier instantiation for bit\-vectors
+.TP
+.B "cbqi-bv-concat-inv"
+(bool) compute inverse for concat over equalities rather than producing an invertibility condition
+.TP
+.B "cbqi-bv-ineq"
+(CVC4::theory::quantifiers::CbqiBvIneqMode) choose mode for handling bit\-vector inequalities with counterexample\-guided instantiation
+.TP
+.B "cbqi-bv-interleave-value"
+(bool) interleave model value instantiation with word\-level inversion approach
+.TP
+.B "cbqi-bv-linear"
+(bool) linearize adder chains for variables
+.TP
+.B "cbqi-bv-rm-extract"
+(bool) replaces extract terms with variables for counterexample\-guided instantiation for bit\-vectors
+.TP
+.B "cbqi-bv-solve-nl"
+(bool) try to solve non\-linear bv literals using model value projections
+.TP
+.B "cbqi-full"
+(bool) turns on full effort counterexample\-based quantifier instantiation, which may resort to model\-value instantiation
+.TP
+.B "cbqi-innermost"
+(bool) only process innermost quantified formulas in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-lit-dep"
+(bool) dependency lemmas for quantifier alternation in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-midpoint"
+(bool) choose substitutions based on midpoints of lower and upper bounds for counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-min-bounds"
+(bool) use minimally constrained lower/upper bound for counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-model"
+(bool) guide instantiations by model values for counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-multi-inst"
+(bool) when applicable, do multi instantiations per quantifier per round in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-nested-qe"
+(bool) process nested quantified formulas with quantifier elimination in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-nopt"
+(bool) non\-optimal bounds for counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-prereg-inst"
+(bool) preregister ground instantiations in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-recurse"
+(bool) turns on recursive counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-repeat-lit"
+(bool) solve literals more than once in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-round-up-lia"
+(bool) round up integer lower bounds in substitutions for counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-sat"
+(bool) answer sat when quantifiers are asserted with counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-use-inf-int"
+(bool) use integer infinity for vts in counterexample\-based quantifier instantiation
+.TP
+.B "cbqi-use-inf-real"
+(bool) use real infinity for vts in counterexample\-based quantifier instantiation
+.TP
+.B "cegis-sample"
+(CVC4::theory::quantifiers::CegisSampleMode) mode for using samples in the counterexample\-guided inductive synthesis loop
+.TP
+.B "cegqi"
+(bool) counterexample\-guided quantifier instantiation for sygus
+.TP
+.B "cegqi-si-abort"
+(bool) abort if synthesis conjecture is not single invocation
+.TP
+.B "cegqi-si-partial"
+(bool) combined techniques for synthesis conjectures that are partially single invocation
+.TP
+.B "cegqi-si-reconstruct"
+(bool) reconstruct solutions for single invocation conjectures in original grammar
+.TP
+.B "cegqi-si-reconstruct-const"
+(bool) include constants when reconstruct solutions for single invocation conjectures in original grammar
+.TP
+.B "cegqi-si-sol-min-core"
+(bool) minimize solutions for single invocation conjectures based on unsat core
+.TP
+.B "cegqi-si-sol-min-inst"
+(bool) minimize individual instantiations for single invocation conjectures based on unsat core
+.TP
+.B "cegqi-si"
+(CVC4::theory::quantifiers::CegqiSingleInvMode) mode for processing single invocation synthesis conjectures
+.TP
+.B "cond-rewrite-quant"
+(bool) conditional rewriting of quantified formulas
+.TP
+.B "cond-var-split-agg-quant"
+(bool) aggressive split quantified formulas that lead to variable eliminations
+.TP
+.B "cond-var-split-quant"
+(bool) split quantified formulas that lead to variable eliminations
+.TP
+.B "conjecture-filter-active-terms"
+(bool) filter based on active terms
+.TP
+.B "conjecture-filter-canonical"
+(bool) filter based on canonicity
+.TP
+.B "conjecture-filter-model"
+(bool) filter based on model
+.TP
+.B "conjecture-gen"
+(bool) generate candidate conjectures for inductive proofs
+.TP
+.B "conjecture-gen-gt-enum"
+(int) number of ground terms to generate for model filtering
+.TP
+.B "conjecture-gen-max-depth"
+(int) maximum depth of terms to consider for conjectures
+.TP
+.B "conjecture-gen-per-round"
+(int) number of conjectures to generate per instantiation round
+.TP
+.B "conjecture-gen-uee-intro"
+(bool) more aggressive merging for universal equality engine, introduces terms
+.TP
+.B "conjecture-no-filter"
+(bool) do not filter conjectures
+.TP
+.B "dt-stc-ind"
+(bool) apply strengthening for existential quantification over datatypes based on structural induction
+.TP
+.B "dt-var-exp-quant"
+(bool) expand datatype variables bound to one constructor in quantifiers
+.TP
+.B "e-matching"
+(bool) whether to do heuristic E\-matching
+.TP
+.B "elim-ext-arith-quant"
+(bool) eliminate extended arithmetic symbols in quantified formulas
+.TP
+.B "elim-taut-quant"
+(bool) eliminate tautological disjuncts of quantified formulas
+.TP
+.B "finite-model-find"
+(bool) use finite model finding heuristic for quantifier instantiation
+.TP
+.B "fmf-bound"
+(bool) finite model finding on bounded quantification
+.TP
+.B "fmf-bound-int"
+(bool) finite model finding on bounded integer quantification
+.TP
+.B "fmf-bound-lazy"
+(bool) enforce bounds for bounded quantification lazily via use of proxy variables
+.TP
+.B "fmf-bound-min-mode"
+(CVC4::theory::quantifiers::FmfBoundMinMode) mode for which types of bounds to minimize via first decision heuristics
+.TP
+.B "fmf-empty-sorts"
+(bool) allow finite model finding to assume sorts that do not occur in ground assertions are empty
+.TP
+.B "fmf-fmc-simple"
+(bool) simple models in full model check for finite model finding
+.TP
+.B "fmf-fresh-dc"
+(bool) use fresh distinguished representative when applying Inst\-Gen techniques
+.TP
+.B "fmf-fun"
+(bool) find models for recursively defined functions, assumes functions are admissible
+.TP
+.B "fmf-fun-rlv"
+(bool) find models for recursively defined functions, assumes functions are admissible, allows empty type when function is irrelevant
+.TP
+.B "fmf-inst-engine"
+(bool) use instantiation engine in conjunction with finite model finding
+.TP
+.B "fmf-inst-gen"
+(bool) enable Inst\-Gen instantiation techniques for finite model finding
+.TP
+.B "fmf-inst-gen-one-quant-per-round"
+(bool) only perform Inst\-Gen instantiation techniques on one quantifier per round
+.TP
+.B "fs-interleave"
+(bool) interleave full saturate instantiation with other techniques
+.TP
+.B "full-saturate-quant"
+(bool) when all other quantifier instantiation strategies fail, instantiate with ground terms from relevant domain, then arbitrary ground terms before answering unknown
+.TP
+.B "full-saturate-quant-rd"
+(bool) whether to use relevant domain first for full saturation instantiation strategy
+.TP
+.B "global-negate"
+(bool) do global negation of input formula
+.TP
+.B "ho-matching"
+(bool) do higher\-order matching algorithm for triggers with variable operators
+.TP
+.B "ho-matching-var-priority"
+(bool) give priority to variable arguments over constant arguments
+.TP
+.B "ho-merge-term-db"
+(bool) merge term indices modulo equality
+.TP
+.B "increment-triggers"
+(bool) generate additional triggers as needed during search
+.TP
+.B "infer-arith-trigger-eq"
+(bool) infer equalities for trigger terms based on solving arithmetic equalities
+.TP
+.B "infer-arith-trigger-eq-exp"
+(bool) record explanations for inferArithTriggerEq
+.TP
+.B "inst-level-input-only"
+(bool) only input terms are assigned instantiation level zero
+.TP
+.B "inst-max-level"
+(int) maximum inst level of terms used to instantiate quantified formulas with (\-1 == no limit, default)
+.TP
+.B "inst-no-entail"
+(bool) do not consider instances of quantified formulas that are currently entailed
+.TP
+.B "inst-no-model-true"
+(bool) do not consider instances of quantified formulas that are currently true in model, if it is available
+.TP
+.B "inst-prop"
+(bool) internal propagation for instantiations for selecting relevant instances
+.TP
+.B "inst-when-phase"
+(int) instantiation rounds quantifiers takes (>=1) before allowing theory combination to happen
+.TP
+.B "inst-when-strict-interleave"
+(bool) ensure theory combination and standard quantifier effort strategies take turns
+.TP
+.B "inst-when-tc-first"
+(bool) allow theory combination to happen once initially, before quantifier strategies are run
+.TP
+.B "inst-when"
+(CVC4::theory::quantifiers::InstWhenMode) when to apply instantiation
+.TP
+.B "int-wf-ind"
+(bool) apply strengthening for integers based on well\-founded induction
+.TP
+.B "ite-dtt-split-quant"
+(bool) split ites with dt testers as conditions
+.TP
+.B "ite-lift-quant"
+(CVC4::theory::quantifiers::IteLiftQuantMode) ite lifting mode for quantified formulas
+.TP
+.B "literal-matching"
+(CVC4::theory::quantifiers::LiteralMatchMode) choose literal matching mode
+.TP
+.B "local-t-ext"
+(bool) do instantiation based on local theory extensions
+.TP
+.B "lte-partial-inst"
+(bool) partially instantiate local theory quantifiers
+.TP
+.B "lte-restrict-inst-closure"
+(bool) treat arguments of inst closure as restricted terms for instantiation
+.TP
+.B "macros-quant"
+(bool) perform quantifiers macro expansion
+.TP
+.B "macros-quant-mode"
+(CVC4::theory::quantifiers::MacrosQuantMode) mode for quantifiers macro expansion
+.TP
+.B "mbqi-interleave"
+(bool) interleave model\-based quantifier instantiation with other techniques
+.TP
+.B "mbqi-one-inst-per-round"
+(bool) only add one instantiation per quantifier per round for mbqi
+.TP
+.B "mbqi-one-quant-per-round"
+(bool) only add instantiations for one quantifier per round for mbqi
+.TP
+.B "mbqi"
+(CVC4::theory::quantifiers::MbqiMode) choose mode for model\-based quantifier instantiation
+.TP
+.B "miniscope-quant"
+(bool) miniscope quantifiers
+.TP
+.B "miniscope-quant-fv"
+(bool) miniscope quantifiers for ground subformulas
+.TP
+.B "multi-trigger-cache"
+(bool) caching version of multi triggers
+.TP
+.B "multi-trigger-linear"
+(bool) implementation of multi triggers where maximum number of instantiations is linear wrt number of ground terms
+.TP
+.B "multi-trigger-priority"
+(bool) only try multi triggers if single triggers give no instantiations
+.TP
+.B "multi-trigger-when-single"
+(bool) select multi triggers when single triggers exist
+.TP
+.B "partial-triggers"
+(bool) use triggers that do not contain all free variables
+.TP
+.B "pre-skolem-quant"
+(bool) apply skolemization eagerly to bodies of quantified formulas
+.TP
+.B "pre-skolem-quant-agg"
+(bool) apply skolemization to quantified formulas aggressively
+.TP
+.B "pre-skolem-quant-nested"
+(bool) apply skolemization to nested quantified formulas
+.TP
+.B "prenex-quant-user"
+(bool) prenex quantified formulas with user patterns
+.TP
+.B "prenex-quant"
+(CVC4::theory::quantifiers::PrenexQuantMode) prenex mode for quantified formulas
+.TP
+.B "pure-th-triggers"
+(bool) use pure theory terms as single triggers
+.TP
+.B "purify-dt-triggers"
+(bool) purify dt triggers, match all constructors of correct form instead of selectors
+.TP
+.B "purify-triggers"
+(bool) purify triggers, e.g. f( x+1 ) becomes f( y ), x mapsto y\-1
+.TP
+.B "qcf-all-conflict"
+(bool) add all available conflicting instances during conflict\-based instantiation
+.TP
+.B "qcf-eager-check-rd"
+(bool) optimization, eagerly check relevant domain of matched position
+.TP
+.B "qcf-eager-test"
+(bool) optimization, test qcf instances eagerly
+.TP
+.B "qcf-nested-conflict"
+(bool) consider conflicts for nested quantifiers
+.TP
+.B "qcf-skip-rd"
+(bool) optimization, skip instances based on possibly irrelevant portions of quantified formulas
+.TP
+.B "qcf-tconstraint"
+(bool) enable entailment checks for t\-constraints in qcf algorithm
+.TP
+.B "qcf-vo-exp"
+(bool) qcf experimental variable ordering
+.TP
+.B "quant-alpha-equiv"
+(bool) infer alpha equivalence between quantified formulas
+.TP
+.B "quant-anti-skolem"
+(bool) perform anti\-skolemization for quantified formulas
+.TP
+.B "quant-cf"
+(bool) enable conflict find mechanism for quantifiers
+.TP
+.B "quant-cf-mode"
+(CVC4::theory::quantifiers::QcfMode) what effort to apply conflict find mechanism
+.TP
+.B "quant-cf-when"
+(CVC4::theory::quantifiers::QcfWhenMode) when to invoke conflict find mechanism for quantifiers
+.TP
+.B "quant-dsplit-mode"
+(CVC4::theory::quantifiers::QuantDSplitMode) mode for dynamic quantifiers splitting
+.TP
+.B "quant-epr"
+(bool) infer whether in effectively propositional fragment, use for cbqi
+.TP
+.B "quant-epr-match"
+(bool) use matching heuristics for EPR instantiation
+.TP
+.B "quant-fun-wd"
+(bool) assume that function defined by quantifiers are well defined
+.TP
+.B "quant-ind"
+(bool) use all available techniques for inductive reasoning
+.TP
+.B "quant-model-ee"
+(bool) use equality engine of model for last call effort
+.TP
+.B "quant-rep-mode"
+(CVC4::theory::quantifiers::QuantRepMode) selection mode for representatives in quantifiers engine
+.TP
+.B "quant-split"
+(bool) apply splitting to quantified formulas based on variable disjoint disjuncts
+.TP
+.B "register-quant-body-terms"
+(bool) consider ground terms within bodies of quantified formulas for matching
+.TP
+.B "relational-triggers"
+(bool) choose relational triggers such as x = f(y), x >= f(y)
+.TP
+.B "relevant-triggers"
+(bool) prefer triggers that are more relevant based on SInE style analysis
+.TP
+.B "rewrite-rules"
+(bool) use rewrite rules module
+.TP
+.B "rr-one-inst-per-round"
+(bool) add one instance of rewrite rule per round
+.TP
+.B "strict-triggers"
+(bool) only instantiate quantifiers with user patterns based on triggers
+.TP
+.B "sygus-add-const-grammar"
+(bool) statically add constants appearing in conjecture to grammars
+.TP
+.B "sygus-auto-unfold"
+(bool) enable approach which automatically unfolds transition systems for directly solving invariant synthesis problems
+.TP
+.B "sygus-bool-ite-return-const"
+(bool) Only use Boolean constants for return values in unification\-based function synthesis
+.TP
+.B "sygus-eval-unfold"
+(bool) do unfolding of sygus evaluation functions
+.TP
+.B "sygus-eval-unfold-bool"
+(bool) do unfolding of Boolean evaluation functions that appear in refinement lemmas
+.TP
+.B "sygus-ext-rew"
+(bool) use extended rewriter for sygus
+.TP
+.B "sygus-grammar-norm"
+(bool) statically normalize sygus grammars based on flattening (linearization)
+.TP
+.B "sygus-inference"
+(bool) attempt to preprocess arbitrary inputs to sygus conjectures
+.TP
+.B "sygus-inv-templ-when-sg"
+(bool) use invariant templates (with solution reconstruction) for syntax guided problems
+.TP
+.B "sygus-inv-templ"
+(CVC4::theory::quantifiers::SygusInvTemplMode) template mode for sygus invariant synthesis (weaken pre\-condition, strengthen post\-condition, or none)
+.TP
+.B "sygus-min-grammar"
+(bool) statically minimize sygus grammars
+.TP
+.B "sygus-pbe"
+(bool) enable approach which unifies conditional solutions, specialized for programming\-by\-examples (pbe) conjectures
+.TP
+.B "sygus-qe-preproc"
+(bool) use quantifier elimination as a preprocessing step for sygus
+.TP
+.B "sygus-ref-eval"
+(bool) direct evaluation of refinement lemmas for conflict analysis
+.TP
+.B "sygus-repair-const"
+(bool) use approach to repair constants in sygus candidate solutions
+.TP
+.B "sygus-rr"
+(bool) use sygus to enumerate and verify correctness of rewrite rules via sampling
+.TP
+.B "sygus-rr-synth"
+(bool) use sygus to enumerate candidate rewrite rules via sampling
+.TP
+.B "sygus-rr-synth-accel"
+(bool) add dynamic symmetry breaking clauses based on candidate rewrites
+.TP
+.B "sygus-rr-synth-check"
+(bool) use satisfiability check to verify correctness of candidate rewrites
+.TP
+.B "sygus-rr-synth-filter-cong"
+(bool) filter candidate rewrites based on congruence
+.TP
+.B "sygus-rr-synth-filter-match"
+(bool) filter candidate rewrites based on matching
+.TP
+.B "sygus-rr-synth-filter-order"
+(bool) filter candidate rewrites based on variable ordering
+.TP
+.B "sygus-rr-verify"
+(bool) use sygus to verify the correctness of rewrite rules via sampling
+.TP
+.B "sygus-rr-verify-abort"
+(bool) abort when sygus\-rr\-verify finds an instance of unsoundness
+.TP
+.B "sygus-sample-grammar"
+(bool) when applicable, use grammar for choosing sample points
+.TP
+.B "sygus-samples"
+(int) number of points to consider when doing sygus rewriter sample testing
+.TP
+.B "sygus-stream"
+(bool) enumerate a stream of solutions instead of terminating after the first one
+.TP
+.B "sygus-templ-embed-grammar"
+(bool) embed sygus templates into grammars
+.TP
+.B "sygus-unif"
+(bool) Unification\-based function synthesis
+.TP
+.B "term-db-mode"
+(CVC4::theory::quantifiers::TermDbMode) which ground terms to consider for instantiation
+.TP
+.B "track-inst-lemmas"
+(bool) track instantiation lemmas (for proofs, unsat cores, qe and synthesis minimization)
+.TP
+.B "trigger-active-sel"
+(CVC4::theory::quantifiers::TriggerActiveSelMode) selection mode to activate triggers
+.TP
+.B "trigger-sel"
+(CVC4::theory::quantifiers::TriggerSelMode) selection mode for triggers
+.TP
+.B "user-pat"
+(CVC4::theory::quantifiers::UserPatMode) policy for handling user\-provided patterns for quantifier instantiation
+.TP
+.B "var-elim-quant"
+(bool) enable simple variable elimination for quantified formulas
+.TP
+.B "var-ineq-elim-quant"
+(bool) enable variable elimination based on infinite projection of unbound arithmetic variables
+.TP
+.I "SEP OPTIONS"
+.TP
+.B "sep-check-neg"
+(bool) check negated spatial assertions
+.TP
+.B "sep-child-refine"
+(bool) child\-specific refinements of negated star, positive wand
+.TP
+.B "sep-deq-c"
+(bool) assume cardinality elements are distinct
+.TP
+.B "sep-exp"
+(bool) experimental flag for sep
+.TP
+.B "sep-min-refine"
+(bool) only add refinement lemmas for minimal (innermost) assertions
+.TP
+.B "sep-pre-skolem-emp"
+(bool) eliminate emp constraint at preprocess time
+.TP
+.I "SETS OPTIONS"
+.TP
+.B "sets-ext"
+(bool) enable extended symbols such as complement and universe in theory of sets
+.TP
+.B "sets-infer-as-lemmas"
+(bool) send inferences as lemmas
+.TP
+.B "sets-proxy-lemmas"
+(bool) introduce proxy variables eagerly to shorten lemmas
+.TP
+.B "sets-rel-eager"
+(bool) standard effort checks for relations
+.TP
+.I "SMT LAYER OPTIONS"
+.TP
+.B "abstract-values"
+(bool) in models, output arrays (and in future, maybe others) using abstract values, as required by the SMT\-LIB standard
+.TP
+.B "bitblast-step"
+(unsigned) amount of resources spent for each bitblast step (EXPERTS only)
+.TP
+.B "bv-sat-conflict-step"
+(unsigned) amount of resources spent for each sat conflict (bitvectors) (EXPERTS only)
+.TP
+.B "check-models"
+(bool) after SAT/INVALID/UNKNOWN, check that the generated model satisfies user assertions
+.TP
+.B "check-proofs"
+(bool) after UNSAT/VALID, machine\-check the generated proof
+.TP
+.B "check-synth-sol"
+(bool) checks whether produced solutions to functions\-to\-synthesize satisfy the conjecture
+.TP
+.B "check-unsat-cores"
+(bool) after UNSAT/VALID, produce and check an unsat core (expensive)
+.TP
+.B "cnf-step"
+(unsigned) amount of resources spent for each call to cnf conversion (EXPERTS only)
+.TP
+.B "decision-step"
+(unsigned) amount of getNext decision calls in the decision engine (EXPERTS only)
+.TP
+.B "diagnostic-output-channel"
+(std::string) set the diagnostic output channel of the solver
+.TP
+.B "dump-instantiations"
+(bool) output instantiations of quantified formulas after every UNSAT/VALID response
+.TP
+.B "dump-models"
+(bool) output models after every SAT/INVALID/UNKNOWN response
+.TP
+.B "dump-proofs"
+(bool) output proofs after every UNSAT/VALID response
+.TP
+.B "dump-synth"
+(bool) output solution for synthesis conjectures after every UNSAT/VALID response
+.TP
+.B "dump-unsat-cores"
+(bool) output unsat cores after every UNSAT/VALID response
+.TP
+.B "dump-unsat-cores-full"
+(bool) dump the full unsat core, including unlabeled assertions
+.TP
+.B "expand-definitions"
+(bool) always expand symbol definitions in output
+.TP
+.B "ext-rew-prep"
+(bool) use extended rewriter as a preprocessing pass
+.TP
+.B "ext-rew-prep-agg"
+(bool) use aggressive extended rewriter as a preprocessing pass
+.TP
+.B "force-logic"
+(std::string) set the logic, and override all further user attempts to change it (EXPERTS only)
+.TP
+.B "force-no-limit-cpu-while-dump"
+(bool) Force no CPU limit when dumping models and proofs
+.TP
+.B "interactive-mode"
+(bool) deprecated name for produce\-assertions
+.TP
+.B "ite-simp"
+(bool) turn on ite simplification (Kim (and Somenzi) et al., SAT 2009)
+.TP
+.B "lemma-step"
+(unsigned) amount of resources spent when adding lemmas (EXPERTS only)
+.TP
+.B "model-u-dt-enum"
+(bool) in models, output uninterpreted sorts as datatype enumerations
+.TP
+.B "omit-dont-cares"
+(bool) When producing a model, omit variables whose value does not matter
+.TP
+.B "on-repeat-ite-simp"
+(bool) do the ite simplification pass again if repeating simplification
+.TP
+.B "parse-step"
+(unsigned) amount of resources spent for each command/expression parsing (EXPERTS only)
+.TP
+.B "preprocess-step"
+(unsigned) amount of resources spent for each preprocessing step in SmtEngine (EXPERTS only)
+.TP
+.B "produce-assignments"
+(bool) support the get\-assignment command
+.TP
+.B "produce-unsat-assumptions"
+(bool) turn on unsat assumptions generation
+.TP
+.B "produce-unsat-cores"
+(bool) turn on unsat core generation
+.TP
+.B "produce-proofs"
+(bool) turn on proof generation
+.TP
+.B "quantifier-step"
+(unsigned) amount of resources spent for quantifier instantiations (EXPERTS only)
+.TP
+.B "regular-output-channel"
+(std::string) set the regular output channel of the solver
+.TP
+.B "repeat-simp"
+(bool) make multiple passes with nonclausal simplifier
+.TP
+.B "replay-log"
+(std::string) replay decisions from file
+.TP
+.B "replay"
+(std::string) replay decisions from file
+.TP
+.B "restart-step"
+(unsigned) amount of resources spent for each theory restart (EXPERTS only)
+.TP
+.B "rewrite-apply-to-const"
+(bool) eliminate function applications, rewriting e.g. f(5) to a new symbol f_5 (EXPERTS only)
+.TP
+.B "rewrite-step"
+(unsigned) amount of resources spent for each rewrite step (EXPERTS only)
+.TP
+.B "sat-conflict-step"
+(unsigned) amount of resources spent for each sat conflict (main sat solver) (EXPERTS only)
+.TP
+.B "simp-ite-compress"
+(bool) enables compressing ites after ite simplification
+.TP
+.B "simp-ite-hunt-zombies"
+(uint32_t) post ite compression enables zombie removal while the number of nodes is above this threshold
+.TP
+.B "simp-with-care"
+(bool) enables simplifyWithCare in ite simplificiation
+.TP
+.B "simplification-mode"
+(SimplificationMode) choose simplification mode, see \-\-simplification=help
+.TP
+.B "solve-int-as-bv"
+(uint32_t) attempt to solve a pure integer satisfiable problem by bitblasting in sufficient bitwidth (experimental)
+.TP
+.B "solve-real-as-int"
+(bool) attempt to solve a pure real satisfiable problem as an integer problem (for non\-linear)
+.TP
+.B "sort-inference"
+(bool) calculate sort inference of input problem, convert the input based on monotonic sorts
+.TP
+.B "static-learning"
+(bool) use static learning (on by default)
+.TP
+.B "sygus-out"
+(SygusSolutionOutMode) output mode for sygus
+.TP
+.B "sygus-print-callbacks"
+(bool) use sygus print callbacks to print sygus terms in the user\-provided form (disable for debugging)
+.TP
+.B "symmetry-breaker-exp"
+(bool) generate symmetry breaking constraints after symmetry detection
+.TP
+.B "theory-check-step"
+(unsigned) amount of resources spent for each theory check call (EXPERTS only)
+.TP
+.B "unconstrained-simp"
+(bool) turn on unconstrained simplification (see Bruttomesso/Brummayer PhD thesis)
+.TP
+.B "no-simplification"
+turn off all simplification (same as \-\-simplification=none)
+.TP
+.I "STRINGS THEORY OPTIONS"
+.TP
+.B "strings-abort-loop"
+(bool) abort when a looping word equation is encountered
+.TP
+.B "strings-binary-csp"
+(bool) use binary search when splitting strings
+.TP
+.B "strings-check-entail-len"
+(bool) check entailment between length terms to reduce splitting
+.TP
+.B "strings-eager"
+(bool) strings eager check
+.TP
+.B "strings-eager-len"
+(bool) strings eager length lemmas
+.TP
+.B "strings-eit"
+(bool) the eager intersection used by the theory of strings
+.TP
+.B "strings-exp"
+(bool) experimental features in the theory of strings
+.TP
+.B "strings-fmf"
+(bool) the finite model finding used by the theory of strings
+.TP
+.B "strings-guess-model"
+(bool) use model guessing to avoid string extended function reductions
+.TP
+.B "strings-infer-as-lemmas"
+(bool) always send lemmas out instead of making internal inferences
+.TP
+.B "strings-infer-sym"
+(bool) strings split on empty string
+.TP
+.B "strings-inm"
+(bool) internal for strings: ignore negative membership constraints (fragment checking is needed, left to users for now)
+.TP
+.B "strings-lazy-pp"
+(bool) perform string preprocessing lazily
+.TP
+.B "strings-lb"
+(unsigned) the strategy of LB rule application: 0\-lazy, 1\-eager, 2\-no
+.TP
+.B "strings-len-geqz"
+(bool) strings length greater than zero lemmas
+.TP
+.B "strings-len-norm"
+(bool) strings length normalization lemma
+.TP
+.B "strings-lprop-csp"
+(bool) do length propagation based on constant splits
+.TP
+.B "strings-min-prefix-explain"
+(bool) minimize explanations for prefix of normal forms in strings
+.TP
+.B "strings-opt1"
+(bool) internal option1 for strings: normal form
+.TP
+.B "strings-opt2"
+(bool) internal option2 for strings: constant regexp splitting
+.TP
+.B "strings-print-ascii"
+(bool) the alphabet contains only printable characters from the standard extended ASCII
+.TP
+.B "strings-process-loop"
+(bool) reduce looping word equations to regular expressions
+.TP
+.B "strings-rexplain-lemmas"
+(bool) regression explanations for string lemmas
+.TP
+.B "strings-sp-emp"
+(bool) strings split on empty string
+.TP
+.B "strings-uf-reduct"
+(bool) use uninterpreted functions when applying extended function reductions
+.TP
+.I "THEORY LAYER OPTIONS"
+.TP
+.B "assign-function-values"
+(bool) assign values for uninterpreted functions in models
+.TP
+.B "condense-function-values"
+(bool) condense values for functions in models rather than explicitly representing them
+.TP
+.B "theoryof-mode"
+(CVC4::theory::TheoryOfMode) mode for Theory::theoryof() (EXPERTS only)
+.TP
+.B "use-theory"
+(std::string) use alternate theory implementation NAME (\-\-use\-theory=help for a list). This option may be repeated or a comma separated list.
+.TP
+.I "UNINTERPRETED FUNCTIONS THEORY OPTIONS"
+.TP
+.B "uf-symmetry-breaker"
+(bool) use UF symmetry breaker (Deharbe et al., CADE 2011)
+.TP
+.B "uf-ho"
+(bool) enable support for higher\-order reasoning
+.TP
+.B "uf-ho-ext"
+(bool) apply extensionality on function symbols
+.TP
+.B "uf-ss-abort-card"
+(int) tells the uf strong solver to only consider models that interpret uninterpreted sorts of cardinality at most N (\-1 == no limit, default)
+.TP
+.B "uf-ss-clique-splits"
+(bool) use cliques instead of splitting on demand to shrink model
+.TP
+.B "uf-ss-eager-split"
+(bool) add splits eagerly for uf strong solver
+.TP
+.B "uf-ss-fair"
+(bool) use fair strategy for finite model finding multiple sorts
+.TP
+.B "uf-ss-fair-monotone"
+(bool) group monotone sorts when enforcing fairness for finite model finding
+.TP
+.B "uf-ss-regions"
+(bool) disable region\-based method for discovering cliques and splits in uf strong solver
+.TP
+.B "uf-ss-totality"
+(bool) always use totality axioms for enforcing cardinality constraints
+.TP
+.B "uf-ss-totality-limited"
+(int) apply totality axioms, but only up to cardinality N (\-1 == do not apply totality axioms, default)
+.TP
+.B "uf-ss-totality-sym-break"
+(bool) apply symmetry breaking for totality axioms
+.TP
+.B "uf-ss"
+(CVC4::theory::uf::UfssMode) mode of operation for uf strong solver.
+.PD
+.RE
+
+.ad b
+
+.SH VERSION
+This manual page refers to
+.B CVC4
+version 1.6.
+.SH BUGS
+An issue tracker for the CVC4 project is maintained at
+.BR https://github.com/CVC4/CVC4/issues .
+.SH AUTHORS
+.B CVC4
+is developed by a team of researchers at Stanford University
+and the University of Iowa.
+See the AUTHORS file in the distribution for a full list of
+contributors.
+.SH "SEE ALSO"
+.BR libcvc4 (3),
+.BR libcvc4parser (3),
+.BR libcvc4compat (3)
+
+Additionally, the CVC4 wiki contains useful information about the
+design and internals of CVC4.  It is maintained at
+.BR http://cvc4.cs.stanford.edu/wiki/ .

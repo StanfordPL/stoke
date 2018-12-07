@@ -80,7 +80,7 @@ endif
 
 WARNING_FLAGS=-Wall -Werror=all -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wvla -fdiagnostics-color=always -Wno-ignored-qualifiers
 STOKE_CXX=ccache $(CXX) $(CXX_FLAGS) -pthread -std=c++14 $(WARNING_FLAGS)
-CVC4_SRCDIR=src/ext/cvc4-1.5
+CVC4_SRCDIR=src/ext/cvc4-1.6
 CVC4_OUTDIR=$(CVC4_SRCDIR)-build
 CVC4_OUTDIR_ABS=$(shell pwd)/$(CVC4_OUTDIR)
 
@@ -379,15 +379,15 @@ src/ext/gtest-1.7.0/libgtest.a:
 cvc4: $(CVC4_OUTDIR)/lib/libcvc4.so
 .PHONY: cvc4
 
-$(CVC4_OUTDIR)/lib/libcvc4.so: $(CVC4_SRCDIR)/configure
-	cd $(CVC4_SRCDIR) && ./configure --prefix=$(CVC4_OUTDIR_ABS) CVC4_BSD_LICENSED_CODE_ONLY=0 --with-cln
-	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
-	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make install
+#$(CVC4_OUTDIR)/lib/libcvc4.so: $(CVC4_SRCDIR)/configure
+#	cd $(CVC4_SRCDIR) && ./configure --prefix=$(CVC4_OUTDIR_ABS) CVC4_BSD_LICENSED_CODE_ONLY=0 --with-cln
+#	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
+#	cd $(CVC4_SRCDIR) && CC="${CC}" CXX="${CXX}" make install
 
-$(CVC4_SRCDIR)/configure:
-	# unpacking via tar to avoid problems with autoconf timestamps
-	cd src/ext && tar -xf cvc4-1.5.tar.gz  
-	cd src/ext && patch -p0 < cvc4.patch
+#$(CVC4_SRCDIR)/configure:
+#	# unpacking via tar to avoid problems with autoconf timestamps
+#	cd src/ext && tar -xf $(CVC4_SRCDIR)
+#	cd src/ext && patch -p0 < cvc4.patch
 
 .PHONY: z3
 z3: src/ext/z3/build/libz3.so

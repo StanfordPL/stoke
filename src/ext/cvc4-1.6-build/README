@@ -1,0 +1,2 @@
+This CVC4 build was configured with:
+  configure --prefix /home/berkeley/stoke2/src/ext/cvc4-1.6-build --with-abc --with-abc-dir=/home/berkeley/stoke2/src/ext/cvc4-1.6/abc/alanmi-abc-53f39c11b58d --with-cadical

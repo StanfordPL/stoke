@@ -1,0 +1,1056 @@
+.\" Process this file with
+.\" groff -man -Tascii cvc4.1
+.\"
+.TH CVC4 1 "December 2018" "CVC4 release 1.6" "User Manuals"
+.SH NAME
+cvc4, pcvc4 \- an automated theorem prover
+.SH SYNOPSIS
+.B cvc4 [
+.I options
+.B ] [
+.I file
+.B ]
+.P
+.B pcvc4 [
+.I options
+.B ] [
+.I file
+.B ]
+.SH DESCRIPTION
+.B cvc4
+is an automated theorem prover for first-order formulas with respect
+to background theories of interest.
+.B pcvc4
+is CVC4's "portfolio" variant, which is capable of running multiple
+CVC4 instances in parallel, configured differently.
+
+With
+.I file
+, commands are read from
+.I file
+and executed.  CVC4 supports the SMT-LIB (versions 1.2 and 2.0) input
+format, as well as its own native \(lqpresentation language\(rq (see
+.BR cvc4 (5)
+), which is similar in many respects to CVC3's presentation language,
+but not identical.
+
+If
+.I file
+is unspecified, standard input is read (and the
+.B CVC4
+presentation language is assumed).  If
+.I file
+is unspecified and
+.B CVC4
+is connected to a terminal, interactive mode is assumed.
+
+.SH COMMON OPTIONS
+
+.IP "Each option marked with [*] has a \-\-no\-OPTIONNAME variant, which reverses the sense of the option."
+
+.IP "\-\-lang=LANG | \-L LANG"
+force input language (default is "auto"; see \-\-lang help)
+.IP "\-\-output\-lang=LANG"
+force output language (default is "auto"; see \-\-output\-lang help)
+.IP "\-\-quiet | \-q"
+decrease verbosity (may be repeated)
+.IP "\-\-stats"
+give statistics on exit [*]
+.IP "\-\-verbose | \-v"
+increase verbosity (may be repeated)
+.IP "\-\-copyright"
+show CVC4 copyright information
+.IP "\-\-help | \-h"
+full command line reference
+.IP "\-\-seed | \-s"
+seed for random number generator
+.IP "\-\-show\-config"
+show CVC4 static configuration
+.IP "\-\-version | \-V"
+identify this CVC4 binary
+.IP "\-\-strict\-parsing"
+be less tolerant of non\-conforming inputs [*]
+.IP "\-\-cpu\-time"
+measures CPU time if set to true and wall time if false (default false) [*]
+.IP "\-\-dump\-to=FILE"
+all dumping goes to FILE (instead of stdout)
+.IP "\-\-dump=MODE"
+dump preprocessed assertions, etc., see \-\-dump=help
+.IP "\-\-hard\-limit"
+the resource limit is hard potentially leaving the smtEngine in an unsafe state (should be destroyed and rebuild after resourcing out) [*]
+.IP "\-\-incremental | \-i"
+enable incremental solving [*]
+.IP "\-\-produce\-assertions"
+keep an assertions list (enables get\-assertions command) [*]
+.IP "\-\-produce\-models | \-m"
+support the get\-value and get\-model commands [*]
+.IP "\-\-rlimit\-per=N"
+enable resource limiting per query
+.IP "\-\-rlimit=N"
+enable resource limiting (currently, roughly the number of SAT conflicts)
+.IP "\-\-tlimit\-per=MS"
+enable time limiting per query (give milliseconds)
+.IP "\-\-tlimit=MS"
+enable time limiting (give milliseconds)
+
+.SH ARITHMETIC THEORY OPTIONS
+.IP "\-\-approx\-branch\-depth"
+maximum branch depth the approximate solver is allowed to take
+.IP "\-\-arith\-no\-partial\-fun"
+do not use partial function semantics for arithmetic (not SMT LIB compliant) [*]
+.IP "\-\-arith\-prop\-clauses"
+rows shorter than this are propagated as clauses
+.IP "\-\-arith\-prop=MODE"
+turns on arithmetic propagation (default is 'old', see \-\-arith\-prop=help)
+.IP "\-\-arith\-rewrite\-equalities"
+turns on the preprocessing rewrite turning equalities into a conjunction of inequalities [*]
+.IP "\-\-collect\-pivot\-stats"
+collect the pivot history [*]
+.IP "\-\-cut\-all\-bounded"
+turns on the integer solving step of periodically cutting all integer variables that have both upper and lower bounds [*]
+.IP "\-\-dio\-decomps"
+let skolem variables for integer divisibility constraints leak from the dio solver [*]
+.IP "\-\-dio\-repeat"
+handle dio solver constraints in mass or one at a time [*]
+.IP "\-\-dio\-solver"
+turns on Linear Diophantine Equation solver (Griggio, JSAT 2012) [*]
+.IP "\-\-dio\-turns"
+turns in a row dio solver cutting gets
+.IP "\-\-error\-selection\-rule=RULE"
+change the pivot rule for the basic variable (default is 'min', see \-\-pivot\-rule help)
+.IP "\-\-fc\-penalties"
+turns on degenerate pivot penalties [*]
+.IP "\-\-heuristic\-pivots=N"
+the number of times to apply the heuristic pivot rule; if N < 0, this defaults to the number of variables; if this is unset, this is tuned by the logic selection
+.IP "\-\-lemmas\-on\-replay\-failure"
+attempt to use external lemmas if approximate solve integer failed [*]
+.IP "\-\-maxCutsInContext"
+maximum cuts in a given context before signalling a restart
+.IP "\-\-miplib\-trick"
+turns on the preprocessing step of attempting to infer bounds on miplib problems [*]
+.IP "\-\-miplib\-trick\-subs=N"
+do substitution for miplib 'tmp' vars if defined in <= N eliminated vars
+.IP "\-\-new\-prop"
+use the new row propagation system [*]
+.IP "\-\-nl\-ext"
+extended approach to non\-linear [*]
+.IP "\-\-nl\-ext\-ent\-conf"
+check for entailed conflicts in non\-linear solver [*]
+.IP "\-\-nl\-ext\-factor"
+use factoring inference in non\-linear solver [*]
+.IP "\-\-nl\-ext\-inc\-prec"
+whether to increment the precision for irrational function constraints [*]
+.IP "\-\-nl\-ext\-purify"
+purify non\-linear terms at preprocess [*]
+.IP "\-\-nl\-ext\-rbound"
+use resolution\-style inference for inferring new bounds [*]
+.IP "\-\-nl\-ext\-rewrite"
+do rewrites in non\-linear solver [*]
+.IP "\-\-nl\-ext\-split\-zero"
+intial splits on zero for all variables [*]
+.IP "\-\-nl\-ext\-tf\-taylor\-deg=N"
+initial degree of polynomials for Taylor approximation
+.IP "\-\-nl\-ext\-tf\-tplanes"
+use non\-terminating tangent plane strategy for transcendental functions for non\-linear [*]
+.IP "\-\-nl\-ext\-tplanes"
+use non\-terminating tangent plane strategy for non\-linear [*]
+.IP "\-\-nl\-ext\-tplanes\-interleave"
+interleave tangent plane strategy for non\-linear [*]
+.IP "\-\-pb\-rewrites"
+apply pseudo boolean rewrites [*]
+.IP "\-\-pivot\-threshold=N"
+sets the number of pivots using \-\-pivot\-rule per basic variable per simplex instance before using variable order
+.IP "\-\-pp\-assert\-max\-sub\-size"
+threshold for substituting an equality in ppAssert
+.IP "\-\-prop\-row\-length=N"
+sets the maximum row length to be used in propagation
+.IP "\-\-replay\-early\-close\-depth"
+multiples of the depths to try to close the approx log eagerly
+.IP "\-\-replay\-failure\-penalty"
+number of solve integer attempts to skips after a numeric failure
+.IP "\-\-replay\-lemma\-reject\-cut"
+maximum complexity of any coefficient while outputting replaying cut lemmas
+.IP "\-\-replay\-num\-err\-penalty"
+number of solve integer attempts to skips after a numeric failure
+.IP "\-\-replay\-reject\-cut"
+maximum complexity of any coefficient while replaying cuts
+.IP "\-\-replay\-soi\-major\-threshold"
+threshold for a major tolerance failure by the approximate solver
+.IP "\-\-replay\-soi\-major\-threshold\-pen"
+threshold for a major tolerance failure by the approximate solver
+.IP "\-\-replay\-soi\-minor\-threshold"
+threshold for a minor tolerance failure by the approximate solver
+.IP "\-\-replay\-soi\-minor\-threshold\-pen"
+threshold for a minor tolerance failure by the approximate solver
+.IP "\-\-restrict\-pivots"
+have a pivot cap for simplex at effort levels below fullEffort [*]
+.IP "\-\-revert\-arith\-models\-on\-unsat"
+revert the arithmetic model to a known safe model on unsat if one is cached [*]
+.IP "\-\-rewrite\-divk"
+rewrite division and mod when by a constant into linear terms [*]
+.IP "\-\-rr\-turns"
+round robin turn
+.IP "\-\-se\-solve\-int"
+attempt to use the approximate solve integer method on standard effort [*]
+.IP "\-\-simplex\-check\-period=N"
+the number of pivots to do in simplex before rechecking for a conflict on all variables
+.IP "\-\-snorm\-infer\-eq"
+infer equalities based on Shostak normalization [*]
+.IP "\-\-soi\-qe"
+use quick explain to minimize the sum of infeasibility conflicts [*]
+.IP "\-\-standard\-effort\-variable\-order\-pivots=N"
+limits the number of pivots in a single invocation of check() at a non\-full effort level using Bland's pivot rule (EXPERTS only)
+.IP "\-\-unate\-lemmas=MODE"
+determines which lemmas to add before solving (default is 'all', see \-\-unate\-lemmas=help)
+.IP "\-\-use\-approx"
+attempt to use an approximate solver [*]
+.IP "\-\-use\-fcsimplex"
+use focusing and converging simplex (FMCAD 2013 submission) [*]
+.IP "\-\-use\-soi"
+use sum of infeasibility simplex (FMCAD 2013 submission) [*]
+.SH ARRAYS THEORY OPTIONS
+.IP "\-\-arrays\-config"
+set different array option configurations \- for developers only
+.IP "\-\-arrays\-eager\-index"
+turn on eager index splitting for generated array lemmas [*]
+.IP "\-\-arrays\-eager\-lemmas"
+turn on eager lemma generation for arrays [*]
+.IP "\-\-arrays\-lazy\-rintro1"
+turn on optimization to only perform RIntro1 rule lazily (see Jovanovic/Barrett 2012: Being Careful with Theory Combination) [*]
+.IP "\-\-arrays\-model\-based"
+turn on model\-based array solver [*]
+.IP "\-\-arrays\-optimize\-linear"
+turn on optimization for linear array terms (see de Moura FMCAD 09 arrays paper) [*]
+.IP "\-\-arrays\-prop"
+propagation effort for arrays: 0 is none, 1 is some, 2 is full
+.IP "\-\-arrays\-reduce\-sharing"
+use model information to reduce size of care graph for arrays [*]
+.IP "\-\-arrays\-weak\-equiv"
+use algorithm from Christ/Hoenicke (SMT 2014) [*]
+.SH BASE OPTIONS
+.IP "\-\-debug=TAG | \-d TAG"
+debug something (e.g. \-d arith), can repeat
+.IP "\-\-parse\-only"
+exit after parsing input [*]
+.IP "\-\-preprocess\-only"
+exit after preprocessing input [*]
+.IP "\-\-print\-success"
+print the "success" output required of SMT\-LIBv2 [*]
+.IP "\-\-stats\-every\-query"
+in incremental mode, print stats after every satisfiability or validity query [*]
+.IP "\-\-stats\-hide\-zeros"
+hide statistics which are zero [*]
+.IP "\-\-trace=TAG | \-t TAG"
+trace something (e.g. \-t pushpop), can repeat
+.IP "\-\-smtlib\-strict"
+SMT\-LIBv2 compliance mode (implies other options)
+.SH BITVECTOR THEORY OPTIONS
+.IP "\-\-bitblast\-aig"
+bitblast by first converting to AIG (implies \-\-bitblast=eager) [*]
+.IP "\-\-bitblast=MODE"
+choose bitblasting mode, see \-\-bitblast=help
+.IP "\-\-bool\-to\-bv"
+convert booleans to bit\-vectors of size 1 when possible [*]
+.IP "\-\-bv\-abstraction"
+mcm benchmark abstraction (EXPERTS only) [*]
+.IP "\-\-bv\-aig\-simp=COMMAND"
+abc command to run AIG simplifications (implies \-\-bitblast\-aig, default is "balance;drw") (EXPERTS only)
+.IP "\-\-bv\-alg\-extf"
+algebraic inferences for extended functions [*]
+.IP "\-\-bv\-algebraic\-budget"
+the budget allowed for the algebraic solver in number of SAT conflicts (EXPERTS only)
+.IP "\-\-bv\-algebraic\-solver"
+turn on the algebraic solver for the bit\-vector theory (only if \-\-bitblast=lazy) [*]
+.IP "\-\-bv\-div\-zero\-const"
+always return \-1 on division by zero [*]
+.IP "\-\-bv\-eager\-explanations"
+compute bit\-blasting propagation explanations eagerly (EXPERTS only) [*]
+.IP "\-\-bv\-eq\-slicer=MODE"
+turn on the slicing equality solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.IP "\-\-bv\-eq\-solver"
+use the equality engine for the bit\-vector theory (only if \-\-bitblast=lazy) [*]
+.IP "\-\-bv\-extract\-arith"
+enable rewrite pushing extract [i:0] over arithmetic operations (can blow up) (EXPERTS only) [*]
+.IP "\-\-bv\-gauss\-elim"
+simplify formula via Gaussian Elimination if applicable (EXPERTS only) [*]
+.IP "\-\-bv\-inequality\-solver"
+turn on the inequality solver for the bit\-vector theory (only if \-\-bitblast=lazy) [*]
+.IP "\-\-bv\-intro\-pow2"
+introduce bitvector powers of two as a preprocessing pass (EXPERTS only) [*]
+.IP "\-\-bv\-lazy\-reduce\-extf"
+reduce extended functions like bv2nat and int2bv at last call instead of full effort [*]
+.IP "\-\-bv\-lazy\-rewrite\-extf"
+lazily rewrite extended functions like bv2nat and int2bv [*]
+.IP "\-\-bv\-num\-func=NUM"
+number of function symbols in conflicts that are generalized (EXPERTS only)
+.IP "\-\-bv\-propagate"
+use bit\-vector propagation in the bit\-blaster [*]
+.IP "\-\-bv\-quick\-xplain"
+minimize bv conflicts using the QuickXplain algorithm (EXPERTS only) [*]
+.IP "\-\-bv\-sat\-solver=MODE"
+choose which sat solver to use, see \-\-bv\-sat\-solver=help (EXPERTS only)
+.IP "\-\-bv\-skolemize"
+skolemize arguments for bv abstraction (only does something if \-\-bv\-abstraction is on) (EXPERTS only) [*]
+.IP "\-\-bv\-to\-bool"
+lift bit\-vectors of size 1 to booleans when possible [*]
+.SH DATATYPES THEORY OPTIONS
+.IP "\-\-cdt\-bisimilar"
+do bisimilarity check for co\-datatypes [*]
+.IP "\-\-dt\-binary\-split"
+do binary splits for datatype constructor types [*]
+.IP "\-\-dt\-blast\-splits"
+when applicable, blast splitting lemmas for all variables at once [*]
+.IP "\-\-dt\-cyclic"
+do cyclicity check for datatypes [*]
+.IP "\-\-dt\-force\-assignment"
+force the datatypes solver to give specific values to all datatypes terms before answering sat [*]
+.IP "\-\-dt\-infer\-as\-lemmas"
+always send lemmas out instead of making internal inferences [*]
+.IP "\-\-dt\-ref\-sk\-intro"
+introduce reference skolems for shorter explanations [*]
+.IP "\-\-dt\-rewrite\-error\-sel"
+rewrite incorrectly applied selectors to arbitrary ground term (EXPERTS only) [*]
+.IP "\-\-dt\-share\-sel"
+internally use shared selectors across multiple constructors [*]
+.IP "\-\-dt\-use\-testers"
+do not preprocess away tester predicates [*]
+.IP "\-\-sygus\-abort\-size=N"
+tells enumerative sygus to only consider solutions up to term size N (\-1 == no limit, default)
+.IP "\-\-sygus\-eval\-builtin"
+use builtin kind for evaluation functions in sygus [*]
+.IP "\-\-sygus\-fair\-max"
+use max instead of sum for multi\-function sygus conjectures [*]
+.IP "\-\-sygus\-fair=MODE"
+if and how to apply fairness for sygus
+.IP "\-\-sygus\-opt1"
+sygus experimental option [*]
+.IP "\-\-sygus\-sym\-break"
+simple sygus sym break lemmas [*]
+.IP "\-\-sygus\-sym\-break\-dynamic"
+dynamic sygus sym break lemmas [*]
+.IP "\-\-sygus\-sym\-break\-lazy"
+lazily add symmetry breaking lemmas for terms [*]
+.IP "\-\-sygus\-sym\-break\-pbe"
+sygus sym break lemmas based on pbe conjectures [*]
+.IP "\-\-sygus\-sym\-break\-rlv"
+add relevancy conditions to symmetry breaking lemmas [*]
+.SH DECISION HEURISTICS OPTIONS
+.IP "\-\-decision\-random\-weight=N"
+assign random weights to nodes between 0 and N\-1 (0: disable) (EXPERTS only)
+.IP "\-\-decision\-threshold=N"
+ignore all nodes greater than threshold in first attempt to pick decision (EXPERTS only)
+.IP "\-\-decision\-use\-weight"
+use the weight nodes (locally, by looking at children) to direct recursive search (EXPERTS only) [*]
+.IP "\-\-decision\-weight\-internal=HOW"
+computer weights of internal nodes using children: off, max, sum, usr1 (meaning evolving) (EXPERTS only)
+.IP "\-\-decision=MODE"
+choose decision mode, see \-\-decision=help
+.SH EXPRESSION PACKAGE OPTIONS
+.IP "\-\-default\-dag\-thresh=N"
+dagify common subexprs appearing > N times (1 == default, 0 == don't dagify)
+.IP "\-\-default\-expr\-depth=N"
+print exprs to depth N (0 == default, \-1 == no limit)
+.IP "\-\-eager\-type\-checking"
+type check expressions immediately on creation (debug builds only) [*]
+.IP "\-\-print\-expr\-types"
+print types with variables when printing exprs [*]
+.IP "\-\-type\-checking"
+never type check expressions
+.SH IDL OPTIONS
+.IP "\-\-idl\-rewrite\-equalities"
+enable rewriting equalities into two inequalities in IDL solver (default is disabled) [*]
+.SH DRIVER OPTIONS
+.IP "\-\-continued\-execution"
+continue executing commands, even on error [*]
+.IP "\-\-early\-exit"
+do not run destructors at exit; default on except in debug builds (EXPERTS only) [*]
+.IP "\-\-fallback\-sequential"
+Switch to sequential mode (instead of printing an error) if it can't be solved in portfolio mode [*]
+.IP "\-\-filter\-lemma\-length=N"
+don't share (among portfolio threads) lemmas strictly longer than N
+.IP "\-\-incremental\-parallel"
+Use parallel solver even in incremental mode (may print 'unknown's at times) [*]
+.IP "\-\-interactive"
+force interactive/non\-interactive mode [*]
+.IP "\-\-segv\-spin"
+spin on segfault/other crash waiting for gdb [*]
+.IP "\-\-show\-debug\-tags"
+show all available tags for debugging
+.IP "\-\-show\-trace\-tags"
+show all available tags for tracing
+.IP "\-\-tear\-down\-incremental=N"
+implement PUSH/POP/multi\-query by destroying and recreating SmtEngine every N queries (EXPERTS only)
+.IP "\-\-thread\-stack=N"
+stack size for worker threads in MB (0 means use Boost/thread lib default)
+.IP "\-\-threadN=string"
+configures portfolio thread N (0..#threads\-1)
+.IP "\-\-threads=N"
+Total number of threads for portfolio
+.IP "\-\-wait\-to\-join"
+wait for other threads to join before quitting (EXPERTS only) [*]
+.SH PARSER OPTIONS
+.IP "\-\-mmap"
+memory map file input [*]
+.SH PRINTING OPTIONS
+.IP "\-\-inst\-format=MODE"
+print format mode for instantiations, see \-\-inst\-format=help
+.IP "\-\-model\-format=MODE"
+print format mode for models, see \-\-model\-format=help
+.SH PROOF OPTIONS
+.IP "\-\-aggressive\-core\-min"
+turns on aggressive unsat core minimization (experimental) [*]
+.IP "\-\-allow\-empty\-dependencies"
+if unable to track the dependencies of a rewritten/preprocessed assertion, fail silently [*]
+.IP "\-\-fewer\-preprocessing\-holes"
+try to eliminate preprocessing holes in proofs [*]
+.IP "\-\-lfsc\-letification"
+turns on global letification in LFSC proofs [*]
+.SH SAT LAYER OPTIONS
+.IP "\-\-minisat\-dump\-dimacs"
+instead of solving minisat dumps the asserted clauses in Dimacs format [*]
+.IP "\-\-minisat\-elimination"
+use Minisat elimination [*]
+.IP "\-\-random\-freq=P"
+sets the frequency of random decisions in the sat solver (P=0.0 by default)
+.IP "\-\-random\-seed=S"
+sets the random seed for the sat solver
+.IP "\-\-refine\-conflicts"
+refine theory conflict clauses (default false) [*]
+.IP "\-\-restart\-int\-base=N"
+sets the base restart interval for the sat solver (N=25 by default)
+.IP "\-\-restart\-int\-inc=F"
+sets the restart interval increase factor for the sat solver (F=3.0 by default)
+.SH QUANTIFIERS OPTIONS
+.IP "\-\-ag\-miniscope\-quant"
+perform aggressive miniscoping for quantifiers [*]
+.IP "\-\-cbqi"
+turns on counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-all"
+apply counterexample\-based instantiation to all quantified formulas [*]
+.IP "\-\-cbqi\-bv"
+use word\-level inversion approach for counterexample\-guided quantifier instantiation for bit\-vectors [*]
+.IP "\-\-cbqi\-bv\-concat\-inv"
+compute inverse for concat over equalities rather than producing an invertibility condition [*]
+.IP "\-\-cbqi\-bv\-ineq=MODE"
+choose mode for handling bit\-vector inequalities with counterexample\-guided instantiation
+.IP "\-\-cbqi\-bv\-interleave\-value"
+interleave model value instantiation with word\-level inversion approach [*]
+.IP "\-\-cbqi\-bv\-linear"
+linearize adder chains for variables [*]
+.IP "\-\-cbqi\-bv\-rm\-extract"
+replaces extract terms with variables for counterexample\-guided instantiation for bit\-vectors [*]
+.IP "\-\-cbqi\-bv\-solve\-nl"
+try to solve non\-linear bv literals using model value projections [*]
+.IP "\-\-cbqi\-full"
+turns on full effort counterexample\-based quantifier instantiation, which may resort to model\-value instantiation [*]
+.IP "\-\-cbqi\-innermost"
+only process innermost quantified formulas in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-lit\-dep"
+dependency lemmas for quantifier alternation in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-midpoint"
+choose substitutions based on midpoints of lower and upper bounds for counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-min\-bounds"
+use minimally constrained lower/upper bound for counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-model"
+guide instantiations by model values for counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-multi\-inst"
+when applicable, do multi instantiations per quantifier per round in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-nested\-qe"
+process nested quantified formulas with quantifier elimination in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-nopt"
+non\-optimal bounds for counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-prereg\-inst"
+preregister ground instantiations in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-recurse"
+turns on recursive counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-repeat\-lit"
+solve literals more than once in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-round\-up\-lia"
+round up integer lower bounds in substitutions for counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-sat"
+answer sat when quantifiers are asserted with counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-use\-inf\-int"
+use integer infinity for vts in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cbqi\-use\-inf\-real"
+use real infinity for vts in counterexample\-based quantifier instantiation [*]
+.IP "\-\-cegis\-sample=MODE"
+mode for using samples in the counterexample\-guided inductive synthesis loop
+.IP "\-\-cegqi"
+counterexample\-guided quantifier instantiation for sygus [*]
+.IP "\-\-cegqi\-si\-abort"
+abort if synthesis conjecture is not single invocation [*]
+.IP "\-\-cegqi\-si\-partial"
+combined techniques for synthesis conjectures that are partially single invocation [*]
+.IP "\-\-cegqi\-si\-reconstruct"
+reconstruct solutions for single invocation conjectures in original grammar [*]
+.IP "\-\-cegqi\-si\-reconstruct\-const"
+include constants when reconstruct solutions for single invocation conjectures in original grammar [*]
+.IP "\-\-cegqi\-si\-sol\-min\-core"
+minimize solutions for single invocation conjectures based on unsat core [*]
+.IP "\-\-cegqi\-si\-sol\-min\-inst"
+minimize individual instantiations for single invocation conjectures based on unsat core [*]
+.IP "\-\-cegqi\-si=MODE"
+mode for processing single invocation synthesis conjectures
+.IP "\-\-cond\-rewrite\-quant"
+conditional rewriting of quantified formulas [*]
+.IP "\-\-cond\-var\-split\-agg\-quant"
+aggressive split quantified formulas that lead to variable eliminations [*]
+.IP "\-\-cond\-var\-split\-quant"
+split quantified formulas that lead to variable eliminations [*]
+.IP "\-\-conjecture\-filter\-active\-terms"
+filter based on active terms [*]
+.IP "\-\-conjecture\-filter\-canonical"
+filter based on canonicity [*]
+.IP "\-\-conjecture\-filter\-model"
+filter based on model [*]
+.IP "\-\-conjecture\-gen"
+generate candidate conjectures for inductive proofs [*]
+.IP "\-\-conjecture\-gen\-gt\-enum=N"
+number of ground terms to generate for model filtering
+.IP "\-\-conjecture\-gen\-max\-depth=N"
+maximum depth of terms to consider for conjectures
+.IP "\-\-conjecture\-gen\-per\-round=N"
+number of conjectures to generate per instantiation round
+.IP "\-\-conjecture\-gen\-uee\-intro"
+more aggressive merging for universal equality engine, introduces terms [*]
+.IP "\-\-conjecture\-no\-filter"
+do not filter conjectures [*]
+.IP "\-\-dt\-stc\-ind"
+apply strengthening for existential quantification over datatypes based on structural induction [*]
+.IP "\-\-dt\-var\-exp\-quant"
+expand datatype variables bound to one constructor in quantifiers [*]
+.IP "\-\-e\-matching"
+whether to do heuristic E\-matching [*]
+.IP "\-\-elim\-ext\-arith\-quant"
+eliminate extended arithmetic symbols in quantified formulas [*]
+.IP "\-\-elim\-taut\-quant"
+eliminate tautological disjuncts of quantified formulas [*]
+.IP "\-\-finite\-model\-find"
+use finite model finding heuristic for quantifier instantiation [*]
+.IP "\-\-fmf\-bound"
+finite model finding on bounded quantification [*]
+.IP "\-\-fmf\-bound\-int"
+finite model finding on bounded integer quantification [*]
+.IP "\-\-fmf\-bound\-lazy"
+enforce bounds for bounded quantification lazily via use of proxy variables [*]
+.IP "\-\-fmf\-bound\-min\-mode=MODE"
+mode for which types of bounds to minimize via first decision heuristics
+.IP "\-\-fmf\-empty\-sorts"
+allow finite model finding to assume sorts that do not occur in ground assertions are empty [*]
+.IP "\-\-fmf\-fmc\-simple"
+simple models in full model check for finite model finding [*]
+.IP "\-\-fmf\-fresh\-dc"
+use fresh distinguished representative when applying Inst\-Gen techniques [*]
+.IP "\-\-fmf\-fun"
+find models for recursively defined functions, assumes functions are admissible [*]
+.IP "\-\-fmf\-fun\-rlv"
+find models for recursively defined functions, assumes functions are admissible, allows empty type when function is irrelevant [*]
+.IP "\-\-fmf\-inst\-engine"
+use instantiation engine in conjunction with finite model finding [*]
+.IP "\-\-fmf\-inst\-gen"
+enable Inst\-Gen instantiation techniques for finite model finding [*]
+.IP "\-\-fmf\-inst\-gen\-one\-quant\-per\-round"
+only perform Inst\-Gen instantiation techniques on one quantifier per round [*]
+.IP "\-\-fs\-interleave"
+interleave full saturate instantiation with other techniques [*]
+.IP "\-\-full\-saturate\-quant"
+when all other quantifier instantiation strategies fail, instantiate with ground terms from relevant domain, then arbitrary ground terms before answering unknown [*]
+.IP "\-\-full\-saturate\-quant\-rd"
+whether to use relevant domain first for full saturation instantiation strategy [*]
+.IP "\-\-global\-negate"
+do global negation of input formula [*]
+.IP "\-\-ho\-matching"
+do higher\-order matching algorithm for triggers with variable operators [*]
+.IP "\-\-ho\-matching\-var\-priority"
+give priority to variable arguments over constant arguments [*]
+.IP "\-\-ho\-merge\-term\-db"
+merge term indices modulo equality [*]
+.IP "\-\-increment\-triggers"
+generate additional triggers as needed during search [*]
+.IP "\-\-infer\-arith\-trigger\-eq"
+infer equalities for trigger terms based on solving arithmetic equalities [*]
+.IP "\-\-infer\-arith\-trigger\-eq\-exp"
+record explanations for inferArithTriggerEq [*]
+.IP "\-\-inst\-level\-input\-only"
+only input terms are assigned instantiation level zero [*]
+.IP "\-\-inst\-max\-level=N"
+maximum inst level of terms used to instantiate quantified formulas with (\-1 == no limit, default)
+.IP "\-\-inst\-no\-entail"
+do not consider instances of quantified formulas that are currently entailed [*]
+.IP "\-\-inst\-no\-model\-true"
+do not consider instances of quantified formulas that are currently true in model, if it is available [*]
+.IP "\-\-inst\-prop"
+internal propagation for instantiations for selecting relevant instances [*]
+.IP "\-\-inst\-when\-phase=N"
+instantiation rounds quantifiers takes (>=1) before allowing theory combination to happen
+.IP "\-\-inst\-when\-strict\-interleave"
+ensure theory combination and standard quantifier effort strategies take turns [*]
+.IP "\-\-inst\-when\-tc\-first"
+allow theory combination to happen once initially, before quantifier strategies are run [*]
+.IP "\-\-inst\-when=MODE"
+when to apply instantiation
+.IP "\-\-int\-wf\-ind"
+apply strengthening for integers based on well\-founded induction [*]
+.IP "\-\-ite\-dtt\-split\-quant"
+split ites with dt testers as conditions [*]
+.IP "\-\-ite\-lift\-quant=MODE"
+ite lifting mode for quantified formulas
+.IP "\-\-literal\-matching=MODE"
+choose literal matching mode
+.IP "\-\-local\-t\-ext"
+do instantiation based on local theory extensions [*]
+.IP "\-\-lte\-partial\-inst"
+partially instantiate local theory quantifiers [*]
+.IP "\-\-lte\-restrict\-inst\-closure"
+treat arguments of inst closure as restricted terms for instantiation [*]
+.IP "\-\-macros\-quant"
+perform quantifiers macro expansion [*]
+.IP "\-\-macros\-quant\-mode=MODE"
+mode for quantifiers macro expansion
+.IP "\-\-mbqi\-interleave"
+interleave model\-based quantifier instantiation with other techniques [*]
+.IP "\-\-mbqi\-one\-inst\-per\-round"
+only add one instantiation per quantifier per round for mbqi [*]
+.IP "\-\-mbqi\-one\-quant\-per\-round"
+only add instantiations for one quantifier per round for mbqi [*]
+.IP "\-\-mbqi=MODE"
+choose mode for model\-based quantifier instantiation
+.IP "\-\-miniscope\-quant"
+miniscope quantifiers [*]
+.IP "\-\-miniscope\-quant\-fv"
+miniscope quantifiers for ground subformulas [*]
+.IP "\-\-multi\-trigger\-cache"
+caching version of multi triggers [*]
+.IP "\-\-multi\-trigger\-linear"
+implementation of multi triggers where maximum number of instantiations is linear wrt number of ground terms [*]
+.IP "\-\-multi\-trigger\-priority"
+only try multi triggers if single triggers give no instantiations [*]
+.IP "\-\-multi\-trigger\-when\-single"
+select multi triggers when single triggers exist [*]
+.IP "\-\-partial\-triggers"
+use triggers that do not contain all free variables [*]
+.IP "\-\-pre\-skolem\-quant"
+apply skolemization eagerly to bodies of quantified formulas [*]
+.IP "\-\-pre\-skolem\-quant\-agg"
+apply skolemization to quantified formulas aggressively [*]
+.IP "\-\-pre\-skolem\-quant\-nested"
+apply skolemization to nested quantified formulas [*]
+.IP "\-\-prenex\-quant\-user"
+prenex quantified formulas with user patterns [*]
+.IP "\-\-prenex\-quant=MODE"
+prenex mode for quantified formulas
+.IP "\-\-pure\-th\-triggers"
+use pure theory terms as single triggers [*]
+.IP "\-\-purify\-dt\-triggers"
+purify dt triggers, match all constructors of correct form instead of selectors [*]
+.IP "\-\-purify\-triggers"
+purify triggers, e.g. f( x+1 ) becomes f( y ), x mapsto y\-1 [*]
+.IP "\-\-qcf\-all\-conflict"
+add all available conflicting instances during conflict\-based instantiation [*]
+.IP "\-\-qcf\-eager\-check\-rd"
+optimization, eagerly check relevant domain of matched position [*]
+.IP "\-\-qcf\-eager\-test"
+optimization, test qcf instances eagerly [*]
+.IP "\-\-qcf\-nested\-conflict"
+consider conflicts for nested quantifiers [*]
+.IP "\-\-qcf\-skip\-rd"
+optimization, skip instances based on possibly irrelevant portions of quantified formulas [*]
+.IP "\-\-qcf\-tconstraint"
+enable entailment checks for t\-constraints in qcf algorithm [*]
+.IP "\-\-qcf\-vo\-exp"
+qcf experimental variable ordering [*]
+.IP "\-\-quant\-alpha\-equiv"
+infer alpha equivalence between quantified formulas [*]
+.IP "\-\-quant\-anti\-skolem"
+perform anti\-skolemization for quantified formulas [*]
+.IP "\-\-quant\-cf"
+enable conflict find mechanism for quantifiers [*]
+.IP "\-\-quant\-cf\-mode=MODE"
+what effort to apply conflict find mechanism
+.IP "\-\-quant\-cf\-when=MODE"
+when to invoke conflict find mechanism for quantifiers
+.IP "\-\-quant\-dsplit\-mode=MODE"
+mode for dynamic quantifiers splitting
+.IP "\-\-quant\-epr"
+infer whether in effectively propositional fragment, use for cbqi [*]
+.IP "\-\-quant\-epr\-match"
+use matching heuristics for EPR instantiation [*]
+.IP "\-\-quant\-fun\-wd"
+assume that function defined by quantifiers are well defined [*]
+.IP "\-\-quant\-ind"
+use all available techniques for inductive reasoning [*]
+.IP "\-\-quant\-model\-ee"
+use equality engine of model for last call effort [*]
+.IP "\-\-quant\-rep\-mode=MODE"
+selection mode for representatives in quantifiers engine
+.IP "\-\-quant\-split"
+apply splitting to quantified formulas based on variable disjoint disjuncts [*]
+.IP "\-\-register\-quant\-body\-terms"
+consider ground terms within bodies of quantified formulas for matching [*]
+.IP "\-\-relational\-triggers"
+choose relational triggers such as x = f(y), x >= f(y) [*]
+.IP "\-\-relevant\-triggers"
+prefer triggers that are more relevant based on SInE style analysis [*]
+.IP "\-\-rewrite\-rules"
+use rewrite rules module [*]
+.IP "\-\-rr\-one\-inst\-per\-round"
+add one instance of rewrite rule per round [*]
+.IP "\-\-strict\-triggers"
+only instantiate quantifiers with user patterns based on triggers [*]
+.IP "\-\-sygus\-add\-const\-grammar"
+statically add constants appearing in conjecture to grammars [*]
+.IP "\-\-sygus\-auto\-unfold"
+enable approach which automatically unfolds transition systems for directly solving invariant synthesis problems [*]
+.IP "\-\-sygus\-bool\-ite\-return\-const"
+Only use Boolean constants for return values in unification\-based function synthesis [*]
+.IP "\-\-sygus\-eval\-unfold"
+do unfolding of sygus evaluation functions [*]
+.IP "\-\-sygus\-eval\-unfold\-bool"
+do unfolding of Boolean evaluation functions that appear in refinement lemmas [*]
+.IP "\-\-sygus\-ext\-rew"
+use extended rewriter for sygus [*]
+.IP "\-\-sygus\-grammar\-norm"
+statically normalize sygus grammars based on flattening (linearization) [*]
+.IP "\-\-sygus\-inference"
+attempt to preprocess arbitrary inputs to sygus conjectures [*]
+.IP "\-\-sygus\-inv\-templ\-when\-sg"
+use invariant templates (with solution reconstruction) for syntax guided problems [*]
+.IP "\-\-sygus\-inv\-templ=MODE"
+template mode for sygus invariant synthesis (weaken pre\-condition, strengthen post\-condition, or none)
+.IP "\-\-sygus\-min\-grammar"
+statically minimize sygus grammars [*]
+.IP "\-\-sygus\-pbe"
+enable approach which unifies conditional solutions, specialized for programming\-by\-examples (pbe) conjectures [*]
+.IP "\-\-sygus\-qe\-preproc"
+use quantifier elimination as a preprocessing step for sygus [*]
+.IP "\-\-sygus\-ref\-eval"
+direct evaluation of refinement lemmas for conflict analysis [*]
+.IP "\-\-sygus\-repair\-const"
+use approach to repair constants in sygus candidate solutions [*]
+.IP "\-\-sygus\-rr"
+use sygus to enumerate and verify correctness of rewrite rules via sampling [*]
+.IP "\-\-sygus\-rr\-synth"
+use sygus to enumerate candidate rewrite rules via sampling [*]
+.IP "\-\-sygus\-rr\-synth\-accel"
+add dynamic symmetry breaking clauses based on candidate rewrites [*]
+.IP "\-\-sygus\-rr\-synth\-check"
+use satisfiability check to verify correctness of candidate rewrites [*]
+.IP "\-\-sygus\-rr\-synth\-filter\-cong"
+filter candidate rewrites based on congruence [*]
+.IP "\-\-sygus\-rr\-synth\-filter\-match"
+filter candidate rewrites based on matching [*]
+.IP "\-\-sygus\-rr\-synth\-filter\-order"
+filter candidate rewrites based on variable ordering [*]
+.IP "\-\-sygus\-rr\-verify"
+use sygus to verify the correctness of rewrite rules via sampling [*]
+.IP "\-\-sygus\-rr\-verify\-abort"
+abort when sygus\-rr\-verify finds an instance of unsoundness [*]
+.IP "\-\-sygus\-sample\-grammar"
+when applicable, use grammar for choosing sample points [*]
+.IP "\-\-sygus\-samples=N"
+number of points to consider when doing sygus rewriter sample testing
+.IP "\-\-sygus\-stream"
+enumerate a stream of solutions instead of terminating after the first one [*]
+.IP "\-\-sygus\-templ\-embed\-grammar"
+embed sygus templates into grammars [*]
+.IP "\-\-sygus\-unif"
+Unification\-based function synthesis [*]
+.IP "\-\-term\-db\-mode"
+which ground terms to consider for instantiation
+.IP "\-\-track\-inst\-lemmas"
+track instantiation lemmas (for proofs, unsat cores, qe and synthesis minimization) [*]
+.IP "\-\-trigger\-active\-sel"
+selection mode to activate triggers
+.IP "\-\-trigger\-sel"
+selection mode for triggers
+.IP "\-\-user\-pat=MODE"
+policy for handling user\-provided patterns for quantifier instantiation
+.IP "\-\-var\-elim\-quant"
+enable simple variable elimination for quantified formulas [*]
+.IP "\-\-var\-ineq\-elim\-quant"
+enable variable elimination based on infinite projection of unbound arithmetic variables [*]
+.SH SEP OPTIONS
+.IP "\-\-sep\-check\-neg"
+check negated spatial assertions [*]
+.IP "\-\-sep\-child\-refine"
+child\-specific refinements of negated star, positive wand [*]
+.IP "\-\-sep\-deq\-c"
+assume cardinality elements are distinct [*]
+.IP "\-\-sep\-exp"
+experimental flag for sep [*]
+.IP "\-\-sep\-min\-refine"
+only add refinement lemmas for minimal (innermost) assertions [*]
+.IP "\-\-sep\-pre\-skolem\-emp"
+eliminate emp constraint at preprocess time [*]
+.SH SETS OPTIONS
+.IP "\-\-sets\-ext"
+enable extended symbols such as complement and universe in theory of sets [*]
+.IP "\-\-sets\-infer\-as\-lemmas"
+send inferences as lemmas [*]
+.IP "\-\-sets\-proxy\-lemmas"
+introduce proxy variables eagerly to shorten lemmas [*]
+.IP "\-\-sets\-rel\-eager"
+standard effort checks for relations [*]
+.SH SMT LAYER OPTIONS
+.IP "\-\-abstract\-values"
+in models, output arrays (and in future, maybe others) using abstract values, as required by the SMT\-LIB standard [*]
+.IP "\-\-bitblast\-step"
+amount of resources spent for each bitblast step (EXPERTS only)
+.IP "\-\-bv\-sat\-conflict\-step"
+amount of resources spent for each sat conflict (bitvectors) (EXPERTS only)
+.IP "\-\-check\-models"
+after SAT/INVALID/UNKNOWN, check that the generated model satisfies user assertions [*]
+.IP "\-\-check\-proofs"
+after UNSAT/VALID, machine\-check the generated proof [*]
+.IP "\-\-check\-synth\-sol"
+checks whether produced solutions to functions\-to\-synthesize satisfy the conjecture [*]
+.IP "\-\-check\-unsat\-cores"
+after UNSAT/VALID, produce and check an unsat core (expensive) [*]
+.IP "\-\-cnf\-step"
+amount of resources spent for each call to cnf conversion (EXPERTS only)
+.IP "\-\-decision\-step"
+amount of getNext decision calls in the decision engine (EXPERTS only)
+.IP "\-\-dump\-instantiations"
+output instantiations of quantified formulas after every UNSAT/VALID response [*]
+.IP "\-\-dump\-models"
+output models after every SAT/INVALID/UNKNOWN response [*]
+.IP "\-\-dump\-proofs"
+output proofs after every UNSAT/VALID response [*]
+.IP "\-\-dump\-synth"
+output solution for synthesis conjectures after every UNSAT/VALID response [*]
+.IP "\-\-dump\-unsat\-cores"
+output unsat cores after every UNSAT/VALID response [*]
+.IP "\-\-dump\-unsat\-cores\-full"
+dump the full unsat core, including unlabeled assertions [*]
+.IP "\-\-ext\-rew\-prep"
+use extended rewriter as a preprocessing pass [*]
+.IP "\-\-ext\-rew\-prep\-agg"
+use aggressive extended rewriter as a preprocessing pass [*]
+.IP "\-\-force\-logic=LOGIC"
+set the logic, and override all further user attempts to change it (EXPERTS only)
+.IP "\-\-force\-no\-limit\-cpu\-while\-dump"
+Force no CPU limit when dumping models and proofs [*]
+.IP "\-\-ite\-simp"
+turn on ite simplification (Kim (and Somenzi) et al., SAT 2009) [*]
+.IP "\-\-lemma\-step"
+amount of resources spent when adding lemmas (EXPERTS only)
+.IP "\-\-model\-u\-dt\-enum"
+in models, output uninterpreted sorts as datatype enumerations [*]
+.IP "\-\-omit\-dont\-cares"
+When producing a model, omit variables whose value does not matter [*]
+.IP "\-\-on\-repeat\-ite\-simp"
+do the ite simplification pass again if repeating simplification [*]
+.IP "\-\-parse\-step"
+amount of resources spent for each command/expression parsing (EXPERTS only)
+.IP "\-\-preprocess\-step"
+amount of resources spent for each preprocessing step in SmtEngine (EXPERTS only)
+.IP "\-\-produce\-assignments"
+support the get\-assignment command [*]
+.IP "\-\-produce\-unsat\-assumptions"
+turn on unsat assumptions generation [*]
+.IP "\-\-produce\-unsat\-cores"
+turn on unsat core generation [*]
+.IP "\-\-proof"
+turn on proof generation [*]
+.IP "\-\-quantifier\-step"
+amount of resources spent for quantifier instantiations (EXPERTS only)
+.IP "\-\-repeat\-simp"
+make multiple passes with nonclausal simplifier [*]
+.IP "\-\-restart\-step"
+amount of resources spent for each theory restart (EXPERTS only)
+.IP "\-\-rewrite\-apply\-to\-const"
+eliminate function applications, rewriting e.g. f(5) to a new symbol f_5 (EXPERTS only) [*]
+.IP "\-\-rewrite\-step"
+amount of resources spent for each rewrite step (EXPERTS only)
+.IP "\-\-sat\-conflict\-step"
+amount of resources spent for each sat conflict (main sat solver) (EXPERTS only)
+.IP "\-\-simp\-ite\-compress"
+enables compressing ites after ite simplification [*]
+.IP "\-\-simp\-ite\-hunt\-zombies"
+post ite compression enables zombie removal while the number of nodes is above this threshold
+.IP "\-\-simp\-with\-care"
+enables simplifyWithCare in ite simplificiation [*]
+.IP "\-\-simplification=MODE"
+choose simplification mode, see \-\-simplification=help
+.IP "\-\-sort\-inference"
+calculate sort inference of input problem, convert the input based on monotonic sorts [*]
+.IP "\-\-static\-learning"
+use static learning (on by default) [*]
+.IP "\-\-sygus\-out=MODE"
+output mode for sygus
+.IP "\-\-sygus\-print\-callbacks"
+use sygus print callbacks to print sygus terms in the user\-provided form (disable for debugging) [*]
+.IP "\-\-symmetry\-breaker\-exp"
+generate symmetry breaking constraints after symmetry detection [*]
+.IP "\-\-theory\-check\-step"
+amount of resources spent for each theory check call (EXPERTS only)
+.IP "\-\-unconstrained\-simp"
+turn on unconstrained simplification (see Bruttomesso/Brummayer PhD thesis) [*]
+.IP "\-\-no\-simplification"
+turn off all simplification (same as \-\-simplification=none)
+.SH STRINGS THEORY OPTIONS
+.IP "\-\-strings\-abort\-loop"
+abort when a looping word equation is encountered [*]
+.IP "\-\-strings\-binary\-csp"
+use binary search when splitting strings [*]
+.IP "\-\-strings\-check\-entail\-len"
+check entailment between length terms to reduce splitting [*]
+.IP "\-\-strings\-eager"
+strings eager check [*]
+.IP "\-\-strings\-eager\-len"
+strings eager length lemmas [*]
+.IP "\-\-strings\-eit"
+the eager intersection used by the theory of strings [*]
+.IP "\-\-strings\-exp"
+experimental features in the theory of strings [*]
+.IP "\-\-strings\-fmf"
+the finite model finding used by the theory of strings [*]
+.IP "\-\-strings\-guess\-model"
+use model guessing to avoid string extended function reductions [*]
+.IP "\-\-strings\-infer\-as\-lemmas"
+always send lemmas out instead of making internal inferences [*]
+.IP "\-\-strings\-infer\-sym"
+strings split on empty string [*]
+.IP "\-\-strings\-inm"
+internal for strings: ignore negative membership constraints (fragment checking is needed, left to users for now) [*]
+.IP "\-\-strings\-lazy\-pp"
+perform string preprocessing lazily [*]
+.IP "\-\-strings\-lb=N"
+the strategy of LB rule application: 0\-lazy, 1\-eager, 2\-no
+.IP "\-\-strings\-len\-geqz"
+strings length greater than zero lemmas [*]
+.IP "\-\-strings\-len\-norm"
+strings length normalization lemma [*]
+.IP "\-\-strings\-lprop\-csp"
+do length propagation based on constant splits [*]
+.IP "\-\-strings\-min\-prefix\-explain"
+minimize explanations for prefix of normal forms in strings [*]
+.IP "\-\-strings\-opt1"
+internal option1 for strings: normal form [*]
+.IP "\-\-strings\-opt2"
+internal option2 for strings: constant regexp splitting [*]
+.IP "\-\-strings\-print\-ascii"
+the alphabet contains only printable characters from the standard extended ASCII [*]
+.IP "\-\-strings\-process\-loop"
+reduce looping word equations to regular expressions [*]
+.IP "\-\-strings\-rexplain\-lemmas"
+regression explanations for string lemmas [*]
+.IP "\-\-strings\-sp\-emp"
+strings split on empty string [*]
+.IP "\-\-strings\-uf\-reduct"
+use uninterpreted functions when applying extended function reductions [*]
+.SH THEORY LAYER OPTIONS
+.IP "\-\-assign\-function\-values"
+assign values for uninterpreted functions in models [*]
+.IP "\-\-condense\-function\-values"
+condense values for functions in models rather than explicitly representing them [*]
+.IP "\-\-theoryof\-mode=MODE"
+mode for Theory::theoryof() (EXPERTS only)
+.IP "\-\-use\-theory=NAME"
+use alternate theory implementation NAME (\-\-use\-theory=help for a list). This option may be repeated or a comma separated list.
+.SH UNINTERPRETED FUNCTIONS THEORY OPTIONS
+.IP "\-\-symmetry\-breaker"
+use UF symmetry breaker (Deharbe et al., CADE 2011) [*]
+.IP "\-\-uf\-ho"
+enable support for higher\-order reasoning [*]
+.IP "\-\-uf\-ho\-ext"
+apply extensionality on function symbols [*]
+.IP "\-\-uf\-ss\-abort\-card=N"
+tells the uf strong solver to only consider models that interpret uninterpreted sorts of cardinality at most N (\-1 == no limit, default)
+.IP "\-\-uf\-ss\-clique\-splits"
+use cliques instead of splitting on demand to shrink model [*]
+.IP "\-\-uf\-ss\-eager\-split"
+add splits eagerly for uf strong solver [*]
+.IP "\-\-uf\-ss\-fair"
+use fair strategy for finite model finding multiple sorts [*]
+.IP "\-\-uf\-ss\-fair\-monotone"
+group monotone sorts when enforcing fairness for finite model finding [*]
+.IP "\-\-uf\-ss\-regions"
+disable region\-based method for discovering cliques and splits in uf strong solver [*]
+.IP "\-\-uf\-ss\-totality"
+always use totality axioms for enforcing cardinality constraints [*]
+.IP "\-\-uf\-ss\-totality\-limited=N"
+apply totality axioms, but only up to cardinality N (\-1 == do not apply totality axioms, default)
+.IP "\-\-uf\-ss\-totality\-sym\-break"
+apply symmetry breaking for totality axioms [*]
+.IP "\-\-uf\-ss=MODE"
+mode of operation for uf strong solver.
+
+.IP "Each option marked with [*] has a \-\-no\-OPTIONNAME variant, which reverses the sense of the option."
+
+.\".SH FILES
+.\".SH ENVIRONMENT
+.SH DIAGNOSTICS
+.B CVC4
+reports all syntactic and semantic errors on standard error.
+.SH HISTORY
+The
+.B CVC4
+effort is the culmination of fifteen years of theorem proving
+research, starting with the
+.I Stanford Validity Checker (SVC)
+in 1996.
+
+SVC's successor, the
+.I Cooperating Validity Checker (CVC),
+had a more optimized internal design, produced proofs, used the
+.I Chaff
+SAT solver, and featured a number of usability
+enhancements.  Its name comes from the cooperative nature of
+decision procedures in Nelson-Oppen theory combination,
+which share amongst each other equalities between shared terms.
+
+CVC Lite, first made available in 2003, was a rewrite of CVC
+that attempted to make CVC
+more flexible (hence the \(lqlite\(rq) while extending the feature set:
+CVCLite supported quantifiers where its predecessors did not.
+CVC3 was a major overhaul of portions of CVC Lite: it added
+better decision procedure implementations, added support for using
+MiniSat in the core, and had generally better performance.
+
+CVC4 is the new version, the fifth generation of this validity
+checker line that is now celebrating fifteen years of heritage.
+It represents a complete re-evaluation of
+the core architecture to be both performant and to serve as a cutting-edge research vehicle
+for the next several years.  Rather than taking CVC3
+and redesigning problem parts, we've taken a clean-room approach,
+starting from scratch.  Before using any designs from CVC3, we have
+thoroughly scrutinized, vetted, and updated them.  Many parts of CVC4
+bear only a superficial resemblance, if any, to their correspondent in CVC3.
+
+However, CVC4 is fundamentally similar to CVC3 and many other
+modern SMT solvers: it is a DPLL(
+.I T
+) solver,
+with a SAT solver at its core and a delegation path to different decision
+procedure implementations, each in charge of solving formulas in some
+background theory.
+
+The re-evaluation and ground-up rewrite was necessitated, we felt, by
+the performance characteristics of CVC3.  CVC3 has many useful
+features, but some core aspects of the design led to high memory use, and
+the use of heavyweight computation (where more nimble engineering
+approaches could suffice) makes CVC3 a much slower prover than other tools.
+As these designs are central to CVC3, a new version was preferable to a
+selective re-engineering, which would have ballooned in short order.
+.SH VERSION
+This manual page refers to
+.B CVC4
+version 1.6.
+.SH BUGS
+An issue tracker for the CVC4 project is maintained at
+.BR https://github.com/CVC4/CVC4/issues .
+.SH AUTHORS
+.B CVC4
+is developed by a team of researchers at Stanford University
+and the University of Iowa.
+See the AUTHORS file in the distribution for a full list of
+contributors.
+.SH "SEE ALSO"
+.BR libcvc4 (3),
+.BR libcvc4parser (3),
+.BR libcvc4compat (3)
+
+Additionally, the CVC4 wiki contains useful information about the
+design and internals of CVC4.  It is maintained at
+.BR http://cvc4.cs.stanford.edu/wiki/ .
