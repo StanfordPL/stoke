@@ -1,14 +1,17 @@
 #!/usr/bin/env ruby
 
-hashes=[]
+require 'set'
+hashes=Set.new
 
 count = 100
 
 ARGF.each do |line|
   if line =~ /Dispatching hash ([a-f0-9]*)/ then
-    hashes.push($~[1])
+    hashes.add($~[1])
   end
 end
+
+hashes = hashes.to_a
 
 while hashes.size > 0 do
   current = hashes.take count

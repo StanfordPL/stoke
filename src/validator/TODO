@@ -1,7 +1,8 @@
 Possible improvements
   - remove unnecessary invariants before generating constraints
       (i.e. those that contrain unneeded registers)
-
+  - counterexample check should only consider registers that are
+    defined
   - debug specific obligations that take too long
   - shorter failure edges
   - implication graph with equalities over registers

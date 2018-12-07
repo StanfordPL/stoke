@@ -760,7 +760,7 @@ bool DdecValidator::test_alignment_predicate(shared_ptr<Invariant> invariant) {
 
   bool simplify_ok = dual.simplify();
   if(!simplify_ok) {
-    cout << "[verify_dual] Failure. Simplify returned false" << endl;
+    cout << "[test_alignment_predicate] Aborting. Simplify returned false" << endl;
     return false;
   }
 

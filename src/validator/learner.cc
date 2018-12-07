@@ -140,7 +140,8 @@ vector<Variable> get_memory_variables(const Cfg& target, const Cfg& rewrite, Reg
     }
 
     if(has_stack) {
-      for(int32_t i = 24; i > -24; i -= 8) {
+      int32_t max_stack_slots = 8;
+      for(int32_t i = max_stack_slots*8; i > -max_stack_slots*8; i -= 8) {
         M64 m(rsp, Imm32(i));
         memory_operands.insert(m);
       }

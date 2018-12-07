@@ -146,7 +146,7 @@ BitVector SmtObligationChecker::add_to_map(const SymArray& array, unordered_map<
   return default_value_bv;
 }
 
-bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray heap, const vector<SymArray>& stacks, const map<const SymBitVectorAbstract*, uint64_t>& others, bool separate_stack) const {
+bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray heap, const vector<SymArray>& stacks, const map<const SymBitVectorAbstract*, uint64_t>& others, uint64_t stack_pointer) const {
 
   unordered_map<uint64_t, BitVector> mem_map;
   auto default_heap = add_to_map(heap, mem_map);
@@ -173,25 +173,17 @@ bool SmtObligationChecker::build_testcase_from_array(CpuState& ceg, SymArray hea
     }
   }
 
-  DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] separate_stack = " << separate_stack << endl;)
-  if(separate_stack) {
-    // allocate some space on the stack and initialize it (unless precluded)
-    size_t stack_size=128;
-    uint64_t rsp_loc = ceg[rsp];
-    DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;)
-    BitVector zero_bv(8);
-    if(rsp_loc > stack_size-1 && rsp_loc < (uint64_t)(-stack_size)) {
-      for(uint64_t i = rsp_loc+7; i > rsp_loc - stack_size + 1; i--) {
-        if(!mem_map.count(i))
-          mem_map[i] = default_stack;
-      }
-    } else {
-      for(uint64_t i = 0; i < stack_size+8; ++i) {
-        if(!mem_map.count(i))
-          mem_map[i] = default_stack;
-      }
+  // ensure space on stack is allocated and initialized
+  size_t stack_size=128; 
+  uint64_t rsp_loc = stack_pointer;
+  DEBUG_BUILDTC_FROM_ARRAY(cout << "[build_testcase_from_array] rsp_loc = " << rsp << endl;)
+  BitVector zero_bv(8);
+  if(rsp_loc > stack_size && rsp_loc < (uint64_t)(-stack_size)) {
+    for(uint64_t i = rsp_loc+stack_size; i > rsp_loc - stack_size; i--) {
+      if(!mem_map.count(i))
+        mem_map[i] = default_stack;
     }
-  }
+  } 
 
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
@@ -218,6 +210,8 @@ bool SmtObligationChecker::check_counterexample(
     const Cfg& rewrite, 
     const Code& target_unroll,
     const Code& rewrite_unroll,
+    const CfgPath& P,
+    const CfgPath& Q,
     const LineMap& target_linemap,
     const LineMap& rewrite_linemap,
     const std::shared_ptr<Invariant> assume, 
@@ -235,6 +229,7 @@ bool SmtObligationChecker::check_counterexample(
     CpuState& expected = k ? ceg_r_expected : ceg_t_expected;
     const Cfg& program = k ? rewrite : target;
     const Code& unroll = k ? rewrite_unroll : target_unroll;
+    const CfgPath& path = k ? Q : P;
     const LineMap& linemap = k ? rewrite_linemap : target_linemap;
     CpuState& output = k ? rewrite_output : target_output;
     string name = k ? "rewrite" : "target";
@@ -284,6 +279,15 @@ bool SmtObligationChecker::check_counterexample(
     output = traces[0].back().cs;
 
     /** Compare */
+    DEBUG_CHECK_CEG(
+    assert(path.size() > 0);
+    auto last_block = path.back();
+    RegSet registers;
+    if(last_block == program.get_exit())
+      registers = program.def_outs();
+    else
+      registers = program.def_ins(last_block);
+    cout << "registers that should be compared: " << registers << endl;)
     if(output != expected) {
       cout << "  (Counterexample execution differs in sandbox for " << name << ".)" << endl;
       cout << "  START STATE " << endl << start << endl << endl;
@@ -455,14 +459,16 @@ bool SmtObligationChecker::generate_arm_testcases(
     other_maps.push_back(target_flat.get_access_list());
     other_maps.push_back(rewrite_flat.get_access_list());
     auto other_map = append_maps(other_maps);
+    auto target_rsp = target_tc[rsp];
+    auto rewrite_rsp = rewrite_tc[rsp];
 
     // doesn't really matter if these fail or not...
     build_testcase_from_array(target_tc, target_flat.get_start_variable(), 
                                          target_flat.get_stack_start_variables(),
-                                         other_map, separate_stack);
+                                         other_map, target_rsp);
     build_testcase_from_array(rewrite_tc, rewrite_flat.get_start_variable(), 
                                           rewrite_flat.get_stack_start_variables(),
-                                          other_map, separate_stack);
+                                          other_map, rewrite_rsp);
 
     cout << "... running sandbox / statgen for target" << endl;
     Sandbox sb1;
@@ -994,6 +1000,9 @@ void SmtObligationChecker::check(
     CpuState ceg_tf = state_from_model("_1_FINAL");
     CpuState ceg_rf = state_from_model("_2_FINAL");
 
+    auto target_rsp = ceg_t[rsp];
+    auto rewrite_rsp = ceg_r[rsp];
+
     bool ok = true;
     if (flat_model) {
       auto target_flat = static_cast<FlatMemory*>(state_t.memory);
@@ -1005,13 +1014,13 @@ void SmtObligationChecker::check(
       auto other_map = append_maps(other_maps);
 
       ok &= build_testcase_from_array(ceg_t, target_flat->get_start_variable(), 
-                                             target_flat->get_stack_start_variables(), other_map, separate_stack);
+                                             target_flat->get_stack_start_variables(), other_map, target_rsp);
       ok &= build_testcase_from_array(ceg_r, rewrite_flat->get_start_variable(),
-                                             rewrite_flat->get_stack_start_variables(), other_map, separate_stack);
+                                             rewrite_flat->get_stack_start_variables(), other_map, rewrite_rsp);
       build_testcase_from_array(ceg_tf, target_flat->get_variable(), 
-                                        target_flat->get_stack_end_variables(), other_map, separate_stack);
+                                        target_flat->get_stack_end_variables(), other_map, target_rsp);
       build_testcase_from_array(ceg_rf, rewrite_flat->get_variable(), 
-                                        rewrite_flat->get_stack_end_variables(), other_map, separate_stack);
+                                        rewrite_flat->get_stack_end_variables(), other_map, rewrite_rsp);
 
     } else if (arm_model) {
       auto target_arm = static_cast<ArmMemory*>(state_t.memory);
@@ -1023,13 +1032,13 @@ void SmtObligationChecker::check(
       auto other_map = append_maps(other_maps);
 
       ok &= build_testcase_from_array(ceg_t, target_arm->get_start_variable(), 
-                                             target_arm->get_stack_start_variables(), other_map, separate_stack);
+                                             target_arm->get_stack_start_variables(), other_map, target_rsp);
       ok &= build_testcase_from_array(ceg_r, rewrite_arm->get_start_variable(), 
-                                             rewrite_arm->get_stack_start_variables(), other_map, separate_stack);
+                                             rewrite_arm->get_stack_start_variables(), other_map, rewrite_rsp);
       build_testcase_from_array(ceg_tf, target_arm->get_variable(), 
-                                        target_arm->get_stack_end_variables(), other_map, separate_stack);
+                                        target_arm->get_stack_end_variables(), other_map, target_rsp);
       build_testcase_from_array(ceg_rf, rewrite_arm->get_variable(), 
-                                        rewrite_arm->get_stack_end_variables(), other_map, separate_stack);
+                                        rewrite_arm->get_stack_end_variables(), other_map, rewrite_rsp);
     }
 
     if (!ok) {
@@ -1052,9 +1061,8 @@ void SmtObligationChecker::check(
     CEG_DEBUG(print_m.unlock();)
 
 
-    /** Checks ceg with sandbox.  Updates ceg_tf, ceg_rf to match sandbox data */
-    if (check_counterexample(target, rewrite, target_unroll, rewrite_unroll, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
-      CEG_DEBUG(cout << "  (Counterexample verified in sandbox) P=" << P << " Q=" << Q << endl;)
+    /** Checks ceg with sandbox. */
+    if (check_counterexample(target, rewrite, target_unroll, rewrite_unroll, P, Q, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
     } else {
       ok = false;
       CEG_DEBUG(cout << "  (Spurious counterexample detected) P=" << P << " Q=" << Q << endl;)
@@ -1077,9 +1085,6 @@ void SmtObligationChecker::check(
     result.rewrite_ceg = ceg_r;
     result.target_final_ceg = ceg_tf;
     result.rewrite_final_ceg = ceg_rf;
-
-    cout << "RESULT.REWRITE_CEG = " << endl << result.rewrite_ceg << endl;
-    cout << "RESULT.REWRITE_FINAL_CEG = " << endl << result.rewrite_final_ceg << endl;
 
     callback(result, optional);
 
