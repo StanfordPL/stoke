@@ -93,9 +93,10 @@ public:
       auto value = term.from_state(target, rewrite);
       auto value_ext = value.sign_extend(size);
       bool negative = (term.coefficient < 0);
-      auto normalized_term = (term.coefficient >> k);
+      auto normalized_term = term.coefficient;
       if(negative)
         normalized_term = -normalized_term;
+      normalized_term = (normalized_term >> k);
       auto coefficient = SymBitVector::constant(64, normalized_term);
 
       if(k) 
@@ -108,7 +109,7 @@ public:
         side = side + value_ext;
       } else {
         auto coefficient_ext = coefficient.sign_extend(size-k);
-        sum_rhs = sum_rhs + coefficient_ext*value_ext;
+        side = side + coefficient_ext*value_ext;
       }
     }
 
