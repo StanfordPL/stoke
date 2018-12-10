@@ -30,6 +30,10 @@ void PostgresObligationChecker::make_tables() {
       "created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()"        \
     ")";
 
+  const char* sql_proof_obligation_index =
+    "CREATE INDEX IF NOT EXISTS proofobligation_hash "        \
+      "ON ProofObligation(hash)";
+
   const char* sql_proof_obligation_result = 
     "CREATE TABLE IF NOT EXISTS ProofObligationResult("             \
       "id                 SERIAL PRIMARY KEY,"                      \
@@ -49,9 +53,9 @@ void PostgresObligationChecker::make_tables() {
       "comments           TEXT"                                     \
     ")";
 
-  // indexes needed:
-  // 1. hash
-  // 2. hash, solver, strategy
+  const char* sql_proof_obligation_result_index =
+    "CREATE INDEX IF NOT EXISTS proofobligationresult_hash "        \
+      "ON ProofObligationResult(hash)";
 
   const char* sql_proof_obligation_queue = 
     "CREATE TABLE IF NOT EXISTS ProofObligationQueue("              \
@@ -64,10 +68,6 @@ void PostgresObligationChecker::make_tables() {
       "created_at         TIMESTAMP WITH TIME ZONE DEFAULT NOW()"   \
     ")";
 
-  // indexes needed:
-  // 1. hash
-  // 2. hash, solver, strategy
-
   nontransaction tx(connection_);
   tx.exec(sql_proof_obligation);
   tx.commit();
@@ -77,12 +77,20 @@ void PostgresObligationChecker::make_tables() {
   tx2.commit();
 
   nontransaction tx3(connection_);
-  tx3.exec(sql_proof_obligation_queue);
+  tx3.exec(sql_proof_obligation_index);
   tx3.commit();
 
   nontransaction tx4(connection_);
-  tx4.exec("SET SESSION synchronous_commit TO OFF");
+  tx4.exec(sql_proof_obligation_result_index);
   tx4.commit();
+
+  nontransaction tx5(connection_);
+  tx5.exec(sql_proof_obligation_queue);
+  tx5.commit();
+
+  nontransaction tx6(connection_);
+  tx6.exec("SET SESSION synchronous_commit TO OFF");
+  tx6.commit();
 
   cout << "make_tables() complete" << endl;
 

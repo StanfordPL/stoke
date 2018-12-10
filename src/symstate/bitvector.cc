@@ -149,6 +149,8 @@ SymBitVector SymBitVector::extend(uint16_t size) const {
   return sign_extend(size);
 }
 SymBitVector SymBitVector::sign_extend(uint16_t size) const {
+  if(size <= width())
+    return *this;
   return SymBitVector(new SymBitVectorSignExtend(ptr, size));
 }
 

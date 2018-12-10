@@ -603,66 +603,6 @@ void discharge_problem(const ObligationQueueEntry& qe, ObligationChecker::Callba
   oc.block_until_complete();
 }
 
-void fetch_testcases_db(const char* testcase_hash) {
-  connection c(postgres_arg.value());
-  nontransaction tx(c);
-
-  stringstream sql;
-  sql << "SELECT * FROM TestcaseSet WHERE hash='" << tx.esc(testcase_hash) << "'";
-  auto r = tx.exec(sql.str());
-  tx.commit();
-
-  if(r.size() == 0) {
-    cerr << "Testcase set not found" << endl;
-    return;
-  }
-
-  auto row = r[0];
-  stringstream ss;
-  ss << row["testcases"].as<const char*>();
-
-  stringstream filess;
-  filess << "/tmp/testcases/" << testcase_hash;
-  ofstream ofs(filess.str());
-  ofs << ss.str();
-  ofs.close();
-}
-
-CpuStates fetch_testcases(const char* testcase_hash) {
-  // first, make sure we have a testcases directory
-  struct stat status;
-  int bad = stat("/tmp/testcases", &status);
-  if(bad) {
-    bad = mkdir("/tmp/testcases", 0755);
-    if(bad) {
-      cerr << "Could not make directory for testcases!  That's bad!!" << endl;
-      exit(1);
-    }
-  }
-
-  // check if a file is lying around
-  stringstream filename_ss;
-  filename_ss << "/tmp/testcases/" << testcase_hash;
-  string filename = filename_ss.str();
-
-  bad = stat(filename.c_str(), &status);
-  int sleep_time = 1;
-  while(bad || !S_ISREG(status.st_mode)) {
-    fetch_testcases_db(testcase_hash);
-    bad = stat(filename.c_str(), &status);
-    if(bad || !S_ISREG(status.st_mode)) {
-      sleep(sleep_time); // apparently the testcases haven't been uploaded
-      if(sleep_time < 1024)
-        sleep_time*=2;
-    }
-  }
-
-  ifstream ifs(filename.c_str());
-  auto tcs = deserialize<vector<CpuState>>(ifs);
-  return tcs;
-}
-
-
 
 template <typename T>
 pid_t spawn_worker(T* item) {

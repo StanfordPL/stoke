@@ -84,6 +84,7 @@ public:
       k = 0;
 
     SymBitVector sum = SymBitVector::constant(size-k, 0);
+    SymBitVector sum_rhs = SymBitVector::constant(size-k, constant_);
     // proceed, chopping off the top k bits from each term
     for (auto term : terms_) {
       if(term.coefficient == 0)
@@ -91,21 +92,31 @@ public:
 
       auto value = term.from_state(target, rewrite);
       auto value_ext = value.sign_extend(size);
+      bool negative = (term.coefficient < 0);
       auto normalized_term = (term.coefficient >> k);
+      if(negative)
+        normalized_term = -normalized_term;
       auto coefficient = SymBitVector::constant(64, normalized_term);
+
       if(k) 
         value_ext = value_ext[size-1-k][0];
       if(size-k < 64)
         coefficient = coefficient[size-k-1][0];
-      auto coefficient_ext = coefficient.sign_extend(size-k);
-      sum = sum + coefficient_ext*value_ext;
+
+      auto& side = negative ? sum_rhs : sum;
+      if(normalized_term == 1) {
+        side = side + value_ext;
+      } else {
+        auto coefficient_ext = coefficient.sign_extend(size-k);
+        sum_rhs = sum_rhs + coefficient_ext*value_ext;
+      }
     }
 
     if(modulus_ == 0)
-      return sum == SymBitVector::constant(size-k, constant_);
+      return sum == sum_rhs;
     else
       return 
-        ((sum - SymBitVector::constant(size, constant_)) 
+        ((sum - sum_rhs) 
           % SymBitVector::constant(size, modulus_)) 
         == SymBitVector::constant(size, 0);
   }
