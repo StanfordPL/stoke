@@ -11,7 +11,8 @@ MEMORY {
   seg_d : ORIGIN = 0x601680, LENGTH = 0x200
   seg_e : ORIGIN = 0x601880, LENGTH = 0x200
   ro    : ORIGIN = 0x601a80, LENGTH = 0x200
-  ram   : ORIGIN = 0x602000, LENGTH = 128M
+  seg_f : ORIGIN = 0x602000, LENGTH = 0x400
+  ram   : ORIGIN = 0x603000, LENGTH = 128M
 }
 
 SECTIONS
@@ -234,5 +235,6 @@ SECTIONS
   SEGMENT_C : { *(.data) } > seg_c
   SEGMENT_D : { *(.data) } > seg_d
   SEGMENT_E : { *(.data) } > seg_e
+  SEGMENT_F : { *(.data) } > seg_f
 }
 

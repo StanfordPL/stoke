@@ -192,6 +192,11 @@ private:
   /** Create a single MemoryEqualityInvariant */
   std::shared_ptr<MemoryEqualityInvariant> learn_memory_equality(
       const std::vector<CpuState>&, const std::vector<CpuState>&, x64asm::RegSet, x64asm::RegSet) const;
+  /** For printing output when learn_memory_equality fails. */
+  void debug_memory_nonequivalent(
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states) const;
+
 
   /** Set of ghost variables we should do learning over. */
   std::vector<Variable> ghosts_;

@@ -17,7 +17,7 @@
 #include "stdlib.h"
 
 #define LEN 128
-#define LEN2 256
+#define LEN2 16
 
 #define TYPE int
 
@@ -29,6 +29,7 @@ TYPE b[LEN] __attribute__((section ("SEGMENT_B")));
 TYPE c[LEN] __attribute__((section ("SEGMENT_C")));
 TYPE d[LEN] __attribute__((section ("SEGMENT_D")));
 TYPE e[LEN] __attribute__((section ("SEGMENT_E")));
+TYPE aa[LEN2][LEN2] __attribute__((section ("SEGMENT_F")));
 
 void testing() {
   a[0] = 0;
@@ -70,6 +71,15 @@ TYPE s1111(int count) {
 TYPE s112(int count) {
   for (int i = count*8-1; i >= 1; i--) {
     a[i] = a[i-1] + b[i];
+  }
+  return 0;
+}
+
+TYPE s115(int count) {
+  for (int j = 0; j < count; j++) {
+    for (int i = j+1; i < count; i++) {
+      a[i] -= aa[j][i] * a[j];
+    }
   }
   return 0;
 }
@@ -380,5 +390,5 @@ TYPE s176(int count) {
 }
 
 int main() {
-
+  return 0;
 }

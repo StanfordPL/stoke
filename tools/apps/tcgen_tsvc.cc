@@ -60,14 +60,24 @@ int main(int argc, char** argv) {
 
   CpuStates outputs;
 
-  vector<uint64_t> segments = {
+  vector<uint64_t> segment_locations = {
+    0x602000, //f
     0x601880, //e
     0x601680, //d
     0x601480, //c
     0x601280, //b
     0x601080  //a
   };
-  uint64_t length = segment_length.value()*sizeof(int);
+  uint64_t d1_length = segment_length.value()*sizeof(int);
+  uint64_t d2_length = 16*16*sizeof(int);
+  vector<uint64_t> segment_lengths = {
+    d1_length,
+    d1_length,
+    d1_length,
+    d1_length,
+    d1_length,
+    d2_length
+  };
 
 
   uint64_t gcc_segment_start = 0x601a80;
@@ -301,7 +311,9 @@ int main(int argc, char** argv) {
     }
     tc.segments.push_back(gcc);
 
-    for(uint64_t start : segments) {
+    for(size_t i = 0; i < segment_locations.size(); ++i) {
+      auto start = segment_locations[i];
+      auto length = segment_lengths[i];
       Memory m;
       m.resize(start, length+256);
       for(size_t j = 0; j < length; ++j) {

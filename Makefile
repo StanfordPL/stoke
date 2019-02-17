@@ -262,7 +262,8 @@ BIN=\
 	bin/stoke_debug_verify \
 	bin/stoke_obligation_check \
 	bin/stoke_worker \
-	bin/tcgen_tsvc
+	bin/tcgen_tsvc \
+	bin/tcgen_tsvc_float
 
 #bin/stoke_replace \
 #bin/stoke_search \

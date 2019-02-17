@@ -9,7 +9,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_LEARN_STATE_DATA(X) { if(0) { X } }
+#define DEBUG_LEARN_STATE_DATA(X) { if(1) { X } }
 #define DEBUG_IS_PREFIX(X) { if(0) { X } }
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(0) { X } }
@@ -316,7 +316,6 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
       continue;
 
     /* For debugging states encountered. */
-    /*
     DEBUG_LEARN_STATE_DATA(
       stringstream ts;
       ts << "state" << state << "-target.txt";
@@ -334,7 +333,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
       rewrite_file.open(rewrite_filename, ios::out);
       CpuStates rewrite_out(rewrite_state_data_[state]);
       rewrite_out.write_text(rewrite_file);
-      rewrite_file.close();)*/
+      rewrite_file.close();)
 
     // TODO: if there aren't enough states here, sound a warning
     auto target_state_count = target_state_data_[state].size();

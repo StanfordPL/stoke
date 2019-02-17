@@ -854,6 +854,31 @@ const std::vector<CpuState>& rewrite_states) {
   return pair<vector<CpuState>, vector<CpuState>>(target_chosen, rewrite_chosen);
 }
 
+void InvariantLearner::debug_memory_nonequivalent(
+    const std::vector<CpuState>& target_states,
+    const std::vector<CpuState>& rewrite_states) const {
+
+  MemoryEqualityInvariant inv;
+  size_t num_states = target_states.size();
+  size_t bad_states = 0;
+  CpuState target_bad;
+  CpuState rewrite_bad;
+  for(size_t i = 0; i < num_states; ++i) {
+    if(!inv.check(target_states[i], rewrite_states[i])) {
+      if(bad_states == 0) {
+        target_bad = target_states[i]; 
+        rewrite_bad = rewrite_states[i];
+      }
+      bad_states++;
+    }
+  }
+
+  cout << "[debug_memory_nonequivalent] hmm there are " << bad_states << " pairs where memory states disagree.  Here's an example."<< endl;
+  cout << "[debug_memory_nonequivalent] TARGET" << endl << target_bad << endl << endl;
+  cout << "[debug_memory_nonequivalent] REWRITE" << endl << rewrite_bad << endl << endl;
+}
+
+
 std::shared_ptr<MemoryEqualityInvariant> InvariantLearner::learn_memory_equality(
     const std::vector<CpuState>& target_states,
     const std::vector<CpuState>& rewrite_states,
@@ -879,6 +904,7 @@ std::shared_ptr<MemoryEqualityInvariant> InvariantLearner::learn_memory_equality
     }
   }
 
+  debug_memory_nonequivalent(target_states, rewrite_states);
   cerr << "Could not find any invariant relating memory states... busted." << endl;
   return shared_ptr<MemoryEqualityInvariant>(nullptr);
 }
