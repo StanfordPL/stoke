@@ -1,0 +1,10 @@
+
+TARGET_BOUND=40
+REWRITE_BOUND=40
+NAME=sum_positive
+TARGET=opt0/sum_positive.s
+REWRITE=opt1/sum_positive.s
+DEF_INS="{ %rdi %rsp %rbp }"
+LIVE_OUTS="{ %rsp %rbp }"
+
+

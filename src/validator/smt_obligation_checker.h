@@ -53,6 +53,7 @@ public:
 
   SmtObligationChecker(SMTSolver& solver, Filter& filter) : 
     ObligationChecker(),
+    check_counterexamples_(true),
     solver_(solver),
     filter_(filter)
   {
@@ -60,6 +61,7 @@ public:
 
   SmtObligationChecker(const SmtObligationChecker& oc) :
     ObligationChecker(),
+    check_counterexamples_(oc.check_counterexamples_),
     solver_(oc.solver_),
     filter_(oc.filter_),
     memory_manager_()
@@ -71,6 +73,11 @@ public:
 
   SMTSolver& get_solver() {
     return solver_;
+  }
+
+  SmtObligationChecker& set_check_counterexamples(bool b) {
+    check_counterexamples_ = b;
+    return *this;
   }
 
   /** Check.  This is a wrapper around check_* functions that handles parallelism and fixpoint. */
@@ -88,6 +95,8 @@ public:
   }
 
 private:
+
+  bool check_counterexamples_;
 
   SymSimplify simplifier_;
 

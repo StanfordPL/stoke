@@ -199,6 +199,7 @@ void make_tc_different_memory(
 
     ForbiddenDereferenceFilter filter(handler, low, high);
     SmtObligationChecker oc(checker.get_solver(), filter);
+    oc.set_check_counterexamples(false);
     oc.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
     oc.set_separate_stack(false);
 
@@ -267,6 +268,7 @@ int main(int argc, char** argv) {
   ComboHandler handler;
   DefaultFilter filter(handler);
   SmtObligationChecker checker(solver, filter);
+  checker.set_check_counterexamples(false);
   checker.set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
   checker.set_separate_stack(false);
 

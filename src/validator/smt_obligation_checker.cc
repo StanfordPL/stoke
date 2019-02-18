@@ -295,7 +295,9 @@ bool SmtObligationChecker::check_counterexample(
       cout << "  ACTUAL STATE " << endl << output << endl << endl;
       cout << diff_states(expected, output, false, true, x64asm::RegSet::universe());
       cout << "  CODE " << endl << unroll << endl << endl;
-      return false;
+      if(check_counterexamples_) {
+        return false;
+      }
     }
   }
 
@@ -1062,7 +1064,7 @@ void SmtObligationChecker::check(
 
 
     /** Checks ceg with sandbox. */
-    if (check_counterexample(target, rewrite, target_unroll, rewrite_unroll, P, Q, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
+    if (!check_counterexamples_ || check_counterexample(target, rewrite, target_unroll, rewrite_unroll, P, Q, target_linemap, rewrite_linemap, assume, prove, ceg_t, ceg_r, ceg_tf, ceg_rf, separate_stack)) {
     } else {
       ok = false;
       CEG_DEBUG(cout << "  (Spurious counterexample detected) P=" << P << " Q=" << Q << endl;)
