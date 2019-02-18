@@ -14,7 +14,6 @@ using namespace std;
 #define DEBUG_CFG_FRINGE(X) { if(0) { cout << "[cfg_fringe] " << X;} }
 #define DEBUG_IN_SCC(X) { if(0) { X } }
 #define DEBUG_IN_CYCLE(X) { if(0) { X } }
-#define DEBUG_SIMPLIFY(X) { if(1) { X } }
 
 bool DualAutomata::State::operator<(const DualAutomata::State& other) const {
   if (ts != other.ts)
@@ -316,6 +315,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
       continue;
 
     /* For debugging states encountered. */
+    /*
     DEBUG_LEARN_STATE_DATA(
       stringstream ts;
       ts << "state" << state << "-target.txt";
@@ -333,7 +333,7 @@ bool DualAutomata::learn_invariants(InvariantLearner& learner, ImplicationGraph&
       rewrite_file.open(rewrite_filename, ios::out);
       CpuStates rewrite_out(rewrite_state_data_[state]);
       rewrite_out.write_text(rewrite_file);
-      rewrite_file.close();)
+      rewrite_file.close();)*/
 
     // TODO: if there aren't enough states here, sound a warning
     auto target_state_count = target_state_data_[state].size();
@@ -758,27 +758,91 @@ bool DualAutomata::in_scc(State s) const {
   return false;
 }
 
-bool DualAutomata::simplify_remove_edges() {
-  bool changes_made = false;
+/** Remove edges that aren't needed. */
+bool DualAutomata::simplify() {
 
-  DEBUG_SIMPLIFY(cout << "[simplify] removing edges" << endl;)
-  /** Remove edges where another edge is a prefix. */
+  bool changes_made = false;
+  /** Step 1: remove nodes that are not contained in a strongly connected component. */
+  auto start = start_state();
+  auto end = exit_state();
+
+  bool fixpoint = false;
+  while(!fixpoint) {
+    fixpoint = true;
+    auto edge_reachable = get_edge_reachable_states();
+    //cout << "[simplify] starting fixpoint iteration" << endl;
+    for(auto s = edge_reachable.rbegin(); s != edge_reachable.rend(); s++) {
+      if(*s == start)
+        continue;
+      if(*s == end)
+        continue;
+
+      if(has_self_loop(*s))
+        continue;
+
+      //cout << "[simplify] State " << s << " not in SCC; trying to remove." << endl;
+      auto edges_in = prev_edges(*s); 
+      auto edges_out = next_edges(*s);
+
+      for(auto in : edges_in) {
+        for(auto out : edges_out) {
+          Edge e = in;
+          e.to = out.to;
+          e.te.insert(e.te.end(), out.te.begin(), out.te.end());
+          e.re.insert(e.re.end(), out.re.begin(), out.re.end());
+          add_edge(e);
+          //cout << "[simplify] adding edge " << e << endl;
+        }
+      }
+
+      for(auto in : edges_in) {
+        //cout << "[simplify] removing edge " << in << endl;
+        remove_edge(in);
+      }
+      for(auto out : edges_out) {
+        //cout << "[simplify] removing edge " << out << endl;
+        remove_edge(out);
+      }
+      prev_edges_.erase(*s);
+      next_edges_.erase(*s);
+      fixpoint = false;
+      changes_made = true;
+      break;
+    }
+  }
+
+  //cout << "[simplify] proceeding to second step" << endl;
+
+  /** Step 2: Remove edges where another edge is a prefix. */
   auto states = get_edge_reachable_states();
   for(auto s : states) {
     // check for any edges which are the prefix of another 
     auto edges = next_edges_[s];
     set<Edge> edges_to_remove;
 
-    DEBUG_SIMPLIFY(cout << "[simplify] considering " << edges.size() << " edges at " << s << endl;)
     for(size_t i = 0; i < edges.size(); ++i) {
       for(size_t j = 0; j < edges.size(); ++j) {
         if(i == j)
           continue;
 
-        if(edge_is_redundant(edges[i], edges[j])) {
+        auto first = edges[i];
+        auto second = edges[j];
+
+        auto first_target_edge = first.te;
+        first_target_edge.push_back(first.to.ts);
+        auto second_target_edge = second.te;
+        second_target_edge.push_back(second.to.ts);
+
+        auto first_rewrite_edge = first.re;
+        first_rewrite_edge.push_back(first.to.rs);
+        auto second_rewrite_edge = second.re;
+        second_rewrite_edge.push_back(second.to.rs);
+
+
+        if(CfgPaths::is_prefix(first_target_edge, second_target_edge) &&
+           CfgPaths::is_prefix(first_rewrite_edge, second_rewrite_edge)) {
           // remove 'second'
-          DEBUG_SIMPLIFY(cout << "[simplify] removing " << edges[j] << endl;)
-          edges_to_remove.insert(edges[j]);
+          edges_to_remove.insert(second);
           changes_made = true;
         }
       }
@@ -788,123 +852,14 @@ bool DualAutomata::simplify_remove_edges() {
       remove_edge(e);
   }
 
-  cout << "[simplify_remove_edges] changes_made = " << changes_made << endl;
+  // redo until fixpoint
+  if(changes_made) 
+    simplify();
+
   return changes_made;
-
-}
-
-bool DualAutomata::simplify_remove_a_node() {
-  auto start = start_state();
-  auto end = exit_state();
-
-  auto edge_reachable = get_edge_reachable_states();
-  DEBUG_SIMPLIFY(cout << "[simplify] removing nodes" << endl;)
-  for(auto s = edge_reachable.rbegin(); s != edge_reachable.rend(); s++) {
-    if(*s == start)
-      continue;
-    if(*s == end)
-      continue;
-
-    if(has_self_loop(*s))
-      continue;
-
-    DEBUG_SIMPLIFY(cout << "[simplify] State " << *s << " has no self-loop; trying to remove." << endl;)
-    auto edges_in = prev_edges(*s); 
-    auto edges_out = next_edges(*s);
-
-    for(auto in : edges_in) {
-      for(auto out : edges_out) {
-        Edge e = in;
-        e.to = out.to;
-        e.te.insert(e.te.end(), out.te.begin(), out.te.end());
-        e.re.insert(e.re.end(), out.re.begin(), out.re.end());
-        add_edge(e);
-        DEBUG_SIMPLIFY(cout << "[simplify] adding edge " << e << endl;)
-      }
-    }
-
-    for(auto in : edges_in) {
-      DEBUG_SIMPLIFY(cout << "[simplify] removing edge " << in << endl;)
-      remove_edge(in);
-    }
-    for(auto out : edges_out) {
-      DEBUG_SIMPLIFY(cout << "[simplify] removing edge " << out << endl;)
-      remove_edge(out);
-    }
-    prev_edges_.erase(*s);
-    next_edges_.erase(*s);
-
-    cout << "[simplify_remove_a_node] changes_made = true" << endl;
-    return true;
-  }
-
-  cout << "[simplify_remove_a_node] changes_made = false" << endl;
-  return false;
-}
-
-/** Remove edges and nodes that aren't needed. Returns 
-  false if this PAA appears not to be viable. */
-bool DualAutomata::simplify() {
-
-  bool changes_made = true;
-
-  while(changes_made) {
-    changes_made = false;
-
-    if(simplify_remove_edges())
-      changes_made = true;
-
-    while(simplify_remove_a_node())
-      changes_made = true;
-
-    if(!too_many_edges_sanity_check())
-      return false;
-  }
-
-  return true;
-}
-
-bool DualAutomata::too_many_edges_sanity_check() const {
-  
-  auto states = get_edge_reachable_states();
-  for(auto s : states) {
-    if(next_edges_.at(s).size() > 200)
-      return false;
-  }
-  return true;
-}
-
-bool DualAutomata::edge_is_redundant(const DualAutomata::Edge& first, const DualAutomata::Edge& second) const {
-
-  auto first_target_edge = first.te;
-  first_target_edge.push_back(first.to.ts);
-  auto second_target_edge = second.te;
-  second_target_edge.push_back(second.to.ts);
-
-  auto first_rewrite_edge = first.re;
-  first_rewrite_edge.push_back(first.to.rs);
-  auto second_rewrite_edge = second.re;
-  second_rewrite_edge.push_back(second.to.rs);
-
-  return CfgPaths::is_prefix(first_target_edge, second_target_edge) &&
-         CfgPaths::is_prefix(first_rewrite_edge, second_rewrite_edge);
 }
 
 
-bool DualAutomata::add_edge(const DualAutomata::Edge& path) {
-  if(next_edges_.count(path.from)) {
-    for (const auto& e : next_edges_.at(path.from)) {
-      if (e == path) {
-        //std::cout << "      > edge already exists -- skipping" << std::endl;
-        return false;
-      }
-    }
-  }
-
-  next_edges_[path.from].push_back(path);
-  prev_edges_[path.to].push_back(path);
-  return true;
-}
 
 namespace std {
 

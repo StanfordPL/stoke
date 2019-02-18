@@ -112,7 +112,21 @@ public:
   }
 
   /** Add a feastible edge.  Returns true if not already present. */
-  bool add_edge(const Edge& path);
+  bool add_edge(Edge path) {
+
+    if(next_edges_.count(path.from)) {
+      for (const auto& e : next_edges_.at(path.from)) {
+        if (e == path) {
+          //std::cout << "      > edge already exists -- skipping" << std::endl;
+          return false;
+        }
+      }
+    }
+
+    next_edges_[path.from].push_back(path);
+    prev_edges_[path.to].push_back(path);
+    return true;
+  }
 
   /** Remove an edge. */
   void remove_edge(Edge e) {
@@ -307,16 +321,13 @@ public:
 
 
   /** Remove states and edges that aren't needed. 
-    Returns false if this doesn't seem to be viable. */
+    Returns false if nothing was done. */
   bool simplify();
 
   void serialize(std::ostream& os) const;
   static DualAutomata deserialize(std::istream& is);
 
 private:
-
-  bool simplify_remove_a_node();
-  bool simplify_remove_edges();
 
   /** This is a data structure used in learn_state_data and its helpers
     to track the possible states that the automata can be in starting from
@@ -347,8 +358,6 @@ private:
   /** Remove an edge prefix from a trace. */
   void remove_prefix(const CfgPath& tr1, DataCollector::Trace& tr2);
 
-  bool edge_is_redundant(const DualAutomata::Edge& e1, const DualAutomata::Edge& e2) const;
-
   Cfg& target_; //serialize
   Cfg& rewrite_; //serialize
 
@@ -363,11 +372,6 @@ private:
   std::map<Edge, std::vector<CpuState>> rewrite_edge_data_;
 
   std::vector<DualAutomata::State> topological_sort_; //serialize
-
-
-  /** Returns false if there are a ton of edges in the PAA.  
-    There really shouldn't be.  This is an extra optimization. */
-  bool too_many_edges_sanity_check() const;
 };
 
 }
