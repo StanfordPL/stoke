@@ -8,6 +8,6 @@ ENV NOTVISIBLE "in users profile"
 RUN useradd -ms /bin/bash -ms /bin/bash stoke
 
 # Build everything 
-COPY ../ /home/stoke/
-RUN chmod +x /home/stoke/stoke/setup.sh && \
-    /home/stoke/stoke/setup.sh
+COPY . /home/stoke/stoke/
+RUN chmod +x /home/stoke/stoke/docker/setup.sh && \
+    /home/stoke/stoke/docker/setup.sh
