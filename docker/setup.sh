@@ -60,4 +60,4 @@ update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/
 chown -R stoke /home/stoke/stoke
 cd /home/stoke/stoke
 chmod +x docker/user-setup.sh
-su stoke -m -c "./docker/user-setup.sh"
+su stoke -c "TRAVIS=$TRAVIS ./docker/user-setup.sh"
