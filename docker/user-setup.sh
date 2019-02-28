@@ -9,7 +9,7 @@ echo "PATH=\"\$HOME/stoke/bin:\$PATH\"" >> ~/.bashrc
 echo "[user-setup.sh] TRAVIS=$TRAVIS"
 if [ $TRAVIS == "1" ] ; then
   sed -i "s/haswell/sandybridge/g" ~/.stoke-config
-  make objectfiles
+  make tests
 else
   make
 fi
