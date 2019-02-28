@@ -52,6 +52,7 @@ sed -i "s/stoke:.*/stoke:\$6\$ZfBji33B\$1GZHu6wFBOIjkTgb6DEJRdRYcgjoI4hgzrlhU\/4
 usermod -a -G sudo stoke
 
 # Compile everything, etc.
+chown -R stoke /home/stoke/stoke
 cd /home/stoke/stoke
 chmod +x docker/user-setup.sh
 su stoke -c "./docker/user-setup.sh"

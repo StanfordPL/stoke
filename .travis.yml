@@ -8,5 +8,5 @@ before_install:
   - docker build -t bchurchill/stoke .
 
 script:
-  - docker run bchurchill/stoke /bin/sh -c "cd /home/stoke; make test;"
+  - docker run bchurchill/stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
 
