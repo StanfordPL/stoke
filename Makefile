@@ -372,7 +372,11 @@ $(CVC4_SRCDIR)/configure:
 	cd src/ext && patch -p0 < cvc4.patch
 
 .PHONY: z3
-z3: src/ext/z3/build/libz3.so
+z3: z3tryCopy src/ext/z3/build/libz3.so
+
+z3tryCopy:
+	mkdir -p src/ext/z3/build
+	cp libz3.so src/ext/z3/build
 
 src/ext/z3/build/libz3.so: z3init src/ext/z3/build/Makefile
 	cd src/ext/z3/build && CC="${CC}" CXX="${CXX}" make -j$(NTHREADS)
