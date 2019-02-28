@@ -1,8 +1,12 @@
 
+language: generic
+
 services:
   - docker
 
 before_install:
   - docker build -t bchurchill/stoke docker
-  - docker run -d bchurchill/stoke /bin/sh -c "cd /home/stoke; make test;"
+
+script:
+  - docker run bchurchill/stoke /bin/sh -c "cd /home/stoke; make test;"
 
