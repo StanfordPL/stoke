@@ -12,6 +12,6 @@ jobs:
   include:
     - stage: compile
       script: docker build -t bchurchill/stoke .
-    - state: test
+    - stage: test
       script: docker run bchurchill/stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
 
