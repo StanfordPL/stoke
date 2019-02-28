@@ -7,12 +7,7 @@ EXPOSE 22
 ENV NOTVISIBLE "in users profile"
 RUN useradd -ms /bin/bash -ms /bin/bash stoke
 
-# shortcut for Z3
-COPY libz3.so /home/stoke
-
 # Build everything 
-COPY setup.sh user-setup.sh /home/stoke/
-RUN chmod +x /home/stoke/setup.sh && \
-    /home/stoke/setup.sh && \
-    rm /home/stoke/setup.sh \
-       /home/stoke/user-setup.sh
+COPY ../ /home/stoke/
+RUN chmod +x /home/stoke/stoke/setup.sh && \
+    /home/stoke/stoke/setup.sh
