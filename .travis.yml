@@ -4,9 +4,14 @@ language: generic
 services:
   - docker
 
-before_install:
-  - docker build -t bchurchill/stoke .
+stages:
+  - compile
+  - test
 
-script:
-  - docker run bchurchill/stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
+jobs:
+  include:
+    - stage: compile
+      script: docker build -t bchurchill/stoke .
+    - state: test
+      script: docker run bchurchill/stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
 
