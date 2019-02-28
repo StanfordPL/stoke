@@ -392,6 +392,8 @@ src/validator/handlers.h: .FORCE
 
 ##### BUILD TARGETS
 
+objectfiles: $(OBJS)
+
 src/cfg/%.o: src/cfg/%.cc $(DEPS)
 	$(STOKE_CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc $(DEPS)

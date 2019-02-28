@@ -8,6 +8,9 @@ stages:
   - compile
   - test
 
+env:
+  - IMAGENAME: "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
+
 jobs:
   include:
     - stage: compile
@@ -15,11 +18,11 @@ jobs:
         - echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin
         - docker build --build-arg TRAVIS=1 -t stoke .
         - docker images
-        - docker tag stoke "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
-        - docker push "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
+        - docker tag stoke "$IMAGENAME"
+        - docker push "$IMAGENAME"
     - stage: test
       script: 
-        - docker pull "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
-        - docker run "stanfordpl/stoke-test:$TRAVIS_BUILD_ID" /bin/sh -c "cd /home/stoke/stoke; make;"
-        - docker run "stanfordpl/stoke-test:$TRAVIS_BUILD_ID" /bin/sh -c "cd /home/stoke/stoke; make test;"
+        - docker pull "$IMAGENAME"
+        - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make;"
+        - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make test;"
 
