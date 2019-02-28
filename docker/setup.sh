@@ -9,7 +9,6 @@ apt-get update && apt-get install -y \
   autoconf \
   bison \
   ccache \
-  clang \
   cmake \
   doxygen \
   exuberant-ctags \
@@ -38,11 +37,8 @@ apt-get update && apt-get install -y \
   pccts \
   pkg-config \
   python \
-  ruby \
   subversion \
-  time \
-  vim \
-  wget
+  time 
 
 # gcc setup
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
