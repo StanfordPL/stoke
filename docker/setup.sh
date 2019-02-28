@@ -34,7 +34,6 @@ apt-get update && apt-get install -y \
   libiml-dev \
   libpqxx-dev \
   libtool \
-  openssh-server \
   pccts \
   pkg-config \
   python \
