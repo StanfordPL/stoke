@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "[setup.sh] TRAVIS=$TRAVIS"
 # install packages
 apt-get update
 apt-get install -y software-properties-common
@@ -40,19 +41,24 @@ apt-get update && apt-get install -y \
   subversion \
   time 
 
+# if not on travis, setup an SSH server for dev environment
+if [ $TRAVIS != "1" ]; then
+  apt-get install -y openssh-server vim
+
+  # SSH setup/config
+  mkdir /var/run/sshd
+  chmod 0755 /var/run/sshd
+  sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+  echo "export VISIBLE=now" >> /etc/profile
+  sed -i "s/stoke:.*/stoke:\$6\$ZfBji33B\$1GZHu6wFBOIjkTgb6DEJRdRYcgjoI4hgzrlhU\/4p.nMhQzVOWEsPBKYzfJ1ZRlYgEUcQamR28\/q3\/nbJSPpgd.:17947:0:99999:7:::/" /etc/shadow
+  usermod -a -G sudo stoke
+fi
+
 # gcc setup
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
-
-# SSH setup/config
-mkdir /var/run/sshd
-chmod 0755 /var/run/sshd
-sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-echo "export VISIBLE=now" >> /etc/profile
-sed -i "s/stoke:.*/stoke:\$6\$ZfBji33B\$1GZHu6wFBOIjkTgb6DEJRdRYcgjoI4hgzrlhU\/4p.nMhQzVOWEsPBKYzfJ1ZRlYgEUcQamR28\/q3\/nbJSPpgd.:17947:0:99999:7:::/" /etc/shadow
-usermod -a -G sudo stoke
 
 # Compile everything, etc.
 chown -R stoke /home/stoke/stoke
 cd /home/stoke/stoke
 chmod +x docker/user-setup.sh
-su stoke -c "./docker/user-setup.sh"
+su stoke -m -c "./docker/user-setup.sh"

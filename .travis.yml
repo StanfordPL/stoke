@@ -11,7 +11,15 @@ stages:
 jobs:
   include:
     - stage: compile
-      script: docker build -t bchurchill/stoke .
+      script: 
+        - echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin
+        - docker build --build-arg TRAVIS=1 -t stoke .
+        - docker images
+        - docker tag stoke "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
+        - docker push "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
     - stage: test
-      script: docker run bchurchill/stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
+      script: 
+        - docker pull "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
+        - docker run "stanfordpl/stoke-test:$TRAVIS_BUILD_ID" /bin/sh -c "cd /home/stoke/stoke; make;"
+        - docker run "stanfordpl/stoke-test:$TRAVIS_BUILD_ID" /bin/sh -c "cd /home/stoke/stoke; make test;"
 

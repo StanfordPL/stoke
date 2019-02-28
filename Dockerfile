@@ -1,5 +1,6 @@
 FROM ubuntu:14.04
 MAINTAINER Berkeley Churchill (berkeley@cs.stanford.edu)
+ARG TRAVIS=0
 
 # SSH setup
 CMD ["/usr/sbin/sshd", "-D"]
@@ -10,4 +11,4 @@ RUN useradd -ms /bin/bash -ms /bin/bash stoke
 # Build everything 
 COPY . /home/stoke/stoke/
 RUN chmod +x /home/stoke/stoke/docker/setup.sh && \
-    /home/stoke/stoke/docker/setup.sh
+    TRAVIS=$TRAVIS /home/stoke/stoke/docker/setup.sh
