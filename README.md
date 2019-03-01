@@ -93,7 +93,7 @@ then one can SSH as follows:
 In the home directory, you will find a `stoke` folder which will contain the
 last "released" version of stoke.  If you want the latest code, enter this
 folder, perform a `git pull` and `make`.  Running `make test` is optional, but the
-tests should pass (sometimes the "integration tests nondeterministically fail;
+tests should pass (sometimes the "integration tests" nondeterministically fail;
     if this happens and you're worried about it, try running them again).
 
 Note that there are more recent, publically available docker images built by
