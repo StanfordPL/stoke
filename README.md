@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/StanfordPL/stoke.svg?branch=develop)](https://travis-ci.org/StanfordPL/stoke)
+
 STOKE
 =====
 
