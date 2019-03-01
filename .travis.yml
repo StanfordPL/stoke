@@ -15,13 +15,16 @@ jobs:
   include:
     - stage: compile
       script: 
+        - echo "\u001b[33m=== Building docker image $IMAGENAME ===\u001b[37m"
         - echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin
         - docker build --build-arg TRAVIS=1 -t stoke .
         - docker images
         - docker tag stoke "$IMAGENAME"
         - docker push "$IMAGENAME"
+        - echo "\u001b[33m=== Pushed docker image $IMAGENAME ===\u001b[37m"
     - stage: test
       script: 
+        - echo "\u001b[33m=== Testing docker image $IMAGENAME ===\u001b[37m"
         - docker pull "$IMAGENAME"
         - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make;"
         - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make test;"
