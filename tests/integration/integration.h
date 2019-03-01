@@ -245,7 +245,7 @@ TEST_F(IntegrationTest, SandboxRecursiveJmp) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-#if !defined(NEHALEM_BUILD)
+#if defined(HASWELL_BUILD)
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
   set_path("../../../../bin");

@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/StanfordPL/stoke.svg?branch=develop)](https://travis-ci.org/StanfordPL/stoke)
+
 STOKE
 =====
 
@@ -16,82 +18,124 @@ the design of STOKE, see:
 - [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
 - [**Sound Loop Superoptimization for Google Native Client** -- ASPLOS 2017](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos17.pdf)
 
-Important
+Status of this Work
 =====
 
-STOKE isn't production ready.  It's a research prototype that demonstrates the viability of superoptimization techniques in various domains.  It's not a general-purpose tool.  The papers above describe specific areas where successes have been shown beyond the state of the art: in optimizing straight line code, code where correctness can be relaxed (e.g. floating point), synthesizing sematic specifications for an instruction set, and in optimizing code containing loops with special compilation requirements (e.g. Google Native Client).  We're not quite at the point where we can take a generic loop and expect to improve gcc/llvm -O3 code.  In part, this is because these compilers have decades of work behind them to make them really great; moreover, some (but not all!) outputs from optimizing compilers don't leave much room for improvement.  If you're willing to get your hands dirty, we very much appreciate contributions!
+STOKE isn't production ready.  It's a research prototype that demonstrates the viability of superoptimization techniques in various domains.  It's not a general-purpose tool.  The papers above describe specific areas where successes have been shown beyond the state of the art: in optimizing straight line code, code where correctness can be relaxed (e.g. floating point), synthesizing sematic specifications for an instruction set, and in optimizing code containing loops with special compilation requirements (e.g. Google Native Client).  We're not quite at the point where we can take a generic loop and expect to improve gcc/llvm -O3 code.  In part, this is because these compilers have decades of work behind them to make them really great.  
+
+At this point, nobody is actively working on this code base.  This repository now serves as an artifact for several of the above research papers.  We will accept pull requests and answer inquiries as time permits.
+
 
 Table of Contents
 =====
-0. [Prerequisites](#prerequisites)
-1. [Choosing a STOKE version](#choosing-a-stoke-version)
-2. [Building STOKE](#building-stoke)
+0. [Hardware Prerequisites](#hardware-prerequisites)
+1. [Using Docker](#using-docker)
+2. [Downloading and Building STOKE](#downloading-and-building-stoke)
 3. [Using STOKE](#using-stoke)
- 1. [Running Example](#running-example)
- 1. [Compiling and Disassembling Your Code](#compiling-and-disassembling-your-code)
- 1. [Test Case Generation](#test-case-generation)
- 1. [Final Configuration](#final-configuration)
- 1. [Starting STOKE](#starting-stoke)
- 1. [Rewriting the Binary](#rewriting-the-binary)
- 1. [Using the formal validator](#using-the-formal-validator)
+   1. [Running Example](#running-example)
+   1. [Compiling and Disassembling Your Code](#compiling-and-disassembling-your-code)
+   1. [Test Case Generation](#test-case-generation)
+   1. [Final Configuration](#final-configuration)
+   1. [Starting STOKE](#starting-stoke)
+   1. [Rewriting the Binary](#rewriting-the-binary)
+   1. [Using the formal validator](#using-the-formal-validator)
 4. [Additional Features](#additional-features)
 5. [User FAQ](#user-faq)
 6. [Developer FAQ](#developer-faq)
 7. [Extending STOKE](#extending-stoke)
- 1. [Code Organization](#code-organization)
- 2. [Gadgets](#gadgets)
- 3. [Initial Search State](#initial-search-state)
- 4. [Search Transformations](#search-transformations)
- 5. [Cost Function](#cost-function)
- 6. [Live-out Error](#live-out-error)
- 7. [Verification Strategy](#verification-strategy)
- 8. [Command Line Args](#command-line-args)
+   1. [Code Organization](#code-organization)
+   2. [Gadgets](#gadgets)
+   3. [Initial Search State](#initial-search-state)
+   4. [Search Transformations](#search-transformations)
+   5. [Cost Function](#cost-function)
+   6. [Live-out Error](#live-out-error)
+   7. [Verification Strategy](#verification-strategy)
+   8. [Command Line Args](#command-line-args)
 8. [Contact](#contact)
 
-Prerequisites
+Hardware Prerequisites
 =====
 
-STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
-processors with AVX2 extensions.  STOKE should also run on Sandy Bridge
-systems (with AVX, but not AVX2).  It might run on newer architectures, but we currently don't test these.
-Running `./configure.sh` as described next will automatically configure the build for the correct architecture.
+STOKE will run on modern 64-bit x86 processors.  It will run best on Haswell or
+newer machines, but it can also run okay on Sandy Bridge.  With Sandy Bridge
+processors, there won't be support for AVX2 instructions.  
 
-STOKE is supported on Ubuntu 16.04 only.  If you're trying to get STOKE to
-work on another linux distribution, having the right version of g++ is key.
-STOKE is supported on 4.9 only.
-It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
-definitely will not work.
+It should run on newer architectures, but we haven't tested it.  However, stoke
+only supports a subset of instructions that were widely available when it was
+initially developed.  As a result, targets generated by newer compilers might not
+work with STOKE.  (Adding support for an instruction mostly involves adding a
+spreadsheet entry in the x64asm project, and optionally adding validator support).
 
-***IMPORTANT*** Ubuntu 16.04 shipped with a new gcc that changed the ABI.  This is causing us some problems and we're still playing catch-up.  If you're on Ubuntu 16.04, the best thing at the present-time is to install gcc-4.9 and use the ubuntu16.04 branch of this repository.  After running ./configure.sh you'll want to be sure that CXX=/usr/bin/g++-4.9 and CC=/usr/bin/gcc-4.9 are in the .stoke_config file.  Hopefully we'll get everything working for gcc-5.3 soon.
+Using Docker
+=====
 
-Most of STOKE's software dependencies are available through apt. These can be
-satisfied by typing:
+STOKE has many dependencies and we think the best way to get up-and-running
+with a development environment is to use docker.  Simply:
+
+    $ sudo docker pull stanfordpl/stoke:haswell
+
+OR
+
+    $ sudo docker pull stanfordpl/stoke:sandybridge
+
+depending on your hardware architecture (see section on hardware prerequisites).   These docker images run an SSH server.  We recommend starting the image like so:
+
+    $ sudo docker run -d -P --name stoke stanfordpl/stoke:ARCH
+
+then one can SSH as follows:
+
+    $ sudo docker port stoke 22
+    0.0.0.0:XXXXX
+
+    $ ssh -pXXXXX stoke@127.0.0.1
+    (password is 'stoke')
+
+In the home directory, you will find a `stoke` folder which will contain the
+last "released" version of stoke.  If you want the latest code, enter this
+folder, perform a `git pull` and `make`.  Running `make test` is optional, but the
+tests should pass (sometimes the "integration tests nondeterministically fail;
+    if this happens and you're worried about it, try running them again).
+
+Note that there are more recent, publically available docker images built by
+the travis-CI system.  These are meant to work for sandybridge and haswell so
+they don't support AVX2.  They are in the stanfordpl/stoke-test repository, and
+are tagged by travis CI's internal build ID.  For these images, you will need to
+run `make` inside the `stoke` folder.
+
+You can build your own docker images by running `docker build -t stoke .` in
+the top level of this repository.
+
+Downloading and Building STOKE
+=====
+
+STOKE should work on Ubuntu 14.04 and Ubuntu 16.04.  Regardless of
+distribution, the key to making stoke right is using gcc version 4.9.  Below
+that, the compiler doesn't support enough features to build our code.  Above
+that, there are some issues with an ABI change in gcc-5.
 
     $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion libiml-dev libgmp-dev libboost-regex-dev autoconf libtool antlr pccts pkg-config
 
-Note that your distribution might not have g++-4.9 by default.  You may consider installing a PPA as described here: https://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-4-9-on-ubuntu-14-04
+Note that your distribution might not have g++-4.9 by default.  You may
+consider installing a PPA as described here:
+https://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-4-9-on-ubuntu-14-04
 
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Downloading STOKE
-=====
-
 The entire STOKE code base is available on GitHub under the Apache Software
-License version 2.0 at [github.com/StanfordPL/stoke](https://github.com/StanfordPL/stoke/).
-
-To check it out, type:
+License version 2.0 at [github.com/StanfordPL/stoke](https://github.com/StanfordPL/stoke/).  To check it out, type:
 
     $ git clone https://github.com/StanfordPL/stoke
 
-This will check out the default `develop` branch.  Unless you are looking for a specific version or modification of STOKE, this is the branch to use.  It contains all the latest changes and is reasonably stable.  This branch is supposed to always pass all tests.
+This will check out the default `develop` branch.  Unless you are looking for a
+specific version or modification of STOKE, this is the branch to use.  It
+contains all the latest changes and is reasonably stable.  This branch is
+supposed to always pass all tests.
 
-Building STOKE
-=====
-
-See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
-support level.  The remainder of STOKE's software dependencies are available on
-GitHub and will be downloaded automatically the first time that STOKE is built.  When you build STOKE the first time, run
+See the previous sections on how to download STOKE, a list of dependencies, and
+to check your hardware support level.  The remainder of STOKE's software
+dependencies are available on GitHub and will be downloaded automatically the
+first time that STOKE is built.  When you build STOKE the first time, run
 
     $ ./configure.sh
 
