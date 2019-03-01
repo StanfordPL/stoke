@@ -100,6 +100,9 @@ they don't support AVX2.  They are in the stanfordpl/stoke-test repository, and
 are tagged by travis CI's internal build ID.  For these images, you will need to
 run `make` inside the `stoke` folder.
 
+You can build your own docker images by running `docker build -t stoke .` in
+the top level of this repository.
+
 Downloading and Building STOKE
 =====
 
