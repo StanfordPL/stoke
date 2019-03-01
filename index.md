@@ -23,5 +23,5 @@ STOKE has appeared in a number of publications.
 
 # Download
 
-STOKE is developed as open source on GitHub and can be downloaded from [github.com/StanfordPL/stoke](https://github.com/StanfordPL/stoke).  The repository contains instructions on how to install STOKE as well as it's dependencies.
+STOKE is developed as open source on GitHub and can be downloaded from [github.com/StanfordPL/stoke](https://github.com/StanfordPL/stoke).  The repository contains instructions on how to install STOKE as well as its dependencies.
 
