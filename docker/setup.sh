@@ -47,7 +47,7 @@ mkdir /var/run/sshd
 chmod 0755 /var/run/sshd
 sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 echo "export VISIBLE=now" >> /etc/profile
-sed -i "s/stoke:.*/stoke:\$6\$ZfBji33B\$1GZHu6wFBOIjkTgb6DEJRdRYcgjoI4hgzrlhU\/4p.nMhQzVOWEsPBKYzfJ1ZRlYgEUcQamR28\/q3\/nbJSPpgd.:17947:0:99999:7:::/" /etc/shadow
+sed -i "s/stoke:.*/stoke:\$1\$bXW0K4Te\$5UHZQ8CHFS\/RkwfnN6.FS.:17947:0:99999:7:::/" /etc/shadow
 usermod -a -G sudo stoke
 
 # gcc setup
