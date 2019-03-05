@@ -59,6 +59,10 @@ SymBool Handler::minus_of(SymBool arg1_msb, SymBool arg2_msb, SymBool total_msb)
   return (arg2_msb == total_msb) & (arg1_msb != arg2_msb);
 }
 
+SymBool Handler::makeAF(SymBitVector arg1, SymBitVector arg2, SymBitVector total) const {
+  auto res =  arg1 ^ arg2 ^ total;
+  return res[4];
+}
 
 const array<const char*, X64ASM_NUM_OPCODES> Handler::att_ = {{
     "<label definition>"
