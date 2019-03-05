@@ -50,6 +50,10 @@ public:
   /** Build a circuit for a particular instruction */
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+  /** Get name of the `Handler` used to build the circuit for instruction
+   ** `instr` */
+  std::string get_handler_name(const x64asm::Instruction& instr);
+
 protected:
 
   /** Get the handler and support level for an instruction */
