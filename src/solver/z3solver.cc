@@ -36,6 +36,18 @@ uint64_t Z3Solver::convert_time_ = 0;
 uint64_t Z3Solver::solver_time_ = 0;
 #endif
 
+z3::expr Z3Solver::getZ3Formula(const SymBitVector& bv)  {
+  vector<SymBool>* new_constraints = new vector<SymBool>();
+  ExprConverter ec(context_, *new_constraints);
+  return ec(bv);
+}
+
+z3::expr Z3Solver::getZ3Formula(const SymBool& bv)  {
+  vector<SymBool>* new_constraints = new vector<SymBool>();
+  ExprConverter ec(context_, *new_constraints);
+  return ec(bv);
+}
+
 bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE

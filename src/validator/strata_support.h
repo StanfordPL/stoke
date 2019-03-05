@@ -42,8 +42,10 @@ bool strata_uses_imm(const x64asm::Opcode& opcode);
 
 StrataSupportedReason strata_is_supported_type_reason(x64asm::Type t);
 bool strata_is_supported_type(x64asm::Type t);
-x64asm::Instruction strata_get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0);
-x64asm::Instruction strata_get_instruction_from_string(std::string xopcode);
+x64asm::Instruction strata_get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0,
+		bool sameeg = false);
+x64asm::Instruction strata_get_instruction_from_string(std::string xopcode,
+		bool sameeg = false);
 
 } // namespace stoke
 

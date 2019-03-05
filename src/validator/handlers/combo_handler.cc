@@ -51,6 +51,37 @@ void ComboHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
 }
 
+std::string ComboHandler::get_handler_name(const Instruction& instr) {
+
+  Handler::SupportLevel level;
+  auto handler = get_handler(instr, level) ;
+  std::string handler_string("Un-known");
+
+  if (dynamic_cast<StrataHandler *>(handler)) {
+    handler_string = string("StrataHandler");
+  } else if (dynamic_cast<PackedHandler *>(handler)) {
+    handler_string = string("PackedHandler");
+  } else if (dynamic_cast<SimpleHandler *>(handler)) {
+    handler_string = string("SimpleHandler");
+  } else if (dynamic_cast<AddHandler *>(handler)) {
+    handler_string = string("AddHandler");
+  } else if (dynamic_cast<ConditionalHandler *>(handler)) {
+    handler_string = string("ConditionalHandler");
+  } else if (dynamic_cast<LeaHandler *>(handler)) {
+    handler_string = string("LeaHandler");
+  } else if (dynamic_cast<MoveHandler *>(handler)) {
+    handler_string = string("MoveHandler");
+  } else if (dynamic_cast<PunpckHandler *>(handler)) {
+    handler_string = string("PunpckHandler");
+  } else if (dynamic_cast<ShiftHandler *>(handler)) {
+    handler_string = string("ShiftHandler");
+  } else if (dynamic_cast<PseudoHandler *>(handler)) {
+    handler_string = string("PseudoHandler");
+  }
+
+  return handler_string;
+}
+
 Handler* ComboHandler::get_handler(const Instruction& instr, Handler::SupportLevel& sl) {
 
   /* Find the best handler for this instruction */

@@ -45,6 +45,9 @@ public:
     return contents_[i];
   }
 
+  std::vector<stoke::SymBitVector>& getcontents () {
+    return contents_;
+  }
 private:
   /** Symbolic register contents. */
   std::vector<stoke::SymBitVector> contents_;

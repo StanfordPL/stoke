@@ -191,7 +191,13 @@ SymBitVector SymState::lookup(const Operand o) const {
 
   if (o.is_immediate()) {
     auto& imm = reinterpret_cast<const Imm&>(o);
-    return SymBitVector::constant(o.size(), imm);
+    if (keep_imm_symbolic) {
+      string immName("Imm");
+      immName = immName + std::to_string(o.size());
+      return SymBitVector::var(o.size(), immName);
+    } else {
+      return SymBitVector::constant(o.size(), imm);
+    }
   }
 
   assert(false);
