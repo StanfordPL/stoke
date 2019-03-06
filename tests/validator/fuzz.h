@@ -503,6 +503,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.insert_opcode(x64asm::Opcode::PALIGNR_XMM_M128_IMM8);
   tp.insert_opcode(x64asm::Opcode::VPALIGNR_XMM_XMM_M128_IMM8);
   tp.insert_opcode(x64asm::Opcode::VPALIGNR_YMM_YMM_M256_IMM8);
+#include"instrs_under_test.inc"
   */
 
 

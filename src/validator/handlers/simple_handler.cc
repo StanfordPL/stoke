@@ -577,7 +577,6 @@ void SimpleHandler::add_all() {
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
   });
-  // END
 
 
   add_opcode_str({"cmpxchg8b", "cmpxchg16b"},
@@ -630,12 +629,35 @@ void SimpleHandler::add_all() {
     // Where as for dst, while accumulator != a; the ppoer bits need to be preserved even if
     // the witdth of dest is 32 bits.
 
-    if (32 == width) {
-      ss.set(rax, (accumulator == a).ite(ss[Constants::rax()],  SymBitVector::constant(64 - width, 0) || a));
-    } else if (64 == width) {
-      ss.set(rax, (accumulator == a).ite(ss[Constants::rax()],  a));
+    if(dst == eax) {
+      if (32 == width) {
+        ss.set(rax, (accumulator == a).ite(
+              SymBitVector::constant(64 - width, 0) || b,
+              SymBitVector::constant(64 - width, 0) || a));
+      } else if (64 == width) {
+        ss.set(rax, (accumulator == a).ite(
+              b,
+              a));
+      } else {
+        ss.set(rax, (accumulator == a).ite(
+              ss[Constants::rax()][63][width] || b,
+              ss[Constants::rax()][63][width] || a));
+      }
     } else {
-      ss.set(rax, (accumulator == a).ite(ss[Constants::rax()],  ss[Constants::rax()][63][width] || a));
+      if (32 == width) {
+        ss.set(rax, (accumulator == a).ite(
+              ss[Constants::rax()],
+              SymBitVector::constant(64 - width, 0) || a));
+      } else if (64 == width) {
+        ss.set(rax, (accumulator == a).ite(
+              ss[Constants::rax()],
+              a));
+      } else {
+        ss.set(rax, (accumulator == a).ite(
+              ss[Constants::rax()],
+              ss[Constants::rax()][63][width] || a));
+      }
+
     }
 
     ss.set(dst, (accumulator == a).ite(b, a), false, true);
@@ -1141,7 +1163,75 @@ void SimpleHandler::add_all() {
     ss.set(dst, (a & !mask) | temp, true);
   });
 
+    // insertps
+  add_opcode_str({"insertps"},
+  [this] (Operand dst, Operand src, Operand imm_, SymBitVector a, SymBitVector b,  SymBitVector imm8, SymState& ss) {
+   // add_opcode("insertps", [] (SymBitVector a, SymBitVector b, SymBitVector imm8, uint16_t k) {
+      short unsigned int vec_len = 32;
+      auto dest_width = a.width();
 
+      auto count_s = imm8[7][6];
+      auto count_d = imm8[5][4];
+      auto zmask   = imm8[3][0];
+
+      SymBitVector temp;
+      if(src.is_typical_memory()) {
+        temp = b;
+      } else {
+        temp = (count_s == SymBitVector::constant(2, 0x0)).ite(
+                    b[31][0], (count_s == SymBitVector::constant(2, 0x1)).ite(
+                      b[63][32], (count_s == SymBitVector::constant(2, 0x2)).ite(
+                        b[95][64], (count_s == SymBitVector::constant(2, 0x3)).ite(
+                          b[127][96], b[127][96]))));
+      }
+
+      auto temp2 =      (count_d == SymBitVector::constant(2, 0x0)).ite( a[127][32] || temp,
+                        (count_d == SymBitVector::constant(2, 0x1)).ite( a[127][64] || temp || a[31][0],
+                            (count_d == SymBitVector::constant(2, 0x2)).ite( a[127][96] || temp || a[63][0],
+                                (count_d == SymBitVector::constant(2, 0x3)).ite( temp || a[95][0], temp || a[95][0]))));
+
+      auto result = (zmask[3][3] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[127][96])
+                    || (zmask[2][2] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[95][64])
+                    || (zmask[1][1] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[63][32])
+                    || (zmask[0][0] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[31][0]);
+
+      ss.set(dst, result);
+    });
+
+    // vinsertps
+  add_opcode_str({"vinsertps"},
+  [this] (Operand dst, Operand src1, Operand src2, Operand imm_, SymBitVector d, SymBitVector a, SymBitVector b,  SymBitVector imm8, SymState& ss) {
+   // add_opcode("insertps", [] (SymBitVector a, SymBitVector b, SymBitVector imm8, uint16_t k) {
+      short unsigned int vec_len = 32;
+      auto dest_width = a.width();
+
+      auto count_s = imm8[7][6];
+      auto count_d = imm8[5][4];
+      auto zmask   = imm8[3][0];
+
+      SymBitVector temp;
+      if(src2.is_typical_memory()) {
+        temp = b;
+      } else {
+        temp = (count_s == SymBitVector::constant(2, 0x0)).ite(
+                    b[31][0], (count_s == SymBitVector::constant(2, 0x1)).ite(
+                      b[63][32], (count_s == SymBitVector::constant(2, 0x2)).ite(
+                        b[95][64], (count_s == SymBitVector::constant(2, 0x3)).ite(
+                          b[127][96], b[127][96]))));
+      }
+
+      auto temp2 =      (count_d == SymBitVector::constant(2, 0x0)).ite( a[127][32] || temp,
+                        (count_d == SymBitVector::constant(2, 0x1)).ite( a[127][64] || temp || a[31][0],
+                            (count_d == SymBitVector::constant(2, 0x2)).ite( a[127][96] || temp || a[63][0],
+                                (count_d == SymBitVector::constant(2, 0x3)).ite( temp || a[95][0], temp || a[95][0]))));
+
+      auto result = (zmask[3][3] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[127][96])
+                    || (zmask[2][2] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[95][64])
+                    || (zmask[1][1] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[63][32])
+                    || (zmask[0][0] == SymBitVector::constant(1, 0x1)).ite(SymBitVector::constant(32, 0x0), temp2[31][0]);
+
+      ss.set(dst, result, true);
+    });
 
   // pclmulqdq
   add_opcode_str({"pclmulqdq"},
@@ -2281,7 +2371,7 @@ void SimpleHandler::add_all() {
         result = cond.ite(SymBitVector::constant(8, 0), byte) || result;
       }
     }
-    ss.set(dst, result, true);
+    ss.set(dst, result, false);
   });
 
   // for min/max|ss/sd: can't be done with packed handler because the upper 96/64 bits are from src1, not dest in the v variant
