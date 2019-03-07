@@ -624,44 +624,140 @@ void SimpleHandler::add_all() {
       assert(0);
     }
 
-    // For accumulator == a; rax should remain unchanged
-    // For accumulator != a; rax  == 0 || a
-    // Where as for dst, while accumulator != a; the ppoer bits need to be preserved even if
-    // the witdth of dest is 32 bits.
 
-    if(dst == eax) {
-      if (32 == width) {
-        ss.set(rax, (accumulator == a).ite(
-              SymBitVector::constant(64 - width, 0) || b,
-              SymBitVector::constant(64 - width, 0) || a));
-      } else if (64 == width) {
-        ss.set(rax, (accumulator == a).ite(
-              b,
-              a));
-      } else {
-        ss.set(rax, (accumulator == a).ite(
-              ss[Constants::rax()][63][width] || b,
-              ss[Constants::rax()][63][width] || a));
+    // For the case cmpxchng %bl, (%rax), if the accumulator is
+    // updated before the dst, then rax is updated to new_rax before  
+    // the access to the dest; which means the dest which is actually 
+    // accessed later for modification is (new_rax) as opposed to the expected (rax)
+    // For this reason, we update the dest before the accumulator.
+
+    if(32 == width && !dst.is_typical_memory()) {
+      // If the destination register is 32-bit, then we depending upon
+      // accuulator == a, we might have to update the lower 32-bit of
+      // the 64-bit destination register or keep it unmodified. The first
+      // can be achieved using preserve32 == false of the SymState::set function and the
+      // later using preserve32 == true. But as we are using a single Symstate::set
+      // invocation to cover both cases, we need to work with the 64-bit destination
+      // as shown below.  
+      if (dst == eax) {
+          ss.set(rax, SymBitVector::constant(32, 0) || b);
+      }
+      if (dst == ebx) {
+          ss.set(rbx, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rbx()]));
+      }
+      if(dst == ecx) {
+          ss.set(rcx, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rcx()]));
+      }
+      if(dst == edx) {
+          ss.set(rdx, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rdx()]));
+      }
+      if(dst == esi) {
+          ss.set(rsi, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rsi()]));
+      }
+      if(dst == edi) {
+          ss.set(rdi, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rdi()]));
+      }
+      if(dst == esp) {
+          ss.set(rsp, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rsp()]));
+      }
+      if(dst == ebp) {
+          ss.set(rbp, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::rbp()]));
+      }
+      if(dst == r8d) {
+          ss.set(r8, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r8()]));
+      }
+      if(dst == r9d) {
+          ss.set(r9, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r9()]));
+      }
+      if(dst == r10d) {
+          ss.set(r10, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r10()]));
+      }
+      if(dst == r11d) {
+          ss.set(r11, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r11()]));
+      }
+      if(dst == r12d) {
+          ss.set(r12, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r12()]));
+      }
+      if(dst == r13d) {
+          ss.set(r13, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r13()]));
+      }
+      if(dst == r14d) {
+          ss.set(r14, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r14()]));
+      }
+      if(dst == r15d) {
+          ss.set(r15, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || b,
+              ss[Constants::r15()]));
       }
     } else {
-      if (32 == width) {
-        ss.set(rax, (accumulator == a).ite(
+      ss.set(dst, (accumulator == a).ite(b, a), false, true);
+    }
+
+    // Modifications of accumulator
+    if(32 == width) {
+      if (dst == eax) {
+          ss.set(eax, b, false, false);
+      } else {
+          ss.set(rax, (accumulator == a).ite(
               ss[Constants::rax()],
-              SymBitVector::constant(64 - width, 0) || a));
-      } else if (64 == width) {
-        ss.set(rax, (accumulator == a).ite(
+              SymBitVector::constant(32, 0) || a));
+      }
+    }
+    if(64 == width) {
+      if (dst == rax) {
+          ss.set(rax, b);
+      } else {
+          ss.set(rax, (accumulator == a).ite(
               ss[Constants::rax()],
               a));
+      }
+    }
+    if(16 == width) {
+      if (dst == ax) {
+          ss.set(ax, b, false, true);
       } else {
-        ss.set(rax, (accumulator == a).ite(
+          ss.set(rax, (accumulator == a).ite(
               ss[Constants::rax()],
               ss[Constants::rax()][63][width] || a));
       }
-
     }
-
-    ss.set(dst, (accumulator == a).ite(b, a), false, true);
-
+    if(8 == width) {
+      if (dst == al) {
+          ss.set(al, b, false, true);
+      } else {
+          ss.set(rax, (accumulator == a).ite(
+              ss[Constants::rax()],
+              ss[Constants::rax()][63][width] || a));
+      }
+    }
 
     SymBitVector src_bv = a;
     SymBitVector dst_bv = accumulator;
