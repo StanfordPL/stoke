@@ -54,13 +54,13 @@ endif
 # Set platform-specific compiler options to use
 ifndef ARCH_OPT
 	ifeq ($(STOKE_PLATFORM), "haswell")
-		ARCH_OPT=-march=core-avx2 -DHASWELL_BUILD
+		ARCH_OPT=-DHASWELL_BUILD
 	endif
 	ifeq ($(STOKE_PLATFORM), "sandybridge")
-		ARCH_OPT=-march=corei7-avx -DSANDYBRIDGE_BUILD
+		ARCH_OPT=-DSANDYBRIDGE_BUILD
 	endif
 	ifeq ($(STOKE_PLATFORM), "nehalem")
-		ARCH_OPT=-march=corei7 -DNEHALEM_BUILD
+		ARCH_OPT=-DNEHALEM_BUILD
 	endif
 endif
 ifndef ARCH_OPT
