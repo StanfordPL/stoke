@@ -72,13 +72,9 @@ Using Docker
 STOKE has many dependencies and we think the best way to get up-and-running
 with a development environment is to use docker.  Simply:
 
-    $ sudo docker pull stanfordpl/stoke:haswell
+    $ sudo docker pull stanfordpl/stoke:latest
 
-OR
-
-    $ sudo docker pull stanfordpl/stoke:sandybridge
-
-depending on your hardware architecture (see section on hardware prerequisites).   These docker images run an SSH server.  We recommend starting the image like so:
+These docker images run an SSH server.  We recommend starting the image like so:
 
     $ sudo docker run -d -P --name stoke stanfordpl/stoke:ARCH
 
@@ -90,20 +86,23 @@ then one can SSH as follows:
     $ ssh -pXXXXX stoke@127.0.0.1
     (password is 'stoke')
 
-In the home directory, you will find a `stoke` folder which will contain the
-last "released" version of stoke.  If you want the latest code, enter this
-folder, perform a `git pull` and `make`.  Running `make test` is optional, but the
-tests should pass (sometimes the "integration tests" nondeterministically fail;
-    if this happens and you're worried about it, try running them again).
 
-Note that there are more recent, publically available docker images built by
-the travis-CI system.  These are meant to work for sandybridge and haswell so
-they don't support AVX2.  They are in the stanfordpl/stoke-test repository, and
-are tagged by travis CI's internal build ID.  For these images, you will need to
-run `make` inside the `stoke` folder.
+```
+./configure.sh
+make
+```
 
-You can build your own docker images by running `docker build -t stoke .` in
-the top level of this repository.
+Note that there are other docker images from other travis-ci builds available
+in the stanfordpl/stoke-test repository.  These should be available for recent
+branches and pull requests, for example.
+
+You can build your own docker images by running `docker build .` in
+the top level of this repository.  These are built upon the
+`stanfordpl/stoke-base:latest` image, which contains compiled versions of Z3
+and CVC4.  If you want to upgrade Z3 or CVC4, it will require rebuilding these
+imsages.  The `Dockerfile.base` dockerfile may be used for this purpose (but
+it's not part of continuous integration, so it may require some manual work to
+get it to happen).
 
 Downloading and Building STOKE
 =====

@@ -1,14 +1,10 @@
-FROM ubuntu:14.04
+FROM stanfordpl/stoke-base:latest
 MAINTAINER Berkeley Churchill (berkeley@cs.stanford.edu)
-ARG TRAVIS=0
 
-# SSH setup
-CMD ["/usr/sbin/sshd", "-D"]
-EXPOSE 22
-ENV NOTVISIBLE "in users profile"
-RUN useradd -ms /bin/bash -ms /bin/bash stoke
-
-# Build everything 
 COPY . /home/stoke/stoke/
-RUN chmod +x /home/stoke/stoke/docker/setup.sh && \
-    TRAVIS=$TRAVIS /home/stoke/stoke/docker/setup.sh
+# update binaries
+RUN apt-get update && apt-get upgrade
+# compiler
+RUN chown -R stoke /home/stoke/stoke && \
+    chmod +x /home/stoke/stoke/scripts/docker/user-setup.sh && \
+    /home/stoke/stoke/scripts/docker/user-setup.sh

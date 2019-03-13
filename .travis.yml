@@ -1,31 +1,17 @@
 
-language: generic
+language: minimal
 
 services:
   - docker
 
-stages:
-  - compile
-  - test
-
-env:
-  - IMAGENAME: "stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
-
-jobs:
-  include:
-    - stage: compile
-      script: 
-        - echo "\u001b[33m=== Building docker image $IMAGENAME ===\u001b[37m"
-        - echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin
-        - docker build --build-arg TRAVIS=1 -t stoke .
-        - docker images
-        - docker tag stoke "$IMAGENAME"
-        - docker push "$IMAGENAME"
-        - echo "\u001b[33m=== Pushed docker image $IMAGENAME ===\u001b[37m"
-    - stage: test
-      script: 
-        - echo "\u001b[33m=== Testing docker image $IMAGENAME ===\u001b[37m"
-        - docker pull "$IMAGENAME"
-        - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make;"
-        - docker run "$IMAGENAME" /bin/sh -c "cd /home/stoke/stoke; make test;"
+script: 
+  - docker build -t stoke .
+  - docker run stoke /bin/sh -c "cd /home/stoke/stoke; ./configure.sh; make; make test;"
+  - IMAGENAME="stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then IMAGENAME="stanfordpl/stoke:latest"; fi
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
+        docker tag stoke "$IMAGENAME";  
+        echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin;
+        docker push "$IMAGENAME";
+    fi
 
