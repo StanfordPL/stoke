@@ -11,7 +11,7 @@ script:
   - if [ "$TRAVIS_BRANCH" = "develop" ]; then IMAGENAME="stanfordpl/stoke:latest"; fi
   - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then 
         docker tag stoke "$IMAGENAME";  
-        docker push "$IMAGENAME";
         echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin;
+        docker push "$IMAGENAME";
     fi
 
