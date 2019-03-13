@@ -7,7 +7,7 @@ services:
 script: 
   - echo "$DOCKER_DEPLOY_PWD" | docker login -u "$DOCKER_DEPLOY_USR" --password-stdin
   - docker build -t stoke .
-  - docker run stoke /bin/sh -c "cd /home/stoke/stoke; make test;"
+  - docker run stoke /bin/sh -c "cd /home/stoke/stoke; ./configure.sh; make; make test;"
   - IMAGENAME="stanfordpl/stoke-test:$TRAVIS_BUILD_ID"
   - if [ "$TRAVIS_BRANCH" = "develop" ]; then IMAGENAME="stanfordpl/stoke:latest"; fi
   - docker tag stoke "$IMAGENAME"

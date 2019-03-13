@@ -12,8 +12,3 @@ ln -s /home/stoke/base/src/ext/cvc4-1.5 src/ext/cvc4-1.5
 # fix PATH
 echo "PATH=\"\$HOME/stoke/bin:\$PATH\"" >> ~/.bashrc
 
-# compile stoke
-./configure.sh
-make
-
-
