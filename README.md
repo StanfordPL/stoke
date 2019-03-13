@@ -86,8 +86,6 @@ then one can SSH as follows:
     $ ssh -pXXXXX stoke@127.0.0.1
     (password is 'stoke')
 
-In the home directory, you will find a `stoke` folder.  Inside, run the following
-to build stoke for your machine:
 
 ```
 ./configure.sh
@@ -98,7 +96,7 @@ Note that there are other docker images from other travis-ci builds available
 in the stanfordpl/stoke-test repository.  These should be available for recent
 branches and pull requests, for example.
 
-You can build your own docker images by running `docker build -t stoke .` in
+You can build your own docker images by running `docker build .` in
 the top level of this repository.  These are built upon the
 `stanfordpl/stoke-base:latest` image, which contains compiled versions of Z3
 and CVC4.  If you want to upgrade Z3 or CVC4, it will require rebuilding these
