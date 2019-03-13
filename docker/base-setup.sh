@@ -54,8 +54,7 @@ usermod -a -G sudo stoke
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
 
 # Compile everything, etc.
-chown -R stoke /home/stoke/cvc4
-chown -R stoke /home/stoke/z3
-cd /home/stoke/stoke
+chown -R stoke /home/stoke/base
+cd /home/stoke/base
 chmod +x docker/base-user-setup.sh
-su stoke -c "TRAVIS=$TRAVIS ./docker/user-setup.sh"
+su stoke -c "TRAVIS=$TRAVIS ./docker/base-user-setup.sh"

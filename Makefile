@@ -327,7 +327,7 @@ depend:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/astyle cpputil x64asm z3 cvc4 pintool src/ext/gtest-1.7.0/libgtest.a
+external: cpputil x64asm z3 cvc4 pintool src/ext/gtest-1.7.0/libgtest.a
 	if [ ! -f .depend ]; then \
 		$(MAKE) -C . depend; \
 	fi
