@@ -9,5 +9,5 @@ RUN useradd -ms /bin/bash -ms /bin/bash stoke
 
 # Build everything 
 COPY . /home/stoke/base/
-RUN chmod +x /home/stoke/base/docker/base-setup.sh && \
-    TRAVIS=$TRAVIS /home/stoke/base/docker/base-setup.sh
+RUN chmod +x /home/stoke/base/scripts/docker/base-setup.sh && \
+    TRAVIS=$TRAVIS /home/stoke/base/scripts/docker/base-setup.sh

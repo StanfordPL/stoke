@@ -6,5 +6,5 @@ COPY . /home/stoke/stoke/
 RUN apt-get update && apt-get upgrade
 # compiler
 RUN chown -R stoke /home/stoke/stoke && \
-    chmod +x /home/stoke/stoke/docker/user-setup.sh && \
-    /home/stoke/stoke/docker/user-setup.sh
+    chmod +x /home/stoke/stoke/scripts/docker/user-setup.sh && \
+    /home/stoke/stoke/scripts/docker/user-setup.sh
