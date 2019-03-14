@@ -358,6 +358,586 @@ public:
       return a + b;
     }, 32);
 
+
+    // dppd
+    add_opcode("dppd", [] (SymBitVector a, SymBitVector b, SymBitVector c, uint16_t k) {
+      SymFunction f("mul_double", 64, {64, 64});
+      SymFunction g("add_double", 64, {64, 64});
+      auto temp1_1 = (c[4][4] == SymBitVector::constant(1, 1)).ite(f(a[63][0], b[63][0]), SymBitVector::constant(64, 0x0));
+      auto temp1_2 = (c[5][5] == SymBitVector::constant(1, 1)).ite(f(a[127][64], b[127][64]), SymBitVector::constant(64, 0x0));
+      auto temp2 = g(temp1_1, temp1_2);
+
+      auto result = (c[1][1] == SymBitVector::constant(1, 1)).ite(temp2, SymBitVector::constant(64, 0x0)) ||
+                    (c[0][0] == SymBitVector::constant(1, 1)).ite(temp2, SymBitVector::constant(64, 0x0));
+
+      /*
+            auto temp1_1 = f(a[63][0], b[63][0]);
+            auto temp1_2 = f(a[127][64], b[127][64]);
+            auto temp1_3 = SymBitVector::constant(64, 0x0);
+            auto temp2 =  ((c[4][4] == SymBitVector::constant(1, 1)) & (c[5][5] == SymBitVector::constant(1, 1))).ite(g(temp1_1, temp1_2),
+                          ((c[4][4] == SymBitVector::constant(1, 0)) & (c[5][5] == SymBitVector::constant(1, 1))).ite(g(temp1_3, temp1_2),
+                          ((c[4][4] == SymBitVector::constant(1, 1)) & (c[5][5] == SymBitVector::constant(1, 0))).ite(g(temp1_1, temp1_3),
+                          ((c[4][4] == SymBitVector::constant(1, 0)) & (c[5][5] == SymBitVector::constant(1, 0))).ite(g(temp1_3, temp1_3),
+                  g(temp1_3, temp1_3)))));
+
+            auto result = (c[1][1] == SymBitVector::constant(1, 1)).ite(temp2 , SymBitVector::constant(64, 0x0)) ||
+                          (c[0][0] == SymBitVector::constant(1, 1)).ite(temp2, SymBitVector::constant(64, 0x0));
+                          */
+
+      return result;
+    }, 0, 0);
+
+    // dpps
+    add_opcode("dpps", [] (SymBitVector a, SymBitVector b, SymBitVector c, uint16_t k) {
+      SymFunction f("mul_single", 32, {32, 32});
+      SymFunction g("add_single", 32, {32, 32});
+      auto dest_width = a.width();
+      short unsigned int vec_len = 128;
+
+      auto dp_primitive = [&](SymBitVector a, SymBitVector b, SymBitVector c) {
+        auto temp1_1 = (c[4][4] == SymBitVector::constant(1, 1)).ite(f(a[31][0], b[31][0]), SymBitVector::constant(32, 0x0));
+        auto temp1_2 = (c[5][5] == SymBitVector::constant(1, 1)).ite(f(a[63][32], b[63][32]), SymBitVector::constant(32, 0x0));
+        auto temp1_3 = (c[6][6] == SymBitVector::constant(1, 1)).ite(f(a[95][64], b[95][64]), SymBitVector::constant(32, 0x0));
+        auto temp1_4 = (c[7][7] == SymBitVector::constant(1, 1)).ite(f(a[127][96], b[127][96]), SymBitVector::constant(32, 0x0));
+
+        auto temp2 = g(temp1_1, temp1_2);
+        auto temp3 = g(temp1_3, temp1_4);
+        auto temp4 = g(temp2,   temp3);
+
+        auto result = (c[3][3] == SymBitVector::constant(1, 1)).ite(temp4, SymBitVector::constant(32, 0x0)) ||
+                      (c[2][2] == SymBitVector::constant(1, 1)).ite(temp4, SymBitVector::constant(32, 0x0)) ||
+                      (c[1][1] == SymBitVector::constant(1, 1)).ite(temp4, SymBitVector::constant(32, 0x0)) ||
+                      (c[0][0] == SymBitVector::constant(1, 1)).ite(temp4, SymBitVector::constant(32, 0x0));
+        return result;
+      };
+
+      size_t i = 0;
+      auto  result = dp_primitive(a[vec_len-1 + vec_len*i][vec_len*i], b[vec_len-1 + vec_len*i][vec_len*i], c);
+      for (i = 1 ; i < dest_width/vec_len; i++) {
+        result = dp_primitive(a[vec_len-1 + vec_len*i][vec_len*i], b[vec_len-1 + vec_len*i][vec_len*i], c) || result;
+      }
+
+      return result;
+
+    }, 0, 0);
+
+    // pshufhw
+    add_opcode("pshufhw", [] (SymBitVector a, SymBitVector b, SymBitVector c, uint16_t k) {
+      auto dest_width = a.width();
+      // uint64_t constant = (static_cast<const SymBitVectorConstant*>(c.ptr))->constant_;
+      auto result = SymBitVector::constant(128, 0);
+
+      for (size_t k = 0 ; k < dest_width/128; k++) {
+        if (0 == k) {
+          result = b[63+128*k][0+128*k];
+        } else {
+          result = b[63+128*k][0+128*k] || result;
+        }
+        result = (b >> ((SymBitVector::constant(dest_width - 2, 0) ||  c[1][0]) << 4))[79 + 128*k][64 + 128*k] || result;
+        result = (b >> ((SymBitVector::constant(dest_width - 2, 0) ||  c[3][2]) << 4))[79 + 128*k][64 + 128*k] || result;
+        result = (b >> ((SymBitVector::constant(dest_width - 2, 0) ||  c[5][4]) << 4))[79 + 128*k][64 + 128*k] || result;
+        result = (b >> ((SymBitVector::constant(dest_width - 2, 0) ||  c[7][6]) << 4))[79 + 128*k][64 + 128*k] || result;
+      }
+      return result;
+    }, 0, 0);
+
+    // blendpd
+    add_opcode("blendpd", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 64;
+      auto dest_width = a.width();
+
+      auto result = SymBitVector::constant(vec_len, 0);
+      for (size_t i = 0; i < dest_width/vec_len; i++) {
+        if (0 == i) {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i]);
+        } else {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i])
+                   || result;
+        }
+      }
+
+      return result;
+    }, 0, 0);
+
+    // blendps
+    add_opcode("blendps", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 32;
+      auto dest_width = a.width();
+
+      auto result = SymBitVector::constant(vec_len, 0);
+      for (size_t i = 0; i < dest_width/vec_len; i++) {
+        if (0 == i) {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i]);
+        } else {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i])
+                   || result;
+        }
+      }
+
+      return result;
+    }, 0, 0);
+
+    // blendd
+    add_opcode("vpblendd", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 32;
+      auto dest_width = a.width();
+
+      auto result = SymBitVector::constant(vec_len, 0);
+      for (size_t i = 0; i < dest_width/vec_len; i++) {
+        if (0 == i) {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i]);
+        } else {
+          result = (imm[i][i] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i])
+                   || result;
+        }
+      }
+
+      return result;
+    }, 0, 0);
+
+    // blendw
+    add_opcode("pblendw", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 16;
+      auto dest_width = a.width();
+
+      auto result = SymBitVector::constant(vec_len, 0);
+      for (size_t i = 0; i < dest_width/vec_len; i++) {
+        if (0 == i) {
+          result = (imm[i%8][i%8] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i]);
+        } else {
+          result = (imm[i%8][i%8] == SymBitVector::constant(1, 0)).ite(
+                     a[vec_len -1 + vec_len*i][vec_len*i], b[vec_len -1 + vec_len*i][vec_len*i])
+                   || result;
+        }
+      }
+
+      return result;
+    }, 0, 0);
+
+
+
+
+    // roundpd
+    add_opcode("roundpd", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 64;
+      SymFunction f("cvt_double_to_int64_rm", vec_len, {vec_len, 8});
+      auto dest_width = a.width();
+
+      auto result = f(b[vec_len-1][0], imm);
+      for (size_t i = 1; i < dest_width/vec_len; i++) {
+        result =  f(b[vec_len-1 + i*vec_len][vec_len*i], imm) || result;
+      }
+      return result;
+    }, 0, 0, true);
+
+    // roundps
+    add_opcode("roundps", [] (SymBitVector a, SymBitVector b, SymBitVector imm, uint16_t k) {
+      short unsigned int vec_len = 32;
+      SymFunction f("cvt_single_to_int32_rm", vec_len, {vec_len, 8});
+      auto dest_width = a.width();
+
+      auto result = f(b[vec_len-1][0], imm);
+      for (size_t i = 1; i < dest_width/vec_len; i++) {
+        result =  f(b[vec_len-1 + i*vec_len][vec_len*i], imm) || result;
+      }
+      return result;
+    }, 0, 0, true);
+
+    // mpsadbw
+    add_opcode("mpsadbw", [this] (SymBitVector a, SymBitVector b, SymBitVector imm8, uint16_t k) {
+      auto dest_width = a.width();
+      short unsigned int scale1 = 8;
+      short unsigned int scale2 = 32;
+      auto dest = a;
+      auto src = b;
+
+      auto select_ = [&](SymBitVector dest, SymBitVector offset, uint16_t high, uint16_t low) {
+        if (offset.width() == 1) {
+          auto slice0 = SymBitVector::constant(8, 0) || dest[0*32+high][0*32+low];
+          auto slice1 = SymBitVector::constant(8, 0) || dest[1*32+high][1*32+low];
+          return (offset == SymBitVector::constant(1, 0x0)).ite(slice0, slice1);
+        } else {
+          auto slice0 = SymBitVector::constant(8,0) || dest[0*32+high][0*32+low];
+          auto slice1 = SymBitVector::constant(8,0) || dest[1*32+high][1*32+low];
+          auto slice2 = SymBitVector::constant(8,0) || dest[2*32+high][2*32+low];
+          auto slice3 = SymBitVector::constant(8,0) || dest[3*32+high][3*32+low];
+          return (offset == SymBitVector::constant(2, 0x0)).ite(slice0,
+                 (offset == SymBitVector::constant(2, 0x1)).ite(slice1,
+                     (offset == SymBitVector::constant(2, 0x2)).ite(slice2,
+                         (offset == SymBitVector::constant(2, 0x3)).ite(slice3,
+                             slice3))));
+        }
+      };
+
+      auto result = SymBitVector::constant(dest_width, 0);
+      for (size_t i = 0, k = 0 ; i < dest_width/128; i++, k += 3) {
+        auto src_offset = imm8[k+1][k];
+        auto dest_offset = imm8[k+2][k+2];
+
+        auto src_byte0   = select_( src, src_offset, 7 + 128*i, 0 + 128*i);
+        auto src_byte1   = select_( src, src_offset, 15+ 128*i, 8 + 128*i);
+        auto src_byte2   = select_( src, src_offset, 23+ 128*i, 16+ 128*i);
+        auto src_byte3   = select_( src, src_offset, 31+ 128*i, 24+ 128*i);
+
+        auto dest_byte0  = select_(dest, dest_offset, 7  + 128*i,   0 + 128*i);
+        auto dest_byte1  = select_(dest, dest_offset, 15 + 128*i,  8 + 128*i);
+        auto dest_byte2  = select_(dest, dest_offset, 23 + 128*i, 16 + 128*i);
+        auto dest_byte3  = select_(dest, dest_offset, 31 + 128*i, 24 + 128*i);
+        auto dest_byte4  = select_(dest, dest_offset, 39 + 128*i, 32 + 128*i);
+        auto dest_byte5  = select_(dest, dest_offset, 47 + 128*i, 40 + 128*i);
+        auto dest_byte6  = select_(dest, dest_offset, 55 + 128*i, 48 + 128*i);
+        auto dest_byte7  = select_(dest, dest_offset, 63 + 128*i, 56 + 128*i);
+        auto dest_byte8  = select_(dest, dest_offset, 71 + 128*i, 64 + 128*i);
+        auto dest_byte9  = select_(dest, dest_offset, 79 + 128*i, 72 + 128*i);
+        auto dest_byte10 = select_(dest, dest_offset, 87 + 128*i, 80 + 128*i);
+
+        auto temp0 = absoluteUnsignedDifference(dest_byte0, src_byte0);
+        auto temp1 = absoluteUnsignedDifference(dest_byte1, src_byte1);
+        auto temp2 = absoluteUnsignedDifference(dest_byte2, src_byte2);
+        auto temp3 = absoluteUnsignedDifference(dest_byte3, src_byte3);
+
+        if (i == 0) {
+          result = (temp0 + temp1 + temp2 + temp3);
+        } else {
+          result = (temp0 + temp1 + temp2 + temp3) || result;
+        }
+
+        temp0 = absoluteUnsignedDifference(dest_byte1, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte2, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte3, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte4, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte2, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte3, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte4, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte5, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte3, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte4, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte5, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte6, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte4, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte5, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte6, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte7, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte5, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte6, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte7, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte8, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte6, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte7, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte8, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte9, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+
+        temp0 = absoluteUnsignedDifference(dest_byte7, src_byte0);
+        temp1 = absoluteUnsignedDifference(dest_byte8, src_byte1);
+        temp2 = absoluteUnsignedDifference(dest_byte9, src_byte2);
+        temp3 = absoluteUnsignedDifference(dest_byte10, src_byte3);
+        result = (temp0 + temp1 + temp2 + temp3) || result;
+      }
+
+      return result;
+    }, 0, 0);
+
+
+
+
+    // vpermps
+    add_opcode("vpermps", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+
+      auto result = (b[255][0] >> ( (SymBitVector::constant(253,0) || a[2][0]) * SymBitVector::constant(256,32)))[31][0];
+
+      for (size_t i = 1; i < dest_width/32; i++ ) {
+        result = (b[255][0] >> ( (SymBitVector::constant(253,0) || a[2 + 32*i][32*i]) * SymBitVector::constant(256,32)))[31][0] || result;
+      }
+      return result;
+    }, 0);
+
+    // vpermd
+    add_opcode("vpermd", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+
+      auto result = (b[255][0] >> ( (SymBitVector::constant(253,0) || a[2][0]) * SymBitVector::constant(256,32)))[31][0];
+
+      for (size_t i = 1; i < dest_width/32; i++ ) {
+        result = (b[255][0] >> ( (SymBitVector::constant(253,0) || a[2 + 32*i][32*i]) * SymBitVector::constant(256,32)))[31][0] || result;
+      }
+
+      return result;
+    }, 0);
+
+
+
+    // phminposuw
+    add_opcode("phminposuw", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+      auto index = SymBitVector::constant(3,0);
+      auto min = b[15][0];
+
+      for (size_t i = 1; i < dest_width/16; i++ ) {
+        auto val_ = b[15+16*i][16*i];
+        index = (val_ < min).ite(SymBitVector::constant(3,i), index);
+        min = (val_ < min).ite(val_, min);
+      }
+
+      return SymBitVector::constant(109,0) || index || min;
+    }, 0);
+
+    // phsubsw
+    add_opcode("phsubsw", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+
+      auto val1 = a[15][0].extend(32);
+      auto val2 = a[31][16].extend(32);
+      auto result = signedSaturate(val1 - val2, 32, 16);
+
+      size_t i = 2;
+      for (size_t k = 0; k < dest_width/128; k++, i=0 ) {
+        for (; i < 8; i+= 2 ) {
+          val1 = a[15+16*i+128*k][16*i+128*k].extend(32);
+          val2 = a[15+16*(i+1)+128*k][16*(i+1)+128*k].extend(32);
+          result = signedSaturate(val1 - val2, 32, 16) || result;
+        }
+        for (size_t j = 0 ; j < 8; j+=2 ) {
+          val1 = b[15+16*j+128*k][16*j+128*k].extend(32);
+          val2 = b[15+16*(j+1)+128*k][16*(j+1)+128*k].extend(32);
+          result = signedSaturate(val1 - val2, 32, 16) || result;
+        }
+      }
+
+      return result;
+    }, 0);
+
+    // pmulhrsw
+    add_opcode("pmulhrsw", [this] (SymBitVector a, SymBitVector b) {
+      auto n = a.width();
+      auto aa = a.extend(2*n);
+      auto bb = b.extend(2*n);
+      return (((aa*bb) >> SymBitVector::constant(2*n, 14)) + SymBitVector::constant(2*n, 1))[16][1];
+    }, 16, 16);
+
+    // pmulhuw
+    add_opcode("pmulhuw", [this] (SymBitVector a, SymBitVector b) {
+      auto n = a.width();
+      auto aa = SymBitVector::constant(n, 0) || a;
+      auto bb = SymBitVector::constant(n, 0) || b;
+      return (aa * bb)[31][16];
+    }, 16, 16);
+
+    // pmuludq
+    add_opcode("pmuludq", [this] (SymBitVector a, SymBitVector b) {
+      auto aa = SymBitVector::constant(32, 0) || a[31][0];
+      auto bb = SymBitVector::constant(32, 0) || b[31][0];
+      return (aa * bb);
+    }, 64, 64);
+
+    // pmaddwd
+    add_opcode("pmaddwd", [this] (SymBitVector a, SymBitVector b) {
+      auto val1 = (b[15][0].extend(32)  * a[15][0].extend(32));
+      auto val2 = (b[31][16].extend(32) * a[31][16].extend(32));
+      return val1 + val2;
+    }, 32, 32);
+
+    // pmaddubsw
+    add_opcode("pmaddubsw", [this] (SymBitVector a, SymBitVector b) {
+      auto val1 = (b[7][0].extend(16)   * (SymBitVector::constant(8, 0) || a[7][0])  ).extend(32);
+      auto val2 = (b[15][8].extend(16)  * (SymBitVector::constant(8, 0) || a[15][8]) ).extend(32);
+      return signedSaturate(val1 + val2, 32, 16);
+    }, 16, 16);
+
+    // phaddsw
+    add_opcode("phaddsw", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+
+      auto val1 = a[15][0].extend(32);
+      auto val2 = a[31][16].extend(32);
+      auto sum = signedSaturate(val1 + val2, 32, 16)[15][0];
+
+      size_t i = 2;
+      for (size_t k = 0; k < dest_width/128; k++, i = 0) {
+        for (; i < 8; i=i+2) {
+          auto val1 = a[16*i+15 + 128*k][16*i + 128*k].extend(32);
+          auto val2 = a[16*(i+1)+15 + 128*k][16*(i+1) + 128*k].extend(32);
+          sum = signedSaturate(val2 + val1, 32, 16)[15][0] || sum;
+        }
+
+        for (size_t j = 0; j < 8; j = j + 2) {
+          auto val1 = b[16*j+15 + 128*k][16*j + 128*k].extend(32);
+          auto val2 = b[16*(j+1)+15 + 128*k][16*(j+1) + 128*k].extend(32);
+          sum = signedSaturate(val2 + val1, 32, 16)[15][0] || sum;
+        }
+      }
+
+      return sum;
+
+    }, 0);
+
+    // paddsb
+    add_opcode("paddsb", [this] (SymBitVector a, SymBitVector b) {
+      auto val1 =  a.extend(16);
+      auto val2 =  b.extend(16);
+      return signedSaturate(val1 + val2, 16, 8)[7][0];
+    }, 8, 8);
+
+    // paddsw
+    add_opcode("paddsw", [this] (SymBitVector a, SymBitVector b) {
+      auto val1 = a.extend(32);
+      auto val2 = b.extend(32);
+      return signedSaturate(val1 + val2, 32, 16)[15][0];
+    }, 16, 16);
+
+    // psadbw
+    add_opcode("psadbw", [this] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+      auto auxsum = SymBitVector::constant(16, 0);
+
+      for (size_t i = 0; i <= 7; ++i) {
+        auxsum = (SymBitVector::constant(8, 0) || absoluteUnsignedDifference(a[7 + 8*i][8*i], b[7 + 8*i][8*i])) + auxsum;
+      }
+
+      auto sum = SymBitVector::constant(48, 0) || auxsum;
+
+
+      for (size_t k = 1 ; k < dest_width/64; k++) {
+        auxsum = SymBitVector::constant(16, 0);
+
+        for (size_t i = 0; i <= 7; ++i) {
+          auxsum = (SymBitVector::constant(8, 0) ||  absoluteUnsignedDifference(a[7 + 8*i + 64*k][8*i + 64*k], b[7 + 8*i + 64*k][8*i + 64*k])) + auxsum;
+        }
+
+        sum = (SymBitVector::constant(48, 0) || auxsum) || sum;
+      }
+
+      return sum;
+
+    }, 0);
+
+    // packsswb
+    // Intel Manual Bug:  If the signed doubleword value is beyond the range of an unsigned word (i.e. greater than 7FH or less than 80H),
+    // What does that even mean!!
+    add_opcode("packsswb", [this] (SymBitVector a, SymBitVector b) {
+      auto a_width = a.width();
+      auto b_width = b.width();
+      uint16_t src_width = 16;
+      uint16_t dest_width = 8;
+
+      auto result = signedSaturate  (   a[15][0], src_width, dest_width);
+
+      size_t i = 1;
+      for (size_t k = 0; k < a_width; k += 128, i = 0) {
+        for (; i < 8; ++i) {
+          result = signedSaturate  (a[15 + 16*i + k][16*i + k], src_width, dest_width) || result;
+        }
+
+        for (i = 0; i < 8; ++i) {
+          result = signedSaturate  (b[15 + 16*i + k][16*i + k], src_width, dest_width) || result;
+        }
+      }
+
+      return result;
+    }, 0);
+
+    // packssdw
+    add_opcode("packssdw", [this] (SymBitVector a, SymBitVector b) {
+      auto a_width = a.width();
+      auto b_width = b.width();
+      uint16_t src_width = 32;
+      uint16_t dest_width = 16;
+
+      auto result = signedSaturate  (   a[31][0], src_width, dest_width);
+
+      size_t i = 1;
+      for (size_t k = 0; k < a_width; k += 128, i = 0) {
+        for (; i < 4; ++i) {
+          result = signedSaturate  (a[31 + 32*i + k][32*i + k], src_width, dest_width) || result;
+        }
+
+        for (i = 0; i < 4; ++i) {
+          result = signedSaturate  (b[31 + 32*i + k][32*i + k], src_width, dest_width) || result;
+        }
+      }
+
+      return result;
+    }, 0);
+
+    // packuswb
+    add_opcode("packuswb", [this] (SymBitVector a, SymBitVector b) {
+      auto a_width = a.width();
+      auto b_width = b.width();
+      uint16_t src_width = 16;
+      uint16_t dest_width = 8;
+
+      auto result = unSignedSaturate  (   a[15][0], src_width, dest_width);
+
+      size_t i = 1;
+      for (size_t k = 0; k < a_width; k += 128, i = 0) {
+        for (; i < 8; ++i) {
+          result = unSignedSaturate  (a[15 + 16*i + k][16*i + k],  src_width, dest_width) || result;
+        }
+
+        for (i = 0; i < 8; ++i) {
+          result = unSignedSaturate  (b[15 + 16*i + k][16*i + k],  src_width, dest_width) || result;
+        }
+      }
+
+      return result;
+    }, 0);
+
+    // packusdw
+    add_opcode("packusdw", [this] (SymBitVector a, SymBitVector b) {
+      auto a_width = a.width();
+      auto b_width = b.width();
+      uint16_t src_width = 32;
+      uint16_t dest_width = 16;
+
+      auto result = unSignedSaturate  (   a[31][0], src_width, dest_width);
+
+      size_t i = 1;
+      for (size_t k = 0; k < a_width; k += 128, i = 0) {
+        for (; i < 4 ; ++i) {
+          result = unSignedSaturate  (a[31 + 32*i + k][32*i + k], src_width, dest_width) || result;
+        }
+
+        for (i = 0; i < 4 ; ++i) {
+          result = unSignedSaturate  (b[31 + 32*i + k][32*i + k], src_width, dest_width) || result;
+        }
+      }
+
+      return result;
+    }, 0);
+
+    // vpsravd
+    add_opcode("vpsravd", [] (SymBitVector a, SymBitVector b) {
+      auto dest_width = a.width();
+      auto index = dest_width/32 - 1;
+
+      auto result = a[31][0].s_shr(b[31][0]);
+      for (uint16_t i = 1 ; i <= index; i++) {
+        result = a[31 + i*32][i*32].s_shr(b[31 + i*32][i*32]) || result;
+      }
+      // Intel Manual Bug
+      //result = a[31 + 32*index][32*index].s_shr( SymBitVector::constant(27, 0) || (b[4 + 32*index][32*index])) || result;
+      return result;
+    }, 0);
+
+
     add_opcode("paddq", [] (SymBitVector a, SymBitVector b) {
       return a + b;
     }, 64);
@@ -661,16 +1241,6 @@ public:
       return a ^ b;
     }, 0);
 
-    add_opcode("subpd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("sub_double", 64, {64, 64});
-      return f(a, b);
-    }, 64, 64, true);
-
-    add_opcode("subps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("sub_single", 32, {32, 32});
-      return f(a, b);
-    }, 32, 32, true);
-
     add_opcode("rcpps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("approx_reciprocal_single", 32, {32});
       return f(b);
@@ -820,6 +1390,10 @@ private:
 
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector)> BinaryOperator;
+  /** Represents the operation done in parallel on the bitvectors */
+  typedef std::function<SymBitVector (SymBitVector, SymBitVector, SymBitVector)> TernaryOperator;
+  /** Represents the operation done in parallel on the bitvectors */
+  typedef std::function<SymBitVector (SymBitVector, SymBitVector, SymBitVector, uint16_t)> BinaryOperatorWithConstant;
 
   std::vector<std::string> opcode_names_;
 
@@ -840,13 +1414,13 @@ private:
     , x64asm::Opcode::VADDSS_XMM_XMM_M32
     , x64asm::Opcode::VADDSS_XMM_XMM_XMM
     , x64asm::Opcode::VADDSUBPD_XMM_XMM_XMM
-    , x64asm::Opcode::VADDSUBPD_YMM_YMM_YMM
+    //, x64asm::Opcode::VADDSUBPD_YMM_YMM_YMM
     , x64asm::Opcode::VADDSUBPS_XMM_XMM_XMM
-    , x64asm::Opcode::VADDSUBPS_YMM_YMM_YMM
+    //, x64asm::Opcode::VADDSUBPS_YMM_YMM_YMM
     , x64asm::Opcode::VADDSUBPD_XMM_XMM_M128
-    , x64asm::Opcode::VADDSUBPD_YMM_YMM_M256
+    //, x64asm::Opcode::VADDSUBPD_YMM_YMM_M256
     , x64asm::Opcode::VADDSUBPS_XMM_XMM_M128
-    , x64asm::Opcode::VADDSUBPS_YMM_YMM_M256
+    //, x64asm::Opcode::VADDSUBPS_YMM_YMM_M256
     , x64asm::Opcode::VCVTPD2DQ_XMM_M256
     , x64asm::Opcode::VCVTPD2DQ_XMM_YMM
     , x64asm::Opcode::VCVTPD2PS_XMM_M128
@@ -896,7 +1470,17 @@ private:
   public:
 
     PackedOpcode(std::string opcode, BinaryOperator binop) :
-      opcode_(opcode), binop_(binop) {
+      opcode_(opcode), binop_(binop), has_constant_(false) {
+      init();
+    }
+
+    PackedOpcode(std::string opcode, TernaryOperator ternaryop) :
+      opcode_(opcode), ternaryop_(ternaryop), has_constant_(false) {
+      init();
+    }
+
+    PackedOpcode(std::string opcode, BinaryOperatorWithConstant binop) :
+      opcode_(opcode), binop_with_constant_(binop), has_constant_(true) {
       init();
     }
 
@@ -930,7 +1514,18 @@ private:
     }
 
     SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss) {
+      assert(!has_constant_);
       return binop_(bv1, bv2);
+    }
+
+    SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, x64asm::Operand arg3, SymBitVector bv3, SymState& ss) {
+      assert(!has_constant_);
+      return ternaryop_(bv1, bv2, bv3);
+    }
+
+    SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss, SymBitVector imm, uint16_t k) {
+      assert(has_constant_);
+      return binop_with_constant_(bv1, bv2, imm, k);
     }
 
     bool get_uninterpreted() {
@@ -970,6 +1565,9 @@ private:
     std::string opcode_;
 
     BinaryOperator binop_;
+    TernaryOperator ternaryop_;
+    BinaryOperatorWithConstant binop_with_constant_;
+    bool has_constant_;
 
     bool uninterpreted_;
     bool only_one_;
@@ -979,6 +1577,35 @@ private:
     uint16_t output_width_;
     bool avx_alignment_;
   };
+
+  /** Helper functions for signed/unsigned saturation  */
+  SymBitVector signedSaturate(SymBitVector a,  uint16_t src_width, uint16_t dest_width) {
+    int64_t maxIntVal = int64_t(pow(2, dest_width-1)) - 1;
+    int64_t minIntVal = -1*(int64_t(pow(2, dest_width-1)));
+    auto maxBvVal_src_width = SymBitVector::constant(src_width, maxIntVal);
+    auto maxBvVal_dest_width = SymBitVector::constant(dest_width, maxIntVal);
+    auto minBvVal_src_width = SymBitVector::constant(src_width, minIntVal);
+    auto minBvVal_dest_width = SymBitVector::constant(dest_width, minIntVal);
+
+    return a.s_gt(maxBvVal_src_width).ite( maxBvVal_dest_width,
+                                           a.s_lt(minBvVal_src_width).ite(minBvVal_dest_width, a[dest_width - 1][0]));
+  }
+
+  SymBitVector unSignedSaturate(SymBitVector a,  uint16_t src_width, uint16_t dest_width) {
+    int64_t maxIntVal = int64_t(pow(2, dest_width)) -1;
+    int64_t minIntVal = 0;
+    auto maxBvVal_src_width = SymBitVector::constant(src_width, maxIntVal);
+    auto maxBvVal_dest_width = SymBitVector::constant(dest_width, maxIntVal);
+    auto minBvVal_src_width = SymBitVector::constant(src_width, minIntVal);
+    auto minBvVal_dest_width = SymBitVector::constant(dest_width, minIntVal);
+
+    return a.s_gt(maxBvVal_src_width).ite( maxBvVal_dest_width,
+                                           a.s_lt(minBvVal_src_width).ite(minBvVal_dest_width, a[dest_width - 1][0]));
+  }
+
+  SymBitVector absoluteUnsignedDifference(SymBitVector a, SymBitVector b) {
+    return (a>b).ite(a-b, b-a);
+  }
 
   /** Adds an opcode to our internal maps */
   template <typename T>
