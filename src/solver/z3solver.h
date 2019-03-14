@@ -50,6 +50,10 @@ public:
       delete model_;
   }
 
+  /** Obtain the z3 formula from SymBool/SymBitvertor*/
+  z3::expr getZ3Formula(const SymBitVector& bv) ;
+  z3::expr getZ3Formula(const SymBool& bv) ;
+
   /** Check if a query is satisfiable given constraints */
   bool is_sat(const std::vector<SymBool>& constraints);
 
