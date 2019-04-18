@@ -17,6 +17,7 @@ the design of STOKE, see:
 - [**Stochastic Program Optimization** -- CACM 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/cacm16.pdf)
 - [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
 - [**Sound Loop Superoptimization for Google Native Client** -- ASPLOS 2017](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos17.pdf)
+- [**A Complete Formal Semantics of x86-64 User-Level Instruction Set Architecture** -- PLDI 2019](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi19.pdf)
 
 Status of this Work
 =====
