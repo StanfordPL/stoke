@@ -19,6 +19,9 @@ the design of STOKE, see:
 - [**Sound Loop Superoptimization for Google Native Client** -- ASPLOS 2017](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos17.pdf)
 - [**A Complete Formal Semantics of x86-64 User-Level Instruction Set Architecture** -- PLDI 2019](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi19a.pdf)
 
+Additionally, the work [**Semantic Program Alignment for Equivalence Checking** (PLDI 2019)](https://github.com/bchurchill/pldi19-equivalence-checker/raw/master/pldi2019.pdf), was developed from this codebase.  The [fork is available here](https://github.com/bchurchill/pldi19-equivalence-checker).
+
+
 Status of this Work
 =====
 
