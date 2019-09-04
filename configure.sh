@@ -1,5 +1,4 @@
 #!/bin/bash
-
 function show_help {
   echo "$0 [--debug-default-target] [--debug-ddec] [--debug-ceg] [--no-cvc4]"
   echo ""
@@ -23,13 +22,17 @@ $(grep avx2 /proc/cpuinfo >/dev/null)
 AVX2=$?
 $(grep avx /proc/cpuinfo >/dev/null)
 AVX=$?
+$(grep mmx /proc/cpuinfo >/dev/null)
+MMX=$?
 
 if [ $AVX2 -eq 0 ]; then
   PLATFORM="haswell"
 elif [ $AVX -eq 0 ]; then
   PLATFORM="sandybridge"
+elif [ $AVX -eq 0]; then
+  PLATFORM="nehalem"
 else
-  echo "ERROR: STOKE is currently only supported on sandybridge or haswell machines.  You appear to have an older CPU."
+  echo "ERROR: STOKE not supported on your device. Please update flag field."
 exit 1
 fi
 
