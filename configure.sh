@@ -23,11 +23,15 @@ $(grep avx2 /proc/cpuinfo >/dev/null)
 AVX2=$?
 $(grep avx /proc/cpuinfo >/dev/null)
 AVX=$?
+$(grep mmx /proc/cpuinfo >/dev/null)
+MMX=$?
 
 if [ $AVX2 -eq 0 ]; then
   PLATFORM="haswell"
 elif [ $AVX -eq 0 ]; then
   PLATFORM="sandybridge"
+elif [ $MMX -eq 0 ]; then
+  PLATFORM="nehalem"
 else
   echo "ERROR: STOKE is currently only supported on sandybridge or haswell machines.  You appear to have an older CPU."
 exit 1
