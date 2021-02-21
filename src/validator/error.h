@@ -27,10 +27,11 @@ class validator_error : public std::exception {
 
 public:
 
-  validator_error(std::string file, int line, std::string message) {
-    file_ = file;
-    line_ = line;
-    message_ = message;
+  validator_error(std::string file, int line, std::string message)
+    : file_(file), line_(line), message_(message) {
+    std::stringstream ss;
+    ss << "[" << file_ << ":" << line_ << "] " << message_;
+    what_ = ss.str();
   }
 
   int get_line() {
@@ -46,9 +47,7 @@ public:
   }
 
   virtual const char* what() const throw() {
-    std::stringstream ss;
-    ss << "[" << file_ << ":" << line_ << "] " << message_;
-    return ss.str().c_str();
+    return what_.c_str();
   }
 
 private:
@@ -56,6 +55,7 @@ private:
   std::string message_;
   std::string file_;
   int line_;
+  std::string what_;
 
 };
 
