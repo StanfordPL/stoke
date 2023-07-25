@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <cstring>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 
 #include <chrono>
 #include <iostream>
@@ -377,6 +382,36 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 }
 
 int main(int argc, char** argv) {
+  int client;
+  int portnum = 12341; // stoi(argv[2]);
+  const char* ip = "127.0.0.1";; //argv[1];
+
+  struct sockaddr_in serv_addr;
+
+  client = socket(AF_INET, SOCK_STREAM, 0);
+  if (client < 0) {
+    cout << "ERROR establishing socket\n" << endl;
+    exit(1);
+  }
+
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(portnum);
+  inet_pton(AF_INET, ip, &serv_addr.sin_addr);
+
+  cout << "\n--> Socket client created...\n";
+
+
+  if (connect(client, (const struct sockaddr*)&serv_addr, sizeof(serv_addr)) == 0) {
+    cout << "--> Connection to the server " << inet_ntoa(serv_addr.sin_addr) 
+	<< " with port number: " 
+	<< portnum << endl;		 
+  }
+
+
+  cout << "--> Waiting for server to confirm...\n";
+  // recv(client, buffer, bufsize, 0);
+  cout << "--> Connection confirmed..\n";
+
   const auto start = steady_clock::now();
   duration<double> search_elapsed = duration<double>(0.0);
 
@@ -485,7 +520,7 @@ int main(int argc, char** argv) {
     }
 
     const auto start_search = steady_clock::now();
-    search.run(target, fxn, init_arg, state, aux_fxns);
+    search.run(client, target, fxn, init_arg, state, aux_fxns);
     search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
 
     total_iterations += search.get_statistics().iterations;

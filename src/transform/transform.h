@@ -34,6 +34,8 @@ public:
     the transformation if needed.  */
   virtual TransformInfo operator()(Cfg& cfg) = 0;
 
+  virtual TransformInfo transform_test(int client, Cfg& cfg) = 0;
+
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
   virtual void undo(Cfg& cfg, const TransformInfo& transform_info) const = 0;

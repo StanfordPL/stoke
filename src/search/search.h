@@ -80,7 +80,7 @@ public:
   }
 
   /** Run search beginning from a search state using a user-supplied cost function. */
-  void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, std::vector<stoke::TUnit>& aux_fxn);
+  void run(int client, const Cfg& target, CostFunction& fxn, Init init, SearchState& state, std::vector<stoke::TUnit>& aux_fxn);
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 

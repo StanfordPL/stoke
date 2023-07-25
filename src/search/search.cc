@@ -61,9 +61,9 @@ Search::Search(Transform* transform) : transform_(transform) {
   }
 }
 
-void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
+void Search::run(int client, const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
 
-  // Configure initial state
+    // Configure initial state
   configure(target, fxn, state, aux_fxns);
 
   // Make sure target and rewrite are sound to begin with
@@ -101,12 +101,12 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     if (timeout_itr_ > 0 && iterations >= timeout_itr_) {
       break;
     } else if (timeout_sec_ != steady_clock::duration::zero() &&
-               duration_cast<duration<double>>(steady_clock::now() - start) >= timeout_sec_) {
+              duration_cast<duration<double>>(steady_clock::now() - start) >= timeout_sec_) {
       break;
     }
 
-
-    ti = (*transform_)(state.current);
+    //ti = (*transform_)(state.current);
+    ti = (*transform_).transform_test(client, state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
       continue;

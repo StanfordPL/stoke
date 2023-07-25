@@ -11,6 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <iostream>
+#include <cstring>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 
 #ifndef STOKE_SRC_TRANSFORM_WEIGHTED_H
 #define STOKE_SRC_TRANSFORM_WEIGHTED_H
@@ -42,6 +48,23 @@ public:
     auto ti = (*tr)(cfg);
     ti.move_type = tform_index;
     return ti;
+  }
+  TransformInfo transform_test(int client, Cfg& cfg){
+    int num;
+		//std::cout << "Client: ";
+		//std::cin >> num;
+    //send(client, &num, sizeof(num), 0);
+
+		recv(client, &num, sizeof(num), 0);
+
+    std::cout << "Server: " << num << std::endl;
+    size_t pool_index = num % transform_pool_.size();
+    size_t tform_index = transform_pool_[pool_index];
+    Transform* tr = transforms_[tform_index];
+    auto ti = (*tr)(cfg);
+    ti.move_type = tform_index;
+    return ti;
+    
   }
 
   void undo(Cfg& cfg, const TransformInfo& info) const {
