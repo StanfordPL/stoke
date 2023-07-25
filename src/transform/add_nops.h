@@ -17,8 +17,7 @@
 
 #include "src/transform/pools.h"
 #include "src/transform/transform.h"
-#include <iostream>
-using namespace std;
+
 namespace stoke {
 
 class AddNopsTransform : public Transform {
@@ -30,12 +29,13 @@ public:
   }
 
   AddNopsTransform(TransformPools& pools) : Transform(pools) { }
+
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
   TransformInfo operator()(Cfg& cfg);
   TransformInfo transform_test(int client, Cfg& cfg){
-    std::cout << "addnops.transform_test executed";
+    return (*this)(cfg);
   };
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */

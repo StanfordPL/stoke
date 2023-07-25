@@ -17,8 +17,6 @@
 
 #include "src/transform/pools.h"
 #include "src/transform/transform.h"
-#include <iostream>
-using namespace std;
 
 namespace stoke {
 
@@ -37,7 +35,7 @@ public:
     the transformation if needed.  */
   TransformInfo operator()(Cfg& cfg);
   TransformInfo transform_test(int client, Cfg& cfg){
-    std::cout << "rotatetransform.transform_test executed";
+    return (*this)(cfg);
   };
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
