@@ -26,5 +26,5 @@ int32_t p24(int32_t x) {
   int32_t o9 = o7 | o8;
   int32_t o10 = o9 >> 16;
   int32_t o11 = o9 | o10;
-  return o10 + 1;
+  return o11 + 1;
 }
